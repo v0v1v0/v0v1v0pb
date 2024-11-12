@@ -1,0 +1,115 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>predict.bbl</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Predict Response Group Using <code>bbl</code> Model</h2>
+
+<h3>Description</h3>
+
+<p>Make prediction of response group identity based on trained model
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">## S3 method for class 'bbl'
+predict(object, newdata, type = "link", verbose = 1, progress.bar = FALSE, ...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>object</code></td>
+<td>
+<p>Object of class <code>bbl</code> containing trained model</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>newdata</code></td>
+<td>
+<p>Data frame of new data for which prediction is to
+be made. Columns must contain all of those in <code>model@data</code>.
+If column names are present, the columns will be matched 
+based on them. Extra columns will be ignored. If column names
+are not provided, the columns should exactly match 
+<code>model@data</code> predictor parts. If <code>NULL</code>, replaced
+by <code>model@data</code> (self-prediction).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>type</code></td>
+<td>
+<p>Return value type. If <code>'link'</code>, 
+the logit scale probabilities. If <code>'prob'</code> the probability itself.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>verbose</code></td>
+<td>
+<p>Verbosity level</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>progress.bar</code></td>
+<td>
+<p>Display progress of response group probability. Useful
+for large samples.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Other arguments to methods</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>This method uses a new data set for predictors and trained <code>bbl</code> model
+parameters to compute posterior probabilities of response group 
+identity.
+</p>
+
+
+<h3>Value</h3>
+
+<p>Data frame of predicted posterior probabilities with samples in rows
+and response groups in columns. The last column is the predicted
+response group with maximum probability.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">set.seed(154)
+
+m &lt;- 5
+L &lt;- 3
+n &lt;- 1000
+
+predictors &lt;- list()
+for(i in 1:m) predictors[[i]] &lt;- seq(0,L-1)
+names(predictors) &lt;- paste0('v',1:m)
+par &lt;- list(randompar(predictors=predictors, dJ=0.5),
+            randompar(predictors=predictors, h0=0.1, J0=0.1, dJ=0.5))
+dat &lt;- randomsamp(predictors=predictors, response=c('ctrl','case'), par=par, 
+                 nsample=n)
+dat &lt;- dat[sample(n),]
+dtrain &lt;- dat[seq(n/2),]
+dtest &lt;- dat[seq(n/2+1,n),]
+
+model &lt;- bbl(y ~ .^2, data=dtrain)
+pred &lt;- predict(model, newdata=dtest)
+score &lt;- mean(dtest$y==pred$yhat)
+score
+
+auc &lt;- pROC::roc(response=dtest$y, predictor=pred$case, direction='&lt;')$auc
+auc
+</code></pre>
+
+
+</div>

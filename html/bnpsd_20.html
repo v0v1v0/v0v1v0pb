@@ -1,0 +1,91 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>tree_reindex_tips</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Reindex tree tips in order of appearance in edges</h2>
+
+<h3>Description</h3>
+
+<p>The <code>phylo</code> object from the <code>ape</code> package (see <code>ape::read.tree()</code>) permits mismatches between the order of tips as present in the tip labels vector (<code>tree$tip.label</code>) and in the edge matrix (<code>tree$edge</code>), which can cause mismatches in plots and other settings.
+This function reindexes edges and tips so that they agree in tip order.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">tree_reindex_tips(tree)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table><tr style="vertical-align: top;">
+<td><code>tree</code></td>
+<td>
+<p>A <code>phylo</code> object from the <code>ape</code> package (see <code>ape::read.tree()</code>).
+Works with standard <code>phylo</code> objects, and also with our extended trees (in that additive edges <code>tree$edge.length.add</code> are recalculated after reordering if they were present).</p>
+</td>
+</tr></table>
+<h3>Details</h3>
+
+<p>Order mismatches between tip labels vector and edge matrix can lead to disagreeing order downstream, in variables that order tips as in the labels vector (such as the coancestry matrices output by our <code>coanc_tree()</code>) and tree plots (whose order is guided by the edge matrix, particularly when the edge matrix is ordered by clade as in <code>ape::reorder.phylo()</code>).
+</p>
+<p>This function first reorders the edges of the input tree using <code>ape::reorder.phylo()</code> with default option <code>order = 'cladewise'</code>, which will list edges and tip nodes in plotting order.
+Then tips are indexed so that the first tip to appear has index 1 in the edge matrix (and consequently appears first in the tip labels vector), the second has index 2, and so on.
+Thus, the output tree has both edges and tips reordered, to have a consistent tip order and best experience visualizing trees and their coancestry matrices.
+</p>
+
+
+<h3>Value</h3>
+
+<p>The modified <code>tree</code> (<code>phylo</code> object) with reordered edges and tips.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>tree_reorder()</code> for reordering tree structure so that tips appear in a particular desired order.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R"># create a random tree
+library(ape)
+k &lt;- 5
+tree &lt;- rtree( k )
+
+# trees constructed this way are already ordered as desired, so this function doesn't change it:
+tree2 &lt;- tree_reindex_tips( tree )
+# tree2 equals tree!
+
+# let's scramble the edges on purpose
+# to create an example where reindexing is needed
+
+tree_rand &lt;- tree
+# new order of edges
+indexes &lt;- sample( Nedge( tree_rand ) )
+# reorder all edge values
+tree_rand$edge &lt;- tree_rand$edge[ indexes, ]
+tree_rand$edge.length &lt;- tree_rand$edge.length[ indexes ]
+# now let's reorder edges slightly so tree is more reasonable-looking
+# (otherwise plot looks tangled)
+tree_rand &lt;- reorder( tree_rand, order = 'postorder' )
+# you can now see that, unless permutation got lucky,
+# the order of the tip labels in the vector and on the plot disagree:
+tree_rand$tip.label
+plot( tree_rand )
+
+# now reorder tips to match plotting order (as defined in the `edge` matrix)
+tree_rand &lt;- tree_reindex_tips( tree_rand )
+# now tip labels vector and plot should agree in order:
+# (plot was not changed)
+tree_rand$tip.label
+plot( tree_rand )
+
+</code></pre>
+
+
+</div>

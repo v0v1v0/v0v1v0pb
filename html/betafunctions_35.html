@@ -1,0 +1,162 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>HB.ROC</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>ROC curves for the Hanson and Brennan approach.</h2>
+
+<h3>Description</h3>
+
+<p>Generate a ROC curve plotting the false-positive rate against the true-positive rate at different cut-off values across the observed-score scale.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">HB.ROC(
+  x = NULL,
+  reliability,
+  testlength,
+  truecut,
+  true.model = "4P",
+  failsafe = TRUE,
+  l = 0,
+  u = 1,
+  AUC = FALSE,
+  maxJ = FALSE,
+  maxAcc = FALSE,
+  locate = NULL,
+  raw.out = FALSE,
+  grainsize = testlength
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>A vector of observed results (sum scores) or a list of parameter values (see documentation for the <code>HB.beta.tp.fit() function</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>reliability</code></td>
+<td>
+<p>The reliability coefficient of the test.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>testlength</code></td>
+<td>
+<p>The total number of test items (or maximum possible score). Must be an integer.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>truecut</code></td>
+<td>
+<p>The point along the x-scale that marks true category membership.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>true.model</code></td>
+<td>
+<p>The probability distribution to be fitted to the moments of the true-score distribution. Options are <code>"4P"</code> (default) and <code>"2P"</code>, referring to four- and two-parameter Beta distributions. The <code>"4P"</code> method produces a four-parameter Beta distribution with the same first four moments (mean, variance, skewness, and kurtosis) as the estimated true-score distribution, while the <code>"2P"</code> method produces a two-parameter Beta distribution with the first two moments (mean and variance) as the estimated true-score distribution.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>failsafe</code></td>
+<td>
+<p>If true-model == "4P": Whether to engage a fail-safe reverting to a two-parameter true-score distribution solution should the four-parameter fitting procedure produce impermissible results. Default is TRUE (engage fail-safe in the event of impermissible estimates).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>l</code></td>
+<td>
+<p>If <code>true.model == "2P"</code> or <code>failsafe == TRUE</code>: The lower-bound location parameter of the two-parameter true-score distribution solution.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>u</code></td>
+<td>
+<p>If <code>true.model == "2P"</code> or <code>failsafe == TRUE</code>: The upper-bound location parameter of the two-parameter true-score distribution solution.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>AUC</code></td>
+<td>
+<p>Logical. Calculate and include the area under the curve? Default is <code>FALSE</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>maxJ</code></td>
+<td>
+<p>Logical. Mark the point along the curve where Youden's J statistic is maximized? Default is <code>FALSE</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>maxAcc</code></td>
+<td>
+<p>Logical. Mark the point along the curve where the Accuracy statistic is maximized? Default is <code>FALSE</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>locate</code></td>
+<td>
+<p>Ask the function to locate the cut-point at which sensitivity or NPV is greater than or equal to some value, or specificity or PPV is lesser than or equal to some value. Take as input a character-vector of length 2, with the first argument being which index is to be found (e.g., "sensitivity"), and the second argument the value to locate (e.g., "0.75"). For example: c("sensitivity", "0.75").</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>raw.out</code></td>
+<td>
+<p>Give raw coordinates as output rather than plot? Default is <code>FALSE</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>grainsize</code></td>
+<td>
+<p>Specify the number of cutoff-points for which the ROC curve is to be calculated. The greater this number the greater the accuracy. Default is set to the stated test length (N).</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>A plot tracing the ROC curve for the test, or matrix of coordinates if raw.out is <code>TRUE</code>.
+</p>
+
+
+<h3>Note</h3>
+
+<p>This implementation of the Hanson-Brennan approach is much slower than the implementation of the Livingston and Lewis approach, as there is no native implementation of Lord's two-term approximation to the Compound-Binomial distribution in R. This implementation uses a "brute-force" method of computing the cumulative probabilities from the compound-Binomial distribution, which will by necessity be more resource intensive.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R"># Generate some fictional data. Say, 1000 individuals take a test with a
+# maximum score of 50.
+# Generate some fictional data. Say, 1000 individuals take a 20-item test.
+set.seed(1234)
+p.success &lt;- rBeta.4P(1000, 0.15, 0.85, 6, 4)
+ for (i in 1:20) {
+   if (i == 1) {
+     rawdata &lt;- matrix(nrow = 1000, ncol = 20)
+     }
+   rawdata[, i] &lt;- rbinom(1000, 1, p.success)
+ }
+
+# Suppose the cutoff value for attaining a pass is 10 items correct, and
+# that the reliability of this test was estimated using the Cronbach's Alpha
+# estimator. To draw the ROC-graph and locate the points at which Youden's J
+# and Accuracy are maximized:
+HB.ROC(rowSums(rawdata), cba(rawdata), 20, 10, maxAcc = TRUE, maxJ = TRUE)
+
+# For further examples regarding how to use the locate argument to locate
+# points at which various criteria are satisfied, see documentation for the
+# LL.ROC() function.
+</code></pre>
+
+
+</div>

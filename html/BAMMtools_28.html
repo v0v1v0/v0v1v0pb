@@ -1,0 +1,216 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>getRateThroughTimeMatrix</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Generate rate-through-time matrix from <code>bammdata</code> object</h2>
+
+<h3>Description</h3>
+
+<p>Computes a matrix of macroevolutionary rates at specified
+timepoints from a <code>bammdata</code> object. These rates can be used for
+plotting speciation rates (and other rates) through time.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">getRateThroughTimeMatrix(
+  ephy,
+  start.time = NULL,
+  end.time = NULL,
+  nslices = 100,
+  node = NULL,
+  nodetype = "include"
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>ephy</code></td>
+<td>
+<p>An object of class <code>bammdata</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>start.time</code></td>
+<td>
+<p>The start time (in units before present) for the time.
+sequence over which rates should be computed. If <code>NULL</code>, starts
+at the root.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>end.time</code></td>
+<td>
+<p>The end time (in units before present) for the time
+sequence over which rates should be computed. If <code>NULL</code>, ends in
+the present.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nslices</code></td>
+<td>
+<p>The number of time points at which to compute rate
+estimates (between <code>start.time</code> and <code>end.time</code>).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>node</code></td>
+<td>
+<p>Allows user to extract rate-through-time information for the
+subtree descended from a specific node. Alternatively, a specified
+subtree can be excluded from the rate matrix calculations.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nodetype</code></td>
+<td>
+<p>Two options: "include" and "exclude". If "include",
+computes rate matrix only for the descendants of subtree defined by
+<code>node</code>. If "exclude", computes rate matrix for all background
+lineages in tree after excluding the subtree defined by <code>node</code>.
+Ignored if <code>node = NULL</code>.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>Computes evolutionary rates for each sample in the posterior
+included as part of the <code>bammdata</code> object. Rates are computed by
+draping an imaginary grid over the phylogeny, where the grid begins at
+<code>start.time</code> and ends at <code>end.time</code>, with <code>nslices</code>
+vertical lines through the phylogeny. The mean rate at each point in
+time (for a given sample from the posterior) is simply the mean rate
+at that time for all branches that are intersected by the grid (see
+the grid plot in the examples section).
+</p>
+<p>This function is used by plotRateThroughTime, but the user can
+work directly with the <code>bamm-ratematrix</code> object for greater
+control in plotting rate-through-time trajectories for individual
+clades. See <code>examples</code> for an example of how this can be used to
+plot confidence intervals on a rate trajectory using shaded polygons.
+</p>
+<p>The <code>node</code> options are particularly useful. If you have run
+<code>BAMM</code> on a large phylogeny, you can easily generate the
+rate-through-time data for a particular subtree by specifying the node
+number along with <code>nodetype = "include"</code>. Likewise, if you want
+to look at just the background rate - excluding some particular
+lineage - just specify <code>nodetype = "exclude"</code>.
+</p>
+
+
+<h3>Value</h3>
+
+<p>An object of class <code>bamm-ratematrix</code> with the following
+components:
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>lambda</code></td>
+<td>
+<p>A <code>nsamples</code> x <code>nslices</code> matrix of speciation
+rates, where <code>nsamples</code> is the number of posterior samples in
+the <code>bammdata</code> object.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>mu</code></td>
+<td>
+<p>A <code>nsamples</code> x <code>nslices</code> matrix of extinction
+rates.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>beta</code></td>
+<td>
+<p>A <code>nsamples</code> x <code>nslices</code> matrix of phenotypic
+rates (if applicable).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>times</code></td>
+<td>
+<p>A vector of timepoints where rates were computed.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>times</code></td>
+<td>
+<p>A vector of timepoints where rates were computed (see
+Examples).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>type</code></td>
+<td>
+<p>Either "diversification" or "trait", depending on the
+input data.</p>
+</td>
+</tr>
+</table>
+<h3>Author(s)</h3>
+
+<p>Dan Rabosky
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>plotRateThroughTime</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## Not run: 
+# Plot a rate-through-time curve with 
+# confidence intervals for the whale dataset:
+
+data(whales, events.whales)
+ed &lt;- getEventData(whales, events.whales)
+
+rmat &lt;- getRateThroughTimeMatrix(ed)
+
+plot.new()
+plot.window(xlim=c(0, 36), ylim=c(0, .7))
+
+## Speciation quantiles: plot 90% CIs
+qq &lt;- apply(rmat$lambda, 2, quantile, c(0.05, 0.5, 0.95))
+
+xv &lt;- c(rmat$times, rev(rmat$times))
+yv &lt;- c(qq[1,], rev(qq[3,]))
+
+## Add the confidence polygon on rate distributions:
+polygon(xv, yv, col='gray80', border=FALSE)
+
+## Add the median rate line:
+lines(rmat$times, qq[2,], lwd=3, col='red')
+
+## Add axes
+axis(1, at=seq(-5, 35, by=5))
+axis(2, at=seq(-0.2, 1, by=0.2), las=1)
+
+####### Now we will show the actual grid used for rate calculations:
+
+plot(whales, show.tip.label=FALSE)
+axisPhylo()
+
+mbt &lt;- max(branching.times(whales))
+tvec &lt;- mbt - rmat$times;
+tvec &lt;- rmat$times;
+
+for (i in 1:length(tvec)){
+    lines(x=c(tvec[i], tvec[i]), y=c(0, 90), lwd=0.7, col='gray70')
+}
+
+## This shows the grid of time slices over the phylogeny
+## End(Not run)
+</code></pre>
+
+
+</div>

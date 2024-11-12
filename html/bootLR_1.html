@@ -1,0 +1,166 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>BayesianLR.test</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Compute the (positive/negative) likelihood ratio with appropriate, bootstrapped confidence intervals</h2>
+
+<h3>Description</h3>
+
+<p>Compute the (positive/negative) likelihood ratio with appropriate, bootstrapped confidence intervals. 
+A standard bootstrapping approach is used for sensitivity and specificity, results are combined, and 
+then 95
+For the case where sensitivity or specificity equals zero or one, an appropriate bootstrap sample is generated 
+and then used in subsequent computations.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">BayesianLR.test(truePos, totalDzPos, trueNeg, totalDzNeg, R = 10^4,
+  nBSave = 50, verbose = FALSE, parameters = list(shrink = 5, tol =
+  5e-04, nEach = 80), maxTries = 20, ci.width = 0.95,
+  consistentQuantile = 0.5, ...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>truePos</code></td>
+<td>
+<p>The number of true positive tests.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>totalDzPos</code></td>
+<td>
+<p>The total number of positives ("sick") in the population.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>trueNeg</code></td>
+<td>
+<p>The number of true negatives in the population.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>totalDzNeg</code></td>
+<td>
+<p>The total number of negatives ("well") in the population.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>R</code></td>
+<td>
+<p>The number of replications in each round of the bootstrap (has been tested at 10,000 or greater).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nBSave</code></td>
+<td>
+<p>The number of times to re-bootstrap the statistic and then average at the end to obtain confidence intervals (has been tested at 50).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>verbose</code></td>
+<td>
+<p>Whether to display internal operations as they happen.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>parameters</code></td>
+<td>
+<p>List of control parameters (shrink, tol, nEach) for sequential search.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>maxTries</code></td>
+<td>
+<p>Each time a run fails, BayesianLR.test will back off on the parameters and try again. maxTries specifies the number of times to try before giving up.  If you can't get it to converge, try setting this higher.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ci.width</code></td>
+<td>
+<p>Changing this parameter results in different properties than have been tested and is not recommended. The width of the confidence interval used by boot.ci (not necessarily the same as the width of the CI produced by the algorithm overall)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>consistentQuantile</code></td>
+<td>
+<p>Changing this parameter results in different properties than have been tested and is not recommended. Defaults to 0.5, i.e. the median. Finds the lowest probability for which the random draws are likely to be consistently one, where consistently is defined by this value (i.e. at .5, a simple majority of the time is enough for consistency).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Arguments to pass along to boot.ci for the BCa confidence intervals.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>If the denominator is 0, calculations are inverted until the final result.
+</p>
+
+
+<h3>Value</h3>
+
+<p>An object of class lrtest.
+</p>
+
+
+<h3>Note</h3>
+
+<p>You'll either need a fast computer or substantial patience for certain combinations of inputs.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## Not run: 
+blrt &lt;- BayesianLR.test( truePos=100, totalDzPos=100, trueNeg=60, totalDzNeg=100 )
+blrt
+summary(blrt)
+
+BayesianLR.test( truePos=98, totalDzPos=100, trueNeg=60, totalDzNeg=100 )
+BayesianLR.test( truePos=60, totalDzPos=100, trueNeg=100, totalDzNeg=100 )
+BayesianLR.test( truePos=60, totalDzPos=100, trueNeg=99, totalDzNeg=100 )
+
+# Note the argument names are not necessary if you specify them in the proper order:
+BayesianLR.test( 60, 100, 50, 50 ) 
+
+# You can specify R= to increase/decrease the number of bootstrap replications
+BayesianLR.test( 60, 100, 50, 50, R=10000 ) 
+
+# You can change the number of digits that are printed
+print.lrtest( BayesianLR.test( 500, 500, 300, 500 ), digits = 4 )
+
+# Or extract the results yourself
+model.blrt1 &lt;- BayesianLR.test( 500, 500, 300, 500 )
+unclass( model.blrt1 )
+model.blrt1$statistics
+model.blrt1$posLR.ci
+
+# If the model doesn't converge, you can alter the search parameters
+BayesianLR.test( 500, 500, 300, 500, parameters=list(shrink=4,tol=.001,nEach=150), maxTries = 50 )
+
+### Statistician-only options
+# These change the way the model works. 
+# It is not recommended to alter these, as this will alter the statistical properties of the test
+# in ways that have not been validated.
+# Change number of bootstrap replications
+BayesianLR.test( 500, 500, 300, 500, R = 5*10^4 )
+# Change number of times to average the confidence interval limits at the end
+BayesianLR.test( 500, 500, 300, 500, nBSave = 100 )
+# Change the criteria from median being consistent 0 or 1 to some other quantile
+BayesianLR.test( 500, 500, 300, 500, consistentQuantile = .53 )
+
+## End(Not run)
+</code></pre>
+
+
+</div>

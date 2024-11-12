@@ -1,0 +1,378 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>bmrm</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Bayesian Analysis of Multivariate Receptor Modeling</h2>
+
+<h3>Description</h3>
+
+<p>Generate posterior samples of the source
+composition matrix  P, the source contribution matrix A,
+and the error variance <code class="reqn">\Sigma</code> using 'JAGS', and computes
+estimates of A,P,<code class="reqn">\Sigma</code>.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">bmrm(Y, q, muP,errdist="norm", df=4,
+            varP.free=100, xi=NULL, Omega=NULL,
+              a0=0.01, b0=0.01,
+             nAdapt=1000, nBurnIn=5000, nIter=5000, nThin=1,
+             P.init=NULL, A.init=NULL, Sigma.init=NULL,...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>Y</code></td>
+<td>
+<p>data matrix</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>q</code></td>
+<td>
+<p>number of sources. It must be a positive integer.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>muP</code></td>
+<td>
+<p>(q,ncol(Y))-dimensional prior mean matrix for the source
+composition matrix P, where q is the number of sources.
+Zeros need to be assigned to prespecified elements of muP to satisfy
+the identifiability condition C1. For the remaining free elements,
+any nonnegative numbers (between 0 and 1 preferably) can be assigned.
+If no or an insufficient number of zeros are preassigned in muP,
+estimation can still be performed but the resulting estimates may
+be subject to rotational ambiguities. (default=0.5 for nonzero elements ).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>errdist</code></td>
+<td>
+<p>error distribution: either "norm" for normal distribution or "t"
+for t distribution (default="norm")</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>df</code></td>
+<td>
+<p>degrees of freedom of a t-distribution when errdist="t" (default=4)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>varP.free</code></td>
+<td>
+<p>scalar value of the prior variance of the free (nonzero) elements
+of the source composition matrix P (default=100)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>xi</code></td>
+<td>
+<p>prior mean vector of the q-dimensional source contribution
+vector at time t  (default=vector of 1's)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Omega</code></td>
+<td>
+<p>diagonal matrix of the prior variance of the q-dimensional
+source contribution vector at time t (default=identity matrix)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>a0</code></td>
+<td>
+<p>shape parameter of the Inverse Gamma prior of the error variance
+(default=0.01)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>b0</code></td>
+<td>
+<p>scale parameter of the Inverse Gamma prior of the error variance
+(default=0.01)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nAdapt</code></td>
+<td>
+<p>number of iterations for adaptation in 'JAGS' (default=1000)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nBurnIn</code></td>
+<td>
+<p>number of iterations for the burn-in period in MCMC (default=5000)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nIter</code></td>
+<td>
+<p>number of iterations for monitoring samples from MCMC
+(default=5000). <code>nIter</code> samples are saved in each chain of MCMC.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nThin</code></td>
+<td>
+<p>thinning interval for monitoring samples from MCMC (default=1)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>P.init</code></td>
+<td>
+<p>initial value of the source composition matrix P.
+If omitted, zeros are assigned to the elements corresponding to
+zero elements in muP  and the nonzero elements of P.init will be
+randomly generated from a uniform distrbution.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>A.init</code></td>
+<td>
+<p>initial value of the source contribution matrix A.
+If omitted, it will be calculated from Y and P.init.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Sigma.init</code></td>
+<td>
+<p>initial value of the error variance.
+If omitted, it will be calculated from Y, A.init and P.init.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>arguments to be passed to methods</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p><em>Model</em>
+</p>
+<p>The basic model for Bayesian multivariate receptor model is
+as follows:
+</p>
+<p><code class="reqn">Y_t=A_t P+E_t, t=1,\cdots,T</code>,
+</p>
+<p>where
+</p>
+
+<ul>
+<li> <p><code class="reqn">Y_t</code> is a vector of observations of <code class="reqn">J</code> variables at time
+<code class="reqn">t</code>, <code class="reqn">t = 1,\cdots,T</code>.
+</p>
+</li>
+<li> <p><code class="reqn">P</code> is a <code class="reqn">q \times J</code>  source composition
+matrix in which the <code class="reqn">k</code>-th row represents the <code class="reqn">k</code>-th source
+composition profiles, <code class="reqn">k=1,\cdots,q</code>, <code class="reqn">q</code> is the number of sources.
+</p>
+</li>
+<li> <p><code class="reqn">A_t</code> is a <code class="reqn">q</code> dimensional source contribution vector at time <code class="reqn">t</code>,
+<code class="reqn">t=1,\cdots,T</code>.
+</p>
+</li>
+<li> <p><code class="reqn">E_t =(E_{t1}, \cdots, E_{tJ})</code> is an error term
+for the <code class="reqn">t</code>-th observations,
+following <code class="reqn">E_{t} \sim N(0, \Sigma)</code> or <code class="reqn">E_{t} \sim t_{df}(0, \Sigma)</code>,
+independently for <code class="reqn">j = 1,\cdots,J</code>, where <code class="reqn">\Sigma = diag(\sigma_{1}^2,...,
+     \sigma_{J}^2)</code>.
+</p>
+</li>
+</ul>
+<p><em>Priors</em>
+</p>
+
+<ul>
+<li>
+<p> Prior distribution of <code class="reqn">A_t</code> is given as
+a truncated multivariate normal distribution,
+</p>
+
+<ul><li> <p><code class="reqn"> A_t \sim N(\xi,\Omega) I(A_t \ge 0)</code>, independently for
+<code class="reqn">t = 1,\cdots,T</code>.
+</p>
+</li></ul>
+</li>
+<li>
+<p> Prior distribution of <code class="reqn">P_{kj}</code> (the <code class="reqn">(k,j)</code>-th element  of the source
+composition matrix <code class="reqn">P</code>) is given as
+</p>
+
+<ul>
+<li>
+<p><code class="reqn"> P_{kj} \sim N(\code{muP}_{kj} , \code{varP.free} )I(P_{kj}
+      \ge 0)</code>, for free (nonzero) <code class="reqn">P_{kj}</code>,
+</p>
+</li>
+<li>
+<p><code class="reqn"> P_{kj} \sim N(0, 1e-10 )I(P_{kj} \ge 0)</code>, for zero <code class="reqn">P_{kj}</code>,
+</p>
+<p>independently for  <code class="reqn">k = 1,\cdots,q; j = 1,\cdots,J </code>.
+</p>
+</li>
+</ul>
+</li>
+<li>
+<p> Prior distribution of <code class="reqn">\sigma_j^2</code> is <code class="reqn">IG(a0, b0)</code>, i.e.,
+</p>
+
+<ul><li> <p><code class="reqn">1/\sigma_j^2 \sim Gamma(a0, b0)</code>, having mean <code class="reqn">a0/b0</code>,
+independently for <code class="reqn">j=1,...,J</code>.
+</p>
+</li></ul>
+</li>
+</ul>
+<p><em>Notes</em>
+</p>
+
+<ul>
+<li>
+<p>We use the prior
+<code class="reqn"> P_{kj} \sim N(0, 1e-10 )I(P_{kj} \ge 0)</code>  that is practically equal
+to the point mass at 0 to simplify the model building in 'JAGS'.
+</p>
+</li>
+<li>
+<p>  The MCMC samples of A and P are post-processed (rescaled) before saving
+so that <code class="reqn"> \sum_{j=1}^J P_{kj} =1</code> for each <code class="reqn">k=1,...,q</code> (the identifiablity
+condition C3 of Park and Oh (2015).
+</p>
+</li>
+</ul>
+<h3>Value</h3>
+
+<p>in <code>bmrm</code> object
+</p>
+
+<dl>
+<dt>nsource</dt>
+<dd>
+<p>number of sources</p>
+</dd>
+<dt>nobs</dt>
+<dd>
+<p>number of observations in data Y</p>
+</dd>
+<dt>nvar</dt>
+<dd>
+<p>number of variables in data Y</p>
+</dd>
+<dt>Y</dt>
+<dd>
+<p>observed data matrix</p>
+</dd>
+<dt>muP</dt>
+<dd>
+<p>prior mean of the source composition matrix P</p>
+</dd>
+<dt>errdist</dt>
+<dd>
+<p>error distribution</p>
+</dd>
+<dt>df</dt>
+<dd>
+<p>degrees of freedom when errdist="t"</p>
+</dd>
+<dt>A.hat</dt>
+<dd>
+<p>posterior mean of the source contribution matrix A</p>
+</dd>
+<dt>P.hat</dt>
+<dd>
+<p>posterior mean of the source composition matrix P</p>
+</dd>
+<dt>Sigma.hat</dt>
+<dd>
+<p>posterior mean of the error variance Sigma</p>
+</dd>
+<dt>A.sd</dt>
+<dd>
+<p>posterior standard deviation of the source contribution matrix A</p>
+</dd>
+<dt>P.sd</dt>
+<dd>
+<p>posterior standard deviation of the source composition matrix P</p>
+</dd>
+<dt>Sigma.sd</dt>
+<dd>
+<p>posterior standard deviation of the error variance Sigma</p>
+</dd>
+<dt>A.quantiles</dt>
+<dd>
+<p>posterior quantlies of A for prob=(0.025, 0.05,
+0.25, 0.5, 0.75, 0.95, 0.975)</p>
+</dd>
+<dt>P.quantiles</dt>
+<dd>
+<p>posterior quantiles of P for prob=(0.025, 0.05,
+0.25, 0.5, 0.75, 0.95, 0.975)</p>
+</dd>
+<dt>Sigma.quantiles</dt>
+<dd>
+<p>posterior quantiles of Sigma for prob=(0.025, 0.05,
+0.25, 0.5, 0.75, 0.95, 0.975)</p>
+</dd>
+<dt>Y.hat</dt>
+<dd>
+<p>predicted value of Y computed from A.hat*P.hat</p>
+</dd>
+<dt>residual</dt>
+<dd>
+<p>Y-Y.hat</p>
+</dd>
+<dt>codaSamples</dt>
+<dd>
+<p>MCMC posterior samples of A, P, and <code class="reqn">\Sigma</code> in class "mcmc.list"</p>
+</dd>
+<dt>nIter</dt>
+<dd>
+<p>number of MCMC iterations per chain for monitoring samples from
+MCMC</p>
+</dd>
+<dt>nBurnIn</dt>
+<dd>
+<p>number of iterations for the burn-in period in MCMC</p>
+</dd>
+<dt>nThin</dt>
+<dd>
+<p>thinning interval for monitoring samples from MCMC</p>
+</dd>
+</dl>
+<h3>References</h3>
+
+<p>Park, E.S. and Oh, M-S. (2015), Robust Bayesian Multivariate
+Receptor Modeling, Chemometrics and intelligent laboratory systems,
+149, 215-226.
+</p>
+<p>Plummer, M. 2003. JAGS: A program for analysis of Bayesian
+graphical models using Gibbs sampling. Proceedings of the 3rd
+international workshop on distributed statistical computing, pp. 125.
+Technische Universit at Wien, Wien, Austria.
+</p>
+<p>Plummer, M. 2015. 'JAGS' Version 4.0.0 user manual.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+data(Elpaso); Y=Elpaso$Y ; muP=Elpaso$muP ; q=nrow(muP)
+out.Elpaso &lt;- bmrm(Y,q,muP)
+summary(out.Elpaso)
+plot(out.Elpaso)
+
+</code></pre>
+
+
+</div>

@@ -1,0 +1,103 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>separation.detection</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Separation Identification.</h2>
+
+<h3>Description</h3>
+
+<p>Provides a tool for identifying whether or not separation has occurred.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">separation.detection(fit, nsteps = 30)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>fit</code></td>
+<td>
+<p>the result of a <code>glm</code> call.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nsteps</code></td>
+<td>
+<p>Starting from <code>maxit = 1</code>, the GLM is refitted for
+<code>maxit = 2</code>, <code>maxit = 3</code>, ..., <code>maxit = nsteps</code>. Default
+value is 30.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>Identifies separated cases for binomial-response GLMs, by refitting
+the model. At each iteration the maximum number of allowed IWLS
+iterations is fixed starting from 1 to <code>nsteps</code> (by setting
+<code>control = glm.control(maxit = j)</code>, where <code>j</code> takes values  1,
+..., nsteps in <code>glm</code>). For each value of <code>maxit</code>,
+the estimated asymptotic standard errors are divided to the
+corresponding ones resulted for
+<code>control = glm.control(maxit = 1)</code>. Based on the results in Lesaffre
+&amp; Albert (1989), if the sequence of ratios in any column of the
+resulting matrix diverges, then separation occurs and the maximum
+likelihood estimate for the corresponding parameter has value minus or
+plus infinity.
+</p>
+
+
+<h3>Value</h3>
+
+<p>A matrix of dimension <code>nsteps</code> by <code>length(coef(fit))</code>, that
+contains the ratios of the estimated asymptotic standard errors.
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Ioannis Kosmidis, <a href="mailto:ioannis.kosmidis@warwick.ac.uk">ioannis.kosmidis@warwick.ac.uk</a></p>
+
+
+<h3>References</h3>
+
+<p>Kosmidis I. and Firth D. (2021). Jeffreys-prior penalty, finiteness
+and shrinkage in binomial-response generalized linear
+models. <em>Biometrika</em>, <b>108</b>, 71–82. 
+</p>
+<p>Lesaffre, E. and Albert, A. (1989). Partial separation in logistic
+discrimination. <em>J. R. Statist. Soc. <b>B</b></em>, <b>51</b>,
+109–116.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## Begin Example
+y &lt;- c(1,1,0,0)
+totals &lt;- c(2,2,2,2)
+x1 &lt;- c(1,0,1,0)
+x2 &lt;- c(1,1,0,0)
+m1 &lt;- glm(y/totals ~ x1 + x2, weights = totals, family = binomial())
+# No warning from glm...
+m1
+# However estimates for (Intercept) and x2 are unusually large in
+# absolute value... Investigate further:
+#
+separation.detection(m1,nsteps=30)
+# Note that the values in the column for (Intercept) and x2 diverge,
+# while for x1 converged. Hence, separation has occurred and the
+# maximum lieklihood estimate for (Intercept) is minus infinity and
+# for x2 is plus infinity. The signs for infinity are taken from the
+# signs of (Intercept) and x1 in coef(m1).
+## End Example
+</code></pre>
+
+
+</div>

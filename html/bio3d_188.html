@@ -1,0 +1,303 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>blast.pdb</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2> NCBI BLAST Sequence Search and Summary Plot of Hit Statistics</h2>
+
+<h3>Description</h3>
+
+<p>Run NCBI blastp, on a given sequence, against the PDB, NR and
+swissprot sequence databases. Produce plots that facilitate hit selection
+from the match statistics of a BLAST result.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">blast.pdb(seq, database = "pdb", time.out = NULL, chain.single=TRUE)
+
+get.blast(urlget, time.out = NULL, chain.single=TRUE)
+
+## S3 method for class 'blast'
+plot(x, cutoff = NULL, cut.seed=NULL, cluster=TRUE, mar=c(2, 5, 1, 1), cex=1.5, ...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>seq</code></td>
+<td>
+<p> a single element or multi-element character vector
+containing the query sequence. Alternatively a ‘fasta’
+object from function <code>get.seq</code> or ‘pdb’ object from 
+function <code>read.pdb</code> can be provided. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>database</code></td>
+<td>
+<p> a single element character vector specifying the
+database against which to search. Current options are ‘pdb’,
+‘nr’ and ‘swissprot’. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>time.out</code></td>
+<td>
+<p> integer specifying the number of seconds to wait for
+the blast reply before a time out occurs. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>urlget</code></td>
+<td>
+<p> the URL to retrieve BLAST results; Usually it is returned
+by blast.pdb if time.out is set and met. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>chain.single</code></td>
+<td>
+<p> logical, if TRUE double NCBI character PDB database  
+chain identifiers are simplified to lowercase '1WF4_GG' &gt; '1WF4_g'. If 
+FALSE no conversion to match RCSB PDB files is performed. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p> BLAST results as obtained from the function
+<code>blast.pdb</code>. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>cutoff</code></td>
+<td>
+<p> A numeric cutoff value, in terms of minus the log of
+the evalue, for returned hits.  If null then the function will
+try to find a suitable cutoff near ‘cut.seed’ which can be used
+as an initial guide (see below). </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>cut.seed</code></td>
+<td>
+<p> A numeric seed cutoff value, used for initial
+cutoff estimation. If null then a seed position is set to the point of 
+largest drop-off in normalized scores (i.e. the biggest jump in 
+E-values). </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>cluster</code></td>
+<td>
+<p> Logical, if TRUE (and ‘cutoff’ is null) a clustering 
+of normalized scores is performed to partition hits in groups by 
+similarity to query. If FALSE the partition point is set to the point of largest drop-off in normalized scores. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>mar</code></td>
+<td>
+<p> A numerical vector of the form c(bottom, left, top, right)
+which gives the number of lines of margin to be specified on the
+four sides of the plot.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>cex</code></td>
+<td>
+<p> a numerical single element vector giving the amount by
+which plot labels should be magnified relative to the default. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p> extra plotting arguments. </p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The <code>blast.pdb</code> function employs direct HTTP-encoded requests to the NCBI web
+server to run BLASTP, the protein search algorithm of the BLAST
+software package.
+</p>
+<p>BLAST, currently the most popular pairwise sequence comparison algorithm 
+for database searching, performs gapped local alignments via a heuristic 
+strategy: it identifies short nearly exact matches or hits, bidirectionally 
+extends non-overlapping hits resulting in ungapped extended hits or 
+high-scoring segment pairs(HSPs), and finally extends the highest scoring 
+HSP in both directions via a gapped alignment (Altschul et al., 1997)
+</p>
+<p>For each pairwise alignment BLAST reports the raw score, bitscore
+and an E-value that assess the statistical significance of the
+raw score. Note that unlike the raw score E-values are normalized with
+respect to both the substitution matrix and the query and database lengths.
+</p>
+<p>Here we also return a corrected normalized score (mlog.evalue) that in
+our experience is easier to handle and store than conventional
+E-values. In practice, this score is equivalent to minus the natural
+log of the E-value. Note that, unlike the raw score, this score is
+independent of the substitution matrix and and the query and database
+lengths, and thus is comparable between BLASTP searches. 
+</p>
+<p>Examining plots of BLAST alignment lengths, scores, E-values and normalized
+scores (-log(E-Value) from the <code>blast.pdb</code> function can aid in the
+identification sensible hit similarity thresholds. This is facilitated by 
+the <code>plot.blast</code> function.
+</p>
+<p>If a ‘cutoff’ value is not supplied then a basic hierarchical
+clustering of normalized scores is performed with initial group partitioning
+implemented at a hopefully sensible point in the vicinity of
+‘h=cut.seed’. Inspection of the resultant plot can then be use
+to refine the value of ‘cut.seed’ or indeed
+‘cutoff’. As the ‘cutoff’ value can vary depending on
+the desired application and indeed the properties of the system under
+study it is envisaged that ‘plot.blast’ will be called multiple
+times to aid selection of a suitable ‘cutoff’ value. See the
+examples below for further details.
+</p>
+
+
+<h3>Value</h3>
+
+<p>The function <code>blast.pdb</code> returns a list with three components,
+<code>hit.tbl</code>, <code>raw</code>, and <code>url</code>. 
+The function <code>plot.blast</code> produces a plot on the 
+active graphics device and returns a list object with four components,
+<code>hits</code>, <code>pdb.id</code>, <code>acc</code>, and <code>inds</code>. See below:
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>hit.tbl </code></td>
+<td>
+<p> a data frame summarizing BLAST results for each
+reported hit. It contains following major columns:
+</p>
+
+<ul>
+<li> <p>‘bitscore’, a numeric vector containing the raw score for each
+alignment.
+</p>
+</li>
+<li> <p>‘evalue’, a numeric vector containing the E-value of the raw
+score for each alignment. 
+</p>
+</li>
+<li> <p>‘mlog.evalue’, a numeric vector containing minus the natural log
+of the E-value. 
+</p>
+</li>
+<li> <p>‘acc’, a character vector containing the accession database identifier of
+each hit.  
+</p>
+</li>
+<li> <p>‘pdb.id’, a character vector containing the PDB database identifier of
+each hit. 
+</p>
+</li>
+</ul>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>raw </code></td>
+<td>
+<p> a data frame containing the raw BLAST output. Note multiple
+hits may appear in the same row. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>url </code></td>
+<td>
+<p> a single element character vector with the NCBI result URL and 
+RID code. This can be passed to the get.blast function. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>hits</code></td>
+<td>
+<p> an ordered matrix detailing the subset of hits with a normalized
+score above the chosen cutoff. Database identifiers are listed along
+with their cluster group number. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>pdb.id</code></td>
+<td>
+<p> a character vector containing the PDB database identifier of
+each hit above the chosen threshold. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>acc</code></td>
+<td>
+<p> a character vector containing the accession database identifier of
+each hit above the chosen threshold. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>inds</code></td>
+<td>
+<p> a numeric vector containing the indices of the hits
+relative to the input blast object.</p>
+</td>
+</tr>
+</table>
+<h3>Note</h3>
+
+<p>Online access is required to query NCBI blast services.
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p> Barry Grant </p>
+
+
+<h3>References</h3>
+
+<p>Grant, B.J. et al. (2006) <em>Bioinformatics</em> <b>22</b>, 2695–2696.
+</p>
+<p>‘BLAST’ is the work of Altschul et al.:
+Altschul, S.F. et al. (1990) <em>J. Mol. Biol.</em> <b>215</b>, 403–410.
+</p>
+<p>Full details of the ‘BLAST’ algorithm, along with download and
+installation instructions can be obtained from:<br><a href="https://www.ncbi.nlm.nih.gov/BLAST/">https://www.ncbi.nlm.nih.gov/BLAST/</a>.
+</p>
+
+
+<h3>See Also</h3>
+
+ <p><code>plot.blast</code>, <code>hmmer</code>, <code>seqaln</code>, <code>get.pdb</code> </p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## Not run: 
+pdb &lt;- read.pdb("4q21")
+blast &lt;- blast.pdb( pdbseq(pdb) )
+
+head(blast$hit.tbl)
+top.hits &lt;- plot(blast)
+head(top.hits$hits)
+
+## Use 'get.blast()' to retrieve results at a later time.
+#x &lt;- get.blast(blast$url)
+#head(x$hit.tbl)
+
+# Examine and download 'best' hits
+top.hits &lt;- plot.blast(blast, cutoff=188)
+head(top.hits$hits)
+#get.pdb(top.hits)
+
+## End(Not run)
+</code></pre>
+
+
+</div>

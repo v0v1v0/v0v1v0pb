@@ -1,0 +1,122 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>fast_mds</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Fast MDS</h2>
+
+<h3>Description</h3>
+
+<p>Fast MDS uses recursive programming in combination with a divide
+and conquer strategy in order to obtain an MDS configuration for a given
+large data set <code>x</code>.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">fast_mds(x, l, s_points, r, n_cores)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>A matrix with <code class="reqn">n</code> individuals (rows) and <code class="reqn">k</code> variables (columns).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>l</code></td>
+<td>
+<p>The size for which classical MDS can be computed efficiently
+(using <code>cmdscale</code> function). It means that if <code class="reqn">\bar{l}</code> is the limit
+size for which classical MDS is applicable, then <code>l</code><code class="reqn">\leq \bar{l}</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>s_points</code></td>
+<td>
+<p>Number of points used to align the MDS solutions obtained by
+the division of <code>x</code> into <code class="reqn">p</code> submatrices. Recommended value: <code>5·r</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>r</code></td>
+<td>
+<p>Number of principal coordinates to be extracted.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>n_cores</code></td>
+<td>
+<p>Number of cores wanted to use to run the algorithm.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>Fast MDS randomly divides the whole sample data set, <code>x</code>, of size <code class="reqn">n</code>
+into <code class="reqn">p=</code><code>l/s_points</code> data subsets, where <code>l</code> <code class="reqn">\leq \bar{l}</code> being <code class="reqn">\bar{l}</code>
+the limit size for which classical MDS is applicable. Each one of the <code class="reqn">p</code> data subsets
+has size <code class="reqn">\tilde{n} = n/p</code>. If <code class="reqn">\tilde{n} \leq \code{l}</code> then classical MDS is applied
+to each data subset. Otherwise, fast MDS is recursively applied.
+In either case, a final MDS configuration is obtained for each data subset.
+</p>
+<p>In order to align all the partial solutions, a small subset of size <code>s_points</code>
+is randomly selected from each data subset. They are joined
+to form an alignment set, over which classical MDS is performed giving rise to an
+alignment configuration. Every data subset shares <code>s_points</code> points with the alignment
+set. Therefore every MDS configuration can be aligned with the alignment configuration
+using a Procrustes transformation.
+</p>
+
+
+<h3>Value</h3>
+
+<p>Returns a list containing the following elements:
+</p>
+
+<dl>
+<dt>points</dt>
+<dd>
+<p>A matrix that consists of <code class="reqn">n</code> individuals (rows)
+and <code>r</code> variables (columns) corresponding to the principal coordinates. Since
+we are performing a dimensionality reduction, <code>r</code><code class="reqn">&lt;&lt;k</code></p>
+</dd>
+<dt>eigen</dt>
+<dd>
+<p>The first <code>r</code> largest eigenvalues:
+<code class="reqn">\bar{\lambda}_i, i \in  \{1, \dots, r\} </code>, where
+<code class="reqn">\bar{\lambda}_i = 1/p \sum_{j=1}^{p}\lambda_i^j/n_j</code>,
+being <code class="reqn">\lambda_i^j</code> the <code class="reqn">i-th</code> eigenvalue from partition <code class="reqn">j</code>
+and <code class="reqn">n_j</code> the size of the partition <code class="reqn">j</code>.</p>
+</dd>
+</dl>
+<h3>References</h3>
+
+<p>Delicado P. and C. Pachón-García (2021). <em>Multidimensional Scaling for Big Data</em>.
+<a href="https://arxiv.org/abs/2007.11919">https://arxiv.org/abs/2007.11919</a>.
+</p>
+<p>Yang, T., J. Liu, L. McMillan and W.Wang (2006). <em>A fast approximation to multidimensional scaling</em>.
+In Proceedings of the ECCV Workshop on Computation Intensive Methods for Computer Vision (CIMCV).
+</p>
+<p>Borg, I. and P. Groenen (2005). <em>Modern Multidimensional Scaling: Theory and Applications</em>. Springer.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">set.seed(42)
+x &lt;- matrix(data = rnorm(4 * 10000), nrow = 10000) %*% diag(c(9, 4, 1, 1))
+mds &lt;- fast_mds(x = x, l = 200, s_points = 5 * 2, r = 2, n_cores = 1)
+head(mds$points)
+mds$eigen
+
+</code></pre>
+
+
+</div>

@@ -1,0 +1,208 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>BayesSurvive</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Fit Bayesian Cox Models</h2>
+
+<h3>Description</h3>
+
+<p>This is the main function to fit a Bayesian Cox model with graph-structured
+selection priors for sparse identification of high-dimensional covariates.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">BayesSurvive(
+  survObj,
+  model.type = "Pooled",
+  MRF2b = FALSE,
+  MRF.G = TRUE,
+  g.ini = 0,
+  hyperpar = NULL,
+  initial = NULL,
+  nIter = 1,
+  burnin = 0,
+  thin = 1,
+  output_graph_para = FALSE,
+  verbose = TRUE
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>survObj</code></td>
+<td>
+<p>a list containing observed data from <code>n</code> subjects with
+components <code>t</code>, <code>di</code>, <code>X</code>. For graphical learning of the
+Markov random field prior, <code>survObj</code> should be a list of the list with
+survival and covariates data. For subgroup models with or without graphical
+learning, <code>survObj</code> should be a list of multiple lists with each
+component list representing each subgroup's survival and covariates data</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>model.type</code></td>
+<td>
+<p>a method option from
+<code>c("Pooled", "CoxBVSSL", "Sub-struct")</code>. To enable graphical learning
+for "Pooled" model, please specify <code>list(survObj)</code> where <code>survObj</code>
+is the list of <code>t</code>, <code>di</code> and <code>X</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>MRF2b</code></td>
+<td>
+<p>logical value. <code>MRF2b = TRUE</code> means two different
+hyperparameters b in MRF prior (values b01 and b02) and <code>MRF2b = FALSE</code>
+means one hyperparamter b in MRF prior</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>MRF.G</code></td>
+<td>
+<p>logical value. <code>MRF.G = TRUE</code> is to fix the MRF graph which
+is provided in the argument <code>hyperpar</code>, and <code>MRF.G = FALSE</code> is to
+use graphical model for leanring the MRF graph</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>g.ini</code></td>
+<td>
+<p>initial values for latent edge inclusion indicators in graph,
+should be a value in [0,1]. 0 or 1: set all random edges to 0 or 1; value in
+(0,1): rate of indicators randomly set to 1, the remaining indicators are 0</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>hyperpar</code></td>
+<td>
+<p>a list containing prior parameter values</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>initial</code></td>
+<td>
+<p>a list containing prior parameters' initial values</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nIter</code></td>
+<td>
+<p>the number of iterations of the chain</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>burnin</code></td>
+<td>
+<p>number of iterations to discard at the start of the chain.
+Default is 0</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>thin</code></td>
+<td>
+<p>thinning MCMC intermediate results to be stored</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>output_graph_para</code></td>
+<td>
+<p>allow (<code>TRUE</code>) or suppress (<code>FALSE</code>) the
+output for parameters 'G', 'V', 'C' and 'Sig' in the graphical model
+if <code>MRF.G = FALSE</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>verbose</code></td>
+<td>
+<p>logical value to display the progess of MCMC</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>An object of class <code>BayesSurvive</code> is saved as
+<code>obj_BayesSurvive.rda</code> in the output file, including the following components:
+</p>
+
+<ul>
+<li>
+<p> input - a list of all input parameters by the user
+</p>
+</li>
+<li>
+<p> output - a list of the all output estimates:
+</p>
+
+<ul>
+<li>
+<p> "<code>gamma.p</code>" - a matrix with MCMC intermediate estimates of the indicator variables of regression coefficients.
+</p>
+</li>
+<li>
+<p> "<code>beta.p</code>" - a matrix with MCMC intermediate estimates of the regression coefficients.
+</p>
+</li>
+<li>
+<p> "<code>h.p</code>" - a matrix with MCMC intermediate estimates of the increments in the cumulative baseline hazard in each interval.
+</p>
+</li>
+</ul>
+</li>
+<li>
+<p> call - the matched call.
+</p>
+</li>
+</ul>
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+library("BayesSurvive")
+set.seed(123)
+
+# Load the example dataset
+data("simData", package = "BayesSurvive")
+
+dataset &lt;- list(
+  "X" = simData[[1]]$X,
+  "t" = simData[[1]]$time,
+  "di" = simData[[1]]$status
+)
+
+# Initial value: null model without covariates
+initial &lt;- list("gamma.ini" = rep(0, ncol(dataset$X)))
+# Hyperparameters
+hyperparPooled &lt;- list(
+  "c0"     = 2, # prior of baseline hazard
+  "tau"    = 0.0375, # sd (spike) for coefficient prior
+  "cb"     = 20, # sd (spike) for coefficient prior
+  "pi.ga"  = 0.02, # prior variable selection probability for standard Cox models
+  "a"      = -4, # hyperparameter in MRF prior
+  "b"      = 0.1, # hyperparameter in MRF prior
+  "G"      = simData$G # hyperparameter in MRF prior
+)
+
+
+# run Bayesian Cox with graph-structured priors
+fit &lt;- BayesSurvive(
+  survObj = dataset, hyperpar = hyperparPooled,
+  initial = initial, nIter = 100
+)
+
+# show posterior mean of coefficients and 95% credible intervals
+library("GGally")
+plot(fit) +
+  coord_flip() +
+  theme(axis.text.x = element_text(angle = 90, size = 7))
+
+
+</code></pre>
+
+
+</div>

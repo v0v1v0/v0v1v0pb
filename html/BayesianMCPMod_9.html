@@ -1,0 +1,94 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>performBayesianMCP</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>performBayesianMCP</h2>
+
+<h3>Description</h3>
+
+<p>Performs Bayesian MCP Test step, as described in Fleischer et al. (2022).
+Tests for a dose-response effect using a model-based multiple contrast test based on the (provided) posterior distribution. In particular for every dose-response candidate the posterior probability is calculated that the contrast is bigger than 0 (based on the posterior distribution of the dose groups).
+In order to obtain significant test decision we consider the maximum of the posterior probabilities across the different models. This maximum is compared with a (multiplicity adjusted) critical value (on the probability scale).
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">performBayesianMCP(posterior_list, contr, crit_prob_adj)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>posterior_list</code></td>
+<td>
+<p>An object derived with getPosterior with information about the (mixture) posterior distribution per dose group</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>contr</code></td>
+<td>
+<p>An object of class 'optContr' as created by the getContr() function. It contains the contrast matrix to be used for the testing step.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>crit_prob_adj</code></td>
+<td>
+<p>A getCritProb object, specifying the critical value to be used for the testing (on the probability scale)</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>Bayesian MCP test result, with information about p-values for the individual dose-response shapes and overall significance
+</p>
+
+
+<h3>References</h3>
+
+<p>Fleischer F, Bossert S, Deng Q, Loley C, Gierse J. 2022. Bayesian MCPMod. Pharmaceutical Statistics. 21(3): 654-670. doi:10.1002/pst.2193
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">mods &lt;- DoseFinding::Mods(linear      = NULL,
+                          linlog      = NULL,
+                          emax        = c(0.5, 1.2),
+                          exponential = 2,
+                          doses       = c(0, 0.5, 2,4, 8))
+dose_levels  &lt;- c(0, 0.5, 2, 4, 8)
+sd_posterior &lt;- c(2.8,3,2.5,3.5,4)
+contr_mat &lt;- getContr(
+  mods         = mods,
+  dose_levels  = dose_levels,
+  sd_posterior = sd_posterior)
+critVal &lt;- getCritProb(
+  mods           = mods,
+  dose_weights   = c(50, 50, 50, 50, 50), #reflecting the planned sample size
+  dose_levels    = dose_levels,
+  alpha_crit_val = 0.05)
+prior_list &lt;- list(Ctrl = RBesT::mixnorm(comp1 = c(w = 1, m = 0, s = 5), sigma = 2),
+                   DG_1 = RBesT::mixnorm(comp1 = c(w = 1, m = 1, s = 12), sigma = 2),
+                   DG_2 = RBesT::mixnorm(comp1 = c(w = 1, m = 1.2, s = 11), sigma = 2) ,  
+                   DG_3 = RBesT::mixnorm(comp1 = c(w = 1, m = 1.3, s = 11), sigma = 2) ,
+                   DG_4 = RBesT::mixnorm(comp1 = c(w = 1, m = 2, s = 13), sigma = 2))
+mu &lt;- c(0, 1, 1.5, 2, 2.5)
+se &lt;- c(5, 4, 6, 7, 8)
+posterior_list &lt;- getPosterior(
+  prior_list = prior_list,
+  mu_hat     = mu,
+  se_hat     = se)
+  
+performBayesianMCP(posterior_list = posterior_list,
+                   contr          = contr_mat,
+                   crit_prob_adj  = critVal)
+
+</code></pre>
+
+
+</div>

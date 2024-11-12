@@ -1,0 +1,470 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>bms</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Bayesian Model Sampling and Averaging</h2>
+
+<h3>Description</h3>
+
+<p>Given data and prior information, this function samples all possible model
+combinations via MC3 or enumeration and returns aggregate results.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">bms(
+  X.data,
+  burn = 1000,
+  iter = NA,
+  nmodel = 500,
+  mcmc = "bd",
+  g = "UIP",
+  mprior = "random",
+  mprior.size = NA,
+  user.int = TRUE,
+  start.value = NA,
+  g.stats = TRUE,
+  logfile = FALSE,
+  logstep = 10000,
+  force.full.ols = FALSE,
+  fixed.reg = numeric(0)
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>X.data</code></td>
+<td>
+<p>a data frame or a matrix, with the dependent variable in the
+first column, followed by the covariates (alternatively, <code>X.data</code> can
+also be provided as a <code>formula</code>).  Note that <code>bms</code>
+automatically estimates a constant, therefore including constant terms is
+not necessary.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>burn</code></td>
+<td>
+<p>The (positive integer) number of burn-in draws for the MC3
+sampler, defaults to 1000. (Not taken into account if mcmc="enumerate")</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>iter</code></td>
+<td>
+<p>If mcmc is set to an MC3 sampler, then this is the number of
+iteration draws to be sampled (ex burn-ins), default 3000 draws. <br> If
+<code>mcmc="enumerate"</code>, then iter is the number of models to be sampled,
+starting from 0 (defaults to <code class="reqn">2^K-1</code>) - cf. <code>start.value</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nmodel</code></td>
+<td>
+<p>the number of best models for which information is stored
+(default 500). Best models are used for convergence analysis between
+likelihoods and MCMC frequencies, as well as likelihood-based inference.<br>
+Note that a very high value for <code>nmodel</code> slows down the sampler
+significantly. Set nmodel=0 to speed up sampling (if best model information
+is not needed).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>mcmc</code></td>
+<td>
+<p>a character denoting the model sampler to be used.<br> The MC3
+sampler <code>mcmc="bd"</code> corresponds to a birth/death MCMC algogrithm.
+<code>mcmc="rev.jump"</code> enacts a reversible jump algorithm adding a "swap"
+step to the birth / death steps from "bd".<br> Alternatively, the entire
+model space may be fully enumerated by setting <code>mcmc="enumerate"</code> which
+will iterate all possible regressor combinations (Note: consider that this
+means <code class="reqn">2^K</code> iterations, where K is the number of covariates.)<br> Default
+is full enumeration (<code>mcmc="enumerate"</code>) with less then 15 covariates,
+and the birth-death MC3 sampler (<code>mcmc="bd"</code>) with 15 covariates or
+more. Cf. section 'Details' for more options.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>g</code></td>
+<td>
+<p>the hyperparameter on Zellner's g-prior for the regression
+coefficients.<br><code>g="UIP"</code> corresponds to <code class="reqn">g=N</code>, the number of
+observations (default);<br><code>g="BRIC"</code> corresponds to the benchmark
+prior suggested by Fernandez, Ley and Steel (2001), i.e <code class="reqn">g=max(N, K^2)</code>,
+where K is the total number of covariates;<br><code>g="RIC"</code> sets
+<code class="reqn">g=K^2</code> and conforms to the risk inflation criterion by George and
+Foster (1994)<br><code>g="HQ"</code> sets <code class="reqn">g=log(N)^3</code> and asymptotically
+mimics the Hannan-Quinn criterion with <code class="reqn">C_{HQ}=3</code> (cf. Fernandez, Ley
+and Steel, 2001, p.395)<br><code>g="EBL"</code> estimates a local empirical Bayes
+g-parameter (as in Liang et al. (2008));<br><code>g="hyper"</code> takes the
+'hyper-g' prior distribution (as in Liang et al., 2008) with the default
+hyper-parameter <code class="reqn">a</code> set such that the prior expected shrinkage factor
+conforms to 'UIP';<br> This hyperparameter <code class="reqn">a</code> can be adjusted (between
+<code class="reqn">2&lt;a&lt;=4</code>) by setting <code>g="hyper=2.9"</code>, for instance.<br>
+Alternatively, <code>g="hyper=UIP"</code> sets the prior expected value of the
+shrinkage factor equal to that of UIP (default), <code>g="hyper=BRIC"</code> sets
+it according to BRIC <br> cf section 'Details' fro more on the hyper-g prior</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>mprior</code></td>
+<td>
+<p>a character denoting the model prior choice, defaulting to
+"random":<br><code>mprior="fixed"</code> denotes fixed common prior inclusion
+probabilities for each regressor as e.g. in Sala-i-Martin, Doppelhofer, and
+Miller(2004) - for their fine-tuning, cf. <code>mprior.size</code>. Preferable to
+<code>mcmc="random"</code> if strong prior information on model size exists;<br><code>mprior="random"</code> (default) triggers the 'random theta' prior by Ley
+and Steel (2008), who suggest a binomial-beta hyperprior on the a priori
+inclusion probability;<br><code>mprior="uniform"</code> employs the uniform model
+prior;<br><code>mprior="customk"</code> allows for custom model size priors (cf.
+<code>mprior.size</code>);<br><code>mprior="pip"</code> allows for custom prior
+inclusion probabilities (cf. <code>mprior.size</code>);<br> Note that the prior on
+models with more than N-3 regressors is automatically zero: these models
+will not be sampled.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>mprior.size</code></td>
+<td>
+<p>if <code>mprior</code> is "fixed" or "random",
+<code>mprior.size</code> is a scalar that denotes the prior expected value of the
+model size prior (default K/2).<br> If <code>mprior="customk"</code> then a custom
+model size prior can be provided as a K+1 vector detailing the priors from
+model size 0 to K (e.g. rep(1,K+1) for the uniform model prior);<br> if
+<code>mprior="pip"</code>, then custom prior inclusion probabilities can be
+provided as a vector of size K, with elements in the interval (0,1)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>user.int</code></td>
+<td>
+<p>'interactive mode': print out results to console after
+ending the routine and plots a chart (default TRUE).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>start.value</code></td>
+<td>
+<p>specifies the starting model of the iteration chain. For
+instance a specific model by the corresponding column indices (e.g.
+starting.model=numeric(K) starts from the null model including solely a
+constant term) or <code>start.value=c(3,6)</code> for a starting model only
+including covariates 3 and 6.<br> If <code>start.model</code> is set to an integer
+(e.g. <code>start.model=15</code>) then that number of covariates (here: 15
+covariates) is randomly chosen and the starting model is identified by those
+regressors with an OLS t-statistic&gt;0.2.<br> The default value
+<code>start.value=NA</code> corresponds to
+<code>start.value=min(ncol(X.data),nrow(X.data)-3)</code>. Note that
+<code>start.value=0</code> or <code>start.value=NULL</code> starts from the null
+model.<br> If <code>mcmc="enumerate"</code> then <code>start.value</code> is the index to
+start the iteration (default: 0, the null model) . Any number between 0 and
+<code class="reqn">K^2-1</code> is admissible.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>g.stats</code></td>
+<td>
+<p><code>TRUE</code> if statistics on the shrinkage factor g/(1+g)
+should be collected, defaulting to TRUE (Note: set <code>g.stats=FALSE</code> for
+faster iteration.)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>logfile</code></td>
+<td>
+<p>setting <code>logfile=TRUE</code> produces a logfile named
+<code>"test.log"</code> in your current working directory, in order to keep track
+of the sampling procedure. <code>logfile</code> equal to some filepath (like
+<code>logfile="subfolder/log.txt"</code>) puts the logfile into that specified
+position. (default: <code>logfile=FALSE</code>). Note that <code>logfile=""</code>
+implies log printouts on the console.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>logstep</code></td>
+<td>
+<p>specifies at which number of posterior draws information is
+written to the log file; default: 10 000 iterations</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>force.full.ols</code></td>
+<td>
+<p>default FALSE. If <code>force.full.ols=TRUE</code>, the OLS
+estimation part of the sampling procedure relies on slower matrix inversion,
+instead of streamlined routines. <code>force.full.ols=TRUE</code> can slow down
+sampling but may deal better with highly collinear data</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>fixed.reg</code></td>
+<td>
+<p>indices or variable names of <code>X.data</code> that are fixed
+regressors to be always included in every sampled model. Note: the parameter
+<code>mprior.size</code> refers to prior model size including these fixed
+regressors.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>Ad <code>mcmc</code>: <br> Interaction sampler: adding an ".int" to an MC3 sampler
+(e.g. "mcmc="bd.int") provides for special treatment of interaction terms.
+Interaction terms will only be sampled along with their component variables:
+In the colnumn names of X.data, interaction terms need to be denominated by
+names consisting of the base terms separated by <code>#</code> (e.g. an
+interaction term of base variables <code>"A"</code>, <code>"B"</code> and <code>"C"</code>
+needs column name <code>"A#B#C"</code>). Then variable <code>"A#B#C"</code> will only be
+included in a model if all of the component variables ("A", "B", and "C")
+are included.
+</p>
+<p>The MC3 samplers "<code>bd</code>", "<code>rev.jump</code>", "<code>bd.int</code>" and
+"<code>rev.jump.int</code>", iterate away from a starting model by adding,
+dropping or swapping (only in the case of rev.jump) covariates.
+</p>
+<p>In an MCMC fashion, they thus randomly draw a candidate model and then move
+to it in case its marginal likelihood (marg.lik.) is superior to the
+marg.lik. of the current model.
+</p>
+<p>In case the candidate's marg.lik is inferior, it is randomly accepted or
+rejected according to a probability formed by the ratio of candidate
+marg.lik over current marg.lik.  Over time, the sampler should thus converge
+to a sensible distribution. For aggregate results based on these MC3
+frequencies, the first few iterations are typically disregarded (the
+'burn-ins').
+</p>
+<p>Ad <code>g</code> and the hyper-g prior: The hyper-g prior introduced by Liang et
+al. (2008) puts a prior distribution on the shrinkage factor <code class="reqn">g/(1+g)</code>,
+namely a Beta distribution <code class="reqn"> Beta(1, 1/2-1)</code> that is governed by the
+parameter <code class="reqn">a</code>. <code class="reqn">a=4</code> means a uniform prior distribution of the
+shrinkage factor, while <code class="reqn">a&gt;2</code> close to 2 concentrates the prior
+shrinkage factor close to one. <br> The prior expected value is
+<code class="reqn">E(g/1+g)) = 2/a</code>. In this sense <code>g="hyper=UIP"</code> and
+<code>g="hyper=BRIC"</code> set the prior expected shrinkage such that it conforms
+to a fixed UIP-g (eqng=N) or BRIC-g (<code class="reqn">g=max(K^2,N)</code> ).
+</p>
+
+
+<h3>Value</h3>
+
+<p>A list of class <code>bma</code>, that may be displayed using e.g.
+<code>summary.bma</code> or <code>coef.bma</code>. The list contains the
+following elements: </p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>info</code></td>
+<td>
+<p>a list of aggregate statistics: <code>iter</code>
+is the number of iterations, <code>burn</code> the number of burn-ins.<br> The
+following have to be divided by <code>cumsumweights</code> to get posterior
+expected values: <code>inccount</code> are the posterior inclusion probabilities,
+<code>b1mo</code> and <code>b2mo</code> the first and second moment of coefficients,
+<code>add.otherstats</code> other statistics of interest (typically the moments of
+the shrinkage factor), <code>msize</code> is the post. expected model size,
+<code>k.vec</code> the posterior model size distribution, <code>pos.sign</code> the
+unconditional post. probability of positive coefficients, <code>corr.pmp</code> is
+the correlation between the best models' MCMC frequencies and their marg.
+likelihoods.<br><code>timed</code> is the time that was needed for MCMC sampling,
+<code>cons</code> is the posterior expected value of the constant. <code>K</code> and
+<code>N</code> are the maximum number of covariates and the sample size,
+respectively.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>arguments</code></td>
+<td>
+<p>a list of the evaluated function arguments
+provided to <code>bms</code> (see above)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>topmod</code></td>
+<td>
+<p>a 'topmod' object
+containing the best drawn models. see <code>topmod</code> for more details</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>start.pos</code></td>
+<td>
+<p>the positions of the starting model. If bmao is a'bma'
+object this corresponds to covariates bmao$reg.names[bmao$start.pos]. If
+bmao is a chain that resulted from several starting models (cf.
+<code>c.bma</code>, then <code>start.pos</code> is a list detailing all of them.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>gprior.info</code></td>
+<td>
+<p>a list of class <code>gprior-class</code>, detailing
+information on the g-prior: <code>gtype</code> corresponds to argument <code>g</code>
+above, <code>is.constant</code> is FALSE if <code>gtype</code> is either "hyper" or
+"EBL", <code>return.g.stats</code> corresponds to argument <code>g.stats</code> above,
+<code>shrinkage.moments</code> contains the first and second moments of the
+shrinkage factor (only if <code>return.g.stats==TRUE</code>), <code>g</code> details the
+fixed g (if <code>is.constant==TRUE</code>), <code>hyper.parameter</code> corresponds to
+the hyper-g parameter <code class="reqn">a</code> as in Liang et al. (2008) </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>mprior.info</code></td>
+<td>
+<p>a list of class <code>mprior-class</code>, detailing
+information on the model prior: <code>origargs</code> lists the original arguments
+to <code>mprior</code> and <code>mprior.size</code> above; <code>mp.msize</code> denotes the
+prior mode size; <code>mp.Kdist</code> is a (K+1) vector with the prior model size
+distribution from 0 to K</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>X.data</code></td>
+<td>
+<p>data.frame or matrix: corresponds to
+argument <code>X.data</code> above, possibly cleaned for NAs</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>reg.names</code></td>
+<td>
+<p>character vector: the covariate names to be used for X.data
+(corresponds to <code>variable.names.bma</code> </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>bms.call</code></td>
+<td>
+<p>the
+original call to the <code>bms</code> function</p>
+</td>
+</tr>
+</table>
+<h3>Theoretical background</h3>
+
+<p>The models analyzed are Bayesian
+normal-gamma conjugate models with improper constant and variance priors
+akin to Fernandez, Ley and Steel (2001): A model <code class="reqn">M</code> can be described as
+follows, with <code class="reqn">\epsilon</code> ~ <code class="reqn">N(0,\sigma^2 I)</code>: </p>
+<p style="text-align: center;"><code class="reqn">latex</code>
+</p>
+ <p style="text-align: center;"><code class="reqn">f(\beta | \sigma, M, g) ~ N(0, g \sigma^2
+(X'X)^-1) </code>
+</p>
+
+<p>Moreover, the (improper) prior on the constant <code class="reqn">f(\alpha)</code> is put
+proportional to 1. Similarly, the variance prior <code class="reqn">f(\sigma)</code> is
+proportional to <code class="reqn">1/\sigma</code>.
+</p>
+
+
+<h3>Note</h3>
+
+<p>There are several ways to speed-up sampling: <code>nmodel=10</code> saves
+only the ten best models, at most a marginal improvement. <code>nmodels=0</code>
+does not save the best (500) models, however then posterior convergence and
+likelihood-based inference are not possible.  
+the best models, but not their coefficients, which renders the use of
+<code>image.bma</code> and the paramer <code>exact=TRUE</code> in functions such as
+<code>coef.bma</code> infeasible.  <code>g.stats=FALSE</code> saves some time by not
+retaining the shrinkage factors for the MC3 chain (and the best models).
+<code>force.fullobject=TRUE</code> in contrast, slows sampling down significantly
+if <code>mcmc="enumerate"</code>.
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Martin Feldkircher, Paul Hofmarcher, and Stefan Zeugner
+</p>
+
+
+<h3>References</h3>
+
+<p><a href="http://bms.zeugner.eu">http://bms.zeugner.eu</a>: BMS package homepage with help and tutorials
+</p>
+<p>Feldkircher, M. and S. Zeugner (2015): Bayesian Model Averaging Employing 
+Fixed and Flexible Priors: The BMS Package for R, Journal of Statistical Software 68(4).
+</p>
+<p>Feldkircher, M. and S. Zeugner (2009): Benchmark Priors
+Revisited: On Adaptive Shrinkage and the Supermodel Effect in Bayesian Model
+Averaging, IMF Working Paper 09/202.
+</p>
+<p>Fernandez, C. E. Ley and M. Steel (2001): Benchmark priors for Bayesian
+model averaging. Journal of Econometrics 100(2), 381–427
+</p>
+<p>Ley, E. and M. Steel (2008): On the Effect of Prior Assumptions in Bayesian
+Model Averaging with Applications to Growth Regressions. working paper
+</p>
+<p>Liang, F., Paulo, R., Molina, G., Clyde, M. A., and Berger, J. O. (2008).
+Mixtures of g Priors for Bayesian Variable Selection. Journal of the
+American Statistical Association 103, 410-423.
+</p>
+<p>Sala-i-Martin, X. and G. Doppelhofer and R.I. Miller (2004): Determinants of
+long-term growth: a Bayesian averaging of classical estimates (BACE)
+approach. American Economic Review 94(4), 813–835
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>coef.bma</code>, <code>plotModelsize</code> and
+<code>density.bma</code> for some operations on the resulting 'bma' object,
+<code>c.bma</code> for integrating separate MC3 chains and splitting of
+sampling over several runs.
+</p>
+<p>Check <a href="http://bms.zeugner.eu">http://bms.zeugner.eu</a> for additional help.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+  data(datafls)
+  #estimating a standard MC3 chain with 1000 burn-ins and 2000 iterations and uniform model priors
+  bma1 = bms(datafls,burn=1000, iter=2000, mprior="uniform")
+
+  ##standard coefficients based on exact likelihoods of the 100 best models:
+  coef(bma1,exact=TRUE, std.coefs=TRUE) 
+  
+  #suppressing user-interactive output, using a customized starting value, and not saving the best 
+  #  ...models for only 19 observations (but 41 covariates)
+  bma2 = bms(datafls[20:39,],burn=1000, iter=2000, nmodel=0, start.value=c(1,4,7,30),
+     user.int=FALSE)
+  coef(bma2)
+  
+  #MC3 chain with a hyper-g prior (custom coefficient a=2.1), saving only the 20 best models, 
+  # ...and an alternative sampling procedure; putting a log entry to console every 1000th step
+  bma3 = bms(datafls,burn=1000, iter=5000, nmodel=20, g="hyper=2.1", mcmc="rev.jump",
+      logfile="",logstep=1000)
+  image(bma3) #showing the coefficient signs of the 20 best models
+  
+  #enumerating with 10 covariates (= 1024 models), keeping the shrinkage factors 
+  #  ...of the best 200 models
+  bma4 = bms(datafls[,1:11],mcmc="enumerate",nmodel=200,g.stats=TRUE)
+
+  #using an interaction sampler for two interaction terms
+  dataint=datafls
+  dataint=cbind(datafls,datafls$LifeExp*datafls$Abslat/1000,
+        datafls$Protestants*datafls$Brit-datafls$Muslim)
+  names(dataint)[ncol(dataint)-1]="LifeExp#Abslat"
+  names(dataint)[ncol(dataint)]="Protestants#Brit#Muslim"
+  bma5 = bms(X.data=dataint,burn=1000,iter=9000,start.value=0,mcmc="bd.int") 
+  
+  density(bma5,reg="English") # plot posterior density for covariate "English"
+  
+  # a matrix as X.data argument
+  bms(matrix(rnorm(1000),100,10))
+  
+  # keeping a set of fixed regressors:
+  bms(datafls, mprior.size=7, fixed.reg = c("PrScEnroll", "LifeExp", "GDP60"))
+  # Note that mprior.size=7 means prior model size of 3 fixed to 4 'uncertain' regressors
+  
+</code></pre>
+
+
+</div>

@@ -1,0 +1,225 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>targetGene</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>targetGene</h2>
+
+<h3>Description</h3>
+
+<p>Indices list of target genes corresponding the <code>example_GDSC</code> data set. 
+It has two components representing the gene indices of the MAPK/ERK pathway and 
+BCR-ABL gene fusion in the <code>example_GDSC</code> data set.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">targetGene
+</code></pre>
+
+
+<h3>Format</h3>
+
+<p>An object of class <code>list</code> of length 2.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R"># Load the indices of gene targets from the GDSC sample dataset
+data("targetGene", package = "BayesSUR")
+str(targetGene)
+
+## Not run: 
+# ===============
+# This code below is to do preprocessing of GDSC data and obtain the complete dataset
+# "targetGene.rda" above. The user needs load the datasets from
+# https://www.cancerrxgene.org release 5.
+# But downloading and transforming the three used datasets below to *.csv files first.
+# ===============
+
+requireNamespace("plyr", quietly = TRUE)
+requireNamespace("data.table", quietly = TRUE)
+
+
+features &lt;- data.frame(read.csv("/gdsc_en_input_w5.csv", head = T))
+names.fea &lt;- strsplit(rownames(features), "")
+features &lt;- t(features)
+p &lt;- c(13321, 13747 - 13321, 13818 - 13747)
+Cell.Line &lt;- rownames(features)
+features &lt;- data.frame(Cell.Line, features)
+
+ic50_00 &lt;- data.frame(read.csv("gdsc_drug_sensitivity_fitted_data_w5.csv", head = T))
+ic50_0 &lt;- ic50_00[, c(1, 4, 7)]
+drug.id &lt;- data.frame(read.csv("gdsc_tissue_output_w5.csv", head = T))[, c(1, 3)]
+drug.id2 &lt;- drug.id[!duplicated(drug.id$drug.id), ]
+# delete drug.id=1066 since ID1066 and ID156 both correspond drug AZD6482,
+# and no ID1066 in the "suppl.Data1" by Garnett et al. (2012)
+drug.id2 &lt;- drug.id2[drug.id2$drug.id != 1066, ]
+drug.id2$drug.name &lt;- as.character(drug.id2$drug.name)
+drug.id2$drug.name &lt;- substr(drug.id2$drug.name, 1, nchar(drug.id2$drug.name) - 6)
+drug.id2$drug.name &lt;- gsub(" ", "-", drug.id2$drug.name)
+
+ic50 &lt;- ic50_0
+# mapping the drug_id to drug names in drug sensitivity data set
+ic50$drug_id &lt;- plyr::mapvalues(ic50$drug_id, from = drug.id2[, 2], to = drug.id2[, 1])
+colnames(ic50) &lt;- c("Cell.Line", "compound", "IC50")
+
+# transform drug sensitivity overall cell lines to a data matrix
+y0 &lt;- reshape(ic50, v.names = "IC50", timevar = "compound", 
+                    idvar = "Cell.Line", direction = "wide")
+y0$Cell.Line &lt;- gsub("-", ".", y0$Cell.Line)
+
+# ===============
+# select nonmissing pharmacological data
+# ===============
+y00 &lt;- y0
+m0 &lt;- dim(y0)[2] - 1
+eps &lt;- 0.05
+# r1.na is better to be not smaller than r2.na
+r1.na &lt;- 0.3
+r2.na &lt;- 0.2
+k &lt;- 1
+while (sum(is.na(y0[, 2:(1 + m0)])) &gt; 0) {
+  r1.na &lt;- r1.na - eps / k
+  r2.na &lt;- r1.na - eps / k
+  k &lt;- k + 1
+  ## select drugs with &lt;30% (decreasing with k) missing data overall cell lines
+  na.y &lt;- apply(y0[, 2:(1 + m0)], 2, function(xx) sum(is.na(xx)) / length(xx))
+  while (sum(na.y &lt; r1.na) &lt; m0) {
+    y0 &lt;- y0[, -c(1 + which(na.y &gt;= r1.na))]
+    m0 &lt;- sum(na.y &lt; r1.na)
+    na.y &lt;- apply(y0[, 2:(1 + m0)], 2, function(xx) sum(is.na(xx)) / length(xx))
+  }
+
+  ## select cell lines with treatment of at least 80% (increasing with k) drugs
+  na.y0 &lt;- apply(y0[, 2:(1 + m0)], 1, function(xx) sum(is.na(xx)) / length(xx))
+  while (sum(na.y0 &lt; r2.na) &lt; (dim(y0)[1])) {
+    y0 &lt;- y0[na.y0 &lt; r2.na, ]
+    na.y0 &lt;- apply(y0[, 2:(1 + m0)], 1, function(xx) sum(is.na(xx)) / length(xx))
+  }
+  num.na &lt;- sum(is.na(y0[, 2:(1 + m0)]))
+  message("#{NA}=", num.na, "\n", "r1.na =", r1.na, ", r2.na =", r2.na, "\n")
+}
+
+# ===============
+# combine drug sensitivity, tissues and molecular features
+# ===============
+yx &lt;- merge(y0, features, by = "Cell.Line")
+names.cell.line &lt;- yx$Cell.Line
+names.drug &lt;- colnames(yx)[2:(dim(y0)[2])]
+names.drug &lt;- substr(names.drug, 6, nchar(names.drug))
+# numbers of gene expression features, copy number festures and muatation features
+p &lt;- c(13321, 13747 - 13321, 13818 - 13747)
+num.nonpen &lt;- 13
+yx &lt;- data.matrix(yx[, -1])
+y &lt;- yx[, 1:(dim(y0)[2] - 1)]
+x &lt;- cbind(yx[, dim(y0)[2] - 1 + sum(p) + 1:num.nonpen], yx[, dim(y0)[2] - 1 + 1:sum(p)])
+
+# delete genes with only one mutated cell line
+x &lt;- x[, -c(num.nonpen + p[1] + p[2] + 
+            which(colSums(x[, num.nonpen + p[1] + p[2] + 1:p[3]]) &lt;= 1))]
+p[3] &lt;- ncol(x) - num.nonpen - p[1] - p[2]
+
+GDSC &lt;- list(
+  y = y, x = x, p = p, num.nonpen = num.nonpen, names.cell.line = names.cell.line,
+  names.drug = names.drug
+)
+
+
+## ================
+## ================
+## select a small set of drugs
+## ================
+## ================
+
+name_drugs &lt;- c(
+  "Methotrexate", "RDEA119", "PD-0325901", "CI-1040", "AZD6244", "Nilotinib",
+  "Axitinib"
+)
+
+# extract the drugs' pharmacological profiling and tissue dummy
+YX0 &lt;- cbind(GDSC$y[, colnames(GDSC$y) %in% paste("IC50.", name_drugs, sep = "")]
+[, c(1, 3, 6, 4, 7, 2, 5)], GDSC$x[, 1:GDSC$num.nonpen])
+colnames(YX0) &lt;- c(name_drugs, colnames(GDSC$x)[1:GDSC$num.nonpen])
+# extract the genetic information of CNV &amp; MUT
+X23 &lt;- GDSC$x[, GDSC$num.nonpen + GDSC$p[1] + 1:(p[2] + p[3])]
+colnames(X23)[1:p[2]] &lt;- paste(substr(
+  colnames(X23)[1:p[2]], 1,
+  nchar(colnames(X23)[1:p[2]]) - 3
+), ".CNV", sep = "")
+
+# locate all genes with CNV or MUT information
+name_genes_duplicate &lt;- c(
+  substr(colnames(X23)[1:p[2]], 1, nchar(colnames(X23)[1:p[2]]) - 4),
+  substr(colnames(X23)[p[2] + 1:p[3]], 1, nchar(colnames(X23)[p[2] + 1:p[3]]) - 4)
+)
+name_genes &lt;- name_genes_duplicate[!duplicated(name_genes_duplicate)]
+
+# select the GEX which have the common genes with CNV or MUT
+X1 &lt;- GDSC$x[, GDSC$num.nonpen + 
+            which(colnames(GDSC$x)[GDSC$num.nonpen + 1:p[1]] %in% name_genes)]
+
+p[1] &lt;- ncol(X1)
+X1 &lt;- log(X1)
+
+# summary the data information
+example_GDSC &lt;- list(data = cbind(YX0, X1, X23))
+example_GDSC$blockList &lt;- list(
+  1:length(name_drugs), length(name_drugs) + 1:GDSC$num.nonpen,
+  ncol(YX0) + 1:sum(p))
+
+# ========================
+# construct the G matrix: edge potentials in the MRF prior
+# ========================
+
+# edges between drugs: Group1 ("RDEA119","17-AAG","PD-0325901","CI-1040" and "AZD6244")
+# indexed as (2:5)
+# http://software.broadinstitute.org/gsea/msigdb/cards/KEGG_MAPK_SIGNALING_PATHWAY
+pathway_genes &lt;- read.table("MAPK_pathway.txt")[[1]]
+Idx_Pathway1 &lt;- which(c(colnames(X1), name_genes_duplicate) %in% pathway_genes)
+Gmrf_Group1Pathway1 &lt;- t(combn(rep(Idx_Pathway1, each = length(2:5)) +
+  rep((2:5 - 1) * sum(p), times = length(Idx_Pathway1)), 2))
+
+# edges between drugs: Group2 ("Nilotinib","Axitinib") indexed as (6:7)
+# delete gene ABL2
+Idx_Pathway2 &lt;- which(c(colnames(X1), name_genes_duplicate) %like% "BCR" |
+  c(colnames(X1), name_genes_duplicate) %like% "ABL")[-c(3, 5)]
+Gmrf_Group2Pathway2 &lt;- t(combn(rep(Idx_Pathway2, each = length(6:7)) +
+  rep((6:7 - 1) * sum(p), times = length(Idx_Pathway2)), 2))
+
+# edges between the common gene in different data sources
+Gmrf_CommonGene &lt;- NULL
+list_CommonGene &lt;- list(0)
+k &lt;- 1
+for (i in 1:length(name_genes)) {
+  Idx_CommonGene &lt;- which(c(colnames(X1), name_genes_duplicate) == name_genes[i])
+  if (length(Idx_CommonGene) &gt; 1) {
+    Gmrf_CommonGene &lt;- 
+    rbind(Gmrf_CommonGene, t(combn(rep(Idx_CommonGene, each = length(name_drugs)) + 
+    rep((1:length(name_drugs) - 1) * sum(p), times = length(Idx_CommonGene)), 2)))
+    k &lt;- k + 1
+  }
+}
+Gmrf_duplicate &lt;- rbind(Gmrf_Group1Pathway1, Gmrf_Group2Pathway2, Gmrf_CommonGene)
+Gmrf &lt;- Gmrf_duplicate[!duplicated(Gmrf_duplicate), ]
+example_GDSC$mrfG &lt;- Gmrf
+
+# create the target gene names of the two groups of drugs
+targetGenes1 &lt;- matrix(Idx_Pathway1, nrow = 1)
+colnames(targetGenes1) &lt;- colnames(example_GDSC$data)[seq_along(targetGene$group1)]
+targetGenes2 &lt;- matrix(Idx_Pathway2, nrow = 1)
+colnames(targetGenes2) &lt;- colnames(example_GDSC$data)[seq_along(targetGene$group2)]
+
+targetGene &lt;- list(group1 = targetGenes1, group2 = targetGenes2)
+
+## Write data file targetGene.rda to the user's directory by save()
+
+## End(Not run)
+
+</code></pre>
+
+
+</div>

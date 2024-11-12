@@ -1,0 +1,202 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>bayesCureRateModel-package</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>
+Bayesian Cure Rate Modeling for Time-to-Event Data
+</h2>
+
+<h3>Description</h3>
+
+<p>A fully Bayesian approach in order to estimate a general family of cure rate models under the presence of covariates, see Papastamoulis and Milienos (2024) &lt;doi:10.1007/s11749-024-00942-w&gt;. The promotion time can be modelled (a) parametrically using typical distributional assumptions for time to event data (including the Weibull, Exponential, Gompertz, log-Logistic distributions), or (b) semiparametrically using finite mixtures of distributions. In both cases, user-defined families of distributions are allowed under some specific requirements. Posterior inference is carried out by constructing a Metropolis-coupled Markov chain Monte Carlo (MCMC) sampler, which combines Gibbs sampling for the latent cure indicators and Metropolis-Hastings steps with Langevin diffusion dynamics for parameter updates. The main MCMC algorithm is embedded within a parallel tempering scheme by considering heated versions of the target posterior distribution.
+</p>
+<p>The main function of the package is <code>cure_rate_MC3</code>. See details for a brief description of the model.
+</p>
+
+
+<h3>Details</h3>
+
+<p>Let <code class="reqn">\boldsymbol{y} = (y_1,\ldots,y_n)</code> denote the observed data, which correspond to time-to-event data or censoring times. Let also <code class="reqn">\boldsymbol{x}_i = (x_{i1},\ldots,x_{x_{ip}})'</code> denote the covariates for subject <code class="reqn">i</code>, <code class="reqn">i=1,\ldots,n</code>. 
+</p>
+<p>Assuming that the <code class="reqn">n</code> observations are independent, the observed likelihood is defined as
+</p>
+<p style="text-align: center;"><code class="reqn">
+L=L({\boldsymbol \theta}; {\boldsymbol y}, {\boldsymbol x})=\prod_{i=1}^{n}f_P(y_i;{\boldsymbol\theta},{\boldsymbol x}_i)^{\delta_i}S_P(y_i;{\boldsymbol \theta},{\boldsymbol x}_i)^{1-\delta_i},
+</code>
+</p>
+
+<p>where <code class="reqn">\delta_i=1</code> if the <code class="reqn">i</code>-th observation corresponds to time-to-event while <code class="reqn">\delta_i=0</code> indicates censoring time. The parameter vector <code class="reqn">\boldsymbol\theta</code> is decomposed as 
+</p>
+<p style="text-align: center;"><code class="reqn">
+\boldsymbol\theta = (\boldsymbol\alpha', \boldsymbol\beta', \gamma,\lambda)
+</code>
+</p>
+
+<p>where 
+</p>
+
+<ul>
+<li> <p><code class="reqn">\boldsymbol\alpha = (\alpha_1,\ldots,\alpha_d)'\in\mathcal A</code> are the parameters of the promotion time distribution whose cumulative distribution and density functions are denoted as <code class="reqn">F(\cdot,\boldsymbol\alpha)</code> and <code class="reqn">f(\cdot,\boldsymbol\alpha)</code>, respectively. 
+</p>
+</li>
+<li> <p><code class="reqn">\boldsymbol\beta\in\mathbf R^{k}</code> are the regression coefficients with <code class="reqn">k</code> denoting the number of columns in the design matrix (it may include a constant term or not).
+</p>
+</li>
+<li> <p><code class="reqn">\gamma\in\mathbf R</code>
+</p>
+</li>
+<li> <p><code class="reqn">\lambda &gt; 0</code>. 
+</p>
+</li>
+</ul>
+<p>The population survival and density functions are defined as
+</p>
+<p style="text-align: center;"><code class="reqn">S_P(y;\boldsymbol\theta) = \left(1 + \gamma\exp\{\boldsymbol{x}_i\boldsymbol{\beta}'\}c^{\gamma\exp\{\boldsymbol{x}_i\boldsymbol{\beta}'\}}F(y;\boldsymbol\alpha)^\lambda\right)^{-1/\gamma}</code>
+</p>
+
+<p>whereas,
+</p>
+<p style="text-align: center;"><code class="reqn">f_P(y;\boldsymbol\theta)=-\frac{\partial S_P(y;\boldsymbol\theta)}{\partial y}.</code>
+</p>
+
+<p>Finally, the cure rate is affected through covariates and parameters as follows
+</p>
+<p style="text-align: center;"><code class="reqn">p_0(\boldsymbol{x}_i;\boldsymbol{\theta}) = \left(1 + \gamma\exp\{\boldsymbol{x}_i\boldsymbol{\beta}'\}c^{\gamma\exp\{\boldsymbol{x}_i\boldsymbol{\beta}'\}}\right)^{-1/\gamma}</code>
+</p>
+
+<p>where <code class="reqn">c = e^{e^{-1}}</code>.
+</p>
+<p>The promotion time distribution can be a member of standard families (currently available are the following: Exponential, Weibull, Gamma, Lomax, Gompertz, log-Logistic) and in this case <code class="reqn">\alpha = (\alpha_1,\alpha_2)\in (0,\infty)^2</code>. Also considered is the Dagum distribution, which has three parameters <code class="reqn">(\alpha_1,\alpha_2,\alpha_3)\in(0,\infty)^3</code>. In case that the previous parametric assumptions are not justified, the promotion time can belong to the more flexible family of finite mixtures of Gamma distributions. For example, assume a mixture of two Gamma distributions of the form
+</p>
+<p style="text-align: center;"><code class="reqn">
+f(y;\boldsymbol \alpha) = \alpha_5 f_{\mathcal G}(y;\alpha_1,\alpha_3) + (1-\alpha_5) f_{\mathcal G}(y;\alpha_2,\alpha_4),
+</code>
+</p>
+
+<p>where </p>
+<p style="text-align: center;"><code class="reqn">f_\mathcal{G}(y;\alpha,\beta)=\frac{\beta^{\alpha}}{\Gamma(\alpha)}y^{\alpha-1}\exp\{-\beta y\}, y&gt;0</code>
+</p>
+<p> denotes the density of the Gamma distribution with parameters <code class="reqn">\alpha &gt; 0</code> (shape) and  <code class="reqn">\beta &gt; 0</code> (rate).
+For the previous model, the parameter vector is </p>
+<p style="text-align: center;"><code class="reqn">\boldsymbol\alpha = (\alpha_1,\alpha_2,\alpha_3,\alpha_4,\alpha_5)'\in\mathcal A</code>
+</p>
+
+<p>where <code class="reqn">\mathcal A = (0,\infty)^4\times (0,1)</code>. 
+</p>
+<p>More generally, one can fit a mixture of <code class="reqn">K&gt;2</code> Gamma distributions. The appropriate model can be selected according to information criteria such as the BIC.
+</p>
+<p>The binary vector <code class="reqn">\boldsymbol{I} = (I_1,\ldots,I_n)</code> contains the (latent) cure indicators, that is, <code class="reqn">I_i = 1</code> if the <code class="reqn">i</code>-th subject is susceptible and <code class="reqn">I_i = 0</code> if the <code class="reqn">i</code>-th subject is cured.  <code class="reqn">\Delta_0</code> denotes the subset of <code class="reqn">\{1,\ldots,n\}</code> containing the censored subjects, whereas <code class="reqn">\Delta_1 = \Delta_0^c</code> is the (complementary) subset of uncensored subjects. The complete likelihood of the model is 
+</p>
+<p style="text-align: center;"><code class="reqn">L_c(\boldsymbol{\theta};\boldsymbol{y}, \boldsymbol{I}) = \prod_{i\in\Delta_1}(1-p_0(\boldsymbol{x}_i,\boldsymbol\theta))f_U(y_i;\boldsymbol\theta,\boldsymbol{x}_i)\\
+\prod_{i\in\Delta_0}p_0(\boldsymbol{x}_i,\boldsymbol\theta)^{1-I_i}\{(1-p_0(\boldsymbol{x}_i,\boldsymbol\theta))S_U(y_i;\boldsymbol\theta,\boldsymbol{x}_i)\}^{I_i}.</code>
+</p>
+
+<p><code class="reqn">f_U</code> and <code class="reqn">S_U</code> denote the probability density and survival function of the susceptibles, respectively, that is
+</p>
+<p style="text-align: center;"><code class="reqn">
+S_U(y_i;\boldsymbol\theta,{\boldsymbol x}_i)=\frac{S_P(y_i;\boldsymbol{\theta},{\boldsymbol x}_i)-p_0({\boldsymbol x}_i;\boldsymbol\theta)}{1-p_0({\boldsymbol x}_i;\boldsymbol\theta)}, f_U(y_i;\boldsymbol\theta,{\boldsymbol x}_i)=\frac{f_P(y_i;\boldsymbol\theta,{\boldsymbol x}_i)}{1-p_0({\boldsymbol x}_i;\boldsymbol\theta)}.</code>
+</p>
+
+
+<p>Index of help topics:
+</p>
+<pre>
+bayesCureRateModel-package
+                        Bayesian Cure Rate Modeling for Time-to-Event
+                        Data
+complete_log_likelihood_general
+                        Logarithm of the complete log-likelihood for
+                        the general cure rate model.
+compute_fdr_tpr         Compute the achieved FDR and TPR
+cure_rate_MC3           Main function of the package
+cure_rate_mcmc          The basic MCMC scheme.
+logLik.bayesCureModel   Extract the log-likelihood.
+log_dagum               PDF and CDF of the Dagum distribution
+log_gamma               PDF and CDF of the Gamma distribution
+log_gamma_mixture       PDF and CDF of a Gamma mixture distribution
+log_gompertz            PDF and CDF of the Gompertz distribution
+log_logLogistic         PDF and CDF of the log-Logistic distribution.
+log_lomax               PDF and CDF of the Lomax distribution
+log_user_mixture        Define a finite mixture of a given family of
+                        distributions.
+log_weibull             PDF and CDF of the Weibull distribution
+marriage_dataset        Marriage data
+plot.bayesCureModel     Plot method
+plot.predict_bayesCureModel
+                        Plot method
+predict.bayesCureModel
+                        Predict method.
+print.bayesCureModel    Print method
+print.predict_bayesCureModel
+                        Print method for the 'predict' object
+print.summary_bayesCureModel
+                        Print method for the summary
+residuals.bayesCureModel
+                        Computation of residuals.
+sim_mix_data            Simulated dataset
+summary.bayesCureModel
+                        Summary method.
+summary.predict_bayesCureModel
+                        Summary method for predictions.
+</pre>
+
+
+<h3>Author(s)</h3>
+
+<p>Panagiotis Papastamoulis and Fotios S. Milienos
+</p>
+<p>Maintainer: Panagiotis Papastamoulis &lt;papapast@yahoo.gr&gt;
+</p>
+
+
+<h3>References</h3>
+
+<p>Papastamoulis and Milienos (2024). Bayesian inference and cure rate modeling for event history data. TEST doi: 10.1007/s11749-024-00942-w.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>cure_rate_MC3</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R"># TOY EXAMPLE (very small numbers... only for CRAN check purposes)
+# simulate toy data 
+	set.seed(10)
+        n = 4
+        # censoring indicators
+        stat = rbinom(n, size = 1, prob = 0.5)
+        # covariates
+        x &lt;- matrix(rnorm(2*n), n, 2)
+        # observed response variable 
+        y &lt;- rexp(n)
+#	define a data frame with the response and the covariates        
+        my_data_frame &lt;- data.frame(y, stat, x1 = x[,1], x2 = x[,2])
+# run a weibull model with default prior setup
+# considering 2 heated chains 
+	fit1 &lt;- cure_rate_MC3(survival::Surv(y, stat) ~ x1 + x2, 
+		data = my_data_frame, 
+		promotion_time = list(distribution = 'weibull'),
+		nChains = 2, 
+		nCores = 1, 
+		mcmc_cycles = 3, sweep=2)
+#	print method
+	fit1	
+# 	summary method	
+	summary1 &lt;- summary(fit1)
+	
+# WARNING: the following parameters
+#  mcmc_cycles, nChains
+#        should take _larger_ values. E.g. a typical implementation consists of:
+#        mcmc_cycles = 15000, nChains = 12
+	
+
+</code></pre>
+
+
+</div>

@@ -1,0 +1,146 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>tidy_add_estimate_to_reference_rows</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Add an estimate value to references rows for categorical variables</h2>
+
+<h3>Description</h3>
+
+<p>For categorical variables with a treatment contrast
+(<code>stats::contr.treatment()</code>) or a SAS contrast (<code>stats::contr.SAS()</code>),
+will add an estimate equal to <code>0</code> (or <code>1</code> if <code>exponentiate = TRUE</code>)
+to the reference row.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">tidy_add_estimate_to_reference_rows(
+  x,
+  exponentiate = attr(x, "exponentiate"),
+  conf.level = attr(x, "conf.level"),
+  model = tidy_get_model(x),
+  quiet = FALSE
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>(<code>data.frame</code>)<br>
+A tidy tibble as produced by <code style="white-space: pre;">⁠tidy_*()⁠</code> functions.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>exponentiate</code></td>
+<td>
+<p>(<code>logical</code>)<br>
+Whether or not to exponentiate the coefficient estimates. It should be
+consistent with the original call to <code>broom::tidy()</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>conf.level</code></td>
+<td>
+<p>(<code>numeric</code>)<br>
+Confidence level, by default use the value indicated
+previously in <code>tidy_and_attach()</code>, used only for sum contrasts.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>model</code></td>
+<td>
+<p>(a model object, e.g. <code>glm</code>)<br>
+The corresponding model, if not attached to <code>x</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>quiet</code></td>
+<td>
+<p>(<code>logical</code>)<br>
+Whether <code>broom.helpers</code> should not return a message when requested output
+cannot be generated. Default is <code>FALSE</code>.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>For categorical variables with a sum contrast (<code>stats::contr.sum()</code>),
+the estimate value of the reference row will be equal to the sum of
+all other coefficients multiplied by <code>-1</code> (eventually exponentiated if
+<code>exponentiate = TRUE</code>), and obtained with <code>emmeans::emmeans()</code>.
+The <code>emmeans</code> package should therefore be installed.
+For sum contrasts, the model coefficient corresponds
+to the difference of each level with the grand mean.
+For sum contrasts, confidence intervals and p-values will also
+be computed and added to the reference rows.
+</p>
+<p>For other variables, no change will be made.
+</p>
+<p>If the <code>reference_row</code> column is not yet available in <code>x</code>,
+<code>tidy_add_reference_rows()</code> will be automatically applied.
+</p>
+
+
+<h3>See Also</h3>
+
+<p>Other tidy_helpers: 
+<code>tidy_add_coefficients_type()</code>,
+<code>tidy_add_contrasts()</code>,
+<code>tidy_add_header_rows()</code>,
+<code>tidy_add_n()</code>,
+<code>tidy_add_pairwise_contrasts()</code>,
+<code>tidy_add_reference_rows()</code>,
+<code>tidy_add_term_labels()</code>,
+<code>tidy_add_variable_labels()</code>,
+<code>tidy_attach_model()</code>,
+<code>tidy_disambiguate_terms()</code>,
+<code>tidy_identify_variables()</code>,
+<code>tidy_plus_plus()</code>,
+<code>tidy_remove_intercept()</code>,
+<code>tidy_select_variables()</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+if (.assert_package("gtsummary", boolean = TRUE) &amp;&amp; .assert_package("emmeans", boolean = TRUE)) {
+  df &lt;- Titanic |&gt;
+    dplyr::as_tibble() |&gt;
+    dplyr::mutate(dplyr::across(where(is.character), factor))
+
+  glm(
+    Survived ~ Class + Age + Sex,
+    data = df, weights = df$n, family = binomial,
+    contrasts = list(Age = contr.sum, Class = "contr.SAS")
+  ) |&gt;
+    tidy_and_attach(exponentiate = TRUE) |&gt;
+    tidy_add_reference_rows() |&gt;
+    tidy_add_estimate_to_reference_rows()
+
+  glm(
+    response ~ stage + grade * trt,
+    gtsummary::trial,
+    family = binomial,
+    contrasts = list(
+      stage = contr.treatment(4, base = 3),
+      grade = contr.treatment(3, base = 2),
+      trt = contr.treatment(2, base = 2)
+    )
+  ) |&gt;
+    tidy_and_attach() |&gt;
+    tidy_add_reference_rows() |&gt;
+    tidy_add_estimate_to_reference_rows()
+}
+
+</code></pre>
+
+
+</div>

@@ -1,0 +1,321 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>bayesTest</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Fit a Bayesian model to A/B test data.</h2>
+
+<h3>Description</h3>
+
+<p>This function fits a Bayesian model to your A/B testing sample data. See <b>Details</b> for more information on usage.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">bayesTest(
+  A_data,
+  B_data,
+  priors,
+  n_samples = 1e+05,
+  distribution = c("bernoulli", "normal", "lognormal", "poisson", "exponential",
+    "uniform", "bernoulliC", "poissonC")
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>A_data</code></td>
+<td>
+<p>Vector of collected samples from recipe A</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>B_data</code></td>
+<td>
+<p>Vector of collected samples from recipe B</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>priors</code></td>
+<td>
+<p>Named vector or named list providing priors as required by the specified distribution:
+</p>
+
+<ul>
+<li>
+<p>     For 'bernoulli' distribution <code>list("alpha" = val1, "beta" = val2)</code>
+</p>
+</li>
+<li>
+<p>     For 'normal' distribution <code>c("mu" = val1, "lambda" = val2, "alpha" = val3, "beta" = val4)</code>
+</p>
+</li>
+<li>
+<p>     For 'lognormal' distribution <code>c("mu" = val1, "lambda" = val2, "alpha" = val3, "beta" = val4)</code>
+</p>
+</li>
+<li>
+<p>     For 'poisson' distribution <code>c("shape" = val1, "rate" = val2)</code>
+</p>
+</li>
+<li>
+<p>     For 'exponential' distribution <code>list("shape" = val1, "rate" = val2)</code>
+</p>
+</li>
+<li>
+<p>     For 'uniform' distribution <code>c("xm" = val1, "alpha" = val2)</code>
+</p>
+</li>
+<li>
+<p>     For 'bernoulliC' distribution: same prior definitions as 'bernoulli'
+</p>
+</li>
+<li>
+<p>     For 'poissonC' distribution: same prior definitions as 'poisson'
+</p>
+</li>
+</ul>
+<p>See plotDistributions or the <em>Note</em> section of this help document for more info.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>n_samples</code></td>
+<td>
+<p>Number of posterior samples to draw. Should be large enough for the distribution to converge. 1e5 is a good rule of thumb.
+Not used for closed form tests.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>distribution</code></td>
+<td>
+<p>Distribution of underlying A/B test data.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p><code>bayesTest</code> is the main driver function of the <b>bayesAB</b> package. The input takes two vectors of data,
+corresponding to recipe A and recipe B of an A/B test. Order does not matter, except for interpretability of the final
+plots and intervals/point estimates. The Bayesian model for each distribution uses conjugate priors which must
+be specified at the time of invoking the function. Currently, there are <em>eight</em> supported distributions for the underlying data:
+</p>
+
+<ul>
+<li>
+<p> Bernoulli: If your data is well modeled by 1s and 0s, according to a specific probability <code>p</code> of a 1 occurring
+</p>
+<ul>
+<li>
+<p> For example, click-through-rate /conversions for a page
+</p>
+</li>
+<li>
+<p> Data <b>must</b> be in a {0, 1} format where 1 corresponds to a 'success' as per the Bernoulli distribution
+</p>
+</li>
+<li>
+<p> Uses a conjugate <code>Beta</code> distribution for the parameter <b>p</b> in the Bernoulli distribution
+</p>
+</li>
+<li> <p><code>alpha</code> and <code>beta</code> must be set for a prior distribution over <b>p</b>
+</p>
+<ul><li>
+<p> alpha = 1, beta = 1 can be used as a diffuse or uniform prior</p>
+</li></ul>
+</li>
+</ul>
+</li>
+<li>
+<p> Normal: If your data is well modeled by the normal distribution, with parameters <code class="reqn">\mu</code>, <code class="reqn">\sigma^2</code> controlling mean and variance
+of the underlying distribution
+</p>
+<ul>
+<li>
+<p> Data <em>can</em> be negative if it makes sense for your experiment
+</p>
+</li>
+<li>
+<p> Uses a conjugate <code>NormalInverseGamma</code> distribution for the parameters <b><code class="reqn">\mu</code></b> and <b><code class="reqn">\sigma^2</code></b> in the 
+Normal Distribution.
+</p>
+</li>
+<li> <p><code>mu</code>, <code>lambda</code>, <code>alpha</code>, and <code>beta</code> must be set for prior
+distributions over <b><code class="reqn">\mu, \sigma^2</code></b> in accordance with the parameters of the conjugate prior distributions:
+</p>
+<ul><li> <p><code class="reqn">\mu, \sigma^2</code> ~ NormalInverseGamma(mu, lambda, alpha, beta)</p>
+</li></ul>
+</li>
+<li>
+<p> This is a bivariate distribution (commonly used to model mean and variance of the normal distribution). 
+You may want to experiment with both this distribution and the <code>plotNormal</code> and <code>plotInvGamma</code> outputs 
+separately before arriving at a suitable set of priors for the Normal and LogNormal <code>bayesTest</code></p>
+</li>
+</ul>
+<p>.
+</p>
+</li>
+<li>
+<p> LogNormal: If your data is well modeled by the log-normal distribution, with parameters <code class="reqn">\mu</code>, <code class="reqn">\sigma^2</code> as the <b>parameters</b>
+of the corresponding log-normal distribution (log of data is ~ N(<code class="reqn">\mu</code>, <code class="reqn">\sigma^2</code>))
+</p>
+<ul>
+<li>
+<p> Support for a log-normal distribution is strictly positive
+</p>
+</li>
+<li>
+<p> The Bayesian model requires same conjugate priors on <code class="reqn">\mu</code>, <code class="reqn">\sigma^2</code> as for the Normal Distribution priors
+</p>
+</li>
+<li>
+<p> Note: The <code class="reqn">\mu</code> and <code class="reqn">\sigma^2</code> are not the mean/variance of lognormal numbers themselves but are rather the
+corresponding parameters of the lognormal distribution. Thus, posteriors for the statistics 'Mean' and 'Variance'
+are returned alongside 'Mu' and 'Sig_Sq' for interpretability.</p>
+</li>
+</ul>
+</li>
+<li>
+<p> Poisson: If your data is well modeled by the Poisson distribution, with parameter <code class="reqn">\lambda</code> controlling the average number of events
+per interval.
+</p>
+<ul>
+<li>
+<p> For example, pageviews per session
+</p>
+</li>
+<li>
+<p> Data <em>must</em> be strictly integral or 0.
+</p>
+</li>
+<li>
+<p> Uses a conjugate <code>Gamma</code> distribution for the parameter <b><code class="reqn">\lambda</code></b> in the Poisson Distribution
+</p>
+</li>
+<li> <p><code>shape</code> and <code>rate</code> must be set for prior distribution over <code class="reqn">\lambda</code></p>
+</li>
+</ul>
+</li>
+<li>
+<p> Exponential: If your data is well modeled by the Exponential distribution, with parameter <code class="reqn">\lambda</code> controlling the
+rate of decay.
+</p>
+<ul>
+<li>
+<p> For example, time spent on a page or customers' LTV
+</p>
+</li>
+<li>
+<p> Data <em>must</em> be strictly &gt;= 0
+</p>
+</li>
+<li>
+<p> Uses a conjugate <code>Gamma</code> distribution for the parameter <b><code class="reqn">\lambda</code></b> in the Exponential Distribution
+</p>
+</li>
+<li> <p><code>shape</code> and <code>rate</code> must be set for prior distribution over <code class="reqn">\lambda</code></p>
+</li>
+</ul>
+</li>
+<li>
+<p> Uniform: If your data is well modeled by the Uniform distribution, with parameter <code class="reqn">\theta</code> controlling the <em>max</em> value.
+</p>
+<ul>
+<li>
+<p> bayesAB has only implemented Uniform(0, <code class="reqn">\theta</code>) forms
+</p>
+</li>
+<li>
+<p> For example, estimating max/total inventory size from individually numbered snapshots
+</p>
+</li>
+<li>
+<p> Data <em>must</em> be strictly &gt; 0
+</p>
+</li>
+<li>
+<p> Uses a conjugate <code>Pareto</code> distribution for the parameter <b><code class="reqn">\theta</code></b> in the Uniform(0, <code class="reqn">\theta</code>) Distribution
+</p>
+</li>
+<li> <p><code>xm</code> and <code>alpha</code> must be set for prior distribution over <code class="reqn">\theta</code></p>
+</li>
+</ul>
+</li>
+<li>
+<p> BernoulliC: Closed form (computational) calculation of the 'bernoulli' bayesTest. Same priors are required.
+</p>
+</li>
+<li>
+<p> PoissonC: Closed form (computational) calculation of the 'poisson' bayesTest. Same priors are required.
+</p>
+</li>
+</ul>
+<h3>Value</h3>
+
+<p>A <code>bayesTest</code> object of the appropriate distribution class.
+</p>
+
+
+<h3>Note</h3>
+
+<p>For 'closed form' tests, you do not get a distribution over the posterior, but simply P(A &gt; B) for the parameter in question.
+</p>
+<p>Choosing priors correctly is very important. Please see http://fportman.com/writing/bayesab-0-dot-7-0-plus-a-primer-on-priors/ for a detailed example of choosing priors
+within bayesAB. Here are some ways to leverage objective/diffuse (assigning equal probability to all values) priors:
+</p>
+<ul>
+<li> <p><code>Beta</code>(1, 1)
+</p>
+</li>
+<li> <p><code>Gamma</code>(eps, eps) ~ <code>Gamma</code>(.00005, .00005) will be effectively diffuse
+</p>
+</li>
+<li> <p><code>InvGamma</code>(eps, eps) ~ <code>InvGamma</code>(.00005, .00005) will be effectively diffuse
+</p>
+</li>
+<li> <p><code>Pareto</code>(eps, eps) ~ <code>Pareto</code>(.005, .005) will be effectively diffuse</p>
+</li>
+</ul>
+<p>Keep in mind that the Prior Plots for bayesTest's run with diffuse priors may not plot correctly as they will not be truncated as they
+approach infinity. See plot.bayesTest for how to turn off the Prior Plots.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">A_binom &lt;- rbinom(100, 1, .5)
+B_binom &lt;- rbinom(100, 1, .6)
+
+A_norm &lt;- rnorm(100, 6, 1.5)
+B_norm &lt;- rnorm(100, 5, 2.5)
+
+AB1 &lt;- bayesTest(A_binom, B_binom, 
+                 priors = c('alpha' = 1, 'beta' = 1), 
+                 distribution = 'bernoulli')
+AB2 &lt;- bayesTest(A_norm, B_norm,
+                 priors = c('mu' = 5, 'lambda' = 1, 'alpha' = 3, 'beta' = 1), 
+                 distribution = 'normal')
+
+print(AB1)
+summary(AB1)
+plot(AB1)
+
+summary(AB2)
+
+# Create a new variable that is the probability multiiplied
+# by the normally distributed variable (expected value of something)
+
+    AB3 &lt;- combine(AB1, AB2, f = `*`, params = c('Probability', 'Mu'), newName = 'Expectation')
+
+    print(AB3)
+    summary(AB3)
+    plot(AB3)
+
+</code></pre>
+
+
+</div>

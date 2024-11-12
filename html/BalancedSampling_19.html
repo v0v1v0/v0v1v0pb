@@ -1,0 +1,200 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>scps</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Spatially Correlated Poisson Sampling</h2>
+
+<h3>Description</h3>
+
+<p>Selects spatially balanced samples with prescribed inclusion probabilities
+from a finite population using Spatially Correlated Poisson Sampling (SCPS).
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">scps(prob, x, rand = NULL, type = "kdtree2", bucketSize = 50, eps = 1e-12)
+
+lcps(prob, x, type = "kdtree2", bucketSize = 50, eps = 1e-12)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>prob</code></td>
+<td>
+<p>A vector of length N with inclusion probabilities, or an integer &gt; 1. If an integer n, then the sample will be drawn with equal probabilities n / N.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>An N by p matrix of (standardized) auxiliary variables. Squared euclidean distance is used in the <code>x</code> space.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>rand</code></td>
+<td>
+<p>A vector of length N with random numbers.
+If this is supplied, the decision of each unit is taken with the corresponding
+random number. This makes it possible to coordinate the samples.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>type</code></td>
+<td>
+<p>The method used in finding nearest neighbours.
+Must be one of <code>"kdtree0"</code>, <code>"kdtree1"</code>, <code>"kdtree2"</code>, and
+<code>"notree"</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>bucketSize</code></td>
+<td>
+<p>The maximum size of the terminal nodes in the k-d-trees.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>eps</code></td>
+<td>
+<p>A small value used to determine when an updated probability is
+close enough to 0.0 or 1.0.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>If <code>prob</code> sum to an integer n, a fixed sized sample (n) will be produced.
+The implementation uses the maximal weight strategy, as specified in
+Grafström (2012).
+</p>
+
+
+<h4>Coordinated SCPS</h4>
+
+<p>If <code>rand</code> is supplied, coordinated SCPS will be performed.
+The algorithm for coordinated SCPS differs from the SCPS algorithm, as
+uncoordinated SCPS chooses a unit to update randomly, whereas coordinated SCPS
+traverses the units in the supplied order.
+This has a small impact on the efficiency of the algorithm for coordinated SCPS.
+</p>
+
+
+
+<h4>Locally Correlated Poisson Sampling (LCPS)</h4>
+
+<p>The method differs from SCPS as LPM1 differs from LPM2. In each step of the
+algorithm, the unit with the smallest updating distance is chosen as the
+deciding unit.
+</p>
+
+
+
+<h3>Value</h3>
+
+<p>A vector of selected indices in 1,2,...,N.
+</p>
+
+
+<h3>Functions</h3>
+
+
+<ul><li> <p><code>lcps()</code>: 
+</p>
+</li></ul>
+<h3>k-d-trees</h3>
+
+<p>The <code>type</code>s "kdtree" creates k-d-trees with terminal node bucket sizes
+according to <code>bucketSize</code>.
+</p>
+
+<ul>
+<li>
+<p>"kdtree0" creates a k-d-tree using a median split on alternating variables.
+</p>
+</li>
+<li>
+<p>"kdtree1" creates a k-d-tree using a median split on the largest range.
+</p>
+</li>
+<li>
+<p>"kdtree2" creates a k-d-tree using a sliding-midpoint split.
+</p>
+</li>
+<li>
+<p>"notree" does a naive search for the nearest neighbour.
+</p>
+</li>
+</ul>
+<h3>References</h3>
+
+<p>Friedman, J. H., Bentley, J. L., &amp; Finkel, R. A. (1977).
+An algorithm for finding best matches in logarithmic expected time.
+ACM Transactions on Mathematical Software (TOMS), 3(3), 209-226.
+</p>
+<p>Maneewongvatana, S., &amp; Mount, D. M. (1999, December).
+It’s okay to be skinny, if your friends are fat.
+In Center for geometric computing 4th annual workshop on computational geometry (Vol. 2, pp. 1-8).
+</p>
+<p>Grafström, A. (2012).
+Spatially correlated Poisson sampling.
+Journal of Statistical Planning and Inference, 142(1), 139-147.
+</p>
+<p>Prentius, W. (2023).
+Locally correlated Poisson sampling.
+Environmetrics, e2832.
+</p>
+
+
+<h3>See Also</h3>
+
+<p>Other sampling: 
+<code>cube()</code>,
+<code>hlpm2()</code>,
+<code>lcube()</code>,
+<code>lpm()</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## Not run: 
+set.seed(12345);
+N = 1000;
+n = 100;
+prob = rep(n/N, N);
+x = matrix(runif(N * 2), ncol = 2);
+s = scps(prob, x);
+plot(x[, 1], x[, 2]);
+points(x[s, 1], x[s, 2], pch = 19);
+
+set.seed(12345);
+prob = c(0.2, 0.25, 0.35, 0.4, 0.5, 0.5, 0.55, 0.65, 0.7, 0.9);
+N = length(prob);
+x = matrix(runif(N * 2), ncol = 2);
+ep = rep(0L, N);
+r = 10000L;
+for (i in seq_len(r)) {
+  s = scps(prob, x);
+  ep[s] = ep[s] + 1L;
+}
+print(ep / r);
+
+set.seed(12345);
+N = 1000;
+n = 100;
+prob = rep(n/N, N);
+x = matrix(runif(N * 2), ncol = 2);
+scps(prob, x);
+lcps(prob, x);
+
+## End(Not run)
+
+</code></pre>
+
+
+</div>

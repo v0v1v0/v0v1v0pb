@@ -1,0 +1,300 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>TurnerEtAlPrior</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>(Log-Normal) heterogeneity priors for binary outcomes
+as proposed by Turner et al. (2015).</h2>
+
+<h3>Description</h3>
+
+<p>Use the prior specifications proposed in the paper by Turner et al.,
+based on an analysis of studies using binary endpoints that were
+published in the <em>Cochrane Database of Systematic Reviews</em>.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">TurnerEtAlPrior(outcome=c(NA, "all-cause mortality", "obstetric outcomes",
+  "cause-specific mortality / major morbidity event / composite (mortality or morbidity)",
+  "resource use / hospital stay / process", "surgical / device related success / failure",
+  "withdrawals / drop-outs", "internal / structure-related outcomes",
+  "general physical health indicators", "adverse events",
+  "infection / onset of new disease",
+  "signs / symptoms reflecting continuation / end of condition", "pain",
+  "quality of life / functioning (dichotomized)", "mental health indicators",
+  "biological markers (dichotomized)", "subjective outcomes (various)"),
+  comparator1=c("pharmacological", "non-pharmacological", "placebo / control"),
+  comparator2=c("pharmacological", "non-pharmacological", "placebo / control"))
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>outcome</code></td>
+<td>
+<p>The type of outcome investigated (see below for a list
+of possible values).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>comparator1</code></td>
+<td>
+<p>One comparator's type.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>comparator2</code></td>
+<td>
+<p>The other comparator's type.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+ 
+<p>Turner et al. conducted an analysis of studies listed in the
+<em>Cochrane Database of Systematic Reviews</em> that were investigating
+binary endpoints. As a result, they proposed empirically motivated
+log-normal prior distributions for the (squared!) heterogeneity
+parameter <code class="reqn">\tau^2</code>, depending on the particular type of outcome
+investigated and the type of comparison in question. The log-normal
+parameters (<code class="reqn">\mu</code> and <code class="reqn">\sigma</code>) here are internally stored in
+a 3-dimensional array (named <code>TurnerEtAlParameters</code>) and are most
+conveniently accessed using the <code>TurnerEtAlPrior()</code> function.
+</p>
+<p>The <code>outcome</code> argument specifies the type of outcome
+investigated. It may take one of the following values
+(partial matching is supported):
+</p>
+
+<ul>
+<li> <p><code>NA</code>
+</p>
+</li>
+<li> <p><code>"all-cause mortality"</code>
+</p>
+</li>
+<li> <p><code>"obstetric outcomes"</code>
+</p>
+</li>
+<li> <p><code>"cause-specific mortality / major morbidity event / composite (mortality or morbidity)"</code>
+</p>
+</li>
+<li> <p><code>"resource use / hospital stay / process"</code>
+</p>
+</li>
+<li> <p><code>"surgical / device related success / failure"</code>
+</p>
+</li>
+<li> <p><code>"withdrawals / drop-outs"</code>
+</p>
+</li>
+<li> <p><code>"internal / structure-related outcomes"</code>
+</p>
+</li>
+<li> <p><code>"general physical health indicators"</code>
+</p>
+</li>
+<li> <p><code>"adverse events"</code>
+</p>
+</li>
+<li> <p><code>"infection / onset of new disease"</code>
+</p>
+</li>
+<li> <p><code>"signs / symptoms reflecting continuation / end of condition"</code>
+</p>
+</li>
+<li> <p><code>"pain"</code>
+</p>
+</li>
+<li> <p><code>"quality of life / functioning (dichotomized)"</code>
+</p>
+</li>
+<li> <p><code>"mental health indicators"</code>
+</p>
+</li>
+<li> <p><code>"biological markers (dichotomized)"</code>
+</p>
+</li>
+<li> <p><code>"subjective outcomes (various)"</code>
+</p>
+</li>
+</ul>
+<p>Specifying “<code>outcome=NA</code>” (the default) yields the
+<em>marginal</em> setting, without considering meta-analysis
+characteristics as covariates.
+</p>
+<p>The <code>comparator1</code> and <code>comparator2</code> arguments together
+specify the type of comparison in question.  These may take one of the
+following values (partial matching is supported):
+</p>
+
+<ul>
+<li> <p><code>"pharmacological"</code>
+</p>
+</li>
+<li> <p><code>"non-pharmacological"</code>
+</p>
+</li>
+<li> <p><code>"placebo / control"</code>
+</p>
+</li>
+</ul>
+<p>Any combination is allowed for the <code>comparator1</code> and
+<code>comparator2</code> arguments, as long as not both arguments are set to
+<code>"placebo / control"</code>.
+</p>
+<p><b>Note</b> that the log-normal prior parameters refer to the
+(<em>squared</em>) heterogeneity parameter <code class="reqn">\tau^2</code>. When you want
+to use the prior specifications for <code class="reqn">\tau</code>, the square root,
+as the parameter (as is necessary when using the <code>bayesmeta()</code>
+function), you need to correct for the square root
+transformation. Taking the square root is equivalent to dividing by
+two on the log-scale, so the square root's distribution will still be
+log-normal, but with halved mean and standard deviation. The relevant
+transformations are already taken care of when using the resulting
+<code>$dprior()</code>, <code>$pprior()</code> and <code>$qprior()</code> functions; see
+also the example below.
+</p>
+
+
+<h3>Value</h3>
+
+<p>a list with elements
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>parameters</code></td>
+<td>
+<p>the log-normal parameters (<code class="reqn">\mu</code> and
+<code class="reqn">\sigma</code>, corresponding to the <em>squared</em> heterogeneity
+parameter <code class="reqn">\tau^2</code> as well as <code class="reqn">\tau</code>).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>outcome.type</code></td>
+<td>
+<p>the corresponding type of outcome.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>comparison.type</code></td>
+<td>
+<p>the corresponding type of comparison.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>dprior</code></td>
+<td>
+<p>a <code>function(tau)</code> returning the prior
+density of <code class="reqn">\tau</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>pprior</code></td>
+<td>
+<p>a <code>function(tau)</code> returning the prior cumulative
+distribution function (CDF) of <code class="reqn">\tau</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>qprior</code></td>
+<td>
+<p>a <code>function(p)</code> returning the prior quantile
+function (inverse CDF) of <code class="reqn">\tau</code>.</p>
+</td>
+</tr>
+</table>
+<h3>Author(s)</h3>
+
+<p>Christian Roever <a href="mailto:christian.roever@med.uni-goettingen.de">christian.roever@med.uni-goettingen.de</a>
+</p>
+
+
+<h3>References</h3>
+
+<p>R.M. Turner, D. Jackson, Y. Wei, S.G. Thompson,
+J.P.T. Higgins.
+Predictive distributions for between-study heterogeneity and simple
+methods for their application in Bayesian meta-analysis.
+<em>Statistics in Medicine</em>, <b>34</b>(6):984-998, 2015.
+<a href="https://doi.org/10.1002/sim.6381">doi:10.1002/sim.6381</a>.
+</p>
+<p>C. Roever, R. Bender, S. Dias, C.H. Schmid, H. Schmidli, S. Sturtz,
+S. Weber, T. Friede.
+On weakly informative prior distributions for the heterogeneity
+parameter in Bayesian random-effects meta-analysis. 
+<em>Research Synthesis Methods</em>, <b>12</b>(4):448-474, 2021.
+<a href="https://doi.org/10.1002/jrsm.1475">doi:10.1002/jrsm.1475</a>.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>dlnorm</code>, <code>RhodesEtAlPrior</code>.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R"># load example data:
+data("CrinsEtAl2014")
+
+# determine corresponding prior parameters:
+TP &lt;- TurnerEtAlPrior("surgical", "pharma", "placebo / control")
+print(TP)
+# a prior 95 percent interval for tau:
+TP$qprior(c(0.025,0.975))
+
+## Not run: 
+# compute effect sizes (log odds ratios) from count data
+# (using "metafor" package's "escalc()" function):
+crins.es &lt;- escalc(measure="OR",
+                   ai=exp.AR.events,  n1i=exp.total,
+                   ci=cont.AR.events, n2i=cont.total,
+                   slab=publication, data=CrinsEtAl2014)
+print(crins.es)
+
+# perform meta analysis:
+crins.ma01 &lt;- bayesmeta(crins.es, tau.prior=TP$dprior)
+# for comparison perform analysis using weakly informative Cauchy prior:
+crins.ma02 &lt;- bayesmeta(crins.es, tau.prior=function(t){dhalfcauchy(t,scale=1)})
+
+# show results:
+print(crins.ma01)
+print(crins.ma02)
+# compare estimates; heterogeneity (tau):
+rbind("Turner prior"=crins.ma01$summary[,"tau"], "Cauchy prior"=crins.ma02$summary[,"tau"])
+# effect (mu):
+rbind("Turner prior"=crins.ma01$summary[,"mu"], "Cauchy prior"=crins.ma02$summary[,"mu"])
+
+# illustrate heterogeneity priors and posteriors:
+par(mfcol=c(2,2))
+  plot(crins.ma01, which=4, prior=TRUE, taulim=c(0,2),
+       main="informative log-normal prior")
+  plot(crins.ma02, which=4, prior=TRUE, taulim=c(0,2),
+       main="weakly informative half-Cauchy prior")
+  plot(crins.ma01, which=3, mulim=c(-3,0),
+       main="informative log-normal prior")
+  abline(v=0, lty=3)
+  plot(crins.ma02, which=3, mulim=c(-3,0),
+       main="weakly informative half-Cauchy prior")
+  abline(v=0, lty=3)
+par(mfrow=c(1,1))
+
+# compare prior and posterior 95 percent upper limits for tau:
+TP$qprior(0.95)
+crins.ma01$qposterior(0.95)
+qhalfcauchy(0.95)
+crins.ma02$qposterior(0.95)
+
+## End(Not run)
+</code></pre>
+
+
+</div>

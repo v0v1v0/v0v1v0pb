@@ -1,0 +1,225 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>bayesboot</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>The Bayesian bootstrap</h2>
+
+<h3>Description</h3>
+
+<p>Performs a Bayesian bootstrap and returns a <code>data.frame</code> with a sample
+of size <code>R</code> representing the posterior distribution of the (possibly
+multivariate) summary <code>statistic</code>.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">bayesboot(data, statistic, R = 4000, R2 = 4000, use.weights = FALSE,
+  .progress = "none", .parallel = FALSE, ...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+<p>Either a vector or a list, or a matrix or a data.frame with one
+datapoint per row. The format of <code>data</code> should be compatible with the
+first argument of <code>statistic</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>statistic</code></td>
+<td>
+<p>A function implementing the summary statistic of interest
+where the first argument should take the data. If <code>use.weights = TRUE</code>
+then the second argument should take a vector of weights.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>R</code></td>
+<td>
+<p>The size of the posterior sample from the Bayesian bootstrap.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>R2</code></td>
+<td>
+<p>When <code>use.weights = FALSE</code> this is the size of the resample of
+the data used to approximate the weighted statistic.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>use.weights</code></td>
+<td>
+<p>When <code>TRUE</code> the data will be reweighted, like in the
+original Bayesian bootstrap. When <code>FALSE</code> (the default) the
+reweighting will be approximated by resampling the data.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>.progress</code></td>
+<td>
+<p>The type of progress bar ("none", "text", "tk", and "win").
+See the <code>.progress</code> argument to <code>adply</code> in the plyr
+package.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>.parallel</code></td>
+<td>
+<p>If <code>TRUE</code> enables parallel processing. See the
+<code>.parallel</code> argument to <code>adply</code> in the plyr package.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Other arguments passed on to <code>statistic</code></p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The summary statistic is a function of the data that represents a feature of
+interest, where a typical statistic is the mean. In <code>bayesboot</code> it is
+most efficient to define the statistic as a function taking the data as the
+first argument and a vector of weights as the second argument. An example of
+such a function is <code>weighted.mean</code>. Indicate that you are using a
+statistic defined in this way by setting <code>use.weights = TRUE</code>.
+</p>
+<p>It is also possible to define the statistic as a function only taking data
+(and no weights) by having <code>use.weights = FALSE</code> (the default). This
+will, for each of the <code>R</code> Bayesian bootstrap draws, give a resampled
+version of the <code>data</code> of size <code>R2</code> to <code>statistic</code>. This will
+be much slower than using <code>use.weights = TRUE</code> but will work with a
+larger range of statistics (the <code>median</code>, for example)
+</p>
+<p>For more information regarding this implementation of the Bayesian bootstrap
+see the blog post
+<a href="http://www.sumsar.net/blog/2015/07/easy-bayesian-bootstrap-in-r/">Easy
+Bayesian Bootstrap in R</a>. For more information about the model behind the
+Bayesian bootstrap see the blog post
+<a href="http://www.sumsar.net/blog/2015/04/the-non-parametric-bootstrap-as-a-bayesian-model/">The
+Non-parametric Bootstrap as a Bayesian Model</a> and, of course,
+<a href="http://projecteuclid.org/euclid.aos/1176345338">the original Bayesian
+bootstrap paper by Rubin (1981)</a>.
+</p>
+
+
+<h3>Value</h3>
+
+<p>A <code>data.frame</code> with <code>R</code> rows, each row being a draw from
+the posterior distribution of the Bayesian bootstrap. The number of columns
+is decided by the length of the output from <code>statistic</code>. If
+<code>statistic</code> does not return a vector or data frame with named values
+then the columns will be given the names <code>V1</code>, <code>V2</code>, <code>V3</code>,
+etc. While the output is a <code>data.frame</code> it has subclass
+<code>bayesboot</code> which enables specialized <code>summary</code> and
+<code>plot</code> functions for the result of a <code>bayesboot</code> call.
+</p>
+
+
+<h3>Note</h3>
+
+
+<ul>
+<li>
+<p>  While <code>R</code> and <code>R2</code> are set to <code>4000</code> by
+default, that should not be taken to indicate that a sample of size 4000 is
+sufficient nor recommended.
+</p>
+</li>
+<li>
+<p> When using <code>use.weights = FALSE</code> it is important to use a summary
+statistic that does not depend on the sample size. That is, doubling the size
+of a dataset by cloning data should result in the same statistic as when
+using the original dataset. An example of a statistic that depends on the
+sample size is the sample standard deviation (that is, <code>sd</code>), and
+when using <code>bayesboot</code> it would make more sense to use the population
+standard deviation (as in the example below). </p>
+</li>
+</ul>
+<h3>References</h3>
+
+<p>Miller, R. G. (1974) The jackknife - a review. <em>Biometrika</em>,
+<b>61(1)</b>, 1–15.
+</p>
+<p>Rubin, D. B. (1981). The Bayesian bootstrap. <em>The annals of statistics</em>,
+<b>9(1)</b>, 130–134.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+### A Bayesian bootstrap analysis of a mean ###
+
+# Heights of the last ten American presidents in cm (Kennedy to Obama).
+heights &lt;- c(183, 192, 182, 183, 177, 185, 188, 188, 182, 185);
+b1 &lt;- bayesboot(heights, mean)
+# But it's more efficient to use the a weighted statistic.
+b2 &lt;- bayesboot(heights, weighted.mean, use.weights = TRUE)
+
+# The result of bayesboot can be plotted and summarized
+plot(b2)
+summary(b2)
+
+# It can also be easily post processed.
+# Here the probability that the mean is &gt; 182 cm.
+mean( b2[,1] &gt; 182)
+
+### A Bayesian bootstrap analysis of a SD ###
+
+# When use.weights = FALSE it is important that the summary statistics
+# does not change as a function of sample size. This is the case with
+# the sample standard deviation, so here we have to implement a
+# function calculating the population standard deviation.
+pop.sd &lt;- function(x) {
+  n &lt;- length(x)
+  sd(x) * sqrt( (n - 1) / n)
+}
+
+b3 &lt;- bayesboot(heights, pop.sd)
+summary(b3)
+
+### A Bayesian bootstrap analysis of a correlation coefficient ###
+
+# Data comparing two methods of measuring blood flow.
+# From Table 1 in Miller (1974) and used in an example
+# by Rubin (1981, p. 132).
+blood.flow &lt;- data.frame(
+  dye = c(1.15, 1.7, 1.42, 1.38, 2.80, 4.7, 4.8, 1.41, 3.9),
+  efp = c(1.38, 1.72, 1.59, 1.47, 1.66, 3.45, 3.87, 1.31, 3.75))
+
+# Using the weighted correlation (corr) from the boot package.
+library(boot)
+b4 &lt;- bayesboot(blood.flow, corr, R = 1000, use.weights = TRUE)
+hist(b4[,1])
+
+### A Bayesian bootstrap analysis of lm coefficients ###
+
+# A custom function that returns the coefficients of
+# a weighted linear regression on the blood.flow data
+lm.coefs &lt;- function(d, w) {
+  coef( lm(efp ~ dye, data = d, weights = w) )
+}
+
+b5 &lt;- bayesboot(blood.flow, lm.coefs, R = 1000, use.weights = TRUE)
+
+# Plotting the marginal posteriors
+plot(b5)
+
+# Plotting a scatter of regression lines from the posterior
+plot(blood.flow)
+for(i in sample(nrow(b5), size = 20)) {
+  abline(coef = b5[i, ], col = "grey")
+}
+</code></pre>
+
+
+</div>

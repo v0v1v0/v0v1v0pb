@@ -1,0 +1,159 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>print.bm_pixmap</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Print pixmap objects</h2>
+
+<h3>Description</h3>
+
+<p><code>print.bm_pixmap()</code> prints bittermelon pixmap objects to the terminal
+It is a wrapper around <code>format.bm_pixmap()</code>.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">## S3 method for class 'bm_pixmap'
+print(
+  x,
+  ...,
+  bg = getOption("bittermelon.bg", FALSE),
+  compress = getOption("bittermelon.compress", "none"),
+  downscale = getOption("bittermelon.downscale", FALSE)
+)
+
+## S3 method for class 'bm_pixmap'
+format(
+  x,
+  ...,
+  bg = getOption("bittermelon.bg", FALSE),
+  compress = getOption("bittermelon.compress", "none"),
+  downscale = getOption("bittermelon.downscale", FALSE)
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>A <code>bm_pixmap()</code> object</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Currently ignored.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>bg</code></td>
+<td>
+<p>R color string of background color to use and/or
+cli ANSI style function of class <code>cli_ansi_style</code>.
+<code>FALSE</code> (default) for no background color
+(i.e. use default terminal background).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>compress</code></td>
+<td>
+<p>How to print the image:
+* "none" (default) or "n" use one character per pixel.
+* "vertical" or "v" use one character per two vertical pixels
+(makes pixels look closest to square in typical terminal).
+* "horizontal" or "h" use one character per two horizontal pixels.
+* "both" or "b" use one character per four pixels
+(this will be a lossy conversion whenever there are more than two colors per four pixels).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>downscale</code></td>
+<td>
+<p>If <code>TRUE</code> and the printed pixmap will be wider than <code>getOption("width")</code>
+then shrink the image to fit <code>getOption("width")</code> using <code>bm_downscale()</code>.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>A character vector of the string representation (<code>print.bm_pixmap()</code> does this invisibly).
+As a side effect <code>print.bm_pixmap()</code> prints out the string representation to the terminal.
+</p>
+
+
+<h3>Fonts and terminal settings</h3>
+
+<p>Printing bitmaps/pixmaps may or may not look great
+in your terminal depending on a variety of factors:
+</p>
+
+<ul>
+<li>
+<p> The terminal should support the Unicode - UTF-8 encoding.
+We use <code>cli::is_utf8_output()</code> to guess Unicode support
+which in turn looks at <code>getOption("cli.unicode")</code> and <code>l10n_info()</code>.
+</p>
+</li>
+<li>
+<p> The terminal should support ANSI sequences and if it does
+it should support many colors.
+</p>
+
+<ul><li>
+<p> We use <code>cli::num_ansi_colors()</code> to detect number of colors supported.
+<code>num_ansi_colors()</code> detection algorithm is complicated but it first looks at
+<code>getOption("cli.num_colors")</code>.
+</p>
+</li></ul>
+<ul><li>
+<p> If <code>cli::num_ansi_colors()</code> equals 16777216 then your terminal
+supports 24-bit ANSI colors.
+</p>
+</li></ul>
+<ul><li>
+<p> If using the Windows Command Prompt window you may need to enable
+ANSI sequences support by doing <code style="white-space: pre;">⁠REG ADD HKCU\CONSOLE /f /v VirtualTerminalLevel /t REG_DWORD /d 1⁠</code>
+from the command-line or running <code>regedit</code> (Registry Editor) and go to
+<code style="white-space: pre;">⁠Computer\HKEY_CURRENT_USER\Console⁠</code> and set <code>VirtualTerminalLevel</code> to <code>1</code>.
+</p>
+</li></ul>
+</li>
+<li>
+<p> The font used by the terminal should be a monoscale font that supports the
+<a href="https://en.wikipedia.org/wiki/Block_Elements">Block Elements</a> Unicode block.
+</p>
+</li>
+<li>
+<p> The terminal text settings should have a cell spacing around 1.00 times width and 1.00 times height.
+For terminals configured by CSS styles this means a <code>line-height</code> of around <code>1.0</code>.
+</p>
+</li>
+</ul>
+<h3>Examples</h3>
+
+<pre><code class="language-R">crops &lt;- farming_crops_16x16()
+corn &lt;- crops$corn$portrait
+if (cli::is_utf8_output() &amp;&amp; cli::num_ansi_colors() &gt;= 256L) {
+  print(corn)
+}
+
+if (cli::is_utf8_output() &amp;&amp; cli::num_ansi_colors() &gt;= 256L) {
+  print(corn, compress = "v", bg = cli::bg_br_white)
+}
+
+if (cli::is_utf8_output() &amp;&amp; 
+    cli::num_ansi_colors() &gt; 256L &amp;&amp;
+    getOption("width") &gt;= 100L) {
+  img &lt;- png::readPNG(system.file("img", "Rlogo.png", package="png"))
+  pm &lt;- as_bm_pixmap(img)
+  print(pm, compress = "v")
+}
+</code></pre>
+
+
+</div>

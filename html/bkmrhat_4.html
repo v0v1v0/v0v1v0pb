@@ -1,0 +1,122 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>kmbayes_combine_lowmem</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Combine multiple BKMR chains in lower memory settings</h2>
+
+<h3>Description</h3>
+
+<p>Combine multiple chains comprising BKMR fits at different starting
+values. This function writes some results
+to disk, rather than trying to process fully within memory which, in some cases,
+will result in avoiding "out of memory" errors that can happen with kmbayes_combine.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">kmbayes_combine_lowmem(
+  fitkm.list,
+  burnin = NULL,
+  excludeburnin = FALSE,
+  reorder = TRUE
+)
+
+comb_bkmrfits_lowmem(
+  fitkm.list,
+  burnin = NULL,
+  excludeburnin = FALSE,
+  reorder = TRUE
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>fitkm.list</code></td>
+<td>
+<p>output from <code>kmbayes_parallel</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>burnin</code></td>
+<td>
+<p>(numeric, or default=NULL) add in custom burnin (number of burnin iterations per chain).
+If NULL, then default to half of the chain</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>excludeburnin</code></td>
+<td>
+<p>(logical, default=FALSE) should burnin iterations be excluded from the final chains?
+Note that all bkmr package functions automatically exclude burnin from calculations.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>reorder</code></td>
+<td>
+<p>(logical, default=TRUE) ensures that the first half of the combined chain contains
+only the first half of each individual chain - this allows unaltered use
+of standard functions from bkmr package, which automatically trims the first
+half of the iterations. This can be used for posterior summaries, but
+certain diagnostics may not work well (autocorrelation, effective sample size)
+so the diagnostics should be done on the individual chains
+#' @param ... arguments to <code>as.mcmc.bkmrfit</code></p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>Chains are not combined fully sequentially (see "reorder")
+</p>
+
+
+<h3>Value</h3>
+
+<p>a <code>bkmrplusfit</code> object, which inherits from <code>bkmrfit</code>
+(from the <code>kmbayes</code> function)
+with multiple chains combined into a single object and additional parameters
+given by <code>chain</code> and <code>iters</code>, which index the specific chains and
+iterations for each posterior sample in the <code>bkmrplusfit</code> object
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+# following example from https://jenfb.github.io/bkmr/overview.html
+set.seed(111)
+library(bkmr)
+dat &lt;- bkmr::SimData(n = 50, M = 4)
+y &lt;- dat$y
+Z &lt;- dat$Z
+X &lt;- dat$X
+set.seed(111)
+
+future::plan(strategy = future::multisession, workers=2)
+# run 4 parallel Markov chains (low iterations used for illustration)
+fitkm.list &lt;- kmbayes_parallel(nchains=2, y = y, Z = Z, X = X, iter = 500,
+  verbose = FALSE, varsel = TRUE)
+# use bkmr defaults for burnin, but keep them
+bigkm = kmbayes_combine_lowmem(fitkm.list, excludeburnin=FALSE)
+ests = ExtractEsts(bigkm) # defaults to keeping second half of samples
+ExtractPIPs(bigkm)
+pred.resp.univar &lt;- PredictorResponseUnivar(fit = bigkm)
+risks.overall &lt;- OverallRiskSummaries(fit = bigkm, y = y, Z = Z, X = X,
+  qs = seq(0.25, 0.75, by = 0.05), q.fixed = 0.5, method = "exact")
+
+# additional objects that are not in a standard bkmrfit object:
+summary(bigkm$iters) # note that this reflects how fits are re-ordered to reflect burnin
+table(bigkm$chain)
+
+
+closeAllConnections()
+
+</code></pre>
+
+
+</div>

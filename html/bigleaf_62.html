@@ -1,0 +1,248 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>surface.conditions</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Big-Leaf Surface Conditions</h2>
+
+<h3>Description</h3>
+
+<p>Calculates meteorological conditions at the big-leaf surface
+by inverting bulk transfer equations for water, energy, and carbon
+fluxes.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">surface.conditions(
+  data,
+  Tair = "Tair",
+  pressure = "pressure",
+  LE = "LE",
+  H = "H",
+  VPD = "VPD",
+  Ga = "Ga_h",
+  calc.surface.CO2 = FALSE,
+  Ca = "Ca",
+  Ga_CO2 = "Ga_CO2",
+  NEE = "NEE",
+  Esat.formula = c("Sonntag_1990", "Alduchov_1996", "Allen_1998"),
+  constants = bigleaf.constants()
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+<p>Data.frame or matrix containing all required input variables</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Tair</code></td>
+<td>
+<p>Air temperature (deg C)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>pressure</code></td>
+<td>
+<p>Atmospheric pressure (kPa)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>LE</code></td>
+<td>
+<p>Latent heat flux (W m-2)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>H</code></td>
+<td>
+<p>Sensible heat flux (W m-2)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>VPD</code></td>
+<td>
+<p>Vapor pressure deficit (kPa)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Ga</code></td>
+<td>
+<p>Aerodynamic conductance for heat/water vapor (m s-1)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>calc.surface.CO2</code></td>
+<td>
+<p>Calculate surface CO2 concentration? Defaults to <code>FALSE</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Ca</code></td>
+<td>
+<p>Atmospheric CO2 concentration (mol mol-1). Required if <code>calc.surface.CO2 = TRUE</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Ga_CO2</code></td>
+<td>
+<p>Aerodynamic conductance for CO2 (m s-1). Required if <code>calc.surface.CO2 = TRUE</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>NEE</code></td>
+<td>
+<p>Net ecosystem exchange (umol m-2 s-1). Required if <code>calc.surface.CO2 = TRUE</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Esat.formula</code></td>
+<td>
+<p>Optional: formula to be used for the calculation of esat and the slope of esat.
+One of <code>"Sonntag_1990"</code> (Default), <code>"Alduchov_1996"</code>, or <code>"Allen_1998"</code>.
+See <code>Esat.slope</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>constants</code></td>
+<td>
+<p>cp - specific heat of air for constant pressure (J K-1 kg-1) <br> 
+eps - ratio of the molecular weight of water vapor to dry air (-) <br>
+Pa2kPa - conversion pascal (Pa) to kilopascal (kPa)</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>Canopy surface temperature and humidity are calculated by inverting bulk transfer equations of
+sensible and latent heat, respectively. 'Canopy surface' in this case refers to 
+the surface of the big-leaf (i.e. at height d + z0h; the apparent sink of sensible heat and water vapor).
+Aerodynamic canopy surface temperature is given by:
+</p>
+<p style="text-align: center;"><code class="reqn">Tsurf = Tair + H / (\rho * cp * Ga)</code>
+</p>
+
+<p>where <code class="reqn">\rho</code> is air density (kg m-3). 
+Vapor pressure at the canopy surface is:
+</p>
+<p style="text-align: center;"><code class="reqn">esurf = e + (LE * \gamma)/(Ga * \rho * cp)</code>
+</p>
+
+<p>where <code class="reqn">\gamma</code> is the psychrometric constant (kPa K-1).
+Vapor pressure deficit (VPD) at the canopy surface is calculated as:
+</p>
+<p style="text-align: center;"><code class="reqn">VPD_surf = Esat_surf - esurf</code>
+</p>
+
+<p>CO2 concentration at the canopy surface is given by:
+</p>
+<p style="text-align: center;"><code class="reqn">Ca_surf = Ca + NEE / Ga_CO2</code>
+</p>
+
+<p>Note that Ga is assumed to be equal for water vapor and sensible heat.
+Ga is further assumed to be the inverse of the sum of the turbulent part
+and the canopy boundary layer conductance (1/Ga = 1/Ga_m + 1/Gb; 
+see <code>aerodynamic.conductance</code>). Ga_CO2, the aerodynamic conductance
+for CO2 is also calculated by <code>aerodynamic.conductance</code>.
+If Ga is replaced by Ga_m (i.e. only the turbulent conductance part), 
+the results of the functions represent conditions outside the canopy
+boundary layer, i.e. in the canopy airspace.
+</p>
+
+
+<h3>Value</h3>
+
+<p>a data.frame with the following columns:
+</p>
+<table><tr style="vertical-align: top;">
+<td><code>Tsurf</code></td>
+<td>
+<p>Surface temperature (deg C)</p>
+</td>
+</tr></table>
+<p><br></p>
+<table><tr style="vertical-align: top;">
+<td><code>esat_surf</code></td>
+<td>
+<p>Saturation vapor pressure at the surface (kPa)</p>
+</td>
+</tr></table>
+<p><br></p>
+<table><tr style="vertical-align: top;">
+<td><code>esurf</code></td>
+<td>
+<p>vapor pressure at the surface (kPa)</p>
+</td>
+</tr></table>
+<p><br></p>
+<table><tr style="vertical-align: top;">
+<td><code>VPD_surf</code></td>
+<td>
+<p>vapor pressure deficit at the surface (kPa)</p>
+</td>
+</tr></table>
+<p><br></p>
+<table><tr style="vertical-align: top;">
+<td><code>qsurf</code></td>
+<td>
+<p>specific humidity at the surface (kg kg-1)</p>
+</td>
+</tr></table>
+<p><br></p>
+<table><tr style="vertical-align: top;">
+<td><code>rH_surf</code></td>
+<td>
+<p>relative humidity at the surface (-)</p>
+</td>
+</tr></table>
+<p><br></p>
+<table><tr style="vertical-align: top;">
+<td><code>Ca_surf</code></td>
+<td>
+<p>CO2 concentration at the surface (umol mol-1)</p>
+</td>
+</tr></table>
+<h3>Note</h3>
+
+<p>The following sign convention for NEE is employed (relevant if 
+<code>calc.surface.CO2 = TRUE</code>): 
+negative values of NEE denote net CO2 uptake by the ecosystem.
+</p>
+
+
+<h3>References</h3>
+
+<p>Knauer, J. et al., 2018: Towards physiologically meaningful water-use efficiency estimates
+from eddy covariance data. Global Change Biology 24, 694-710.
+</p>
+<p>Blanken, P.D. &amp; Black, T.A., 2004: The canopy conductance of a boreal aspen forest,
+Prince Albert National Park, Canada. Hydrological Processes 18, 1561-1578.
+</p>
+<p>Shuttleworth, W. J., Wallace, J.S., 1985: Evaporation from sparse crops-
+an energy combination theory. Quart. J. R. Met. Soc. 111, 839-855.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R"># calculate surface temperature, water vapor, VPD etc. at the surface
+# for a given temperature and turbulent fluxes, and under different 
+# aerodynamic conductance.
+surface.conditions(Tair=25,pressure=100,LE=100,H=200,VPD=1.2,Ga=c(0.02,0.05,0.1)) 
+         
+# now calculate also surface CO2 concentration
+surface.conditions(Tair=25,pressure=100,LE=100,H=200,VPD=1.2,Ga=c(0.02,0.05,0.1),
+                   Ca=400,Ga_CO2=c(0.02,0.05,0.1),NEE=-20,calc.surface.CO2=TRUE)
+                   
+</code></pre>
+
+
+</div>

@@ -1,0 +1,248 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>multiple_comparisons</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Perform Multiple Comparison Tests on a statistical model</h2>
+
+<h3>Description</h3>
+
+<p>A function for comparing and ranking predicted means with Tukey's Honest Significant Difference (HSD) Test.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">multiple_comparisons(
+  model.obj,
+  classify,
+  sig = 0.05,
+  int.type = "ci",
+  trans = NA,
+  offset = NA,
+  power = NA,
+  decimals = 2,
+  descending = FALSE,
+  plot = FALSE,
+  label_height = 0.1,
+  rotation = 0,
+  save = FALSE,
+  savename = "predicted_values",
+  order,
+  pred.obj,
+  pred,
+  ...
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>model.obj</code></td>
+<td>
+<p>An ASReml-R or aov model object. Will likely also work with <code>lme</code> (<code>nlme::lme()</code>), <code>lmerMod</code> (<code>lme4::lmer()</code>) models as well.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>classify</code></td>
+<td>
+<p>Name of predictor variable as string.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>sig</code></td>
+<td>
+<p>The significance level, numeric between 0 and 1. Default is 0.05.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>int.type</code></td>
+<td>
+<p>The type of confidence interval to calculate. One of <code>ci</code>, <code style="white-space: pre;">⁠1se⁠</code> or <code style="white-space: pre;">⁠2se⁠</code>. Default is <code>ci</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>trans</code></td>
+<td>
+<p>Transformation that was applied to the response variable. One of <code>log</code>, <code>sqrt</code>, <code>logit</code>, <code>power</code> or <code>inverse</code>. Default is <code>NA</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>offset</code></td>
+<td>
+<p>Numeric offset applied to response variable prior to transformation. Default is <code>NA</code>. Use 0 if no offset was applied to the transformed data. See Details for more information.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>power</code></td>
+<td>
+<p>Numeric power applied to response variable with power transformation. Default is <code>NA</code>. See Details for more information.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>decimals</code></td>
+<td>
+<p>Controls rounding of decimal places in output. Default is 2 decimal places.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>descending</code></td>
+<td>
+<p>Logical (default <code>FALSE</code>). Order of the output sorted by the predicted value. If <code>TRUE</code>, largest will be first, through to smallest last.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>plot</code></td>
+<td>
+<p>Automatically produce a plot of the output of the multiple comparison test? Default is <code>FALSE</code>. This is maintained for backwards compatibility, but the preferred method now is to use <code style="white-space: pre;">⁠autoplot(&lt;multiple_comparisons output&gt;)⁠</code>. See <code>autoplot.mct()</code> for more details.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>label_height</code></td>
+<td>
+<p>Height of the text labels above the upper error bar on the plot. Default is 0.1 (10%) of the difference between upper and lower error bars above the top error bar.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>rotation</code></td>
+<td>
+<p>Rotate the text output as Treatments within the plot. Allows for easier reading of long treatment labels. Number between 0 and 360 (inclusive) - default 0</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>save</code></td>
+<td>
+<p>Logical (default <code>FALSE</code>). Save the predicted values to a csv file?</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>savename</code></td>
+<td>
+<p>A file name for the predicted values to be saved to. Default is <code>predicted_values</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>order</code></td>
+<td>
+<p>Deprecated. Use <code>descending</code> instead.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>pred.obj</code></td>
+<td>
+<p>Deprecated. Predicted values are calculated within the function from version 1.0.1 onwards.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>pred</code></td>
+<td>
+<p>Deprecated. Use <code>classify</code> instead.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Other arguments passed through to <code>predict.asreml()</code>.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>Some transformations require that data has a small offset applied, otherwise it will cause errors (for example taking a log of 0, or square root of negative values). In order to correctly reverse this offset, if the <code>trans</code> argument is supplied, an offset value must also be supplied. If there was no offset required for a transformation, then use a value of 0 for the <code>offset</code> argument.
+</p>
+
+
+<h3>Value</h3>
+
+<p>A list containing a data frame with predicted means, standard errors, confidence interval upper and lower bounds, and significant group allocations (named <code>predicted_values</code>), as well as a plot visually displaying the predicted values (named <code>predicted_plot</code>). If some of the predicted values are aliased, a warning is printed, and the aliased treatment levels are returned in the output (named <code>aliased</code>).
+</p>
+
+
+<h3>References</h3>
+
+<p>Jørgensen, E. &amp; Pedersen, A. R. (1997). How to Obtain Those Nasty Standard Errors From Transformed Data - and Why They Should Not Be Used. <a href="https://pure.au.dk/portal/en/publications/how-to-obtain-those-nasty-standard-errors-from-transformed-data--and-why-they-should-not-be-used(d649ca20-d15f-11db-8e26-000ea68e967b).html">https://pure.au.dk/portal/en/publications/how-to-obtain-those-nasty-standard-errors-from-transformed-data–and-why-they-should-not-be-used(d649ca20-d15f-11db-8e26-000ea68e967b).html</a>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R"># Fit aov model
+model &lt;- aov(Petal.Length ~ Species, data = iris)
+
+# Display the ANOVA table for the model
+anova(model)
+
+# Determine ranking and groups according to Tukey's Test
+pred.out &lt;- multiple_comparisons(model, classify = "Species")
+
+# Display the predicted values table
+pred.out
+
+# Show the predicted values plot
+autoplot(pred.out, label_height = 0.5)
+
+
+
+## Not run: 
+# ASReml-R Example
+library(asreml)
+
+#Fit ASReml Model
+model.asr &lt;- asreml(yield ~ Nitrogen + Variety + Nitrogen:Variety,
+                    random = ~ Blocks + Blocks:Wplots,
+                    residual = ~ units,
+                    data = asreml::oats)
+
+wald(model.asr) #Nitrogen main effect significant
+
+#Determine ranking and groups according to Tukey's Test
+pred.out &lt;- multiple_comparisons(model.obj = model.asr, classify = "Nitrogen",
+                    descending = TRUE, decimals = 5)
+
+pred.out
+
+# Example using a box-cox transformation
+set.seed(42) # See the seed for reproducibility
+resp &lt;- rnorm(n = 50, 5, 1)^3
+trt &lt;- as.factor(sample(rep(LETTERS[1:10], 5), 50))
+block &lt;- as.factor(rep(1:5, each = 10))
+ex_data &lt;- data.frame(resp, trt, block)
+
+# Change one treatment random values to get significant difference
+ex_data$resp[ex_data$trt=="A"] &lt;- rnorm(n = 5, 7, 1)^3
+
+model.asr &lt;- asreml(resp ~ trt,
+                    random = ~ block,
+                    residual = ~ units,
+                    data = ex_data)
+
+resplot(model.asr)
+
+# Perform Box-Cox transformation and get maximum value
+out &lt;- MASS::boxcox(ex_data$resp~ex_data$trt)
+out$x[which.max(out$y)] # 0.3838
+
+# Fit cube root to the data
+model.asr &lt;- asreml(resp^(1/3) ~ trt,
+                    random = ~ block,
+                    residual = ~ units,
+                    data = ex_data)
+resplot(model.asr) # residual plots look much better
+
+#Determine ranking and groups according to Tukey's Test
+pred.out &lt;- multiple_comparisons(model.obj = model.asr,
+                                 classify = "trt",
+                                 trans = "power", power = (1/3))
+
+pred.out
+autoplot(pred.out)
+
+## End(Not run)
+
+</code></pre>
+
+
+</div>

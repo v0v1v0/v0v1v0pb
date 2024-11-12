@@ -1,0 +1,167 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>binseg_normal</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Binary segmentation, normal change in mean</h2>
+
+<h3>Description</h3>
+
+<p>Calls <code>binseg</code> to compute a binary segmentation model for change in
+mean with constant variance, max normal likelihood = min square
+loss.</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">binseg_normal(data.vec, 
+    max.segments = sum(!is.validation.vec), 
+    is.validation.vec = rep(FALSE, 
+        length(data.vec)), 
+    position.vec = seq_along(data.vec))</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>data.vec</code></td>
+<td>
+<p>Vector of numeric data to segment.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>max.segments</code></td>
+<td>
+<p>Maximum number of segments to compute, default=number of FALSE
+entries in <code>is.validation.vec</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>is.validation.vec</code></td>
+<td>
+<p>logical vector indicating which data are to be used in validation
+set, default=all FALSE (no validation set).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>position.vec</code></td>
+<td>
+<p>integer vector of positions at which data are measured,
+default=1:length(<code>data.vec</code>).</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>List output from <code>binseg</code> which represents a binary segmentation
+model.</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Toby Dylan Hocking</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+data.table::setDTthreads(1)
+
+x &lt;- c(0.1, 0, 1, 1.1, 0.1, 0)
+## Compute full path of binary segmentation models from 1 to 6
+## segments.
+(models &lt;- binsegRcpp::binseg_normal(x))
+
+## Plot loss values using base graphics.
+plot(models)
+
+## Same loss values using ggplot2.
+if(require("ggplot2")){
+  ggplot()+
+    geom_point(aes(
+      segments, loss),
+      data=models$splits)
+}
+
+## Compute data table of segments to plot.
+(segs.dt &lt;- coef(models, 2:4))
+
+## Plot data, segments, changepoints.
+if(require("ggplot2")){
+  ggplot()+
+    theme_bw()+
+    theme(panel.spacing=grid::unit(0, "lines"))+
+    facet_grid(segments ~ ., labeller=label_both)+
+    geom_vline(aes(
+      xintercept=start.pos),
+      color="green",
+      data=segs.dt[1&lt;start])+
+    geom_segment(aes(
+      start.pos, mean,
+      xend=end.pos, yend=mean),
+      data=segs.dt,
+      color="green")+
+    xlab("Position/index")+
+    ylab("Data/mean value")+
+    geom_point(aes(
+      pos, x),
+      data=data.frame(x, pos=seq_along(x)))
+}
+
+## Demonstration of model selection using cross-validation in
+## simulated data.
+seg.mean.vec &lt;- 1:5
+data.mean.vec &lt;- rep(seg.mean.vec, each=20)
+set.seed(1)
+n.data &lt;- length(data.mean.vec)
+data.vec &lt;- rnorm(n.data, data.mean.vec, 0.2)
+plot(data.vec)
+
+library(data.table)
+loss.dt &lt;- data.table(seed=1:10)[, {
+  set.seed(seed)
+  is.valid &lt;- sample(rep(c(TRUE,FALSE), l=n.data))
+  bs.model &lt;- binsegRcpp::binseg_normal(data.vec, is.validation.vec=is.valid)
+  bs.model$splits[, data.table(
+    segments,
+    validation.loss)]
+}, by=seed]
+loss.stats &lt;- loss.dt[, .(
+  mean.valid.loss=mean(validation.loss)
+), by=segments]
+plot(
+  mean.valid.loss ~ segments, loss.stats,
+  col=ifelse(
+    mean.valid.loss==min(mean.valid.loss),
+    "black",
+    "red"))
+
+selected.segments &lt;- loss.stats[which.min(mean.valid.loss), segments]
+full.model &lt;- binsegRcpp::binseg_normal(data.vec, selected.segments)
+(segs.dt &lt;- coef(full.model, selected.segments))
+if(require("ggplot2")){
+  ggplot()+
+    theme_bw()+
+    theme(panel.spacing=grid::unit(0, "lines"))+
+    geom_vline(aes(
+      xintercept=start.pos),
+      color="green",
+      data=segs.dt[1&lt;start])+
+    geom_segment(aes(
+      start.pos, mean,
+      xend=end.pos, yend=mean),
+      data=segs.dt,
+      color="green")+
+    xlab("Position/index")+
+    ylab("Data/mean value")+
+    geom_point(aes(
+      pos, data.vec),
+      data=data.frame(data.vec, pos=seq_along(data.vec)))
+}
+
+</code></pre>
+
+
+</div>

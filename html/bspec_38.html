@@ -1,0 +1,125 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>snr</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Compute the signal-to-noise ratio (SNR) of a signal</h2>
+
+<h3>Description</h3>
+
+<p>Compute the SNR for a given signal and noise power spectral density.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">snr(x, psd, two.sided = FALSE)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>the signal waveform, a time series (<code>ts</code>) object.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>psd</code></td>
+<td>
+<p>the noise power spectral density. May be a vector of
+appropriate length (<code>length(x)/2+1</code>) or a function of frequency.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>two.sided</code></td>
+<td>
+<p>a <code>logical</code> flag indicating whether the
+<code>psd</code> argument is to be interpreted as a one-sided or a
+two-sided spectrum.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>For a signal <code class="reqn">s(t)</code>, the complex-valued discrete
+Fourier transform <code class="reqn">\tilde{s}(f)</code> is computed along the Fourier
+frequencies <code class="reqn">f_j=\frac{j}{N \Delta_t} |
+    j=0,\ldots,N/2+1</code>, where
+<code class="reqn">N</code> is the sample size, and <code class="reqn">\Delta_t</code> is the
+sampling interval.
+The SNR, as a measure of "signal strength" relative to the noise, then
+is given by
+</p>
+<p style="text-align: center;"><code class="reqn">\varrho=\sqrt{\sum_{j=0}^{N/2+1}\frac{\bigl|\tilde{s(f_j)}\bigr|^2}{\frac{N}{4\Delta_t} S_1(f_j)}},</code>
+</p>
+
+<p>where <code class="reqn">S_1(f)</code> is the noise's one-sided power spectral
+density. For more on its interpretation, see e.g. Sec. II.C.4 in the
+reference below.
+</p>
+
+
+<h3>Value</h3>
+
+<p>The SNR <code class="reqn">\varrho</code>.
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Christian Roever, <a href="mailto:christian.roever@med.uni-goettingen.de">christian.roever@med.uni-goettingen.de</a></p>
+
+
+<h3>References</h3>
+
+<p>  Roever, C.
+A Student-t based filter for robust signal detection.
+<em>Physical Review D</em>, <b>84</b>(12):122004, 2011.
+doi: <a href="https://doi.org/10.1103/PhysRevD.84.122004">10.1103/PhysRevD.84.122004</a>.
+See also <a href="https://arxiv.org/abs/1109.0442">arXiv preprint 1109.0442</a>.</p>
+
+
+<h3>See Also</h3>
+
+<p><code>matchedfilter</code>, <code>studenttfilter</code></p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R"># sample size and sampling resolution:
+N       &lt;- 1000
+deltaT  &lt;- 0.001
+
+# For the coloured noise, use some AR(1) process;
+# AR noise process parameters:
+sigmaAR &lt;- 1.0
+phiAR   &lt;- 0.9
+
+# generate non-white noise
+# (autoregressive AR(1) low-frequency noise):
+noiseSample &lt;- rnorm(10*N)
+for (i in 2:length(noiseSample))
+  noiseSample[i] &lt;- phiAR*noiseSample[i-1] + noiseSample[i]
+noiseSample &lt;- ts(noiseSample, deltat=deltaT)
+
+# estimate the noise spectrum:
+PSDestimate &lt;- welchPSD(noiseSample, seglength=1,
+                        windowingPsdCorrection=FALSE)
+
+# generate a (sine-Gaussian) signal:
+t0    &lt;- 0.6
+phase &lt;- 1.0
+t &lt;- ts((0:(N-1))*deltaT, deltat=deltaT, start=0)
+signal &lt;- exp(-(t-t0)^2/(2*0.01^2)) * sin(2*pi*150*(t-t0)+phase)
+plot(signal)
+
+# compute the signal's SNR:
+snr(signal, psd=PSDestimate$power)
+</code></pre>
+
+
+</div>

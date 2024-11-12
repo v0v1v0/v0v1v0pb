@@ -1,0 +1,145 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>summary.ggum</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Summarize Posterior Draws for GGUM Parameters</h2>
+
+<h3>Description</h3>
+
+<p>Summarize the results of <code>ggumMCMC</code> or <code>ggumMC3</code>.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">## S3 method for class 'ggum'
+summary(object, ...)
+
+## S3 method for class 'list'
+summary(object, ..., combine = TRUE)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>object</code></td>
+<td>
+<p>A numeric matrix of posterior draws as returned by
+<code>ggumMCMC</code> or <code>ggumMC3</code>, or a list of
+such matrices.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Arguments to be passed to or from other methods</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>combine</code></td>
+<td>
+<p>A logical vector of length one; if <code>TRUE</code> and
+<code>object</code> is a list of <code>ggum</code> result objects, the matrices are
+combined and a summary of the combined sample is given; if <code>FALSE</code>
+and <code>object</code> is a list of <code>ggum</code> result objects, each matrix
+will be summarized individually; and if <code>object</code> is not a list, it
+has no effect. The default is <code>TRUE</code>.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>This function provides the posterior mean, median, standard deviation,
+and 0.025 and 0.975 quantiles for GGUM parameters from posterior samples
+drawn using <code>ggumMCMC</code> or <code>ggumMC3</code>.
+Please note that the quantiles are calculated using the type 8 algorithm
+from Hyndman and Fan (1996), as suggested by Hyndman and Fan (1996), rather
+than the type 7 algorithm that would be the default from R's
+<code>quantile()</code>).
+Before calling this function, care should be taken to ensure that
+post-processing has been done if necessary to identify the correct
+reflective posterior mode, as discussed in the vignette and Duck-Mayr and
+Montgomery (2019).
+</p>
+<p>Please see the vignette (via <code>vignette("bggum")</code>) for a full in-depth
+practical guide to Bayesian estimation of GGUM parameters.
+</p>
+
+
+<h3>Value</h3>
+
+<p>A list with three elements: estimates (a list of length four;
+a numeric vector giving the means of the theta draws, a numeric vector
+giving the means of the alpha draws, a numeric vector giving the means
+of the delta draws, and a list where the means of the tau draws are
+collated into a tau estimate vector for each item), sds (a list of length
+four giving the posterior standard deviations for the theta, alpha, delta,
+and tau draws), and statistics (a matrix with five columns and one row
+for each parameter giving the 0.025 quantile, the 0.5 quantile, the mean,
+the 0.975 quantile, and the standard deviation of the posterior draws
+for each parameter; please note the quantiles are calculated using the
+type 8 algorithm from Hyndman and Fan 1996, as suggested by Hyndman and
+Fan 1996, rather than the type 7 algorithm that would be the default
+from R's <code>quantile()</code>).
+</p>
+<p>If <code>object</code> is a list and <code>combine</code> is <code>FALSE</code>,
+a list of such lists will be returned.
+</p>
+
+
+<h3>References</h3>
+
+<p>Duck-Mayr, JBrandon, and Jacob Montgomery. 2019.
+“Ends Against the Middle: Scaling Votes When Ideological Opposites
+Behave the Same for Antithetical Reasons.”
+<a href="http://jbduckmayr.com/papers/ggum.pdf">http://jbduckmayr.com/papers/ggum.pdf</a>.
+</p>
+<p>Hyndman, R. J. and Fan, Y. 1996. “Sample Quantiles in
+Packages.” <em>American Statistician</em> 50, 361–365.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>ggumMCMC</code>, <code>ggumMC3</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## NOTE: This is a toy example just to demonstrate the function, which uses
+## a small dataset and an unreasonably low number of sampling interations.
+## For a longer practical guide on Bayesian estimation of GGUM parameters,
+## please see the vignette ( via vignette("bggum") ).
+## We'll simulate data to use for this example:
+set.seed(123)
+sim_data &lt;- ggum_simulation(100, 10, 2)
+## Now we can generate posterior draws
+## (for the purposes of example, we use 100 iterations,
+## though in practice you would use much more)
+draws &lt;- ggumMC3(data = sim_data$response_matrix, n_temps = 2,
+                 sd_tune_iterations = 100, temp_tune_iterations = 100,
+                 temp_n_draws = 50,
+                 burn_iterations = 100, sample_iterations = 100)
+## Then post-process the output
+processed_draws &lt;- post_process(sample = draws,
+                                constraint = which.min(sim_data$theta),
+                                expected_sign = "-")
+## And now we can obtain a summary of the posterior
+posterior_summary &lt;- summary(processed_draws)
+## It contains all the parameter estimates
+str(posterior_summary$estimates)
+## As well as the posterior standard deviations
+str(posterior_summary$sds)
+## And a matrix of the mean (estimates), median, standard deviations,
+## and 0.025 and 0.975 quantiles
+head(posterior_summary$statistics)
+
+</code></pre>
+
+
+</div>

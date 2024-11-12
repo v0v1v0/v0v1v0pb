@@ -1,0 +1,134 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>check</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>
+Check MCMC Output
+</h2>
+
+<h3>Description</h3>
+
+<p>Verify that MCMC output covers expected values.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">CheckMcmcMatrix(draws, truth, confidence = .95,
+                control.multiple.comparisons = TRUE,
+                burn = 0)
+
+CheckMcmcVector(draws, truth, confidence = .95, burn = 0)
+
+McmcMatrixReport(draws, truth, confidence = .95, burn = 0)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>draws</code></td>
+<td>
+<p>The array of MCMC draws to check.  This must be a matrix
+for CheckMcmcMatrix and a vector for CheckMcmcVector.  </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>truth</code></td>
+<td>
+<p> The vector of true values that must be covered by
+<code>draws</code> in order for the check to succeed.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>confidence</code></td>
+<td>
+<p> Specifies the probability width of the intervals
+used to determine whether <code>draws</code> covers <code>truth</code>.
+Central intervals are used, not HPD intervals.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>control.multiple.comparisons</code></td>
+<td>
+<p> If FALSE then every interval must
+cover its corresponding true value.  Otherwise a fraction of
+intervals (given by <code>confidence</code>) must cover.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>burn</code></td>
+<td>
+<p>The number of MCMC iterations to discard as burn-in.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p><code>CheckMcmcVector</code> checks a vector of draws corresponding to a
+scalar random variable.  <code>CheckMcmcMatrix</code> checks a matrix of
+draws corresponding to a vector of random variables.  In either case
+the check is made by constructing a central confidence interval
+(obtained by removing half of <code>1 - confidence</code> from the upper and
+lower tails of the distribution).
+</p>
+<p>If a single variable is being checked with CheckMcmcVector then the
+check passes if and only if the interval covers the true value.
+</p>
+<p>If multiple values are being checked with CheckMcmcMatrix then the
+user has control over how strict to make the check.  If
+<code>control.multiple.comparisons</code> is FALSE then the check passes if
+and only if all intervals cover true values.  Otherwise a fraction of
+intervals must cover.  The fraction is the lower bound of the binomial
+confidence interval for the coverage rate under the hypothesis that
+the true coverage rate is <code>confidence</code>.
+</p>
+
+
+<h3>Value</h3>
+
+<p><code>CheckMcmcVector</code> and <code>CheckMcmcMatrix</code> return <code>TRUE</code>
+if the check passes, and <code>FALSE</code> if it does not.
+</p>
+<p><code>McmcMatrixReport</code> returns a string that can be put in the
+<code>info</code> field of an <code>expect_true</code>
+expression, to give useful information about a failed test case.  The
+return value is a textual representation of a three column matrix.
+Each row matches a variable in <code>draws</code>, and gives the lower and
+upper bounds for the credible interval used to check the values.  The
+final column lists the true values that are supposed to be inside the
+credible intervals.  The value is returned as a character string that
+is expected to be fed to <code>cat()</code> or <code>print()</code> so that it
+will render correctly in R CMD CHECK output.
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Steven L. Scott
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+ndraws &lt;- 100
+draws &lt;- rnorm(ndraws, 0, 1)
+CheckMcmcVector(draws, 0)  ## Returns TRUE
+CheckMcmcVector(draws, 17)  ## Returns FALSE
+
+draws &lt;- matrix(nrow = ndraws, ncol = 5)
+for (i in 1:5) {
+  draws[, i] &lt;- rnorm(ndraws, i, 1)
+}  
+CheckMcmcMatrix(draws, truth = 1:5)  ## Returns TRUE
+CheckMcmcMatrix(draws, truth = 5:1)  ## Returns FALSE
+
+</code></pre>
+
+
+</div>

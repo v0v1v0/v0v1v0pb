@@ -1,0 +1,141 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>interp</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>
+Interpolate Biogas Composition or Cumulative Production
+</h2>
+
+<h3>Description</h3>
+
+<p><code>interp</code> interpolates (or extrapolates) biogas composition (methane concentration) or cumulative production data to a wanted time using one of several possible methods. 
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">interp(times, y, time.out, method = "linear", extrap = FALSE)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>times</code></td>
+<td>
+
+<p>measurement times.
+Numeric vector or <code>POSIX</code>.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>y</code></td>
+<td>
+
+<p>response variable at <code>times</code>, e.g., mole fraction of methane in biogas, or biogas cumulative production.
+Numeric vector.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>time.out</code></td>
+<td>
+
+<p>time or times at which interpolated values are needed.
+Numeric vector or <code>POSIX</code>.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>method</code></td>
+<td>
+
+<p>method used for interpolation.
+Default is <code>"linear"</code>, which uses the <code>approx</code> function.
+Use <code>"f1"</code> for to always use nearest value to right (see <code>f = 1</code> argument in <code>approx</code>).
+For spline interpolation, use <code>"ffm"</code> or the other options available (see <code>spline</code>).
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>extrap</code></td>
+<td>
+
+<p>should <code>y</code> be exptrapolated?
+Logical. Default is <code>FALSE</code>. 
+See ‘Details’.
+</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p><code>interp</code> is really a wrapper for the interpolation functions <code>approx</code> and <code>spline</code>.
+For cumulative production, which (usually) must monotonically increase, <code>method = "hyman"</code> is the best choice.
+Extrapolation behavior depends on <code>method</code>.
+For <code>method = "linear"</code>, <code>extrap = TRUE</code> simply returns the value of the closest <code>y</code>.
+For manometric measurement with mix of venting/no venting with composition measurements only when venting use <code>method = "f1"</code>.
+See <code>approx</code> and <code>spline</code> for more information.
+</p>
+
+
+<h3>Value</h3>
+
+<p>Interpolated estimates of <code>y</code> at given <code>times</code>.
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Sasha D. Hafner and Charlotte Rennuit
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>cumBg</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R"># Fake composition data 
+dat &lt;- data.frame(time = c(1, 7, 14, 28), 
+                  xCH4 = c(0.3, 0.5, 0.61, 0.65))
+interp(dat$time, dat$xCH4, time.out = 10)
+interp(dat$time, dat$xCH4, time.out = 10, method = "natural")
+interp(dat$time, dat$xCH4, time.out = c(10, 30))
+interp(dat$time, dat$xCH4, time.out = c(10, 30), method = "natural")
+interp(dat$time, dat$xCH4, time.out = c(10, 30), extrap = TRUE)
+
+# Actual data
+data(comp)
+# Work with one reactor
+bgc &lt;- subset(comp, id=="2_1")
+
+# With numeric time, interpolate to 1, 7, and 30 days
+interp(bgc$days, bgc$xCH4, time.out = c(1, 7, 30))
+
+# If extrapolation is OK
+interp(bgc$days, bgc$xCH4, time.out = c(1, 7, 30), extrap = TRUE)
+
+# Or POSIXct
+interp(bgc$date.time, bgc$xCH4, 
+       time.out = as.POSIXct("2014-07-12 13:00:00"))
+
+# For cumulative gas production
+data(vol)
+# Work with one reactor
+bgv &lt;- subset(vol, id=="2_1")
+# Calculate cumulative volume
+bgv &lt;- cumBg(bgv, time.name = "days")
+# The interpolate of cumulative production to 1, 7, and 30 days
+interp(bgv$days, bgv$cvBg, time.out = c(1, 7, 30), method = "hyman")
+</code></pre>
+
+
+</div>

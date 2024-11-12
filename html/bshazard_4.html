@@ -1,0 +1,346 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>bshazard</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>
+Nonparametric Smoothing of the Hazard Function
+</h2>
+
+<h3>Description</h3>
+
+<p>The function estimates the hazard function non parametrically from a
+survival object (possibly adjusted for covariates). The smoothed
+estimate is based on B-splines from the perspective of generalized
+linear mixed models. Left truncated and right censoring data are
+allowed.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">
+## Default S3 method:
+bshazard(formula,data,nbin=NULL,nk,degree,l0,lambda,phi,alpha,err,verbose)
+
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>formula</code></td>
+<td>
+
+
+<p>a formula object, which must have a Surv object as the
+response on the left of the ~ operator. On the right, if
+desired are the names of the covariates in the Poisson model
+separated by + operators. For unadjusted estimates the right
+hand side should be ~1.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+
+<p>a data frame containing the variables named
+in the formula.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nbin</code></td>
+<td>
+
+<p>number of bins (equally spaced). If omitted, the function will split the data at each
+distinct time in the data (censoring or event).
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nk</code></td>
+<td>
+
+<p>number of knots for B-splines (including minimum and
+maximum, default is 31): as a rule of thumb the number of
+observations divided by 4, but more than 40 knots are rarely
+needed.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>degree</code></td>
+<td>
+
+<p>degree of B-splines, representing the effective number of parameters in the piecewise
+segments of splines (default is 1, corresponding to a linear segment)
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>l0</code></td>
+<td>
+
+<p>Starting value for the smoothing parameter lambda (default is 10). Relevant only if lambda=NULL
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>lambda</code></td>
+<td>
+
+<p>smoothing parameter. If not provided (default is NULL) it is
+estimated from the data as phi times the reciprocal of the
+variance of the random effect (by an iterative algorithm). A
+high value
+imposes a smoother estimate.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>phi</code></td>
+<td>
+
+<p>overdispersion parameter. If not provided (default is NULL)
+it is estimated from the data.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>alpha</code></td>
+<td>
+
+<p>1 minus the level for the two-sided confidence interval for the
+hazard function. Default is 0.05.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>err</code></td>
+<td>
+
+<p>relative error for the
+iterative process in the lambda/phi estimation (default is
+0.0001)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>verbose</code></td>
+<td>
+
+<p>TRUE/FALSE Print each iteration step (default is T)</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The time axis is partitioned in a number of intervals 
+equal to the number of different observations (if not fixed
+otherwise by the option <code>nbin</code>). The number of events in each
+interval is modeled by a Poisson model and the smoothing parameter
+(lambda) is estimated by a mixed model framework. The number of
+knots is 31 by default. The code also allows for overdispersion
+(phi). Adjustment for covariates can increase the computation time.</p>
+
+
+<h3>Value</h3>
+
+<p>The output of the bshazard function can be divided into three parts:
+1. a data frame with the original data split in time intervals, 2.
+the set of vectors containing the estimated hazard and confidence limits and 3. the parameter estimates.
+
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>raw.data</code></td>
+<td>
+<p>data frame with original data split in bins (intervals of time), containing:</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>time</code></td>
+<td>
+<p>mid point of each bin</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>n.event</code></td>
+<td>
+<p>number of events in each bin</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>PY</code></td>
+<td>
+<p>total person-time in each bin (for each covariate value)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>raw.hazard</code></td>
+<td>
+<p>number of events in each interval divided by PY</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>covariate values</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nobs</code></td>
+<td>
+<p>number of records in input data</p>
+</td>
+</tr>
+</table>
+<table>
+<tr style="vertical-align: top;">
+<td><code>time</code></td>
+<td>
+<p>mid point of each bin at which the curve is computed</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>hazard</code></td>
+<td>
+<p>hazard estimate for each bin</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>lower.ci</code></td>
+<td>
+<p>lower limit of the hazard confidence interval (depends on alpha level)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>upper.ci</code></td>
+<td>
+<p>upper limit of the hazard confidence interval (depends on alpha level)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>(cov.value)</code></td>
+<td>
+<p>values of covariates at which hazard is computed (mean value)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>fitted.values</code></td>
+<td>
+<p>estimated number of events at each time (from the Poisson model)</p>
+</td>
+</tr>
+</table>
+<table>
+<tr style="vertical-align: top;">
+<td><code>coefficients</code></td>
+<td>
+<p>coefficient estimates for each covariate</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>phi</code></td>
+<td>
+<p>overdispersion parameter</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>sv2</code></td>
+<td>
+<p>variance of the random effect corresponding to the inverse of the smoothing parameter multiplied by phi</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>df</code></td>
+<td>
+<p>degrees of freedom representing the effective number of smoothing parameters</p>
+</td>
+</tr>
+</table>
+<h3>Author(s)</h3>
+
+<p>Paola Rebora, Agus Salim, Marie Reilly
+Maintainer: Paola Rebora &lt;paola.rebora@unimib.it&gt;
+</p>
+
+
+<h3>References</h3>
+
+<p>Rebora P, Salim A, Reilly M (2014) bshazard: A Flexible Tool for Nonparametric
+Smoothing of the Hazard Function.The R Journal Vol. 6/2:114-122.
+</p>
+<p>Lee Y, Nelder JA, Pawitan Y (2006). Generalized Linear Models with Random Effects: Unified
+Analysis via H-likelihood, volume 106. Chapman &amp; Hall/CRC.
+</p>
+<p>Pawitan Y (2001). In All Likelihood: Statistical Modelling and Inference Using Likelihood.
+Oxford University Press
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">data(cancer,package="survival")
+  fit&lt;-bshazard(Surv(time, status==2) ~ 1,data=lung)
+  plot(fit$time, fit$hazard,xlab='Time', ylab='Rate/person-days',type='l')
+  points(fit$raw.data$time,fit$raw.data$raw.hazard,cex=.3, lwd=3,col=1)
+  lines(fit$time, fit$hazard, lty=1, lwd=3)
+  lines(fit$time, fit$lower.ci, lty=1, lwd=1)
+lines(fit$time, fit$upper.ci, lty=1, lwd=1)
+# or alternatively
+plot(fit)
+
+
+#Example to graphically evaluate the Markov assumpion in an illness-death model
+### data simulated under EXTENDED SEMI-MARKOV model
+set.seed(123)
+n  &lt;- 500
+beta&lt;-log(3)
+R  &lt;- runif(n, min = 0, max =2)
+cat &lt;- cut(R, breaks = seq(0,2,0.5), labels = seq(1,4,1))
+T12  &lt;- 1/0.2*( (-log(runif(n, min = 0, max = 1))) / (exp(beta*R)))**(1/0.6)
+C  &lt;- runif(n, min =0, max = 10)
+T12obs &lt;- pmin(T12, C)
+status  &lt;- ifelse(T12obs &lt; C, 1, 0)
+T012obs &lt;- R+T12obs
+#R: simulated time to illness
+#cat: time to illness categorised in 4 classes
+#T12obs:  time from illness to death or censoring
+#T012obs: time from origin to death or censoring
+#status: indicator of death (1=death,0=censoring)
+
+# Hazard estimate in the Clock Reset scale (time from illness) by time to illness class
+fit &lt;- bshazard(Surv(T12obs[cat == 1],status[cat==1]) ~ 1)
+plot(fit,conf.int=FALSE,xlab='Time since illness',xlim=c(0,5),ylim=c(0,10),lwd=2,col=rainbow(1))
+for(i in 2:4) {
+  fit &lt;- bshazard(Surv(T12obs[cat == i],status[cat==i]) ~ 1)
+  lines(fit$time, fit$hazard, type = 'l', lwd = 2, col = rainbow(4)[i])
+}
+legend("top",title="Time to illness",c("&lt;=0.5","0.5-|1","1-|1.5","1.5-|2"),col=c(rainbow(4)),lwd =2)
+
+# Hazard estimate in the Clock Forward scale (time from origin) by time to illness class
+fit &lt;- bshazard(Surv(R[cat == 1],T012obs[cat == 1],status[cat==1]) ~ 1)
+plot(fit,conf.int=FALSE,xlab='Time since origin',xlim=c(0,5),ylim=c(0,10),lwd=2,col=rainbow(1))
+for(i in 2:4) {
+  fit &lt;- bshazard(Surv(R[cat == i],T012obs[cat == i],status[cat==i]) ~ 1)
+  lines(fit$time, fit$hazard, type = 'l', lwd = 2, col = rainbow(4)[i])
+}
+legend("top",title="Time to illness",c("&lt;=0.5","0.5-|1","1-|1.5","1.5-|2"),col=c(rainbow(4)),lwd =2)
+
+#Alternatively an adjusted estimate can be performed, assuming proportionl hazard. 
+##This computation can be time consuming!
+## Not run: fit.adj &lt;- bshazard(Surv(T12obs,status) ~ cat )
+plot(fit.adj,overall=FALSE, xlab = 'Time since illness',col=rainbow(4),lwd=2, xlim = c(0,5), 
+ylim = c(0,10))
+legend("top",title="Time to illness",c("&lt;=0.5","0.5-|1","1-|1.5","1.5-|2"),col=c(rainbow(4)),lwd =2)
+## End(Not run)
+
+### A more general setting with examples of Markov assumption evaluation can be found 
+### in Bernasconi et al. Stat in Med 2016
+## The function is currently defined as
+function (x, ...) 
+UseMethod("bshazard")
+</code></pre>
+
+
+</div>

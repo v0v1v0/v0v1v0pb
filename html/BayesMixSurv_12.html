@@ -1,0 +1,175 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>predict.bayesmixsurv</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>
+Predict method for bayesmixsurv model fits
+</h2>
+
+<h3>Description</h3>
+
+<p>Calculates log-likelihood and hazard/cumulative hazard/survival functions over a user-supplied vector time values, based on bayesmixsurv model object.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">## S3 method for class 'bayesmixsurv'
+predict(object, newdata=NULL, tvec=NULL, burnin=object$control$burnin, ...)
+## S3 method for class 'predict.bayesmixsurv'
+summary(object, idx=1:dim(object$smp$h)[3], burnin=object$burnin, pval=0.05
+  , popmean=identical(idx,1:dim(object$smp$h)[3]), make.plot=TRUE, ...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>object</code></td>
+<td>
+<p>For <code>predict.bayesmixsurv</code>, an object of class "bayesmixsurv", usually the result of a call to bayesmixsurv; for <code>summary.predict.bayesmixsurv</code>, an object of class "predict.bayesmixsurv", usually the result of a call to <code>predict.bayesmixsurv</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>newdata</code></td>
+<td>
+<p>An optional data frame in which to look for variables with which to predict. If omiited, the fitted values (training set) are used.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>tvec</code></td>
+<td>
+<p>An optional vector of time values, along which time-dependent entities (hazard, cumulative hazard, survival) will be predicted. If omitted, only the time-independent entities (currently only log-likelihood) will be calculated. If a single integer is provided for <code>tvec</code>, it is interpreted as number of time points, equally spaced from <code>0</code> to <code>object$tmax: tvec &lt;- seq(from=0.0, to=object$tmax, length.out=tvec)</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>burnin</code></td>
+<td>
+<p>Number of samples to discard from the beginning of each MCMC chain before calculating median value(s) for time-independent entities.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>idx</code></td>
+<td>
+<p>Index of observations (rows of <code>newdata</code> or training data) for which to generate summary statistics. Default is the entire data.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>pval</code></td>
+<td>
+<p>Desired p-value, based on which lower/upper bounds will be calculated. Default is <code>0.05</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>popmean</code></td>
+<td>
+<p>Whether population averages must be calculated or not. By default, population averages are only calculated when the entire data is included in prediction.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>make.plot</code></td>
+<td>
+<p>Whether population mean and other plots must be created or not.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Further arguments to be passed to/from other methods.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The time-dependent predicted objects (except <code>loglike</code>) are three-dimensional arrays of size (<code>nsmp x nt x nobs</code>), where <code>nsmp</code> = number of MCMC samples, <code>nt</code> = number of time values in <code>tvec</code>, and <code>nobs</code> = number of rows in <code>newdata</code>. Therefore, even for modest data sizes, these objects can occupy large chunks of memory. For example, for <code>nsmp=1000, nt=100, nobs=1000</code>, the three objects <code>h, H, S</code> have a total size of 2.2GB. Since applying <code>quantile</code> to these arrays is time-consuming (as needed for calculation of median and lower/upper bounds), we have left such summaries out of the scope of <code>predict</code> function. Users can instead apply <code>summary</code> to the prediction object to obtain summary statistics. During cross-validation-based selection of shrinkage parameter <code>lambda</code>, there is no need to supply <code>tvec</code> since we only need the log-likelihood value. This significantly speeds up the parameter-tuning process. The function <code>summary.predict.bayesmixsurv</code> allows the user to calculates summary statistics for a subset (or all of) data, if desired. This approach is in line with the overall philosophy of delaying the data summarization until necessary, to avoid unnecessary loss in accuracy due to premature blending of information contained in individual samples.
+</p>
+
+
+<h3>Value</h3>
+
+<p>The function <code>predict.bayesmixsurv</code> returns as object of class "predict.bayesmixsurv" with the following fields:
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>tvec</code></td>
+<td>
+<p>Actual vector of time values (if any) used for prediction.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>burnin</code></td>
+<td>
+<p>Same as input.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>median</code></td>
+<td>
+<p>List of median values for predicted entities. Currently, only <code>loglike</code> is produced. See 'Details' for explanation.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>smp</code></td>
+<td>
+<p>List of MCMC samples for predicted entities. Elements include <code>h1,h2,h</code> (hazard functions for components 1,2 and their sum), <code>H1,H2,H</code> (cumulative hazard functions for components 1,2 and their sum), <code>S</code> (survival function), and <code>loglike</code> (model log-likelihood). All functions are evaluated over time values specified in <code>tvec</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>km.fit</code></td>
+<td>
+<p>Kaplan-Meyer fit of the data used for prediction (if data contains response fields).</p>
+</td>
+</tr>
+</table>
+<p>The function <code>summary.predict.bayesmixsurv</code> returns a list with the following fields:
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>lower</code></td>
+<td>
+<p>A list of lower-bound values for <code>h</code>, <code>H</code>, <code>S</code>, <code>hr</code> (hazard ratio of <code>idx[2]</code> to <code>idx[1]</code> observation), and <code>S.diff</code> (survival probability of <code>idx[2]</code> minus <code>idx[1]</code>). The last two are only included if <code>length(idx)==2</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>median</code></td>
+<td>
+<p>List of median values for same entities described in <code>lower</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>upper</code></td>
+<td>
+<p>List of upper-bound values for same entities described in <code>lower</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>popmean</code></td>
+<td>
+<p>Lower-bound/median/upper-bound values for population average of survival probability.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>km.fit</code></td>
+<td>
+<p>Kaplan-Meyer fit associated with the prediction object (if available).</p>
+</td>
+</tr>
+</table>
+<h3>Author(s)</h3>
+
+<p>Alireza S. Mahani, Mansour T.A. Sharabiani</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">est &lt;- bayesmixsurv(Surv(futime, fustat) ~ ecog.ps + rx + age, ovarian
+            , control=bayesmixsurv.control(iter=400, nskip=100))
+pred &lt;- predict(est, tvec=50)
+predsumm &lt;- summary(pred, idx=1:10)
+</code></pre>
+
+
+</div>

@@ -1,0 +1,189 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>optimalPortfolios</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Calculates optimal portfolios under prior and posterior distributions</h2>
+
+<h3>Description</h3>
+
+<p>These are wrapper functions that calculate optimal portfolios under the prior and posterior return distributions.  
+<code>optimalPortfolios</code> works with a user-supplied optimization  function, 
+though simple Markowitz minimum-risk optimization is done with <code>solve.QP</code> from <code>quadprog</code> if none is supplied.
+<code>optimalPortfolios.fPort</code> is a generic utility function which calculates optimal portfolios using routines from
+the <code>fPortfolio</code> package.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">optimalPortfolios(result, optimizer = .optimalWeights.simpleMV, ..., doPlot = TRUE, 
+                  beside = TRUE)
+optimalPortfolios.fPort(result, spec = NULL, constraints = "LongOnly", 
+                        optimizer = "minriskPortfolio", inputData = NULL, 
+                        numSimulations = BLCOPOptions("numSimulations")) 
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>result</code></td>
+<td>
+<p>An object of class <code>BLResult</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>optimizer</code></td>
+<td>
+<p>For <code>optimalPortfolios</code>, An optimization function.  It should take as arguments a vector of means and
+a variance-covariance matrix, and should return a vector of optimal weights.  For <code>optimalPortfolios</code>, 
+the name of a <code>fPortfolio</code> function that performs portfolio optimization</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>spec</code></td>
+<td>
+<p>Object of class <code>fPORTFOLIOSPEC</code>.  If NULL, will use a basic mean-variance spec for Black-Litterman
+results, and a basic CVaR spec for COP results</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>inputData</code></td>
+<td>
+<p>Time series data (any form that can be coerced into a <code>timeSeries</code> object)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>constraints</code></td>
+<td>
+<p>String of constraints that may be passed into <code>fPortfolio</code> optimization routines</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>numSimulations</code></td>
+<td>
+<p>For COP results only - the number of posterior simulations to use in the optimization (large
+numbers here will likely cause the routine to fail)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p> Additional arguments to the optimization function </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>doPlot</code></td>
+<td>
+<p> A logical flag.  Should barplots of the optimal portfolio weights be produced? </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>beside</code></td>
+<td>
+<p>A logical flag. If a barplot is generated, should the bars appear side-by side? If <code>FALSE</code>, 
+differences of weights will be plotted instead.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>By default, <code>optimizer</code> is a simple function that performs Markowitz optimization via
+<code>solve.QP</code>.  In addition to a mean and variance, it takes an optional <code>constraints</code>
+parameter that if supplied should hold a named list with all of the parameters that <code>solve.QP</code>
+takes.  
+</p>
+
+
+<h3>Value</h3>
+
+<p><code>optimalPortfolios</code> will return a list with the following items:
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>priorPFolioWeights</code></td>
+<td>
+<p>The optimal weights under the prior distribution</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>postPFolioWeights</code></td>
+<td>
+<p>The optimal weights under the posterior distribution</p>
+</td>
+</tr>
+</table>
+<p><code>optimalPortfolios.fPort</code> will return a similar list with 2 elements of class <code>fPORTFOLIO</code>.
+</p>
+
+
+<h3>Note</h3>
+
+<p> It is expected that <code>optimalPortfolios</code> will be deprecated in future releases in favour of 
+<code>optimalPortfolios.fPort</code>.
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Francisco Gochez &lt;fgochez@mango-solutions.com&gt;</p>
+
+
+<h3>References</h3>
+
+<p>Wuertz, D., Chalabi, Y., Chen W., Ellis A. (2009); Portfolio Optimization with R/Rmetrics, Rmetrics eBook, Rmetrics Association and Finance Online, Zurich. </p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">	## Not run: 
+	    entries &lt;- c(0.001005,0.001328,-0.000579,-0.000675,0.000121,0.000128,
+                    -0.000445, -0.000437, 0.001328,0.007277,-0.001307,-0.000610,
+                    -0.002237,-0.000989,0.001442,-0.001535, -0.000579,-0.001307,
+                    0.059852,0.027588,0.063497,0.023036,0.032967,0.048039,-0.000675,
+                    -0.000610,0.027588,0.029609,0.026572,0.021465,0.020697,0.029854,
+                    0.000121,-0.002237,0.063497,0.026572,0.102488,0.042744,0.039943,
+                    0.065994 ,0.000128,-0.000989,0.023036,0.021465,0.042744,0.032056,
+                    0.019881,0.032235 ,-0.000445,0.001442,0.032967,0.020697,0.039943,
+                    0.019881,0.028355,0.035064 ,-0.000437,-0.001535,0.048039,0.029854,
+                    0.065994,0.032235,0.035064,0.079958 )
+	    
+	    varcov &lt;- matrix(entries, ncol = 8, nrow = 8)
+	    mu &lt;- c(0.08, 0.67,6.41, 4.08, 7.43, 3.70, 4.80, 6.60) / 100
+	    pick &lt;- matrix(0, ncol = 8, nrow = 3, dimnames = list(NULL, letters[1:8]))
+	    pick[1,7] &lt;- 1
+	    pick[2,1] &lt;- -1; pick[2,2] &lt;- 1
+	    pick[3, 3:6] &lt;- c(0.9, -0.9, .1, -.1)
+	    confidences &lt;- 1 / c(0.00709, 0.000141, 0.000866)
+	    views &lt;- BLViews(pick, c(0.0525, 0.0025, 0.02), confidences, letters[1:8])
+	    posterior &lt;- posteriorEst(views, tau = 0.025, mu, varcov )
+	    optimalPortfolios(posterior, doPlot = TRUE)
+    
+    	optimalPortfolios.fPort(posterior, optimizer = "tangencyPortfolio")
+    	
+    	# An example based on one found in "Beyond Black-Litterman:Views on Non-normal Markets"
+        dispersion &lt;- c(.376,.253,.360,.333,.360,.600,.397,.396,.578,.775) / 1000
+        sigma &lt;- BLCOP:::.symmetricMatrix(dispersion, dim = 4)
+        caps &lt;- rep(1/4, 4)
+        mu &lt;- 2.5 * sigma 
+        dim(mu) &lt;- NULL
+        marketDistribution &lt;- mvdistribution("mt", mean = mu, S = sigma, df = 5 )
+        pick &lt;- matrix(0, ncol = 4, nrow = 1, dimnames = list(NULL, c("SP", "FTSE", "CAC", "DAX")))
+        pick[1,4] &lt;- 1
+        vdist &lt;- list(distribution("unif", min = -0.02, max = 0))
+    
+        views &lt;- COPViews(pick, vdist, 0.2, c("SP", "FTSE", "CAC", "DAX"))
+        posterior &lt;- COPPosterior(marketDistribution, views)
+    
+        optimalPortfolios.fPort(myPosterior, spec = NULL, optimizer = "minriskPortfolio", 
+		                        inputData = NULL, numSimulations  = 100	)
+	
+    
+## End(Not run)
+</code></pre>
+
+
+</div>

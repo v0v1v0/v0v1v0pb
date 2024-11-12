@@ -1,0 +1,339 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>sim.dp</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Simulate Dissolution Profiles</h2>
+
+<h3>Description</h3>
+
+<p>Function to simulate dissolution profiles based on mathematical models or
+multivariate normal distribution.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">sim.dp(tp, dp, dp.cv, model = c("Weibull", "first-order"),
+       model.par = NULL, seed = NULL, n.units = 12L, product,
+       max.disso = 100, ascending = FALSE, message = FALSE,
+       time.unit = c("min", "h"), plot = TRUE,
+       plot.max.unit = 36L)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>tp</code></td>
+<td>
+<p><em>Numeric</em> vector of time points for the dissolution profiles.
+See Details.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>dp, dp.cv</code></td>
+<td>
+<p><em>Numeric</em> vectors of the <em>target mean dissolution profile</em>
+(<code>dp</code>) and its respective CV at time points <code>tp</code> (<code>dp.cv</code>). See Details.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>model</code></td>
+<td>
+<p><em>Character</em> strings of model names. Currently only <code>"Weibull"</code>
+and <code>"first-order"</code> models are supported.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>model.par</code></td>
+<td>
+<p>A <em>list</em> with model parameters. If missing, a list of
+random <code>model.par</code> will be generated. See Details.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>seed</code></td>
+<td>
+<p><em>Integer</em> seed value for reproducibility. If missing, a random
+seed will be generated for reproducibility purpose.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>n.units</code></td>
+<td>
+<p>An <em>integer</em> indicating the number of individual profiles
+to be simulated.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>product</code></td>
+<td>
+<p><em>Character</em> strings indicating the product name of the
+simulated profiles. If missing, a random name with 3 letters and 4 digits
+will be generated.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>max.disso</code></td>
+<td>
+<p><em>Numeric</em> value for the maximum possible dissolution.
+In theory, the maximum dissolution is 100%, but in practice, it is not
+uncommon to see higher values, such as 105%, or much lower values,
+especially for products with low solubility.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ascending</code></td>
+<td>
+<p><em>Logical</em>. If <code>TRUE</code>, simulated profiles will always
+increase with time. Only applicable when the approach based on
+multivariate normal distribution is used. See Details.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>message</code></td>
+<td>
+<p><em>Logical</em>. If <code>TRUE</code>, basic information of the simulation
+will be printed on screen.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>time.unit</code></td>
+<td>
+<p><em>Character</em> strings indicating the unit of time. It should
+be either <code>"min"</code> for minute or <code>"h"</code> for hour. It is mainly used for
+and making plot and generating <code>model.par</code> and <code>dp.cv</code> when they are not
+provided by the user. @seealso <code>calcf2()</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>plot</code></td>
+<td>
+<p><em>Logical</em>. If <code>TRUE</code>, a a dissolution versus time plot will be
+included in the output.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>plot.max.unit</code></td>
+<td>
+<p><em>Integer</em>. If the number of individual units is no more
+than this value, the mean and all individual profiles will be plotted;
+otherwise, individual profiles will be represented by boxplots at each
+time point. Therefore, to avoid overplotting, this value should not be
+too large. @seealso <code>calcf2()</code>.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+
+
+<h4>Simulation approaches</h4>
+
+<p>The approach used to simulate individual dissolution profiles depends on if
+the <em>target mean dissolution profile</em> <code>dp</code> is provided by the user or not.
+</p>
+
+<ul>
+<li>
+<p> If <code>dp</code> is not provided, then it will be calculated using <code>tp</code>, <code>model</code>,
+and <code>model.par</code>. The parameters defined by <code>model.par</code> are considered as
+the <em>population parameter</em>; consequently, the calculated <code>dp</code> is
+considered as the <em>targeted population profile</em>. In addition, <code>n.units</code>
+sets of <em>individual model parameters</em> will be simulated based on
+exponential error model, and <em>individual dissolution profiles</em> will be
+generated using those individual parameters. The mean of all simulated
+individual profiles, <code>sim.mean</code>, included in one of the outputs data
+frames, <code>sim.summary</code>, will be <em>similar, but not identical, to <code>dp</code></em>.
+The difference between <code>sim.mean</code> and <code>dp</code> is determined by the number of
+units and the variability of the model parameters. In general, the larger
+the number of units and the lower of the variability, the smaller the
+difference. Additional details on the mathematical models are given below.
+</p>
+</li>
+<li>
+<p> If <code>dp</code> is provided, then <code>n.units</code> of individual dissolution profiles
+will be simulated using multivariate normal distribution. The mean of all
+simulated individual profiles, <code>sim.mean</code>, will be <em>identical to <code>dp</code></em>.
+In such case, it is recommended that <code>dp.cv</code>, the CV at time points <code>tp</code>,
+should also be provided by the user. If <code>dp.cv</code> is not provided, it will
+be generated automatically such that the CV is between 10% and 20% for time
+points up to 10 min, between 1% and 3% for time points where the
+dissolution is more than 95%, between 3% and 5% for time points where the
+dissolution is between 90% and 95%, and between 5% and 10% for the rest of
+time points. Whether the <code>dp.cv</code> is provided or generated automatically,
+the CV calculated using all individual profiles will be equal to <code>dp.cv</code>.
+Additional details on this approach are given below.
+</p>
+</li>
+</ul>
+<h4>Minimum required arguments that must be provided by the user</h4>
+
+<p>If <code>dp</code> is provided by the user, logically, <code>tp</code> must also be provided, and
+the approach based on multivariate normal distribution is used, as explained
+above. If <code>dp</code> is not provided, <code>tp</code> could be missing, i.e., a simple
+function call such as <code>sim.dp()</code> will simulate dissolution profiles. In such
+case, a default <code>tp</code> will be generated depending on the <code>time.unit</code>: if the
+<code>time.unit</code> is <code>"min"</code>, then <code>tp</code> would be <code>c(5, 10, 15, 20, 30, 45, 60)</code>;
+otherwise the <code>tp</code> would be <code>c(1, 2, 3, 4, 6, 8, 10, 12)</code>. The rest
+arguments are either optional, or required by the function but default
+values will be used.
+</p>
+
+
+
+<h4>Notes on mathematical models</h4>
+
+<p>The first-order model is expressed as
+</p>
+<p style="text-align: center;"><code class="reqn">f_t = f_\mathrm{max} \left(1 - %
+  e^{-k\left(t - t_\mathrm{lag}\right)}\right),</code>
+</p>
+
+<p>and the Weibull model was expressed either as
+</p>
+<p style="text-align: center;"><code class="reqn">f_t = f_\mathrm{max} \left(1 - %
+  e^{-\left(\frac{t - t_\mathrm{lag}}{\mathrm{MDT}}%
+  \right)^\beta}\right)</code>
+</p>
+
+<p>or
+</p>
+<p style="text-align: center;"><code class="reqn">f_t = f_\mathrm{max} \left(1 - %
+  e^{-\frac{(t - t_\mathrm{lag})^\beta}{\alpha}}\right)</code>
+</p>
+
+<p>where <code class="reqn">f_\mathrm{max}</code> is the maximum dissolution,
+<code class="reqn">\mathrm{MDT}</code> is the mean dissolution time,
+<code class="reqn">t_\mathrm{lag}</code> is the lag time, <code class="reqn">\alpha</code> and
+<code class="reqn">\beta</code> are the scale and shape factor in Weibull function,
+and <code class="reqn">k</code> is the rate constant in the first-order model. Obviously,
+The two Weibull models are mathematically equivalent by letting
+<code class="reqn">\alpha = \mathrm{MDT}^\beta</code>.
+</p>
+<p>Individual model parameter were simulated according to the exponential
+error model
+</p>
+<p style="text-align: center;"><code class="reqn">P_i = P_\mu e^{N\left(0, \sigma^2\right)}</code>
+</p>
+
+<p>where <code class="reqn">P_i</code> and <code class="reqn">P_\mu</code> denote the individual and
+population model parameters; <code class="reqn">N\left(0, \sigma^2\right)</code>
+represents the normal distribution with mean zero and variance <code class="reqn">\sigma^2</code>
+(<code class="reqn">\sigma = \mathrm{CV}/100</code>).
+</p>
+
+
+
+<h4>How to supply <code>model.par</code>
+</h4>
+
+<p>The argument <code>model.par</code> should be supplied as a <em>named list</em> of model
+parameters as explained above, and their respective CV for simulation of
+individual parameters. Therefore, for the first-order model, three pairs of
+parameters should be specified: <code>fmax/fmax.cv</code>, <code>k/k.cv</code>, and <code>tlag/tlag.cv</code>;
+and for Weibull model, four pairs: <code>fmax/fmax.cv</code>, <code>tlag/tlag.cv</code>,
+<code>beta/beta.cv</code>, and either <code>alpha/alpha.cv</code> or <code>mdt/mdt.cv</code>, depending on
+the mathematical formula used. CV should be given in percentage, e.g., if
+CV for <code>beta</code> is 30%, it should be specified as <code>beta.cv = 30</code>, <em>not</em>
+<code>beta.cv = 0.3</code>. The order of the parameters does not matter, but the name
+of the parameters must be given <em>exactly same</em> as described above.
+For example:
+</p>
+
+<ul>
+<li> <p><code>model.par = list(fmax = 100, fmax.cv = 5, k = 0.6, k.cv = 25, tlag = 0, tlag.cv = 0)</code> for the first-order model.
+</p>
+</li>
+<li> <p><code>model.par = list(fmax = 100, fmax.cv = 5, tlag = 5, tlag.cv = 10, mdt = 15, mdt.cv = 20, beta = 1.5, beta.cv = 5)</code>, or
+</p>
+</li>
+<li> <p><code>model.par = list(fmax = 100, fmax.cv = 5, tlag = 5, tlag.cv = 10, alpha = 60, alpha.cv = 20, beta = 1.5, beta.cv = 5)</code> for Weibull models.
+</p>
+</li>
+</ul>
+<h4>Notes on multivariate normal distribution approach</h4>
+
+<p>When this approach is used, depending on <code>dp/dp.cv</code>, there is no guarantee
+that all individual profiles increase with time; near the end of the time
+points, some individual profiles may decrease, especially when the
+dissolution is close to the plateau and the variability is high. This can
+happen to real life data, especially for those products with drug substances
+that are unstable in dissolution medium. To force increase for all profiles,
+set <code>ascending = TRUE</code>. Depending on the data, the program may take long
+time to run, or may even fail.
+</p>
+
+
+
+<h3>Value</h3>
+
+<p>A list of 3 to 5 components:
+</p>
+
+<ul>
+<li> <p><code>sim.summary</code>: A <em>data frame</em> with summary statistics of all
+individual dissolution profiles.
+</p>
+</li>
+<li> <p><code>sim.disso</code>: A <em>data frame</em> with all individual dissolution profiles.
+</p>
+</li>
+<li> <p><code>sim.info</code>: A <em>data frame</em> with information of the simulation such as
+the seed number and number of individual profiles. If modelling approach
+is used, the data frame will contain model parameters as well.
+</p>
+</li>
+<li> <p><code>model.par.ind</code>: A <em>data frame</em> of all individual model parameters
+that were used for the simulation of individual dissolution profiles.
+Available only if the modelling approach is used, i.e., when <code>dp</code>
+is missing.
+</p>
+</li>
+<li> <p><code>sim.dp</code>: A plot. Available only if the argument <code>plot</code> is <code>TRUE</code>.
+</p>
+</li>
+</ul>
+<h3>Examples</h3>
+
+<pre><code class="language-R"># time points
+tp &lt;- c(5, 10, 15, 20, 30, 45, 60)
+
+# using all default values to simulate profiles
+d1 &lt;- sim.dp(tp, plot = FALSE)
+
+# summary statistics
+d1$sim.summary
+
+# individual profiles
+d1$sim.disso
+
+# simulation information
+d1$sim.info
+
+#individual model parameters
+d1$mod.par.ind
+
+# using Weibull model to simulate 100 profiles without lag time
+mod.par &lt;- list(fmax = 100, fmax.cv = 2, tlag = 0, tlag.cv = 0,
+                mdt = 20, mdt.cv = 5, beta = 2.2, beta.cv = 5)
+d2 &lt;- sim.dp(tp, model.par = mod.par, seed = 100, n.units = 100L,
+             plot = FALSE)
+
+# using multivariate normal distribution approach
+# target mean profile with same length as tp
+dp &lt;- c(39, 56, 67, 74, 83, 90, 94)
+
+# CV% at each time point
+dp.cv &lt;- c(19, 15, 10, 8, 8, 5, 3)
+
+# simulation
+d3 &lt;- sim.dp(tp, dp = dp, dp.cv = dp.cv, seed = 1234, plot = FALSE)
+
+</code></pre>
+
+
+</div>

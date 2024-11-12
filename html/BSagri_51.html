@@ -1,0 +1,210 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>simplesimint</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2> Simultaneous confidence intervals from raw estimates</h2>
+
+<h3>Description</h3>
+
+<p>Calculates simultaneous confidence intervals for multiple contrasts based on a parameter vector,
+its variance-covariance matrix and (optionally) the degrees of freedom, using quantiles of the multivar
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">simplesimint(coef, vcov, cmat, df = NULL, conf.level = 0.95,
+ alternative = c("two.sided", "less", "greater"))
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>coef</code></td>
+<td>
+<p> a single numeric vector, specifying the point estimates of the parameters of interest </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>vcov</code></td>
+<td>
+<p> the variance-covariance matrix corresponding to <code>coef</code>, should be of dimension P-times-P, when <code>coef</code> is of P </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>cmat</code></td>
+<td>
+<p> the contrasts matrix specifying the comparisons of interest with respect to <code>coef</code>, should have P columns, when <code>coef</code> is of length p </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>df</code></td>
+<td>
+<p> optional, the degree of freedom for the multivariate t-distribution; if specified, quantiles from the multivariate t-distribution are used for confidence interval estimation, if not specified (default), quantiles of the multivariate normal distribution are used</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>conf.level</code></td>
+<td>
+<p> a single numeric value between 0.5 and 1.0; the simultaneous confidence level </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>alternative</code></td>
+<td>
+<p> a single character string, <code>"two.sided"</code> for intervals, <code>"less"</code> for upper limits, and <code>"greater"</code> for lower limits </p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>Implements the methods formerly available in package <span class="pkg">multcomp</span>, function <code>csimint</code>.
+Input values are a vector of parameter estimates <code class="reqn">\mu</code> of length <code class="reqn">P</code>,
+a corresponding estimate for its variance-covariance matrix <code class="reqn">\Sigma</code> (P times P), and a 
+contrast matrix <code class="reqn">C</code> of dimension <code class="reqn">M \times P</code>. The contrasts <code class="reqn">L = C \mu</code> are computed,
+the variance-covariance matrix (being a function of <code class="reqn">C</code> and <code class="reqn">\Sigma</code>) and the corresponding correlation matrix <code class="reqn">R</code> are computed.
+Finally, confidence intervals for <code class="reqn">L</code> are computed: if df is given, quantiles of an M-dimensional t distribution with correlation matrix R are used,
+otherwise quantiles of an M-dimensional standard normal distribution with correlation matrix R are used.
+</p>
+
+
+<h3>Value</h3>
+
+<p>An object of class "simplesimint"
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>estimate </code></td>
+<td>
+<p>the estimates of the contrasts</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>lower </code></td>
+<td>
+<p>the lower confidence limits</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>upper </code></td>
+<td>
+<p>the upper confidence limits</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>cmat</code></td>
+<td>
+<p>the contrast matrix, as input</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>alternative</code></td>
+<td>
+<p>a character string, as input</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>conf.level</code></td>
+<td>
+<p>a numeric value, as input</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>quantile</code></td>
+<td>
+<p>a numeric value, the quantile used for confidence interval estimation</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>df</code></td>
+<td>
+<p>a numeric value or NULL, as input</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>stderr</code></td>
+<td>
+<p>the standard error of the contrasts</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>vcovC</code></td>
+<td>
+<p>the variance covariance matrix of the contrasts</p>
+</td>
+</tr>
+</table>
+<h3>Note</h3>
+
+ 
+<p>This is a testversion and has not been checked extensively. 
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p> Frank Schaarschmidt </p>
+
+
+<h3>See Also</h3>
+
+<p> See <code>?coef</code> and <code>?vcov</code> for extracting of parameter vectors and corresponding variance covariance matrices from various model fits. </p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+
+# For the simple case of Gaussian response
+# variables with homoscedastic variance,
+# see the following example
+
+
+library(mratios)
+data(angina)
+
+boxplot(response ~ dose, data=angina)
+
+# Fit a cell means model,
+
+fit&lt;-lm(response ~ 0+dose, data=angina)
+
+# extract cell means, the corresponding
+# variance-covariance matrix and the
+# residual degree of freedom,
+
+cofi&lt;-coef(fit)
+vcofi&lt;-vcov(fit)
+dofi&lt;-fit$df.residual
+
+# define an appropriate contrast matrix,
+# here, comparisons to control
+
+n&lt;-unlist(lapply(split(angina$response, f=angina$dose), length))
+names(n)&lt;-names(cofi)
+
+cmat&lt;-contrMat(n=n, type="Dunnett")
+cmat
+
+#
+
+test&lt;-simplesimint(coef=cofi, vcov=vcofi, df=dofi, cmat=cmat, alternative="greater" )
+
+test
+
+summary(test)
+
+plotCI(test)
+
+### Note, that the same result can be achieved much more conveniently
+### using confint.glht in package multcomp
+
+
+</code></pre>
+
+
+</div>

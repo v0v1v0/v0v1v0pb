@@ -1,0 +1,531 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>brm_formula</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Model formula</h2>
+
+<h3>Description</h3>
+
+<p>Build a model formula for an MMRM, either for a generic
+<code>brm_data()</code> dataset or an informative prior archetype.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">brm_formula(
+  data,
+  model_missing_outcomes = FALSE,
+  check_rank = TRUE,
+  sigma = brms.mmrm::brm_formula_sigma(data = data, check_rank = check_rank),
+  correlation = "unstructured",
+  autoregressive_order = 1L,
+  moving_average_order = 1L,
+  residual_covariance_arma_estimation = FALSE,
+  ...
+)
+
+## Default S3 method:
+brm_formula(
+  data,
+  model_missing_outcomes = FALSE,
+  check_rank = TRUE,
+  sigma = brms.mmrm::brm_formula_sigma(data = data, check_rank = check_rank),
+  correlation = "unstructured",
+  autoregressive_order = 1L,
+  moving_average_order = 1L,
+  residual_covariance_arma_estimation = FALSE,
+  intercept = TRUE,
+  baseline = !is.null(attr(data, "brm_baseline")),
+  baseline_subgroup = !is.null(attr(data, "brm_baseline")) &amp;&amp; !is.null(attr(data,
+    "brm_subgroup")),
+  baseline_subgroup_time = !is.null(attr(data, "brm_baseline")) &amp;&amp; !is.null(attr(data,
+    "brm_subgroup")),
+  baseline_time = !is.null(attr(data, "brm_baseline")),
+  covariates = TRUE,
+  group = TRUE,
+  group_subgroup = !is.null(attr(data, "brm_subgroup")),
+  group_subgroup_time = !is.null(attr(data, "brm_subgroup")),
+  group_time = TRUE,
+  subgroup = !is.null(attr(data, "brm_subgroup")),
+  subgroup_time = !is.null(attr(data, "brm_subgroup")),
+  time = TRUE,
+  center = TRUE,
+  ...,
+  effect_baseline = NULL,
+  effect_group = NULL,
+  effect_time = NULL,
+  interaction_baseline = NULL,
+  interaction_group = NULL
+)
+
+## S3 method for class 'brms_mmrm_archetype'
+brm_formula(
+  data,
+  model_missing_outcomes = FALSE,
+  check_rank = TRUE,
+  sigma = brms.mmrm::brm_formula_sigma(data = data, check_rank = check_rank),
+  correlation = "unstructured",
+  autoregressive_order = 1L,
+  moving_average_order = 1L,
+  residual_covariance_arma_estimation = FALSE,
+  ...,
+  warn_ignored = TRUE
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+<p>A classed data frame from <code>brm_data()</code>, or an informative
+prior archetype from a function like <code>brm_archetype_successive_cells()</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>model_missing_outcomes</code></td>
+<td>
+<p>Logical of length 1, <code>TRUE</code>
+to impute missing outcomes during model fitting as described in the
+"Imputation during model fitting" section of
+<a href="https://paulbuerkner.com/brms/articles/brms_missings.html">https://paulbuerkner.com/brms/articles/brms_missings.html</a>.
+Specifically, if the outcome variable is <code>y</code>, then the formula will
+begin with <code>y | mi() ~ ...</code> instead of simply <code>y ~ ...</code>.
+Set to <code>FALSE</code> (default) to forgo this kind of imputation
+and discard missing observations from the data
+just prior to fitting the model inside <code>brm_model()</code>. See
+<a href="https://opensource.nibr.com/bamdd/src/02h_mmrm.html#what-estimand-does-mmrm-address">https://opensource.nibr.com/bamdd/src/02h_mmrm.html#what-estimand-does-mmrm-address</a> #nolint
+to understand the standard assumptions and decisions regarding MMRMs
+and missing outcomes.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>check_rank</code></td>
+<td>
+<p><code>TRUE</code> to check the rank of the model matrix and
+throw an error if rank deficiency is detected. <code>FALSE</code> to skip
+this check. Rank-deficient models may have non-identifiable
+parameters and it is recommended to choose a full-rank mapping.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>sigma</code></td>
+<td>
+<p>A formula produced by <code>brm_formula_sigma()</code>.
+The formula is a base R formula with S3 class
+<code>"brms_mmrm_formula_sigma"</code>, and it controls
+the parameterization of the residual standard deviations <code>sigma</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>correlation</code></td>
+<td>
+<p>Character of length 1, name of the correlation
+structure. The correlation matrix is a square <code style="white-space: pre;">⁠T x T⁠</code> matrix, where
+<code>T</code> is the number of discrete time points in the data.
+This matrix describes the correlations between time points in the same
+patient, as modeled in the residuals. Different patients are modeled
+as independent. The <code>correlation</code> argument controls how this matrix
+is parameterized, and the choices given by <code>brms</code> are listed at
+<a href="https://paulbuerkner.com/brms/reference/autocor-terms.html">https://paulbuerkner.com/brms/reference/autocor-terms.html</a>,
+and the choice is ultimately encoded in the main body of the
+output formula through terms like <code>unstru()</code> and <code>arma()</code>, some
+of which are configurable through arguments
+<code>autoregressive_order</code>, <code>moving_average_order</code>, and
+<code>residual_covariance_arma_estimation</code> of <code>brm_formula()</code>.
+Choices in <code>brms.mmrm</code>:
+</p>
+
+<ul>
+<li> <p><code>"unstructured"</code>: the default/recommended option, a fully parameterized
+covariance matrix with a unique scalar parameter for each unique pair
+of discrete time points. C.f.
+<a href="https://paulbuerkner.com/brms/reference/unstr.html">https://paulbuerkner.com/brms/reference/unstr.html</a>.
+</p>
+</li>
+<li> <p><code>"autoregressive_moving_average"</code>: autoregressive moving
+average (ARMA), c.f.
+<a href="https://paulbuerkner.com/brms/reference/arma.html">https://paulbuerkner.com/brms/reference/arma.html</a>.
+</p>
+</li>
+<li> <p><code>"autoregressive"</code>: autoregressive (AR), c.f.
+<a href="https://paulbuerkner.com/brms/reference/ar.html">https://paulbuerkner.com/brms/reference/ar.html</a>.
+</p>
+</li>
+<li> <p><code>"moving_average"</code>: moving average (MA), c.f.
+<a href="https://paulbuerkner.com/brms/reference/ma.html">https://paulbuerkner.com/brms/reference/ma.html</a>.
+</p>
+</li>
+<li> <p><code style="white-space: pre;">⁠"compound_symmetry⁠</code>: compound symmetry, c.f.
+<a href="https://paulbuerkner.com/brms/reference/cosy.html">https://paulbuerkner.com/brms/reference/cosy.html</a>.
+</p>
+</li>
+<li> <p><code>"diagonal"</code>: declare independent time points within patients.
+</p>
+</li>
+</ul>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>autoregressive_order</code></td>
+<td>
+<p>Nonnegative integer,
+autoregressive order for the <code>"autoregressive_moving_average"</code>
+and <code>"autoregressive"</code> correlation structures.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>moving_average_order</code></td>
+<td>
+<p>Nonnegative integer,
+moving average order for the <code>"autoregressive_moving_average"</code>
+and <code>"moving_average"</code> correlation structures.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>residual_covariance_arma_estimation</code></td>
+<td>
+<p><code>TRUE</code> or <code>FALSE</code>,
+whether to estimate ARMA effects using residual covariance matrices.
+Directly supplied to the <code>cov</code> argument in <code>brms</code> for
+<code>"autoregressive_moving_average"</code>, <code>"autoregressive"</code>, and
+<code>"moving_average"</code> correlation structures. C.f.
+<a href="https://paulbuerkner.com/brms/reference/arma.html">https://paulbuerkner.com/brms/reference/arma.html</a>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Named arguments to specific <code>brm_formula()</code> methods.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>intercept</code></td>
+<td>
+<p>Logical of length 1.
+<code>TRUE</code> (default) to include an intercept, <code>FALSE</code> to omit.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>baseline</code></td>
+<td>
+<p>Logical of length 1.
+<code>TRUE</code> to include an additive effect for baseline
+response, <code>FALSE</code> to omit.
+Default is <code>TRUE</code> if <code>brm_data()</code> previously declared a baseline
+variable in the dataset.
+Ignored for informative prior archetypes.
+For informative prior archetypes, this option should be set in
+functions like <code>brm_archetype_successive_cells()</code> rather than in
+<code>brm_formula()</code> in order to make sure columns are appropriately
+centered and the underlying model matrix has full rank.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>baseline_subgroup</code></td>
+<td>
+<p>Logical of length 1.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>baseline_subgroup_time</code></td>
+<td>
+<p>Logical of length 1.
+<code>TRUE</code> to include baseline-by-subgroup-by-time interaction,
+<code>FALSE</code> to omit.
+Default is <code>TRUE</code> if <code>brm_data()</code> previously declared baseline
+and subgroup variables in the dataset.
+Ignored for informative prior archetypes.
+For informative prior archetypes, this option should be set in
+functions like <code>brm_archetype_successive_cells()</code> rather than in
+<code>brm_formula()</code> in order to make sure columns are appropriately
+centered and the underlying model matrix has full rank.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>baseline_time</code></td>
+<td>
+<p>Logical of length 1.
+<code>TRUE</code> to include baseline-by-time interaction, <code>FALSE</code> to omit.
+Default is <code>TRUE</code> if <code>brm_data()</code> previously declared a baseline
+variable in the dataset.
+Ignored for informative prior archetypes.
+For informative prior archetypes, this option should be set in
+functions like <code>brm_archetype_successive_cells()</code> rather than in
+<code>brm_formula()</code> in order to make sure columns are appropriately
+centered and the underlying model matrix has full rank.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>covariates</code></td>
+<td>
+<p>Logical of length 1.
+<code>TRUE</code> (default) to include any additive covariates declared with
+the <code>covariates</code> argument of <code>brm_data()</code>,
+<code>FALSE</code> to omit.
+For informative prior archetypes, this option is set in
+functions like <code>brm_archetype_successive_cells()</code> rather than in
+<code>brm_formula()</code> in order to make sure columns are appropriately
+centered and the underlying model matrix has full rank.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>group</code></td>
+<td>
+<p>Logical of length 1.
+<code>TRUE</code> (default) to include additive effects for
+treatment groups, <code>FALSE</code> to omit.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>group_subgroup</code></td>
+<td>
+<p>Logical of length 1.
+<code>TRUE</code> to include group-by-subgroup interaction, <code>FALSE</code> to omit.
+Default is <code>TRUE</code> if <code>brm_data()</code> previously declared a subgroup
+variable in the dataset.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>group_subgroup_time</code></td>
+<td>
+<p>Logical of length 1.
+<code>TRUE</code> to include group-by-subgroup-by-time interaction, <code>FALSE</code> to omit.
+Default is <code>TRUE</code> if <code>brm_data()</code> previously declared a subgroup
+variable in the dataset.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>group_time</code></td>
+<td>
+<p>Logical of length 1.
+<code>TRUE</code> (default) to include group-by-time interaction, <code>FALSE</code> to omit.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>subgroup</code></td>
+<td>
+<p>Logical of length 1.
+<code>TRUE</code> to include additive fixed effects for subgroup levels,
+<code>FALSE</code> to omit.
+Default is <code>TRUE</code> if <code>brm_data()</code> previously declared a subgroup
+variable in the dataset.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>subgroup_time</code></td>
+<td>
+<p>Logical of length 1.
+<code>TRUE</code> to include subgroup-by-time interaction, <code>FALSE</code> to omit.
+Default is <code>TRUE</code> if <code>brm_data()</code> previously declared a subgroup
+variable in the dataset.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>time</code></td>
+<td>
+<p>Logical of length 1.
+<code>TRUE</code> (default) to include a additive effect for discrete time,
+<code>FALSE</code> to omit.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>center</code></td>
+<td>
+<p><code>TRUE</code> to center the columns of the model matrix before
+fitting the model if the model formula includes an intercept
+term controlled by <code>brms</code>. <code>FALSE</code> to skip centering. Centering usually
+leads to more computationally efficient sampling in the presence
+of an intercept, but it changes
+the interpretation of the intercept parameter if included in the model
+(as explained in the help file of <code>brms::brmsformula()</code>).
+Informative prior archetypes always use <code>center = FALSE</code>
+and use an intercept not controlled by <code>brms.mmrm</code> to ensure the
+intercept parameter is interpretable and compatible with
+user-defined priors.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>effect_baseline</code></td>
+<td>
+<p>Deprecated on 2024-01-16 (version 0.0.2.9002).
+Use <code>baseline</code> instead.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>effect_group</code></td>
+<td>
+<p>Deprecated on 2024-01-16 (version 0.0.2.9002).
+Use <code>group</code> instead.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>effect_time</code></td>
+<td>
+<p>Deprecated on 2024-01-16 (version 0.0.2.9002).
+Use <code>time</code> instead.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>interaction_baseline</code></td>
+<td>
+<p>Deprecated on 2024-01-16 (version 0.0.2.9002).
+Use <code>baseline_time</code> instead.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>interaction_group</code></td>
+<td>
+<p>Deprecated on 2024-01-16 (version 0.0.2.9002).
+Use <code>group_time</code> instead.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>warn_ignored</code></td>
+<td>
+<p>Set to <code>TRUE</code>
+to throw a warning if ignored arguments are specified,
+<code>FALSE</code> otherwise.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>An object of class <code>"brmsformula"</code> returned from
+<code>brms::brmsformula()</code>. It contains the fixed effect mapping,
+correlation structure, and residual variance structure.
+</p>
+
+
+<h3>
+<code>brm_data()</code> formulas</h3>
+
+<p>For a <code>brm_data()</code> dataset,
+<code>brm_formula()</code> builds an R formula for an MMRM based on
+the details in the data and your choice of mapping.
+Customize your mapping by toggling on or off
+the various <code>TRUE</code>/<code>FALSE</code> arguments of <code>brm_formula()</code>,
+such as <code>intercept</code>, <code>baseline</code>, and <code>group_time</code>.
+All plausible additive effects, two-way interactions, and
+three-way interactions can be specified. The following interactions
+are not supported:
+</p>
+
+<ul>
+<li>
+<p> Any interactions with the concomitant covariates you specified in the
+<code>covariates</code> argument of <code>brm_data()</code>.
+</p>
+</li>
+<li>
+<p> Any interactions which include baseline response and treatment
+group together. Rationale: in a randomized controlled experiment,
+baseline and treatment group assignment should be uncorrelated.
+</p>
+</li>
+</ul>
+<h3>Formulas for informative prior archetypes</h3>
+
+<p>Functions like <code>brm_archetype_successive_cells()</code>
+tailor datasets to informative prior archetypes. For these specialized
+tailored datasets, <code>brm_formula()</code> works differently. It still applies
+the variance and correlation structure of your choosing, and it still
+lets you choose whether to adjust for nuisance covariates,
+but it no longer lets you toggle on/off individual terms in the model,
+such as <code>intercept</code>, <code>baseline</code>, or <code>group</code>. Instead, to ensure the
+correct interpretation of the parameters, <code>brm_formula()</code> uses
+the <code style="white-space: pre;">⁠x_*⁠</code> and <code style="white-space: pre;">⁠nuisance_*⁠</code> columns generated by
+<code>brm_archetype_successive_cells( prefix_interest = "x_", prefix_nuisance = "nuisance_")</code>.
+</p>
+
+
+<h3>Parameterization</h3>
+
+<p>For a formula on a <code>brm_data()</code> dataset,
+the formula is not the only factor
+that determines the fixed effect mapping.
+The ordering of the categorical variables in the data,
+as well as the <code>contrast</code> option in R, affect the
+construction of the model matrix. To see the model
+matrix that will ultimately be used in <code>brm_model()</code>,
+run <code>brms::make_standata()</code> and examine the <code>X</code> element
+of the returned list. See the examples below for a
+demonstration.
+</p>
+
+
+<h3>See Also</h3>
+
+<p>Other models: 
+<code>brm_formula_sigma()</code>,
+<code>brm_model()</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">set.seed(0)
+data &lt;- brm_data(
+  data = brm_simulate_simple()$data,
+  outcome = "response",
+  group = "group",
+  time = "time",
+  patient = "patient",
+  reference_group = "group_1",
+  reference_time = "time_1"
+)
+brm_formula(data)
+brm_formula(data = data, intercept = FALSE, baseline = FALSE)
+formula &lt;- brm_formula(
+  data = data,
+  intercept = FALSE,
+  baseline = FALSE,
+  group = FALSE
+)
+formula
+# Standard deviations of residuals are distributional parameters that can
+# regress on variables in the data.
+homogeneous &lt;- brm_formula_sigma(data, time = FALSE)
+by_group &lt;- brm_formula_sigma(data, group = TRUE, intercept = TRUE)
+homogeneous
+by_group
+brm_formula(data, sigma = homogeneous)
+brm_formula(data, sigma = by_group)
+# Optional: set the contrast option, which determines the model matrix.
+options(contrasts = c(unordered = "contr.SAS", ordered = "contr.poly"))
+# See the fixed effect mapping you get from the data:
+head(brms::make_standata(formula = formula, data = data)$X)
+# Specify a different contrast method to use an alternative
+# mapping when fitting the model with brm_model():
+options(
+  contrasts = c(unordered = "contr.treatment", ordered = "contr.poly")
+)
+# different model matrix than before:
+head(brms::make_standata(formula = formula, data = data)$X)
+# Formula on an informative prior archetype:
+data &lt;- brm_simulate_outline(
+  n_group = 2,
+  n_patient = 100,
+  n_time = 4,
+  rate_dropout = 0,
+  rate_lapse = 0
+) |&gt;
+  dplyr::mutate(response = rnorm(n = dplyr::n())) |&gt;
+  brm_data_change() |&gt;
+  brm_simulate_continuous(names = c("biomarker1", "biomarker2")) |&gt;
+  brm_simulate_categorical(
+    names = "biomarker3",
+    levels = c("present", "absent")
+  )
+archetype &lt;- brm_archetype_successive_cells(data)
+formula &lt;- brm_formula(data = archetype)
+formula
+</code></pre>
+
+
+</div>

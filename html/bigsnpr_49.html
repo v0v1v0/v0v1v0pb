@@ -1,0 +1,213 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>bed_clumping</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>LD clumping</h2>
+
+<h3>Description</h3>
+
+<p>For a <code>bigSNP</code>:
+</p>
+
+<ul>
+<li> <p><code>snp_pruning()</code>: LD pruning. Similar to "<code style="white-space: pre;">⁠--indep-pairwise (size+1) 1 thr.r2⁠</code>"
+in <a href="https://www.cog-genomics.org/plink/1.9/ld">PLINK</a>.
+<strong>This function is deprecated (see
+<a href="https://privefl.github.io/bigsnpr/articles/pruning-vs-clumping.html">this article</a>).</strong>
+</p>
+</li>
+<li> <p><code>snp_clumping()</code> (and <code>bed_clumping()</code>): LD clumping. If you do not provide
+any statistic to rank SNPs, it would use minor allele frequencies (MAFs),
+making clumping similar to pruning.
+</p>
+</li>
+<li> <p><code>snp_indLRLDR()</code>: Get SNP indices of long-range LD regions for the
+human genome.
+</p>
+</li>
+</ul>
+<h3>Usage</h3>
+
+<pre><code class="language-R">bed_clumping(
+  obj.bed,
+  ind.row = rows_along(obj.bed),
+  S = NULL,
+  thr.r2 = 0.2,
+  size = 100/thr.r2,
+  exclude = NULL,
+  ncores = 1
+)
+
+snp_clumping(
+  G,
+  infos.chr,
+  ind.row = rows_along(G),
+  S = NULL,
+  thr.r2 = 0.2,
+  size = 100/thr.r2,
+  infos.pos = NULL,
+  is.size.in.bp = NULL,
+  exclude = NULL,
+  ncores = 1
+)
+
+snp_pruning(
+  G,
+  infos.chr,
+  ind.row = rows_along(G),
+  size = 49,
+  is.size.in.bp = FALSE,
+  infos.pos = NULL,
+  thr.r2 = 0.2,
+  exclude = NULL,
+  nploidy = 2,
+  ncores = 1
+)
+
+snp_indLRLDR(infos.chr, infos.pos, LD.regions = LD.wiki34)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>obj.bed</code></td>
+<td>
+<p>Object of type bed, which is the mapping of some bed file.
+Use <code>obj.bed &lt;- bed(bedfile)</code> to get this object.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ind.row</code></td>
+<td>
+<p>An optional vector of the row indices (individuals) that
+are used. If not specified, all rows are used.<br><strong>Don't use negative indices.</strong></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>S</code></td>
+<td>
+<p>A vector of column statistics which express the importance
+of each SNP (the more important is the SNP, the greater should be
+the corresponding statistic).<br>
+For example, if <code>S</code> follows the standard normal distribution, and "important"
+means significantly different from 0, you must use <code>abs(S)</code> instead.<br><strong>If not specified, MAFs are computed and used.</strong></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>thr.r2</code></td>
+<td>
+<p>Threshold over the squared correlation between two SNPs.
+Default is <code>0.2</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>size</code></td>
+<td>
+<p>For one SNP, window size around this SNP to compute correlations.
+Default is <code>100 / thr.r2</code> for clumping (0.2 -&gt; 500; 0.1 -&gt; 1000; 0.5 -&gt; 200).
+If not providing <code>infos.pos</code> (<code>NULL</code>, the default), this is a window in
+number of SNPs, otherwise it is a window in kb (genetic distance).
+I recommend that you provide the positions if available.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>exclude</code></td>
+<td>
+<p>Vector of SNP indices to exclude anyway. For example,
+can be used to exclude long-range LD regions (see Price2008). Another use
+can be for thresholding with respect to p-values associated with <code>S</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ncores</code></td>
+<td>
+<p>Number of cores used. Default doesn't use parallelism.
+You may use <code>bigstatsr::nb_cores()</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>G</code></td>
+<td>
+<p>A FBM.code256
+(typically <code style="white-space: pre;">⁠&lt;bigSNP&gt;$genotypes⁠</code>).<br><strong>You shouldn't have missing values.</strong> Also, remember to do quality control,
+e.g. some algorithms in this package won't work if you use SNPs with 0 MAF.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>infos.chr</code></td>
+<td>
+<p>Vector of integers specifying each SNP's chromosome.<br>
+Typically <code style="white-space: pre;">⁠&lt;bigSNP&gt;$map$chromosome⁠</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>infos.pos</code></td>
+<td>
+<p>Vector of integers specifying the physical position
+on a chromosome (in base pairs) of each SNP.<br>
+Typically <code style="white-space: pre;">⁠&lt;bigSNP&gt;$map$physical.pos⁠</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>is.size.in.bp</code></td>
+<td>
+<p>Deprecated.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nploidy</code></td>
+<td>
+<p>Number of trials, parameter of the binomial distribution.
+Default is <code>2</code>, which corresponds to diploidy, such as for the human genome.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>LD.regions</code></td>
+<td>
+<p>A <code>data.frame</code> with columns "Chr", "Start" and "Stop".
+Default use the table of 34 long-range LD regions that you can find
+<a href="https://goo.gl/0Ou7uI">there</a>.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+
+<ul>
+<li> <p><code>snp_clumping()</code> (and <code>bed_clumping()</code>): SNP indices that are <strong>kept</strong>.
+</p>
+</li>
+<li> <p><code>snp_indLRLDR()</code>: SNP indices to be used as (part of) the '<strong><code>exclude</code></strong>'
+parameter of <code>snp_clumping()</code>.
+</p>
+</li>
+</ul>
+<h3>References</h3>
+
+<p>Price AL, Weale ME, Patterson N, et al.
+Long-Range LD Can Confound Genome Scans in Admixed Populations.
+Am J Hum Genet. 2008;83(1):132-135. <a href="https://doi.org/10.1016/j.ajhg.2008.06.005">doi:10.1016/j.ajhg.2008.06.005</a>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">test &lt;- snp_attachExtdata()
+G &lt;- test$genotypes
+
+# clumping (prioritizing higher MAF)
+ind.keep &lt;- snp_clumping(G, infos.chr = test$map$chromosome,
+                         infos.pos = test$map$physical.pos,
+                         thr.r2 = 0.1)
+
+# keep most of them -&gt; not much LD in this simulated dataset
+length(ind.keep) / ncol(G)
+
+</code></pre>
+
+
+</div>

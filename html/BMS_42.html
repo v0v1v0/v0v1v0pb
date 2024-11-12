@@ -1,0 +1,194 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>pred.density</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Predictive Densities for bma Objects</h2>
+
+<h3>Description</h3>
+
+<p>Predictive densities for conditional forecasts
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">pred.density(object, newdata = NULL, n = 300, hnbsteps = 30, ...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>object</code></td>
+<td>
+<p>a bma object - see <code>bms</code>, alternativel a
+<code>zlm</code> object</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>newdata</code></td>
+<td>
+<p>A data.frame, matrix or vector containing variables with
+which to predict.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>n</code></td>
+<td>
+<p>The integer number of equally spaced points at which the density is
+to be estimated.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>hnbsteps</code></td>
+<td>
+<p>The number of numerical integration steps to be used in case
+of a hyper-g prior (cf. argument <code>g</code> in <code>bms</code>). Increase
+this number to increase accuracy. Must be an even integer.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>arguments to be passed on to <code>plot.density</code>.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The predictive density is a mixture density based on the <code>nmodels</code> best
+models in a <code>bma</code> object (cf. <code>nmodel</code> in <code>bms</code>).<br>
+The number of 'best models' to retain is therefore vital and should be set
+quite high for accuracy.
+</p>
+
+
+<h3>Value</h3>
+
+<p><code>pred.density</code> returns a list of class <code>pred.density</code> with
+the following elements </p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>densities()</code></td>
+<td>
+<p>a list whose elements each contain
+the estimated density for each forecasted observation</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>fit</code></td>
+<td>
+<p>a vector
+with the expected values of the predictions (the 'point forecasts')</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>std.err</code></td>
+<td>
+<p>a vector with the standard deviations of the predictions (the
+'standard errors')</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>dyf(realized.y, predict_index=NULL)</code></td>
+<td>
+<p>Returns the
+densities of realized response variables provided in <code>realized.y</code>. <br>
+If <code>realized.y</code> is a matrix, then each row corresponds to a forecast
+observation in <code>newdata</code><br> if not left empty, <code>predict.index</code>
+specifies to which observations in newdata the realized.y should apply</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>lps(realized.y, predict_index=NULL)</code></td>
+<td>
+<p>Computes the log predictive score
+for the response varaible provided in <code>realized.y</code> (cf.
+<code>lps.bma</code>) -<br> Note that the LPS equals minus the mean of the
+logarithmized results from <code>dyf</code>) </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>plot((x, predict_index =
+NULL, addons = "eslz", realized.y = NULL, addons.lwd = 1.5, ...)</code></td>
+<td>
+<p>the same
+as <code>plot.pred.density</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>n</code></td>
+<td>
+<p>The number of equally spaced
+points for which the density (under <code>densities()</code> was computed.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nmodel</code></td>
+<td>
+<p>The number of best models predictive densities are based
+upon.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>call</code></td>
+<td>
+<p>the call that created this <code>pred.density</code> object</p>
+</td>
+</tr>
+</table>
+<h3>Note</h3>
+
+<p>In BMS version 0.3.0, <code>pred.density</code> may only cope with built-in
+<code>gprior</code>s, not with any user-defined priors.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>predict.bma</code> for simple point forecasts,
+<code>plot.pred.density</code> for plotting predictive densities,
+<code>lps.bma</code> for calculating the log predictive score
+independently, <code>quantile.pred.density</code> for extracting quantiles
+</p>
+<p>Check <a href="http://bms.zeugner.eu">http://bms.zeugner.eu</a> for additional help.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+ data(datafls)
+ mm=bms(datafls,user.int=FALSE)
+ 
+ #predictive densityfor two 'new' data points
+ pd=pred.density(mm,newdata=datafls[1:2,]) 
+ 
+ 
+ #fitted values based on best models, same as predict(mm, exact=TRUE)
+ pd$fit
+ 
+ #plot the density for the first forecast observation
+ plot(pd,1)  
+ 
+ # the same plot ' naked'
+ plot(pd$densities()[[1]])
+ 
+ 
+ #predict density for the first forecast observation if the dep. variable is 0
+ pd$dyf(0,1) 
+ 
+ #predict densities for both forecasts for the realizations 0 and 0.5
+ pd$dyf(rbind(c(0,.5),c(0,.5)))
+ 
+ # calc. Log Predictive Score if both forecasts are realized at 0:
+ lps.bma(pd,c(0,0))
+ 
+ 
+</code></pre>
+
+
+</div>

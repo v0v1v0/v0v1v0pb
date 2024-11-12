@@ -1,0 +1,164 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>WGR3 (MV)</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>
+Multivariate Regression
+</h2>
+
+<h3>Description</h3>
+
+<p>Multivariate model to find breeding values.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">  mkr(Y,K,...)
+  mrr(Y,X,...)
+  mrr_float(Y,X,...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>Y</code></td>
+<td>
+
+<p>Numeric matrix of observations x trait. <code>NA</code> is allowed.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>K</code></td>
+<td>
+
+<p>Numeric matrix containing the relationship matrix.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>X</code></td>
+<td>
+
+<p>Numeric matrix containing the genotyping matrix.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+
+<p>Arguments to pass to MRR3/MRR3F. See <code>args(MRR3)</code>.
+</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>Algorithm is described in Xavier and Habier (2022). The model for the ridge regression (mrr) is as follows:
+</p>
+<p style="text-align: center;"><code class="reqn">Y = Mu + XB + E</code>
+</p>
+
+<p>where <code class="reqn">Y</code> is a matrix of response variables, <code class="reqn">Mu</code> represents the intercepts, <code class="reqn">X</code> is the matrix of genotypic information, <code class="reqn">B</code> is the matrix of marker effects,  and <code class="reqn">E</code> is the residual matrix.
+</p>
+<p>The model for the kernel regression (mkr) is as follows:
+</p>
+<p style="text-align: center;"><code class="reqn">Y = Mu + UB + E</code>
+</p>
+
+<p>where <code class="reqn">Y</code> is a matrix of response variables, <code class="reqn">Mu</code> represents the intercepts, <code class="reqn">U</code> is the matrix of Eigenvector of K, <code class="reqn">b</code> is a vector of regression coefficients and <code class="reqn">E</code> is the residual matrix.
+</p>
+<p>Algorithm: Residuals are assumed to be independent among traits. Regression coefficients are solved via a multivaraite adaptation of Gauss-Seidel Residual Update. Since version 2.0, the solver of <code>mrr</code> is based on the Randomized Gauss-Seidel algorithm. Variance and covariance components are solved with an EM-REML like approach proposed by Schaeffer called Pseudo-Expectation.
+</p>
+<p>Other related implementations:
+</p>
+<p>01) <code>mkr2X(Y,K1,K2):</code> Solves multi-trait kernel regressions with two random effects.
+</p>
+<p>02) <code>mrr2X(Y,X1,X2):</code> Solves multi-trait ridge regressions with two random effects.
+</p>
+<p>03) <code>MRR3(Y,X,...):</code> Extension of mrr with additional parameters.
+</p>
+<p>04) <code>MRR3F(Y,X,...):</code> MRR3 running on float.
+</p>
+<p>05) <code>mrr_svd(Y,W):</code> Solves mrr through the principal components of parameters.
+</p>
+<p>06) <code>MLM(Y,X,Z,maxit=500,logtol=-8,cores=1):</code> Multivariate model with fixed effects.
+</p>
+<p>07) <code>SEM(Y,Z,...):</code> Fits a MegaSEM with both shared- and trait-specific terms.
+</p>
+<p>08) <code>MEGA(Y,X,npc=-1):</code> Toy implementation of MegaLMM, imputing missing with GEBVs.
+</p>
+<p>09) <code>GSEM(Y,X,npc=-1):</code> Toy C++ implementaiton of MegaSEM, jointly fits FA and XB.
+</p>
+<p>10) <code>ZSEMF(Y,X,npc=0):</code> Full-rank MegaSEM, float precision.
+</p>
+<p>11) <code>YSEMF(Y,X,npc=-1):</code> Reduced-rank MegaSEM, float, two-steps approach.
+</p>
+<p>12) <code>XSEMF(Y,X,npc=0):</code> Full-rank MegaSEM, h2 fixed at 0.5, float precision.
+</p>
+<p>In GSEM, XSEMF and MEGA, 'npc' means number of latent spaces if input is above zero, otherwise, 0 means all and -1 means <code>2*sqrt(ncol(Y))</code>.
+</p>
+
+
+<h3>Value</h3>
+
+<p>Returns a list with the random effect covariances (<code>Vb</code>), residual variances (<code>Ve</code>), genetic correlations (<code>GC</code>), matrix with marker effects (<code>b</code>) or eigenvector effects (if <code>mkr</code>), intercepts (<code>mu</code>), heritabilities (<code>h2</code>), and a matrix with fitted values (<code>hat</code>).
+</p>
+<p>NOTE: Numeric stability is a serious concern with multivariate models with large number of response variables, as the covariance matrix is often not invesible. If output is filled with NAs, try using <code>MRR3</code> and play with some parameters. For example, one may try adding priors to stabilize variances, e.g., <code>fit=MRR3(Y,X,df0=20)</code>. 
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Alencar Xavier, David Habier
+</p>
+
+
+<h3>References</h3>
+
+<p>Xavier, A and Habier, D. (2022). A new approach fits multivariate genomic prediction models efficiently. GSE, DOI: 10.1186/s12711-022-00730-w    
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">    
+    # Load genomic data
+    
+    data(tpod)
+    X = CNT(gen)
+    
+    # Simulate phenotyp
+    
+    sim = SimY(X)
+    Y = sim$Y
+    TBV = sim$tbv
+    
+    # Fit regression model
+    
+    test = mrr(Y,X)
+    
+    # Genetic correlation
+    
+    test$GC
+    
+    # Heritabilies
+    
+    test$h2
+    
+    # Accuracy
+    
+    diag(cor(TBV,test$hat))
+    
+    # try: demo(multivariates)
+
+</code></pre>
+
+
+</div>

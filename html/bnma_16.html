@@ -1,0 +1,345 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>network.data</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Make a network object containing data, priors, and a JAGS model file</h2>
+
+<h3>Description</h3>
+
+<p>This function makes a network object that can be used to run network meta-analysis using <code>network.run</code>.
+User needs to specify Outcomes, Study, Treat, N or SE, and response.
+Prior parameters are filled in automatically based on the data type if not specified.
+The input data should be arm-level so that we have observations for each treatment in each study.
+The input data is preprocessed to fit the format necessary to run model in JAGS.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">network.data(
+  Outcomes = NULL,
+  Study = NULL,
+  Treat = NULL,
+  N = NULL,
+  SE = NULL,
+  response = NULL,
+  Treat.order = NULL,
+  type = "random",
+  rank.preference = "higher",
+  baseline = "none",
+  baseline.risk = "independent",
+  covariate = NULL,
+  covariate.type = NULL,
+  covariate.model = NULL,
+  mean.d = NULL,
+  prec.d = NULL,
+  mean.Eta = NULL,
+  prec.Eta = NULL,
+  hy.prior.Eta = NULL,
+  mean.bl = NULL,
+  prec.bl = NULL,
+  hy.prior.bl = NULL,
+  mean.cov = NULL,
+  prec.cov = NULL,
+  hy.prior.cov = NULL,
+  hy.prior = NULL,
+  mean.A = NULL,
+  prec.A = NULL,
+  Z = NULL,
+  Z_bl = NULL
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>Outcomes</code></td>
+<td>
+<p>Arm-level outcomes. If it is a multinomial response, the matrix would have dimensions treatment arms (row) by multinomial categories (column). If it is binomial or normal, it would be a vector.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Study</code></td>
+<td>
+<p>A vector of study indicator for each arm</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Treat</code></td>
+<td>
+<p>A vector of treatment indicator for each arm</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>N</code></td>
+<td>
+<p>A vector of total number of observations in each arm. Used for binomial and multinomial responses.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>SE</code></td>
+<td>
+<p>A vector of standard error for each arm. Used only for normal response.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>response</code></td>
+<td>
+<p>Specification of the outcomes type. Must specify one of the following: "normal", "binomial", or "multinomial".</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Treat.order</code></td>
+<td>
+<p>Treatment order which determines how treatments are compared. The first treatment that is specified is considered to be the baseline treatment. Default order is alphabetical. If the treatments are coded 1, 2, etc, then the treatment with a value of 1 would be assigned as a baseline treatment.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>type</code></td>
+<td>
+<p>Type of model fitted: either "random" for random effects model or "fixed" for fixed effects model. Default is "random".</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>rank.preference</code></td>
+<td>
+<p>Set it equal to "higher" if higher values are preferred (i.e. assumes events are good). Set it equal to "lower" if lower values are preferred (i.e. assumes events are bad). Default is "higher".</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>baseline</code></td>
+<td>
+<p>Three different assumptions for treatment x baseline risk interactions (slopes): "independent", "common", or "exchangeable". Default is "none" which doesn't incorporate baseline risk.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>baseline.risk</code></td>
+<td>
+<p>Two different assumptions for baseline risk: "independent" or "exchangeable". See Achana et al. (2012) for more information about baseline risk.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>covariate</code></td>
+<td>
+<p>A covariate matrix with each row representing each trial and column representing each covariate. This is a study-level data, meaning that the user doesn't need to repeatedly specify covariates for each arm.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>covariate.type</code></td>
+<td>
+<p>Should be a vector indicating the type of the covariate. Covariate can be either "continuous" or "discrete". If it continuous, covariates are centered. If the covariate is discrete it is not centered and it has to be in a dummy integer format (i.e. 0,1,2,...). The code doesn't factor the covariates for the user, so user needs to specify dummy variables if factor is needed.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>covariate.model</code></td>
+<td>
+<p>"independent" allows covariate effects for each treatment. "common" restricts same covariate effect for all treatment. Lastly, "exchangeable"  assumes that the covariate effects are different but related and strength is borrowed across them. We set "common" to be default. See Cooper et al. (2009) for more details on covariates.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>mean.d</code></td>
+<td>
+<p>Prior mean for the relative effect</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>prec.d</code></td>
+<td>
+<p>Prior precision for the relative effect</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>mean.Eta</code></td>
+<td>
+<p>Prior mean for the study effect (baseline risk)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>prec.Eta</code></td>
+<td>
+<p>Prior precision for the study effect (baseline risk)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>hy.prior.Eta</code></td>
+<td>
+<p>Between treatment heterogeneity in baseline risk (for exchangeable assumption only). Format of the parameter is same as hy.prior.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>mean.bl</code></td>
+<td>
+<p>Prior mean for the baseline slope</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>prec.bl</code></td>
+<td>
+<p>Prior precision for the baseline slope</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>hy.prior.bl</code></td>
+<td>
+<p>Between treatment heterogeneity in baseline slope (for exchangeable regression coefficient only). Format of the parameter is same as hy.prior.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>mean.cov</code></td>
+<td>
+<p>Prior mean for the covariate effect</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>prec.cov</code></td>
+<td>
+<p>Prior precision for the covariate effect</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>hy.prior.cov</code></td>
+<td>
+<p>Between treatment heterogeneity in covariate effect (for exchangeable regression coefficient only). Format of the parameter is same as hy.prior. Default is set to be dunif(0, 5) for binary, dunif(0, 100) for normal, and wishart with identity scale matrix and (# of categories - 1) degrees of freedom for multinomial.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>hy.prior</code></td>
+<td>
+<p>Prior for the heterogeneity parameter. Supports uniform, gamma, and half normal for normal and binomial response and wishart for multinomial response. It should be a list of length 3, where first element should be the distribution (one of dunif, dgamma, dhnorm, dwish) and the next two are the parameters associated with the distribution. For example, list("dunif", 0, 5) give uniform prior with lower bound 0 and upper bound 5 for the heterogeneity parameter. For wishart distribution, the last two parameter would be the scale matrix and the degrees of freedom.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>mean.A</code></td>
+<td>
+<p>Mean effect of 'standard' treatment (i.e. placebo). It is in logit scale for binomial and continuous scale for normal. For binomial outcome, this additional input is used to calculate the risk difference, relative risk, or number needed to treat. This should be informed from external evidence or can be found by meta-analyzing single proportions. For number needed to treat, we assume that events are "good". Reversal of sign is needed if the events are "bad".</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>prec.A</code></td>
+<td>
+<p>Precision of 'standard' treatment. Similarly, it is in logit scale for binomial and continuous scale for normal.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Z</code></td>
+<td>
+<p>When calculating treatment effect on the natural scale, this is a scalar or a vector of covariates value(s) that you want to calculate treatment effect at.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Z_bl</code></td>
+<td>
+<p>When calculating treatment effect on the natural scale, this is a scalar of baseline risk (Eta) that you want to calculate treatment effect at.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>Creates list of variables that are used to run the model using <code>network.run</code>
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+<p>Data combining all the input data. User can check this to insure the data is correctly specified. For modelling purposes, character valued studies or treatment variables are changed to numeric values based on alphabetical order.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nrow</code></td>
+<td>
+<p>Total number of arms in the meta-analysis</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ncat</code></td>
+<td>
+<p>Number of columns in the Outcomes. Will equal 1 for binary and normal and number of categories for multinomial</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nstudy</code></td>
+<td>
+<p>Number of study</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>na</code></td>
+<td>
+<p>Number of arms for each study</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ntreat</code></td>
+<td>
+<p>Number of treatment</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>b.id</code></td>
+<td>
+<p>Indicator in sequence of all treatments for which treatment is base treatment in Study</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>t</code></td>
+<td>
+<p><code>Treat</code> transformed into a matrix which has dimensions number of study by max number of arms in studies</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>r</code></td>
+<td>
+<p><code>Outcomes</code> made into an array that is suitable for use in rjags code. For multinomial, it has 3 dimensions: number of study by max number of arms in studies by number of categories.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>mx</code></td>
+<td>
+<p>If the continuous covariate is included, it calculates the mean of the covariates which is used to center the covariates. The numeric indicator after mx refers to column number of the covariates if there are more than one covariates included. Discrete covariates are not centered.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>mx_bl</code></td>
+<td>
+<p>If the baseline effect is specified, it also calculates the mean baseline risk.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>prior.data</code></td>
+<td>
+<p>Prior data created using the user inputs or default values. If no user input is specifies for the prior, it uses default values.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>code</code></td>
+<td>
+<p>Rjags model file code that is generated using information provided by the user. To view model file inside R in a nice format, use <code>cat(network$code).</code></p>
+</td>
+</tr>
+</table>
+<h3>References</h3>
+
+<p>S. Dias, A.J. Sutton, A.E. Ades, and N.J. Welton (2013a), <em>A Generalized Linear Modeling Framework for Pairwise and Network Meta-analysis of Randomized Controlled Trials</em>, Medical Decision Making 33(5):607-617. <a href="https://doi.org/10.1177/0272989X12458724">doi:10.1177/0272989X12458724</a>
+</p>
+<p>F.A. Achana, N.J. Cooper, S. Dias, G. Lu, S.J.C. Rice, D. Kendrick, A.J. Sutton (2012), <em>Extending methods for investigating the relationship between treatment effect and baseline risk from pairwise meta-analysis to network meta-analysis</em>, Statistics in Medicine 32(5):752-771. <a href="https://doi.org/10.1002/sim.5539">doi:10.1002/sim.5539</a>
+</p>
+<p>N.J. Cooper, A.J. Sutton, D. Morris, A.E. Ades, N.J. Welton (2009), <em>Addressing between-study heterogeneity and inconsistency in mixed treatment comparisons: Application to stroke prevention treatments in individuals with non-rheumatic atrial fibrillation</em>, Statistics in Medicine 28:1861-1881. <a href="https://doi.org/10.1002/sim.3594">doi:10.1002/sim.3594</a>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">###Blocker data example
+blocker
+network &lt;- with(blocker, {
+ network.data(Outcomes, Study, Treat, N = N, response = "binomial")
+})
+network
+</code></pre>
+
+
+</div>

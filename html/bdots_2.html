@@ -1,0 +1,190 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>bdotsBoot</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Create bootstrapped curves from bdotsObj</h2>
+
+<h3>Description</h3>
+
+<p>Creates bootstrapped curves and performs alpha adjustment. Can perform
+"difference of difference" for nested comparisons
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">bdotsBoot(
+  formula,
+  bdObj,
+  Niter = 1000,
+  alpha = 0.05,
+  padj = "oleson",
+  cores = 0,
+  ...
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>formula</code></td>
+<td>
+<p>See details.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>bdObj</code></td>
+<td>
+<p>An object of class 'bdotsObj'</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Niter</code></td>
+<td>
+<p>Number of iterations of bootstrap to draw</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>alpha</code></td>
+<td>
+<p>Significance level</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>padj</code></td>
+<td>
+<p>Adjustment to make to pvalues for significance. Will be able to
+use anything from <code>p.adjust</code> function, but for now, just "oleson"</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>cores</code></td>
+<td>
+<p>Number of cores to use in parallel. Default is zero, which
+uses half of what is available.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>not used</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The formula is the only tricky part of this. There will be a minor
+update to how it works in the future. The three parts we will examine here
+are Groups, the LHS, and the RHS. For all variable names, special characters
+should be included with backticks, i.e., <code>`my-var`</code>
+</p>
+<p>## Groups
+</p>
+<p>The Groups are the values input in <code>group</code> in the <code>bdotsFit</code> function,
+which are columns of the dataset used. These will be denoted G_i
+Within each group, we will designate the unique values within each group as v_j, ..., whereby
+G_i(v_1, v_2) will designate unique two unique values within G_i. The possible
+values of v_i will be implied by the group with which they are associated.
+</p>
+<p>For example, if we have groups <code>vehicle</code> and <code>color</code>, we could specify
+that we are interested in all blue cars and trucks with the expression
+<code>vehicle(car, truck) + color(red)</code>.
+</p>
+<p>## Formula
+</p>
+<p>### Bootstrapped difference of curves
+</p>
+<p>This illustrates the case in which we are taking a simple bootstraped difference
+between two curves within a single group
+</p>
+<p>If only one group was provided in <code>bdotsFit</code>, we can take the bootstrapped
+difference between two values within the group with
+</p>
+<p><code>y ~ Group1(val1, val2)</code>
+</p>
+<p>If more than two groups were provided, we must specify within which values of the
+other groups we would like to compare the differences from Group1 in order to
+uniquely identify the observations. This would be
+</p>
+<p><code>y ~ Group1(val1, val2) + Group2(val1)</code>
+</p>
+<p>For example, bootstrapping the differences between cars and trucks when <code>color</code>
+was provided as a second group, we would need <code>y ~ vehicle(car, truck) + color(red)</code>.
+</p>
+<p>### Bootstrapped difference of difference curves
+</p>
+<p>This next portion illustrates the case in which we are interested in studying
+the difference between the differences between two groups, which we will call
+the innerGroup and the outerGroup following a nested container metaphor. Here,
+we must use caution as the order of these differences matter. Using again the
+vehicle example, we can describe this in two ways:
+</p>
+
+<ol>
+<li>
+<p> We may be interested in comparing the difference between red trucks and cars (d_red) with
+the difference between blue trucks and cars (d_blue). In this case, we will be finding
+the difference between cars and trucks twice (one for blue, one for red). The
+vehicle type is the innerGroup, nested within the outerGroup, in this case, color.
+</p>
+</li>
+<li>
+<p> We may also be interested in comparing the difference between red trucks
+and blue trucks (d_truck) with the difference between red and blue cars (d_car).
+Here, innerGroup is the color and outerGroup is the vehicle
+</p>
+</li>
+</ol>
+<p>As our primary object of interest here is not the difference in outcome itself, but the difference
+of the outcome within two groups, the LHS of the formula is written
+<code>diffs(y, Group1(val1, val2))</code>, where Group1 is the innerGroup. The RHS
+is then used to specify the groups of which we want to take the inner difference of. The
+syntax here is the same as above. Together, then, the formula looks like
+</p>
+<p><code>diffs(y, Group1(val1, val2)) ~ Group2(val1, val2)</code>
+</p>
+<p>in the case in which only two grouping variables were provided to <code>bdotsFit</code>
+and
+</p>
+<p><code>diffs(y, Group1(val1, val2)) ~ Group2(val1, val2) + Group3(val1) + ...</code>
+</p>
+<p>is used to uniquely identify the sets of differences when three or more groups were provided.
+</p>
+
+
+<h3>Value</h3>
+
+<p>Object of class 'bdotsBootObj'
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## Not run: 
+
+## fit &lt;- bdotsFit(cohort_unrelated, ...)
+
+boot1 &lt;- bdotsBoot(formula = diffs(Fixations, LookType(Cohort, Unrelated_Cohort)) ~ Group(50, 65),
+                   bdObj = fit,
+                   N.iter = 1000,
+                   alpha = 0.05,
+                   p.adj = "oleson",
+                   cores = 4)
+
+boot2 &lt;- bdotsBoot(formula = Fixations ~ Group(50, 65) + LookType(Cohort),
+                   bdObj = fit,
+                   N.iter = 1000,
+                   alpha = 0.05,
+                   p.adj = "oleson",
+                   cores = 4)
+
+## End(Not run)
+
+</code></pre>
+
+
+</div>

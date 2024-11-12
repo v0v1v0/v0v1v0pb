@@ -1,0 +1,147 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>bamlss.engine.setup</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>
+BAMLSS Engine Setup Function
+</h2>
+
+<h3>Description</h3>
+
+<p>This function takes the <code>x</code> object of a <code>bamlss.frame</code> and adds
+additional objects that are useful for model fitting engines. This is applied only
+for 'regular' terms, e.g., as created by <code>s</code> and <code>te</code>.
+For special model terms the corresponding <code>smooth.construct</code> method is in charge
+of this (see also the examples for function <code>bfit</code>).
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">bamlss.engine.setup(x, update = "iwls", propose = "iwlsC_gp",
+  do.optim = NULL, df = NULL, parametric2smooth = TRUE, ...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>The <code>x</code> list, as returned from function <code>bamlss.frame</code>,
+holding all model matrices and other information that is used for
+fitting the model.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>update</code></td>
+<td>
+<p>Sets the updating function for model terms, see function <code>bfit</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>propose</code></td>
+<td>
+<p>Sets the propose function for model terms, see function <code>GMCMC</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>do.optim</code></td>
+<td>
+<p>Adds list element <code>"do.optim"</code> in the <code>"state"</code> element, see the
+details below.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>df</code></td>
+<td>
+<p>The initial degrees of freedom that should be assigned to a smooth model term,
+based on the trace of the smoother matrix. Note that <code>df</code> can be a named numeric vector.
+If the names match the labels of the model terms, the corresponding <code>df</code> are used, e.g.,
+<code>df = c("s(x1)" = 1, "s(x2)" = 2)</code> sets different <code>df</code>s for each term.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>parametric2smooth</code></td>
+<td>
+<p>Should parametric model terms be transformed into an artificial
+smooth model term and be added to the <code>"smooth.construct"</code> object within the <code>x</code> list?
+This feature is handy, since algorithms can then cycle over the <code>"smooth.construct"</code>
+object, only.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Currently not used.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>For each model term in the <code>"smooth.construct"</code> object of the <code>x</code> list (as returned
+from <code>bamlss.frame</code>), this function adds a named list called <code>"state"</code> with the
+following entries:
+</p>
+
+<ul>
+<li> <p><code>"parameters"</code>: A numeric vector. Regression coefficients are named with <code>"b"</code>,
+smooth variances are named with <code>"tau2"</code>.
+</p>
+</li>
+<li> <p><code>"fitted.values"</code>: Given the <code>"parameters"</code>, the actual fitted values of
+the model term.
+</p>
+</li>
+<li> <p><code>"edf"</code>: Given the smoothing variances, the actual equivalent degrees of freedom
+(edf) of the model term.
+</p>
+</li>
+<li> <p><code>"do.optim"</code>: Should an optimizer function try to find optimum smoothing variances?
+</p>
+</li>
+</ul>
+<p>The state will be changed in each iteration and can be passed outside an updating function.
+</p>
+<p>Additionally, if missing in the <code>xt</code> argument of a model term (see, e.g., function
+<code>s</code> for <code>xt</code>) the function adds the corresponding log-prior and its first
+and second order derivatives w.r.t. regression coefficients in functions <code>grad()</code> and
+<code>hess()</code>.
+</p>
+<p>Also, objects named <code>"lower"</code> and <code>"upper"</code> are added to each model term. These
+indicate the lower and upper boundaries of the parameter space.
+</p>
+
+
+<h3>Value</h3>
+
+<p>A transformed <code>x</code> list, as returned from function <code>bamlss.frame</code>.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>bamlss.frame</code>, <code>bfit</code>, <code>GMCMC</code>,
+<code>get.par</code>, <code>set.par</code>, <code>get.state</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">d &lt;- GAMart()
+bf &lt;- bamlss.frame(num ~ s(x1) + s(x2), data = d, family = "gaussian")
+names(bf$x$mu$smooth.construct)
+bf$x &lt;- bamlss.engine.setup(bf$x, df = c("s(x1)" = 1, "s(x2)" = 3))
+names(bf$x$mu$smooth.construct)
+names(bf$x$mu$smooth.construct[["s(x1)"]])
+names(bf$x$mu$smooth.construct[["s(x1)"]]$state)
+sapply(bf$x$mu$smooth.construct, function(x) {
+  c(x$state$edf, get.state(x, "tau2"))
+})
+</code></pre>
+
+
+</div>

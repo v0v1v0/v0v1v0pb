@@ -1,0 +1,2548 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>bsitar</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Fit Bayesian SITAR growth curve model</h2>
+
+<h3>Description</h3>
+
+<p>The <strong>bsitar()</strong> is the main function that fits the
+Bayesian version of the super imposition by translation and rotation
+(<em>SITAR</em>) model. The <em>SITAR</em> model is a nonlinear mixed effects
+model that has been used extensively to summarize growth processes (such as
+height and weight) from early childhood through the adulthood. The
+frequentist version of the <em>SITAR</em> model can be fit by using an
+already available R package, <span class="pkg">sitar</span> (Cole 2022).
+Besides Bayesian implementation, the <span class="pkg">bsitar</span> package greatly enhances
+the modelling capabilities of the <em>SITAR</em>. For example, in addition to
+the univariate analysis (i.e, modelling a single outcome), the <span class="pkg">bsitar</span>
+allows univariate-by-subgroup and multivariate model fitting. In
+univariate-by-subgroup analysis, a single outcome is simultaneously
+analysed for subgroups defined by a factor variable such as gender. An
+advantage of univariate-by-subgroup analysis is that posterior draws for
+each sub group are part of a single model object that makes it possible to
+compare coefficients across groups and also test various hypotheses. The
+multivariate analysis involves simultaneous joint modelling of two or more
+outcomes.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">bsitar(
+  x,
+  y,
+  id,
+  data,
+  df = 4,
+  knots = NA,
+  fixed = a + b + c,
+  random = a + b + c,
+  xoffset = mean,
+  bstart = xoffset,
+  cstart = 0,
+  xfun = NULL,
+  yfun = NULL,
+  bound = 0.04,
+  terms_rhs = NULL,
+  a_formula = ~1,
+  b_formula = ~1,
+  c_formula = ~1,
+  d_formula = ~1,
+  s_formula = ~1,
+  a_formula_gr = ~1,
+  b_formula_gr = ~1,
+  c_formula_gr = ~1,
+  d_formula_gr = ~1,
+  a_formula_gr_str = NULL,
+  b_formula_gr_str = NULL,
+  c_formula_gr_str = NULL,
+  d_formula_gr_str = NULL,
+  d_adjusted = FALSE,
+  sigma_formula = NULL,
+  sigma_formula_gr = NULL,
+  sigma_formula_gr_str = NULL,
+  dpar_formula = NULL,
+  autocor_formula = NULL,
+  family = gaussian(),
+  custom_family = NULL,
+  custom_stanvars = NULL,
+  group_arg = list(groupvar = NULL, by = NULL, cor = un, cov = NULL, dist = gaussian),
+  sigma_group_arg = list(groupvar = NULL, by = NULL, cor = un, cov = NULL, dist =
+    gaussian),
+  univariate_by = list(by = NA, cor = un, terms = subset),
+  multivariate = list(mvar = FALSE, cor = un, rescor = TRUE),
+  a_prior_beta = student_t(3, ymean, ysd, autoscale = TRUE),
+  b_prior_beta = student_t(3, 0, 3.5, autoscale = FALSE),
+  c_prior_beta = student_t(3, 0, 1.5, autoscale = FALSE),
+  d_prior_beta = student_t(3, 0, 1, autoscale = TRUE),
+  s_prior_beta = student_t(3, 0, lm, autoscale = TRUE),
+  a_cov_prior_beta = student_t(3, 0, 5, autoscale = FALSE),
+  b_cov_prior_beta = student_t(3, 0, 1, autoscale = FALSE),
+  c_cov_prior_beta = student_t(3, 0, 0.1, autoscale = FALSE),
+  d_cov_prior_beta = student_t(3, 0, 1, autoscale = FALSE),
+  s_cov_prior_beta = student_t(3, 0, 10, autoscale = FALSE),
+  a_prior_sd = student_t(3, 0, ysd, autoscale = TRUE),
+  b_prior_sd = student_t(3, 0, 2, autoscale = FALSE),
+  c_prior_sd = student_t(3, 0, 1.25, autoscale = FALSE),
+  d_prior_sd = student_t(3, 0, 1, autoscale = TRUE),
+  a_cov_prior_sd = student_t(3, 0, 5, autoscale = FALSE),
+  b_cov_prior_sd = student_t(3, 0, 1, autoscale = FALSE),
+  c_cov_prior_sd = student_t(3, 0, 0.1, autoscale = FALSE),
+  d_cov_prior_sd = student_t(3, 0, 1, autoscale = FALSE),
+  a_prior_sd_str = NULL,
+  b_prior_sd_str = NULL,
+  c_prior_sd_str = NULL,
+  d_prior_sd_str = NULL,
+  a_cov_prior_sd_str = NULL,
+  b_cov_prior_sd_str = NULL,
+  c_cov_prior_sd_str = NULL,
+  d_cov_prior_sd_str = NULL,
+  sigma_prior_beta = student_t(3, 0, 1, autoscale = FALSE),
+  sigma_cov_prior_beta = student_t(3, 0, 0.5, autoscale = FALSE),
+  sigma_prior_sd = student_t(3, 0, 0.25, autoscale = FALSE),
+  sigma_cov_prior_sd = student_t(3, 0, 0.15, autoscale = FALSE),
+  sigma_prior_sd_str = NULL,
+  sigma_cov_prior_sd_str = NULL,
+  rsd_prior_sigma = exponential(ysd, autoscale = TRUE),
+  dpar_prior_sigma = student_t(3, 0, ysd, autoscale = TRUE),
+  dpar_cov_prior_sigma = student_t(3, 0, 1, autoscale = FALSE),
+  autocor_prior_acor = uniform(-1, 1, autoscale = FALSE),
+  autocor_prior_unstr_acor = lkj(1),
+  gr_prior_cor = lkj(1),
+  gr_prior_cor_str = lkj(1),
+  sigma_prior_cor = lkj(1),
+  sigma_prior_cor_str = lkj(1),
+  mvr_prior_rescor = lkj(1),
+  init = NULL,
+  init_r = NULL,
+  a_init_beta = lm,
+  b_init_beta = 0,
+  c_init_beta = 0,
+  d_init_beta = 0,
+  s_init_beta = lm,
+  a_cov_init_beta = 0,
+  b_cov_init_beta = 0,
+  c_cov_init_beta = 0,
+  d_cov_init_beta = 0,
+  s_cov_init_beta = lm,
+  a_init_sd = random,
+  b_init_sd = random,
+  c_init_sd = random,
+  d_init_sd = random,
+  a_cov_init_sd = random,
+  b_cov_init_sd = random,
+  c_cov_init_sd = random,
+  d_cov_init_sd = random,
+  sigma_init_beta = random,
+  sigma_cov_init_beta = random,
+  sigma_init_sd = random,
+  sigma_cov_init_sd = random,
+  gr_init_cor = random,
+  sigma_init_cor = random,
+  rsd_init_sigma = random,
+  dpar_init_sigma = random,
+  dpar_cov_init_sigma = random,
+  autocor_init_acor = random,
+  autocor_init_unstr_acor = random,
+  mvr_init_rescor = random,
+  r_init_z = random,
+  vcov_init_0 = TRUE,
+  jitter_init_beta = NULL,
+  jitter_init_sd = NULL,
+  jitter_init_cor = NULL,
+  prior_data = NULL,
+  init_data = NULL,
+  init_custom = NULL,
+  verbose = FALSE,
+  expose_function = FALSE,
+  get_stancode = FALSE,
+  get_standata = FALSE,
+  get_formula = FALSE,
+  get_stanvars = FALSE,
+  get_priors = FALSE,
+  get_priors_eval = FALSE,
+  get_init_eval = FALSE,
+  validate_priors = FALSE,
+  set_self_priors = NULL,
+  set_replace_priors = NULL,
+  set_same_priors_hierarchy = FALSE,
+  outliers = NULL,
+  unused = NULL,
+  chains = 4,
+  iter = 2000,
+  warmup = floor(iter/2),
+  thin = 1,
+  cores = getOption("mc.cores", "optimize"),
+  backend = getOption("brms.backend", "rstan"),
+  threads = getOption("brms.threads", "optimize"),
+  opencl = getOption("brms.opencl", NULL),
+  normalize = getOption("brms.normalize", TRUE),
+  algorithm = getOption("brms.algorithm", "sampling"),
+  control = list(adapt_delta = 0.8, max_treedepth = 15),
+  sample_prior = "no",
+  save_pars = NULL,
+  drop_unused_levels = TRUE,
+  stan_model_args = list(),
+  refresh = NULL,
+  silent = 1,
+  seed = 123,
+  save_model = NULL,
+  fit = NA,
+  file = NULL,
+  file_compress = TRUE,
+  file_refit = getOption("brms.file_refit", "never"),
+  future = getOption("future", FALSE),
+  parameterization = "ncp",
+  ...
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>Predictor variable (typically age in years). For <code>univariate</code>
+model, the <code>x</code> is a single variable whereas for <code>univariate_by</code>
+and <code>multivariate</code> models, the <code>x</code> can be same for sub models, or
+different for each sub model. For example, when fitting a bivariate model,
+the <code>x = list(x1, x2)</code> specifies that <code>x1</code> is the predictor
+variable for the first sub model, and <code>x2</code> for the second sub model. To
+specify <code>x1</code> as a common predictor
+variable for both sub models, the argument <code>x</code> is defined as <code>x =
+ list(x1)</code> or simply <code>x = x1</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>y</code></td>
+<td>
+<p>Response variable (e.g., repeated height measurements). For
+<code>univariate</code> and <code>univariate_by</code> models, <code>y</code> is specified as
+a single variable. For <code>univariate_by</code> model, the response vector for
+each sub model is created and named internally based on the factor levels of
+the variable that is used to set up the <code>univariate_by</code> model. As an
+example, the model specified as <code>univariate_by = sex</code> creates response
+vectors <code>Female</code> and  <code>Male</code> when <code>Female</code> is the first level
+and <code>Male</code> is the second level of the <code>sex</code> variable. For
+<code>multivariate</code> model, the response variables are specified as a list
+such as <code>y = list(y1, y2</code>) where <code>y1</code> is the response variable for
+the first sub model and <code>y2</code> for the second sub model. Note that for
+<code>multivariate</code> model, data are not stacked but rather response vectors
+are separate variables in the <code>data</code> and are of same length.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>id</code></td>
+<td>
+<p>A factor variable uniquely identifying the groups (e.g.,
+individuals) in the data frame. For <code>univariate_by</code> and
+<code>multivariate</code> models, the <code>id</code> can be same (typically) for sub
+models or different for each sub model (see argument <code>x</code> for details on
+setting different arguments for sub models).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+<p>Data frame containing variables such as <code>x</code>, <code>y</code>,
+<code>id</code> etc.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>df</code></td>
+<td>
+<p>Degrees of freedom for the natural cubic spline design matrix
+(default <code>4</code>). The <code>df</code> is internally used to construct the
+knots (quantiles of <code>x</code> distribution) that are then used in the
+construction of the spline design matrix. For <code>univariate_by</code>
+and <code>multivariate</code> models, the <code>df</code> can be same (e.g., <code>df  =
+ 4</code>) for sub models or different for each sub model such as
+<code>df=list(4, 5)</code> where <code>df</code> is 4 is for the first sub model, and 5
+for the second sub model.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>knots</code></td>
+<td>
+<p>A numeric vector vector specifying the knots for the natural
+cubic spline design matrix (default <code>NULL</code>) Note that <code>df</code> and
+<code>knots</code> can not be specified together, and also both of them can not be
+<code>NULL</code>. In other words, either <code>df</code> or <code>knots</code> must be
+specified. Like <code>df</code>, the <code>knots</code> can be same for sub models or
+different for each sub model when fitting <code>univariate_by</code> and
+<code>multivariate</code> models (see <code>df</code> for details).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>fixed</code></td>
+<td>
+<p>A character string specifying the fixed effects structure
+(default <code>'a+b+c'</code>). Note that different fixed effect structures can be
+specified when fitting <code>univariate_by</code> and <code>multivariate</code> models.
+As an example, <code>fixed = list('a+b+c', 'a+b')</code> implies that the fixed
+effect structure for the first sub model is <code>'a+b+c'</code>, and <code>'a+b'</code>
+for the second sub model.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>random</code></td>
+<td>
+<p>A character string specifying the random effects structure
+(default <code>'a+b+c'</code>). The approach used in setting the <code>random</code> is
+same as described above for the fixed effects structure (see <code>fixed</code>).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>xoffset</code></td>
+<td>
+<p>An optional character string, or a numeric value to set up the
+origin of the predictor variable, <code>x</code> (i.e., centering of <code>x</code>).
+The options available are <code>'mean'</code> (mean of x, i.e., <code>mean(x)</code>),
+<code>'max'</code> (maximum value of x, i.e., <code>max(x)</code>), <code>'min'</code>
+(minimum value of x, i.e., <code>min(x)</code>), <code>'apv'</code> (age at peak
+velocity estimated from the velocity curve derived from the simple linear
+model fit to the data), or any real number such as <code>xoffset = 12</code>.
+The default is <code>xoffset = 'mean'</code>. For <code>univariate_by</code>
+and <code>multivariate</code> models, the <code>xoffset</code> can be same for sub
+models or different for each sub model (see argument <code>x</code> for details
+on setting different arguments for sub models).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>bstart</code></td>
+<td>
+<p>An optional character string, or a numeric value to set up the
+origin of the fixed effect parameter <code>b</code>. The argument <code>bstart</code>
+can be used to set up the location parameter for the location-scale based
+priors (such as <code>normal()</code>) via <code>b_prior_beta</code> argument and/or the
+initial value via the <code>b_init_beta</code> argument. The options available to
+set up the <code>bstart</code> are same as described above for the <code>xoffset</code>
+i.e., <code>'mean'</code>, <code>'min'</code>, <code>'max'</code>, <code>'apv'</code> or a real
+number such as <code>12</code>. The default is same as <code>xoffset</code> i.e.,
+<code>bstart = 'xoffset'</code>. For <code>univariate_by</code> and  <code>multivariate</code>
+models, the <code>xoffset</code> can be same for sub models (typically), or
+different for each sub model (see argument <code>x</code> for details on setting
+different arguments for sub models).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>cstart</code></td>
+<td>
+<p>An optional character string, or a numeric value to set up the
+origin of the fixed effect parameter <code>c</code>. The argument <code>cstart</code>
+can be used to set up the location parameter for the location-scale based
+priors (such as <code>normal()</code>) via <code>c_prior_beta</code> argument and/or the
+initial value via the <code>c_init_beta</code> argument. The options available to
+set up the <code>cstart</code> are <code>'pv'</code> (peak velocity estimated from the
+velocity curve derived from the simple linear model fit to the data), or a
+real number such as <code>1</code>. Note that since parameter <code>c</code> is
+estimated on the exponential scale, the argument <code>cstart</code> should be
+adjusted accordingly. The default <code>cstart</code> is '0' i.e., <code>cstart =
+ '0'</code>. For <code>univariate_by</code> and <code>multivariate</code> models,
+the <code>xoffset</code> can be same for sub models (typically), or different for
+each sub model (see argument <code>x</code> for details on setting different
+arguments for sub models).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>xfun</code></td>
+<td>
+<p>An optional character string to specify the transformation of the
+predictor variable, The default is <code>NULL</code> indicating that no
+transformation is applied i.e., model is fit to the data with original scale
+of the <code>x</code>. Available transformation options are <code>'log'</code>
+(logarithmic transformation) and <code>'sqrt'</code> (square root transformation).
+For <code>univariate_by</code> and <code>multivariate</code> models, the <code>xfun</code> can
+be same for sub models (typically), or different for each sub model (see
+argument <code>x</code> for details on setting different arguments for sub
+models).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>yfun</code></td>
+<td>
+<p>An optional character string to specify the transformation of the
+response variable, The default is <code>NULL</code>, indicating that no
+transformation is applied i.e., model is fit to the data with original scale
+of the <code>y</code>. Available transformation options are <code>'log'</code>
+(logarithmic transformation) and <code>'sqrt'</code> (square root transformation).
+For <code>univariate_by</code> and <code>multivariate</code> models, the <code>xfun</code> can
+be same for sub models (typically), or different for each sub model (see
+argument <code>x</code> for details on setting different arguments for sub
+models).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>bound</code></td>
+<td>
+<p>An optional real number to extend the span of the predictor
+variable <code>x</code> by a small value (default 0.04). See package
+<code>sitar::sitar()</code> for details. For <code>univariate_by</code> and
+<code>multivariate</code> models, the <code>bound</code> can be same for sub models
+(typically), or different for each sub model (see argument <code>x</code> for
+details on setting different arguments for sub models).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>terms_rhs</code></td>
+<td>
+<p>An optional character string (default <code>NULL</code>) to specify
+terms on the right hand side of the response variable (separated by
+<code>|</code>) but before the formula tilde sign i.e., <code>~</code>. The
+<code>terms_rhs</code> is used when fitting a measurement error model. As an
+example, consider fitting a model with measurement error in the response
+variable which is specified in the <code>brms::brmsformula()</code> as
+<code>brmsformula(y | mi(sdy) ~ ..)</code>. In this example, the <code>mi(sdy)</code> is
+passed to <code>brms::brmsformula()</code> as <code>terms_rhs = mi(sdy)</code>. For
+<code>multivariate</code> model, each outcome can have its own measurement error
+variable that can be specified as follows: <br><code>terms_rhs =
+ list(mi(sdy1), mi(sdy2))</code>. Note that <code>brms::brmsformula()</code> does not allow
+combining <code>mi()</code> with the <code>subset()</code> formulation that is used for
+fitting <code>univariate_by</code> model.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>a_formula</code></td>
+<td>
+<p>Formula for the fixed effect parameter, <code>a</code> (default
+<code>~ 1</code>). User can specify different formula when fitting
+<code>univariate_by</code> and <code>multivariate</code> models. As an example
+<code>a_formula = list(~1, ~1 + cov)</code> implies that the <code>a_formula</code> for
+the first sub model includes an intercept only whereas the second sub model
+includes an intercept and a covariate, <code>cov</code>. The covariate(s)  can be
+continuous variable(s) or factor variable(s). For factor covariates, dummy
+variables are created internally via the <code>stats::model.matrix()</code>). The
+formula can include any combination of continuous and factor variables as
+well as their interactions.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>b_formula</code></td>
+<td>
+<p>Formula for the fixed effect parameter, <code>b</code> (default
+<code>~ 1</code>). See <code>a_formula</code> for details.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>c_formula</code></td>
+<td>
+<p>Formula for the fixed effect parameter, <code>c</code> (default
+<code>~ 1</code>). See <code>a_formula</code> for details.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>d_formula</code></td>
+<td>
+<p>Formula for the fixed effect parameter, <code>d</code> (default
+<code>~ 1</code>). See <code>a_formula</code> for details.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>s_formula</code></td>
+<td>
+<p>Formula for the fixed effect parameter, <code>s</code> (default
+<code>~ 1</code>). The <code>s_formula</code> sets up the the spline design matrix.
+Typically, covariate(s) are not included in the <code>s_formula</code> to limit
+the population curve to be single curve for the whole data. In fact, the
+<code>sitar::sitar()</code> does not provide any option to include covariates in the
+<code>s_formula</code>, However, <span class="pkg">bsitar</span> package allows inclusion of
+covariates but the user need to justify the modelling of separate curves for
+each category when covariate is a factor variable.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>a_formula_gr</code></td>
+<td>
+<p>Formula for the random effect parameter, <code>a</code> (default
+<code>~ 1</code>). Similar to <code>a_formula</code>, user can specify different formula
+when fitting <code>univariate_by</code> and <code>multivariate</code> models and formula
+can include continuous and/or factor variable(s) including their
+interactions as covariates (see <code>a_formula</code> for details). In addition
+to setting up the design matrix for the random effect parameter <code>a</code>,
+user can set up the group identifier and the correlation structure for
+random effects via the vertical bar <code>||</code> approach. For example,
+consider only an intercept for the random effects <code>a</code>, <code>b</code>, and
+<code>c</code> specified as <code>a_formula_gr = ~1</code>, <code>b_formula_gr = ~1</code>
+and <code>c_formula_gr = ~1</code>. To specify the group identifier
+(e.g., <code>id</code>) and an unstructured correlation structure, the formula
+argument as specified as follows: <br><code>a_formula_gr = ~ (1|i|id)</code> <br><code>b_formula_gr = ~ (1|i|id)</code> <br><code>c_formula_gr = ~ (1|i|id)</code> <br>
+where  <code>i</code> within the vertical bars <code>||</code> is just a placeholder. A
+common identifier (i.e., <code>i</code>) shared across random effect formulas are
+modeled as unstructured correlated. For more details on the the vertical bar
+approach, please see <code>brms::brm()</code>. As explained below, an alternative
+approach to set up the group identifier and the correlation structure is to
+use <code>group_by</code> argument. In other words, to achieve the same set up as
+defined above by using the vertical bar approach, user can just specify the
+design matrix part of the formula as
+<code>a_formula_gr = ~ 1</code> <br><code>b_formula_gr = ~ 1</code> <br><code>c_formula_gr = ~ 1</code> <br>
+and use the <code>group_by</code> argument as <code>group_by = list(groupvar = id,
+ cor = un)</code> where <code>id</code> specifies the group identifier and <code>un</code> sets
+up the unstructured correlation structure. See <code>group_by</code> argument for
+details.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>b_formula_gr</code></td>
+<td>
+<p>Formula for the random effect parameter, <code>b</code> (default
+<code>~ 1</code>). See <code>a_formula_gr</code> for details.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>c_formula_gr</code></td>
+<td>
+<p>Formula for the random effect parameter, <code>c</code> (default
+<code>~ 1</code>). See <code>a_formula_gr</code> for details.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>d_formula_gr</code></td>
+<td>
+<p>Formula for the random effect parameter, <code>d</code> (default
+<code>~ 1</code>). See <code>a_formula_gr</code> for details.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>a_formula_gr_str</code></td>
+<td>
+<p>Formula for the random effect parameter, <code>a</code>
+(default <code>NULL</code>) when fitting a hierarchical model with three or more
+levels of hierarchy. An example is model applied to the data that comprise
+repeated measurements (level 1) on individuals (level 2) nested further
+within the growth studies (level 3). Note that When using
+<code>a_formula_gr_str</code> argument, only the vertical bar approach (see
+<code>a_formula_gr</code>) can be used to set up the group identifiers and the
+correlation structure. An example of setting up the formula for a three
+level model with random effect parameter <code>a</code>, <code>b</code> is as follows:
+<br><code>a_formula_gr_str = ~ (1|i|id:study) + (1|i2|study)</code> <br><code>b_formula_gr_str = ~ (1|i|id:study) + (1|i2|study)</code> <br><code>c_formula_gr_str = ~ (1|i|id:study) + (1|i2|study)</code> <br>
+where <code>|i|</code> and <code>|i2|</code> set up the unstructured correlation
+structure for individual and study level random effects. Note that
+<code>|i|</code> and <code>|i2|</code> need to be distinct because random effect
+parameters are not allowed to be correlated across different levels of
+hierarchy.
+It is worth mentioning that user can set up model with any number of
+hierarchical levels and include covariate into the random effect formula.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>b_formula_gr_str</code></td>
+<td>
+<p>Formula for the random effect parameter, <code>b</code>
+(default <code>NULL</code>) when fitting a hierarchical model with three or more
+levels of hierarchy. See <code>a_formula_gr_str</code> for details.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>c_formula_gr_str</code></td>
+<td>
+<p>Formula for the random effect parameter, <code>c</code>
+(default <code>NULL</code>) when fitting a hierarchical model with three or more
+levels of hierarchy. See <code>a_formula_gr_str</code> for details.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>d_formula_gr_str</code></td>
+<td>
+<p>Formula for the random effect parameter, <code>d</code>
+(default <code>NULL</code>) when fitting a hierarchical model with three or more
+levels of hierarchy. See <code>a_formula_gr_str</code> for details.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>d_adjusted</code></td>
+<td>
+<p>A logical indicator to set up the scale of predictor
+variable <code>x</code> when fitting the model with random effect parameter
+<code>d</code>. The coefficient of parameter <code>d</code> is estimated as a linear
+function of <code>x</code> i.e., <code>d * x</code>. If <code>FALSE</code> (default), the
+original <code>x</code> is used. When <code>d_adjusted = TRUE</code>, the <code>x</code> is
+adjusted for the timing (<code>b</code>) and intensity (<code>c</code>) parameters as
+<code>x</code> - <code>b</code>) * <code>exp(c)</code> i.e., <code>d * ((x-b)*exp(c))</code>. The
+adjusted scale of <code>x</code> reflects individual developmental age rather than
+chronological age. This makes d more sensitive to the timing of puberty in
+individuals. See <code>sitar::sitar()</code> function for details.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>sigma_formula</code></td>
+<td>
+<p>Formula for the fixed effect distributional parameter,
+<code>sigma</code>. The <code>sigma_formula</code> sets up the fixed effect design
+matrix that may include continuous and/or factor variables (and their
+interactions) as covariates(s) for  the distributional parameter. In other
+words, setting up the covariates for <code>sigma_formula</code> is same as for any
+other fixed parameter such as <code>a</code> (see <code>a_formula</code> for details).
+Note that <code>sigma_formula</code> estimates <code>sigma</code> parameter at
+<code>log</code> scale. By default, the <code>sigma_formula</code> is <code>NULL</code>
+because the <code>brms::brm()</code> itself models the <code>sigma</code> as a residual
+standard deviation (<code>RSD</code>) parameter at the link scale. The
+<code>sigma_formula</code> along with the arguments <code>sigma_formula_gr</code> and
+<code>sigma_formula_gr_str</code> allow estimating the scale parameters as random
+effects for <code>sigma</code>. The set up to specify the fixed and random effects
+for <code>sigma</code> is similar to setting fixed and random effect structures
+for other model parameters such as <code>a</code>, <code>b</code>, and <code>c</code>. It is
+important to note that an alternative way to set up the fixed effect design
+matrix for the distributional parameter <code>sigma</code> is to use the
+<code>dpar_formula</code> argument. An advantage of <code>dpar_formula</code> over
+<code>sigma_formula</code> is that user can specify the linear and nonlinear
+formulation as allowed by the <code>brms::lf()</code> and <code>brms::nlf()</code> syntax. The
+<code>brms::lf()</code> and <code>brms::nlf()</code> offer flexibility in centering the predictors
+and also allows enabling/disabling of cell mean centering when excluding
+<code>intercept</code> via <code>0 + </code> formulation. A disadvantage of
+<code>dpar_formula</code> approach is that it is not possible to include random
+effects for the <code>sigma</code>. Note that <code>sigma_formula</code> and
+<code>dpar_formula</code> can not be specified together. When either
+<code>sigma_formula</code> or <code>dpar_formula</code> is used, the default estimation
+of the <code>RSD</code> by <code>brms::brm()</code> is automatically turned off.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>sigma_formula_gr</code></td>
+<td>
+<p>Formula for the random effect parameter, <code>sigma</code>
+(default <code>NULL</code>). See <code>a_formula_gr</code> for details.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>sigma_formula_gr_str</code></td>
+<td>
+<p>Formula for the random effect parameter,
+<code>sigma</code> when fitting a hierarchical model with three or more
+levels of hierarchy. See <code>a_formula_gr_str</code> for details.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>dpar_formula</code></td>
+<td>
+<p>Formula for the distributional fixed effect parameter,
+<code>sigma</code> (default <code>NULL</code>). See <code>sigma_formula</code> for details.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>autocor_formula</code></td>
+<td>
+<p>Formula to set up the autocorrelation structure of
+residuals (default <code>NULL</code>). Allowed autocorrelation structures are:
+</p>
+
+<ul>
+<li>
+<p> autoregressive moving average (<code>arma</code>) of order <code>p</code> and
+<code>q</code> specified as <code>autocor_formula = ~arms(p=1, q=1)</code>.
+</p>
+</li>
+<li>
+<p> autoregressive (<code>ar</code>) of order <code>p</code> specified as
+<code>autocor_formula = ~ar(p=1)</code>.
+</p>
+</li>
+<li>
+<p> moving average (<code>ma</code>) of order <code>q</code> specified as
+<code>autocor_formula = ~ma(q=1)</code>.
+</p>
+</li>
+<li>
+<p> unstructured (<code>unstr</code>) over time (and individuals), The
+<code>unstr</code> structure is specified as
+<code>autocor_formula = ~unstr(time, id))</code>.
+</p>
+</li>
+</ul>
+<p>See <code>brms::brm()</code> for further details on modeling autocorrelation structure
+of residuals</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>family</code></td>
+<td>
+<p>Family distribution (default <code>gaussian</code>) and the link
+function (default <code>identity</code>). See <code>brms::brm()</code> for details on
+available distributions and link functions, and how to specify them. For
+<code>univariate_by</code> and <code>multivariate</code> models, the <code>family</code> can
+be same (e.g., <code>family = gaussian()</code>) for sub models or different for
+each sub model such as <code>family = list(gaussian(), student())</code> which
+sets <code>gaussian</code> distribution for the first sub model and
+<code>student_t</code> distribution for the second sub model. Please note that
+argument <code>family</code> is ignored when use specifies <code>custom_family</code>
+i.e., <code>custom_family</code> is not <code>NULL</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>custom_family</code></td>
+<td>
+<p>Specify  custom families (i.e. response distribution).
+Default <code>NULL</code>. Please see <code>brms::custom_family()</code> for details. It is
+important no note that user defined Stan functions must be expose by setting
+<code>expose_functions = TRUE</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>custom_stanvars</code></td>
+<td>
+<p>Prepare and pass user-defined variables that need to be
+added to the Stan's program blocks (default <code>NULL</code>). This is primarily
+useful when defining <code>custom_family</code>. Please see
+<code>brms::custom_family()</code> for details on specifying <code>stanvars</code>. Note that
+<code>custom_stanvars</code> are passed directly without conducting any sanity
+checks.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>group_arg</code></td>
+<td>
+<p>Specify arguments for group-level random effects. The
+<code>group_arg</code> should be a named list that may include <code>groupvar</code>,
+<code>dist</code>, <code>cor</code> and <code>by</code> as described below:
+</p>
+
+<ul>
+<li>
+<p> The <code>groupvar</code> specifies the subject identifier. In case
+<code>groupvar = NULL</code> (default), the <code>groupvar</code> is automatically
+assigned based on the <code>id</code> argument.
+</p>
+</li>
+<li>
+<p> The <code>dist</code> specifies the distribution from which the random
+effects are drawn (default <code>gaussian</code>). As per the <code>brms::brm()</code>
+documentation, the <code>gaussian</code> distribution is the only available
+distribution (as of now).
+</p>
+</li>
+<li>
+<p> The <code>by</code> argument can be used to estimate separate variance
+covariance structure (i.e., standard deviation and correlation parameters)
+for random effect parameters (default <code>NULL</code>). If specified, variable
+used to set up the <code>by</code> argument must be a factor variable. For
+example, <code>by = 'sex'</code> implies that separate variance covariance
+structure are estimated for males and females.
+</p>
+</li>
+<li>
+<p> The <code>cor</code> is used to set up the covariance (i.e., correlation)
+structure for random effect parameters. The default covariance is
+unstructured (i.e, <code>cor = un</code>) for all three model settings, i.e.,
+<code>univariate</code>, <code>univariate_by</code> and <code>multivariate</code>. The
+alternative correlation structure available for <code>univariate</code> and
+<code>univariate_by</code> models is <code>diagonal</code>. While the <code>cor = un</code>
+models the full unstructured variance covariance structure, the <code>cor
+ = diagonal</code> estimates only the variance (i.e, standard deviation) parameters
+and the covariance (i.e., correlation) parameters are set to zero. For
+<em>multivariate</em> model, options include <code>un</code>, <code>diagonal</code> and
+<code>un_s</code>. The <code>un</code> sets up the unstructured correlation implying
+that the group level random effects across response variables are drawn for
+a joint multivariate normal distribution with shared correlation parameters.
+The <code>cor = diagonal</code> specifies that only the variance parameter are
+estimates for each sub model whereas the correlation parameters set to zero.
+Option <code>cor = un_s</code> allows for estimating unstructured variance
+covariance parameters separately for each response variable.
+</p>
+</li>
+</ul>
+<p>Note that user need not to define all or any of these options (i.e.,
+<code>groupvar</code>, <code>dist</code>, <code>cor</code>, or <code>by</code>) because if
+unspecified, they are are automatically set to their default values. Also
+note that only <code>groupvar</code> from the <code>group_arg</code> argument is passed
+on to the <em>univariate_by</em> and <em>multivariate</em> models because these
+model have their own additional options specified via the
+<code>univariate_by</code> and <code>multivariate</code> arguments. Lastly, the
+<code>group_arg</code> is completely ignored when user specify random effects via
+the vertical bar <code>||</code> approach (see <code>a_formula_gr</code> for details) or
+when fitting a hierarchical model with three or more levels of hierarchy
+(see <code>a_formula_gr_str</code> for details).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>sigma_group_arg</code></td>
+<td>
+<p>Specify arguments for modelling distributional level
+random effects, <code>sigma</code>. The approach used in setting up the
+<code>sigma_group_arg</code> is exactly same as described above for the group
+level random effects (see <code>group_arg</code> for details).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>univariate_by</code></td>
+<td>
+<p>Set up the univariate-by-subgroup model fitting (default
+<code>NULL</code>) via a named list as described below:
+</p>
+
+<ul>
+<li>
+<p> The <code>by</code> (an optional character string) is used to specify the
+variable (must be a factor variable) to define the sub models (default
+<code>NA</code>).
+</p>
+</li>
+<li>
+<p> The <code>cor</code> (an optional character string) specifies the
+correlation structure. The options available are <code>un</code> and
+<code>diagonal</code>. The <code>un = un</code> (default) models the full unstructured
+variance covariance structure, whereas the <code>cor = diagonal</code> estimates
+only the variance (i.e, standard deviation) parameters and the covariance
+(i.e., correlation) parameters are set to zero.
+</p>
+</li>
+<li>
+<p> The <code>terms</code> (an optional character string) specifies the method
+used in setting up the sub models. Options are <code>'subset'</code> (default) and
+<code>'weights'</code>. See <code>brms::`addition-terms`</code> for details.
+</p>
+</li>
+</ul>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>multivariate</code></td>
+<td>
+<p>Set up the multivariate model fitting (default
+<code>NULL</code>) arguments as a named list:
+</p>
+
+<ul>
+<li>
+<p> The <code>mvar</code> (logical, default <code>FALSE</code>) indicates whether to
+fit a multivariate model.
+</p>
+</li>
+<li>
+<p> The <code>cor</code> (an optional character string) sets up the correlation
+structure. The options available are <code>un</code>, <code>diagonal</code> and
+<code>un_s</code>. The <code>un</code> sets up the unstructured correlation implying
+that the group level random effects across response variables are drawn for
+a joint multivariate normal distribution with shared correlation parameters.
+The <code>cor = diagonal</code> specifies that only the variance parameter are
+estimates for each sub model whereas the correlation parameters set to zero.
+Option <code>cor = un_s</code> allows for estimating unstructured variance
+covariance parameters separately for each response variable.
+</p>
+</li>
+<li>
+<p> The <code>rescor</code> (logical, default <code>TRUE</code>) indicates whether to
+estimate the residual correlation between response variables.
+</p>
+</li>
+</ul>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>a_prior_beta</code></td>
+<td>
+<p>Specify priors for the fixed effect parameter, <code>a</code>.
+(default <code>student_t(3, ymean, ysd, autoscale = TRUE)</code>). The key points
+in prior specification that are applicable for all parameters are
+highlighted below. For full details on prior specification, please see
+<code>brms::prior()</code>.
+</p>
+
+<ul>
+<li>
+<p> Allowed distributions are <code>normal</code>, <code>student_t</code>,
+<code>cauchy</code>, <code>lognormal</code>, <code>uniform</code>, <code>exponential</code>,
+<code>gamma</code> and <code>inv_gamma</code> (inverse gamma). </p>
+</li>
+<li>
+<p> For each
+distribution, upper and lower bounds can be set via options <code>lb</code> and
+<code>ub</code> (default <code>NA</code> for both <code>lb</code> and <code>ub</code>). </p>
+</li>
+<li>
+<p> For
+location-scale based distributions (such as <code>normal</code>, <code>student_t</code>,
+<code>cauchy</code>, and <code>lognormal</code>), an option <code>autosclae</code> (default
+<code>FALSE</code>) can be used to multiply the scale parameter by a numeric
+value. Both <span class="pkg">brms</span> and <span class="pkg">rstanarm</span> packages allow similar auto
+scaling under the hood. While <span class="pkg">rstanarm</span> earlier used to set
+<code>autosclae</code> as <code>TRUE</code> which internally multiplied scale parameter
+by a value 2.5 (recently authors changed this behavior to <code>FALSE</code>), the
+<span class="pkg">brms</span> package sets scaling factor as 1.0 or 2.5 depending on the
+standard deviation of the response variable (See <code>brms::prior()</code>). The
+<span class="pkg">bsitar</span> package offers full flexibility in choosing the scaling factor
+as any real number instead of 1.0 or 2.5 (e.g., <code>autosclae = 5.0</code>).
+When <code>autosclae = TRUE</code>, <code>2.5</code> is the default scaling factor.
+</p>
+</li>
+<li>
+<p> For location-scale based distributions such as <code>normal</code>, options
+<code>fxl</code> (<code>function location</code>) and <code>fxs</code> (<code>function scale</code>)
+are available to apply any function such as <code>log</code> and <code>sqrt</code>,
+or a function defined in the R environment to transform the location and
+scale parameters. For example, prior <code>normal(2, 5, fxl = 'log', fxs =
+ 'sqrt')</code> will be translated internally as <code>normal(log(2), sqrt(5))</code>
+implying that the actually prior assigned will be  <code>normal(0.693,
+ 2.23)</code>. The default for both  <code>fxl</code> and <code>fxs</code> is <code>NULL</code>.
+</p>
+</li>
+<li>
+<p> Like <code>fxl</code> and <code>fxs</code> functions, another function <code>fxls</code>
+(<code>function location scale</code>) is available to transform location and
+scale parameters for the location-scale based distributions such
+as <code>normal</code>. Unlike <code>fxl</code> and <code>fxs</code> functions which transform
+location and scale parameters individually, the <code>fxls</code> function is used
+for those transformation for which both location and scale parameters are
+needed in the transformation of these parameters. For example, the
+transformation of location and scale parameters for the normal prior on log
+scale is as follows: <br><code>log_location = log(location / sqrt(scale^2 / location^2 + 1))</code>, <br><code>log_scale = sqrt(log(scale^2 / location^2 + 1))</code>, <br>
+where location and scale are the original parameters supplied by the user
+and log_location and log_scale are the equivalent parameters on the log
+scale. The <code>fxls</code> can be set as a character string or a list comprised
+of two functions where first function of the list will be used to transform
+the location parameter and the second function will be for the scale
+transformation. If a character string is used such as <code>fxls = 'log'</code>,
+then the above transformation for the log parametrization will be applied
+automatically. Note that if using a list, then the list must be crated
+within the R environment and then passed this to the  <code>fxls</code> as: <br><code>location_fun &lt;- function(location, scale) {
+ log(location / sqrt(scale^2 / location^2 + 1))
+ }</code> <br><code>scale_fun &lt;- function(location, scale) {
+ sqrt(log(scale^2 / location^2 + 1))
+ }</code> <br>
+fxls_fun &lt;- list(location_fun = location_fun, scale_fun = scale_fun) <br><code>fxls = 'fxls_fun'</code> <br>
+As an example, <code>normal(2, 5, fxls = 'fxls_fun'</code>. The default for
+<code>fxls</code> is <code>NULL</code>.
+</p>
+</li>
+<li>
+<p> For strictly positive distributions such as <code>exponential</code>,
+<code>gamma</code> and <code>inv_gamma</code>, the lower bound (<code>lb</code>) is
+automatically set to zero i.e., <code>lb = 0</code>. </p>
+</li>
+<li>
+<p> For uniform
+distribution, an option <code>addrange</code> is available to symmetrically widen
+the prior range. For example, prior <code>uniform(a, b, addrange = 5)</code>
+implies that the lower and upper limits will be evaluated as
+<code>uniform(a-5, b+5)</code>. </p>
+</li>
+<li>
+<p> For exponential distribution, the rate
+parameter is evaluated as inverse. In other words, prior set as
+<code>exponential(10)</code> is translated to 0.1 i.e.,
+<code>exponential(1.0/10.0)</code>. </p>
+</li>
+<li>
+<p> User need not to specify each option
+explicitly because the missing options are set to their default values
+automatically. For example, the prior specified as
+<code>a_prior_beta = normal(location = 5, scale = 1, lb = NA, ub = NA,
+ addrange = NA, autosclae = FALSE, fxl = NULL, fxs = NULL)</code>) is same
+as <code>a_prior_beta = normal(5, 1)</code>).
+</p>
+</li>
+<li>
+<p> For <code>univariate_by</code> <code>multivariate</code> models, priors
+can be same for sub models (e.g., <code>a_prior_beta =
+ normal(5, 1)</code>), or different for each sub such as <code>a_prior_beta =
+ list(normal(5,1), normal(10, 5)</code>).
+</p>
+</li>
+</ul>
+<p>The location parameter for the location-scale based distributions can be
+specified as mean (by specifying <code>'ymean'</code>) or the median (by using
+<code>'ymedian'</code>) of the response variable. Similarly, the scale parameter
+can be set as the standard deviation (SD) or the median absolute deviation
+(MAD) of the response variable via <code>'ysd'</code> and <code>'ymad'</code> options.
+Another option available is to use the coefficients <code>'lm'</code> from the
+simple linear model applied to the data (e.g., <code>lm(y ~ age, data =
+ data</code>). This is true even when model has covariates i.e.,
+<code>lm(y ~ age + cov, data = data</code>).  A few examples of specifying priors
+using these options are: <br><code>a_prior_beta = normal(ymean, ysd)</code>, <br><code>a_prior_beta = normal(ymean, ysd)</code>, <br><code>a_prior_beta = normal(ymedian, ymad)</code>, <br><code>a_prior_beta = normal(lm, ysd)</code>, <br>
+Note that options <code>'ymean'</code>, <code>'ymedian'</code>, <code>'ysd'</code>,
+<code>'ymad'</code>, <code>'ymad'</code> and <code>'lm'</code> are available only for the
+fixed effect parameter, <code>a</code> and not for parameters <code>b</code>, <code>c</code>
+or <code>d</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>b_prior_beta</code></td>
+<td>
+<p>Specify priors for the fixed effect parameter, <code>b</code>.
+(default <code>student_t(3, 0, 3.5, autoscale = FALSE)</code>). See
+<code>a_prior_beta</code> for details.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>c_prior_beta</code></td>
+<td>
+<p>Specify priors for the fixed effect parameter, <code>c</code>.
+(default <code>student_t(3, 0, 1.5, autoscale = FALSE)</code>). See
+<code>a_prior_beta</code> for details.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>d_prior_beta</code></td>
+<td>
+<p>Specify priors for the fixed effect parameter, <code>d</code>.
+(default <code>student_t(3, 0, 1.0, autoscale = FALSE)</code>). See
+<code>a_prior_beta</code> for details.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>s_prior_beta</code></td>
+<td>
+<p>Specify priors for the fixed effect parameter, <code>s</code>
+(i.e., spline coefficients). (default <code>student_t(3, 0, 'lm', autoscale
+ = TRUE)</code>). The general approach is same as described
+earlier for the fixed effect parameters (see <code>a_prior_beta</code> for
+details). A few key points are highlighted below:
+</p>
+
+<ul>
+<li>
+<p> When specifying location-scale based priors using 'lm' such as
+<code>s_prior_beta = normal(lm, 'lm')</code> , it sets spline coefficients
+obtained from the simple linear model fit as location parameter whereas
+scale parameter is based on the standard deviation of the spline design
+matrix. However, typically, the location parameter is set at '0' (default),
+and the autoscale option is set as <code>TRUE</code>.
+</p>
+</li>
+<li>
+<p> For location-scale based priors, an option <code>sethp</code> (logical,
+default <code>FALSE</code>) is available to set up the hierarchical priors. To set <code>sethp</code> as <code>TRUE</code>, the prior is
+specified as <code>s_prior_beta = normal(0, 'lm', autoscale = TRUE, sethp =
+ TRUE)</code>). When <code>sethp = TRUE</code>, instead of setting prior as <code>s ~ normal(0,
+ 'lm')</code> the hierarchical priors are set as <code>s ~ normal(0, 'hp')</code> where
+<code>'hp'</code> is defined as <code>hp ~ normal(0, 'lm')</code>. Note that the scale
+parameter for the  <code>hp ~ normal(0, 'lm')</code> is automatically taken from the
+<code>s ~ normal(0, 'hp')</code>. Setting <code>sethp = TRUE</code> implies that the
+scale for spline coefficients is estimated from the data itself. The
+distribution of hierarchical priors is automatically matched with the prior
+set for the <code>s</code> parameter, or else can be set by the same <code>sethp</code>
+option. For example, <code>s_prior_beta = normal(0, 'lm', sethp = cauchy)</code>
+will be translated to <code>s ~ normal(0, 'lm')</code>, <code>hp  ~ cauchy(0, 'lm')</code>.
+</p>
+</li>
+<li>
+<p> For <code>uniform</code> priors, the  option<code>addrange</code> can be used to
+symmetrically expand the prior range.
+</p>
+</li>
+</ul>
+<p>It is observed that location scale based prior distributions (e.g,
+<code>normal</code>, <code>student_t</code>, and <code>cauchy</code>) perform well for the
+spline coefficients.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>a_cov_prior_beta</code></td>
+<td>
+<p>Specify priors for the covariate(s) included in the
+fixed effect parameter, <code>a</code> (default <code>student_t(3, 0, 5.0,
+ autoscale = FALSE)</code>). The approach is same as described earlier for the
+<code>a_prior_beta</code> except that options <code>'ymean'</code>, <code>'ymedian'</code>,
+<code>'ysd'</code>, and <code>'ymad'</code> are not allowed. The Option <code>'lm'</code> for
+the location parameter sets covariate(s) coefficient obtained from the
+simple linear model fit to the data. Note that option <code>'lm'</code> is allowed
+only for the <code>a_cov_prior_beta</code> and not for the covariate(s) included
+in the other fixed or random effect parameters. Lastly, separate priors can
+be specified for sub models when fitting <code>univariate_by</code> and
+<code>a_prior_beta</code> models (see <code>a_prior_beta</code>).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>b_cov_prior_beta</code></td>
+<td>
+<p>Specify priors for the covariate(s) included in the
+fixed effect parameter, <code>b</code> (default <code>student_t(3, 0, 1.0,
+ autoscale = FALSE)</code>). See <code>a_cov_prior_beta</code> for details.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>c_cov_prior_beta</code></td>
+<td>
+<p>Specify priors for the covariate(s) included in the
+fixed effect parameter, <code>c</code> (default <code>student_t(3, 0, 0.1,
+ autoscale = FALSE)</code>). See <code>a_cov_prior_beta</code> for details.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>d_cov_prior_beta</code></td>
+<td>
+<p>Specify priors for the covariate(s) included in the
+fixed effect parameter, <code>d</code> (default <code>student_t(3, 0, 1.0,
+ autoscale = FALSE)</code>). See <code>a_cov_prior_beta</code> for details.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>s_cov_prior_beta</code></td>
+<td>
+<p>Specify priors for the covariate(s) included in the
+fixed effect parameter, <code>s</code> (default <code>student_t(3, 0, 10.0,
+ autoscale = FALSE)</code>). However, as described earlier, (see <code>s_formual</code>),
+the <em>SITAR</em> model does not allows for inclusion of covariate(s) in the
+spline design matrix. If and when covariate(s) are specified (see
+<code>s_formual</code>), the approach of setting priors for the covariate(s)
+included in the parameter, <code>s</code> via <code>s_cov_prior_beta</code> is same as
+described earlier for the fixed effect parameter <code>a</code> (see
+<code>a_cov_prior_beta</code>). For the location-scale based priors, the option
+<code>'lm'</code> sets the location parameter same as the spline coefficients
+obtained from fitting a simple linear to the data.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>a_prior_sd</code></td>
+<td>
+<p>Specify priors  for the random effect parameter, <code>a</code>.
+(default <code>student_t(3, 0, 'ysd', autoscale = FALSE)</code>). Note that prior
+is on the standard deviation (which is the square root of the variance) and
+not on the variance itself. The approach of setting the prior is same as
+described earlier for the fixed effect parameter, <code>a</code> (See
+<code>a_prior_beta</code>) with the exception that location parameter is always
+zero. The lower bound <code>0</code> is automatically set by the
+<code>brms::brm()</code>. For <code>univariate_by</code> and <code>multivariate</code> models,
+priors can be same for sub models or different for each sub model (See
+<code>a_prior_beta</code>).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>b_prior_sd</code></td>
+<td>
+<p>Specify priors  for the random effect parameter, <code>b</code>
+(default <code>student_t(3, 0, 2.0, autoscale = FALSE)</code>). See
+<code>a_prior_sd</code> for details.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>c_prior_sd</code></td>
+<td>
+<p>Specify priors  for the random effect parameter, <code>c</code>
+(default <code>student_t(3, 0, 1.25, autoscale = FALSE)</code>). See
+<code>a_prior_sd</code> for details.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>d_prior_sd</code></td>
+<td>
+<p>Specify priors  for the random effect parameter,
+<code>d</code> (default <code>student_t(3, 0, 1.0, autoscale = FALSE)</code>). See
+<code>a_prior_sd</code> for details.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>a_cov_prior_sd</code></td>
+<td>
+<p>Specify priors for the covariate(s) included in the
+random effect parameter, <code>a</code> (default <code>student_t(3, 0, 5.0,
+ autoscale = FALSE)</code>). The approach is same as described earlier for the
+<code>a_cov_prior_beta</code> except that no pre-defined option (e.g.,
+<code>'lm'</code>) is allowed.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>b_cov_prior_sd</code></td>
+<td>
+<p>Specify priors for the covariate(s) included in the
+random effect parameter, <code>b</code> (default <code>student_t(3, 0, 1.0,
+ autoscale = FALSE)</code>). See <code>a_cov_prior_sd</code> for details.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>c_cov_prior_sd</code></td>
+<td>
+<p>Specify priors for the covariate(s) included in the
+random effect parameter, <code>c</code> (default <code>student_t(3, 0, 0.1,
+ autoscale = FALSE)</code>). See <code>a_cov_prior_sd</code> for details.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>d_cov_prior_sd</code></td>
+<td>
+<p>Specify priors for the covariate(s) included in the
+random effect parameter, <code>d</code> (default <code>student_t(3, 0, 1.0,
+ autoscale = FALSE)</code>). See <code>a_cov_prior_sd</code> for details.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>a_prior_sd_str</code></td>
+<td>
+<p>Specify priors for the random effect parameter, <code>a</code>
+when fitting a hierarchical model with three or more levels of hierarchy
+(default <code>NULL</code>). The approach is same as described earlier (see the
+<code>a_prior_sd</code>).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>b_prior_sd_str</code></td>
+<td>
+<p>Specify priors for the random effect parameter, <code>b</code>
+when fitting a hierarchical model with three or more levels of hierarchy
+(default <code>NULL</code>). The approach is same as described earlier (see the
+<code>a_prior_sd_str</code>).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>c_prior_sd_str</code></td>
+<td>
+<p>Specify priors for the random effect parameter, <code>c</code>
+when fitting a hierarchical model with three or more levels of hierarchy
+(default <code>NULL</code>). The approach is same as described earlier (see the
+<code>a_prior_sd_str</code>).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>d_prior_sd_str</code></td>
+<td>
+<p>Specify priors for the random effect parameter, <code>d</code>
+when fitting a hierarchical model with three or more levels of hierarchy
+(default <code>NULL</code>). The approach is same as described earlier (see the
+<code>a_prior_sd_str</code>).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>a_cov_prior_sd_str</code></td>
+<td>
+<p>Specify priors for the covariate(s) included in the
+random effect parameter, <code>a</code> when fitting a hierarchical model with
+three or more levels of hierarchy (default <code>NULL</code>). The approach is
+same as described earlier (see the <code>a_cov_prior_sd</code>).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>b_cov_prior_sd_str</code></td>
+<td>
+<p>Specify priors for the covariate(s) included in the
+random effect parameter, <code>b</code> when fitting a hierarchical model with
+three or more levels of hierarchy (default <code>NULL</code>). The approach is
+same as described earlier (see the <code>a_cov_prior_sd_str</code>).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>c_cov_prior_sd_str</code></td>
+<td>
+<p>Specify priors for the covariate(s) included in the
+random effect parameter, <code>c</code> when fitting a hierarchical model with
+three or more levels of hierarchy (default <code>NULL</code>). The approach is
+same as described earlier (see the <code>a_cov_prior_sd_str</code>).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>d_cov_prior_sd_str</code></td>
+<td>
+<p>Specify priors for the covariate(s) included in the
+random effect parameter, <code>d</code> when fitting a hierarchical model with
+three or more levels of hierarchy (default <code>NULL</code>). The approach is
+same as described earlier (see the <code>a_cov_prior_sd_str</code>).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>sigma_prior_beta</code></td>
+<td>
+<p>Specify priors for the fixed effect distributional
+parameter, <code>sigma</code> (default <code>student_t(3, 0, 1.0, autoscale =
+ FALSE)</code>). The approach is same as described earlier for the fixed effect
+parameter, <code>a</code> (See <code>a_prior_beta</code> for details).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>sigma_cov_prior_beta</code></td>
+<td>
+<p>Specify priors for the covariate(s) included in
+the fixed effect distributional parameter, <code>sigma</code> (default
+<code>student_t(3, 0, 0.5, autoscale = FALSE)</code>). The approach is same as
+described earlier for the covariate(s) included the fixed effect parameter,
+<code>a</code> (see <code>a_cov_prior_beta</code> for details).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>sigma_prior_sd</code></td>
+<td>
+<p>Specify priors for the random effect distributional
+parameter, <code>sigma</code> (default <code>student_t(3, 0, 0.25, autoscale =
+ FALSE)</code>). The approach is same as described earlier the random effect
+parameter <code>a</code> (see <code>a_prior_sd</code> for details).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>sigma_cov_prior_sd</code></td>
+<td>
+<p>Specify priors for the covariate(s) included in the
+random effect distributional parameter, <code>sigma</code> (default
+<code>student_t(3, 0, 0.15, autoscale = FALSE)</code>). The approach is same as
+described earlier for the covariate(s) included in the random effect
+parameter <code>a</code> (see <code>a_cov_prior_sd</code> for details).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>sigma_prior_sd_str</code></td>
+<td>
+<p>Specify priors for the the random effect
+distributional parameter, <code>sigma</code> when fitting a hierarchical model
+with three or more levels of hierarchy (default <code>NULL</code>). The approach
+is same as described earlier for the random effect parameter, <code>a</code> (See
+<code>a_prior_sd_str</code> for details).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>sigma_cov_prior_sd_str</code></td>
+<td>
+<p>Specify priors for the covariate(s) included in
+the random effect distributional parameter, <code>sigma</code> when fitting a
+hierarchical model with three or more levels of hierarchy (default
+<code>NULL</code>). The approach is same as described earlier for the covariate(s)
+included in the random effect parameter, <code>a</code> (See
+<code>a_cov_prior_sd_str</code> for details).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>rsd_prior_sigma</code></td>
+<td>
+<p>Specify priors for the residual standard deviation
+parameter <code>sigma</code> (default <code>exponential('ysd', autoscale =
+ TRUE)</code>). Note that this argument is evaluated only when both
+<code>dpar_formula</code> and <code>sigma_formula</code> are <code>NULL</code>. For location
+scale based distributions, user can use specify standard deviation
+(<code>ysd</code>) or the median absolute deviation (<code>ymad</code>) as scale
+parameter.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>dpar_prior_sigma</code></td>
+<td>
+<p>Specify priors for the fixed effect distributional
+parameter <code>sigma</code> (default <code>student_t(3, 0, 'ysd', autoscale =
+ TRUE)</code>). The argument is evaluated only when
+<code>sigma_formula</code> is <code>NULL</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>dpar_cov_prior_sigma</code></td>
+<td>
+<p>Specify priors for the covariate(s) included in
+the fixed effect distributional parameter <code>sigma</code> (default
+<code>student_t(3, 0, 1.0, autoscale = FALSE)</code>). The argument is evaluated
+only when <code>sigma_formula</code> is <code>NULL</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>autocor_prior_acor</code></td>
+<td>
+<p>Specify priors for the autocorrelation parameters
+when fitting a model with the <code>'arma'</code>, <code>'ar'</code> or the <code>'ma'</code>
+autocorrelation structures (see <code>autocor_formula</code> for details). The
+only allowed distribution is <code>uniform</code> distribution bounded between -1
+and +1 (default <code>uniform(-1, 1, autoscale = FALSE)</code>). For the
+unstructured residual correlation structure, a separate argument
+<code>autocor_prior_unstr_acor</code> is used to specify the priors (see below).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>autocor_prior_unstr_acor</code></td>
+<td>
+<p>Specify priors for the autocorrelation
+parameters when fitting a model with the unstructured (<code>'un'</code>)
+autocorrelation structure (see <code>autocor_formula</code> for details). The
+only allowed distribution is the <code>lkj</code> (default <code>lkj(1)</code>). See
+<code>gr_prior_cor</code> below for details on setting up the <code>lkj</code> prior.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>gr_prior_cor</code></td>
+<td>
+<p>Specify priors for the correlation parameter(s) of
+group-level random effects (default <code>lkj(1)</code>). The only allowed
+distribution is <code>lkj</code> that is specified via a single parameter
+<code>eta</code> (see <code>brms::prior()</code> for details).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>gr_prior_cor_str</code></td>
+<td>
+<p>Specify priors for the correlation parameter(s) of
+group-level random effects when fitting a hierarchical model with three or
+more levels of hierarchy (default <code>lkj(1)</code>). The approach is same as
+described above (See <code>gr_prior_cor</code>).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>sigma_prior_cor</code></td>
+<td>
+<p>Specify priors for the correlation parameter(s) of
+distributional random effects <code>sigma</code> (default <code>lkj(1)</code>). The only
+allowed distribution is <code>lkj</code> (see <code>gr_prior_cor</code> for details).
+Note that currently <code>brms::brm()</code> does not allow for setting different
+<code>lkj</code> priors for the group level and distributional random effects that
+share the same group identifier (<code>id</code>). Therefore, either create a copy
+of group identifier and use that but then this will not allow correlation
+parameter across group random effects and sigma.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>sigma_prior_cor_str</code></td>
+<td>
+<p>Specify priors for the correlation parameter(s) of
+distributional random effects <code>sigma</code> when fitting a hierarchical model
+with three or more levels of hierarchy (default <code>lkj(1)</code>). The approach
+is same as described above (See <code>sigma_prior_cor</code>).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>mvr_prior_rescor</code></td>
+<td>
+<p>Specify priors for the residual correlation parameter
+when fitting a multivariate model (default <code>lkj(1)</code>). The only allowed
+distribution is <code>lkj</code> (see <code>gr_prior_cor</code> for details).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>init</code></td>
+<td>
+<p>Initial values for the sampler. If <code>init = '0'</code>, all
+parameters are initialized to zero. For <code>init = 'random'</code>,
+<strong>Stan</strong> will randomly generate initial values for each parameter
+within a range specified by the <code>init_r</code> (see below), or between -2 and
+2 in unconstrained space when <code>init_r = NULL</code>. Another available option
+is <code>init = 'prior'</code> which sets initial values based on the prior
+specified for each parameter. Lastly, when <code>init = NULL</code> (default),
+initial value for each parameter is specified by the corresponding init
+arguments defined see below.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>init_r</code></td>
+<td>
+<p>A positive real value to set range for the random generation of
+initial values (default <code>NULL</code>). This argument is evaluated only when
+<code>init = 'random'</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>a_init_beta</code></td>
+<td>
+<p>Initial values for the fixed effect parameter, <code>a</code>
+(default 'lm'). Options available are <code>'0'</code>, <code>'random'</code> and
+<code>'prior'</code>. In addition, user can specify <code>'ymean'</code> and
+<code>'ymedian'</code> to set initial as the mean or the median of the response
+variable. Also, option <code>'lm'</code> can be used to set coefficients obtained
+from the simple linear model fitted to the data as initial values for the
+fixed effect parameter, <code>a</code>. Note that this is similar to the location
+parameter for prior on the fixed effect parameter <code>a</code> (see
+<code>a_prior_beta</code> for details). These options (<code>'ymean'</code>,
+<code>'ymedian'</code>, and <code>'lm'</code>) are available only for the fixed effect
+parameter <code>a</code> and not for other parameters described below. Lastly, For
+<code>univariate_by</code> and <code>multivariate</code> models, the initials can be
+same (e.g., <code>a_init_beta = 0</code>) for sub models or different for each sub
+model such as <br><code>list(a_init_beta = '0', a_init_beta = 'lm')</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>b_init_beta</code></td>
+<td>
+<p>Initial values for the fixed effect parameter, <code>b</code>
+(default '0'). See <code>a_init_beta</code> for details.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>c_init_beta</code></td>
+<td>
+<p>Initial values for the fixed effect parameter, <code>c</code>
+(default '0'). See <code>a_init_beta</code> for details.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>d_init_beta</code></td>
+<td>
+<p>Initial values for the fixed effect parameter, <code>d</code>
+(default '0'). See <code>a_init_beta</code> for details.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>s_init_beta</code></td>
+<td>
+<p>Initial values for the fixed effect parameter, <code>s</code>
+(default 'lm'). Options available are <code>'0'</code>, <code>'random'</code>,
+<code>'prior'</code>, and <code>'lm'</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>a_cov_init_beta</code></td>
+<td>
+<p>Initial values for the covariate(s) included in the
+fixed effect parameter, <code>a</code> (default '0'). Options available are
+<code>'0'</code>, <code>'random'</code>, <code>'prior'</code> and <code>'lm'</code>. The option
+<code>'lm'</code> is available only for the <code>a_cov_init_beta</code> and not for the
+covariate(s) included in other fixed effect parameters <code>b</code>, <code>c</code>,
+or <code>d</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>b_cov_init_beta</code></td>
+<td>
+<p>Initial values for covariate(s) included in the fixed
+effect parameter, <code>b</code> (default '0'). See <code>a_cov_init_beta</code> for
+details.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>c_cov_init_beta</code></td>
+<td>
+<p>Initial values for covariate(s) included in the fixed
+effect parameter, <code>c</code> (default '0'). See <code>a_cov_init_beta</code> for
+details.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>d_cov_init_beta</code></td>
+<td>
+<p>Initial values for covariate(s) included in the fixed
+effect parameter, <code>d</code> (default '0'). See <code>a_cov_init_beta</code> for
+details.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>s_cov_init_beta</code></td>
+<td>
+<p>Initial values for covariate(s) included in the fixed
+effect parameter, <code>s</code> (default 'lm'). See <code>a_cov_init_beta</code> for
+details. The option <code>'lm'</code> will set the spline coefficients obtained
+from the simple linear model fitted to the data. Note that
+<code>s_cov_init_beta</code> is only a placeholder and is not valuated because
+covariate(s) are not allowed for the <code>s</code> parameter. See
+<code>s_formula</code> for details.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>a_init_sd</code></td>
+<td>
+<p>Initial value for the standard deviation of group level
+random effect parameter, <code>a</code> (default 'random'). Options available are
+<code>'0'</code>, <code>'random'</code> and <code>'prior'</code>. In addition, <code>'ysd'</code>,
+<code>'ymad'</code>, <code>'lme_sd_a'</code>, and <code>'lm_sd_a'</code> can be used to
+specify initial values as described below:
+</p>
+
+<ul>
+<li>
+<p> The <code>'ysd'</code> sets standard deviation (<code>sd</code>) of the response
+variable as an initial value.
+</p>
+</li>
+<li>
+<p> The <code>'ymad'</code> sets median absolute deviation (<code>mad</code>) of the
+response variable as an initial value.
+</p>
+</li>
+<li>
+<p> The <code>'lme_sd_a'</code> sets initial value based on the standard
+deviation of random Intercept obtained from the linear mixed model
+(<code>nlme::lme()</code>) fitted to the data. Note that in case
+<code>nlme::lme()</code> fails to converge, the option <code>'lm_sd_a'</code>
+(see below) is set automatically.
+</p>
+</li>
+<li>
+<p> The <code>'lm_sd_a'</code> sets square root of the residual variance
+obtained from the simple linear model applied to the data as an initial
+value.
+</p>
+</li>
+</ul>
+<p>Note that these option described above (<code>'ysd'</code>, <code>'ymad'</code>,
+<code>'lme_sd_a'</code>, and <code>'lm_sd_a'</code>) are available only for the random
+effect parameter <code>a</code> and not for other group level random effects.
+Lastly, when fitting <code>univariate_by</code> and <code>multivariate</code> models,
+user can set same initials for sub models, or different for each sub model.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>b_init_sd</code></td>
+<td>
+<p>Initial value for the standard deviation of group level
+random effect parameter, <code>b</code> (default 'random'). See <code>a_init_sd</code>
+for details.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>c_init_sd</code></td>
+<td>
+<p>Initial values for the group level random effect parameter,
+<code>c</code> (default 'random'). See <code>a_init_sd</code> for details.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>d_init_sd</code></td>
+<td>
+<p>Initial value for the standard deviation of group level
+random effect parameter, <code>d</code> (default 'random'). See <code>a_init_sd</code>
+for details.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>a_cov_init_sd</code></td>
+<td>
+<p>Initial values for the covariate(s) included in the
+random effect parameter, <code>a</code> (default 'random'). Options available are
+<code>'0'</code>, <code>'random'</code> and <code>'prior'</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>b_cov_init_sd</code></td>
+<td>
+<p>Initial values for the covariate(s) included in the
+random effect parameter, <code>b</code> (default 'random'). See
+<code>a_cov_init_sd</code> for details.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>c_cov_init_sd</code></td>
+<td>
+<p>Initial values for the covariate(s) included in the
+random effect parameter, <code>c</code> (default 'random'). See
+<code>a_cov_init_sd</code> for details.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>d_cov_init_sd</code></td>
+<td>
+<p>Initial values for the covariate(s) included in the
+random effect parameter, <code>d</code> (default 'random'). See
+<code>a_cov_init_sd</code> for details.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>sigma_init_beta</code></td>
+<td>
+<p>Initial values for the fixed effect distributional
+parameter, <code>sigma</code> (default 'random'). Options available are
+<code>'0'</code>, <code>'random'</code> and <code>'prior'</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>sigma_cov_init_beta</code></td>
+<td>
+<p>Initial values for the covariate(s)
+included in the fixed effect distributional parameter, <code>sigma</code> (See
+<code>sigma_init_beta</code> for details).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>sigma_init_sd</code></td>
+<td>
+<p>Initial value for the standard deviation of
+distributional random effect parameter, <code>sigma</code> (default 'random'). The
+approach is same as described earlier for the group level random effect
+parameters such as <code>a</code> (See <code>a_init_sd</code> for details).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>sigma_cov_init_sd</code></td>
+<td>
+<p>Initial values for the covariate(s) included in the
+distributional random effect parameter, <code>sigma</code> (default 'random').
+(See <code>a_cov_init_sd</code> for details).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>gr_init_cor</code></td>
+<td>
+<p>Initial values for the correlation parameters of
+group-level random effects parameters (default 'random'). Allowed options
+are <code>'0'</code>, <code>'random'</code> and <code>'prior'</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>sigma_init_cor</code></td>
+<td>
+<p>Initial values for the correlation parameters of
+distributional random effects parameter <code>sigma</code> (default 'random').
+Allowed options are <code>'0'</code>, <code>'random'</code> and <code>'prior'</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>rsd_init_sigma</code></td>
+<td>
+<p>Initial values for the residual standard deviation
+parameter, <code>sigma</code> (default 'random'). Options available are
+<code>'0'</code>, <code>'random'</code> and <code>'prior'</code>. In addition, options
+<code>'lme_rsd'</code> and <code>'lm_rsd'</code> can be used as follows. The
+<code>lme_rsd</code> sets initial value based on the standard deviation of
+residuals obtained from the linear mixed model (<code>nlme::lme()</code>) fitted
+to the data. The initial value set by the <code>'lm_rsd'</code> is the square root
+of the residual variance from the simple linear model applied to the data.
+Note that in case <code>nlme::lme()</code> fails to converge, then option
+<code>'lm_sd_a'</code> is set automatically. The argument <code>rsd_init_sigma</code> is
+evaluated when <code>dpar_formula</code> and <code>sigma_formula</code> are set to
+<code>NULL</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>dpar_init_sigma</code></td>
+<td>
+<p>Initial values for the distributional parameter
+<code>sigma</code> (default 'random'). The approach and options available are same
+as described above for the <code>rsd_init_sigma</code>. This argument is evaluated
+only when <code>dpar_formula</code> is not <code>NULL</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>dpar_cov_init_sigma</code></td>
+<td>
+<p>Initial values for the covariate(s) included in the
+distributional parameter, <code>sigma</code> (default 'random'). Allowed options
+are <code>'0'</code>, <code>'random'</code>, and <code>'prior'</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>autocor_init_acor</code></td>
+<td>
+<p>Initial values for autocorrelation parameter (see
+<code>autocor_formula</code> for details). Allowed options are <code>'0'</code>,
+<code>'random'</code>, and <code>'prior'</code> (default 'random').</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>autocor_init_unstr_acor</code></td>
+<td>
+<p>Initial values for unstructured residual
+autocorrelation parameters (default 'random'). Allowed options are
+<code>'0'</code>, <code>'random'</code>, and <code>'prior'</code>. Note that the approach to
+set initials for <code>autocor_init_unstr_acor</code> is identical to the
+<code>gr_init_cor</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>mvr_init_rescor</code></td>
+<td>
+<p>Initial values for the residual correlation parameter
+when fitting a <code>multivariate</code> model (default 'random'). Allowed options
+are <code>'0'</code>, <code>'random'</code>, and <code>'prior'</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>r_init_z</code></td>
+<td>
+<p>Initial values for the standardized group level random effect
+parameters (default 'random'). These parameters are part of the Non-Centered
+Parameterization (NCP) approach used in the <code>brms::brm()</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>vcov_init_0</code></td>
+<td>
+<p>A logical (default <code>TRUE</code>) to set initials for
+variance (i.e, standard deviation) and covariance (i.e., correlation)
+parameters as zero. This allows for setting custom initials for the fixed
+effects parameters but zero for variance covariance parameters.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>jitter_init_beta</code></td>
+<td>
+<p>A value as proportion (between 0 and 1) to perturb the
+initial values for fixed effect parameters. The default is <code>NULL</code>
+indicating that same initials are used across all chains. A sensible option
+can be <code>jitter_init_beta = 0.1</code> as it mildly perturb the initials. Note
+that jitter is not absolute but proportion of the specified initial value.
+For example, if initial value is <code>100</code>, then <code>jitter_init_beta =
+ 0.1</code> implies that the perturbed initial value will be within <code>90</code> and
+<code>110</code>. On the other hand, if initial values is <code>10</code>, then the
+perturbed initial value will be within <code>9</code> and <code>11</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>jitter_init_sd</code></td>
+<td>
+<p>A value as proportion (between 0 and 1) to perturb
+the initials for standard deviation of random effect parameters. The default
+is <code>NULL</code> indicating that same initials are used across all chains.
+An option of setting <code>jitter_init_beta = 0.01</code> looked good during early
+testing.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>jitter_init_cor</code></td>
+<td>
+<p>A value as proportion (between 0 and 1) to perturb the
+initials for correlation parameters of random effects. The default is
+<code>NULL</code> indicating that same initials are used across all chains. An
+option of setting <code>jitter_init_beta = 0.001</code> looked good during early
+testing.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>prior_data</code></td>
+<td>
+<p>An optional argument (a named list, default <code>NULL</code>)
+that can be used to pass information to the prior arguments for each
+parameter (e.g., <code>a_prior_beta</code>). The <code>prior_data</code> is particularly
+helpful in passing a long vector or a matrix as priors. These vectors and
+matrices can be created in the R framework and then passed using the
+<code>prior_data</code>. For example, to pass a vector of location and scale
+parameters when setting priors for covariate coefficients (with 10 dummy
+variables) included in the fixed effects parameter <code>a</code>, the following
+steps can be used to set covariate priors that each has scale parameter
+(<code>sd</code>) as 5 but mean values are drawn from a normal distribution with
+<code>mean = 0</code> and <code>sd = 1</code>:
+</p>
+
+<ul>
+<li>
+<p> create the named objects <code>prior_a_cov_location</code> and
+<code>prior_a_cov_scale</code> in the R environment as follows: <br><code>prior_a_cov_location &lt;- rnorm(n = 10, mean = 0, sd = 1)</code> <br><code>prior_a_cov_scale &lt;- rep(5, 10)</code> <br></p>
+</li>
+<li>
+<p> specify the above created objects <code>prior_a_cov_location</code> and
+<code>prior_a_cov_scale</code> in the <code>prior_data</code> as follows: <br><code>prior_data = list(prior_a_cov_location = prior_a_cov_location, 
+ prior_a_cov_scale = prior_a_cov_scale)</code>.
+</p>
+</li>
+<li>
+<p> now use the <code>prior_data</code> objects to set up the priors as: <br><code>a_cov_prior_beta = normal(prior_a_cov_location, prior_a_cov_scale)</code>.
+</p>
+</li>
+</ul>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>init_data</code></td>
+<td>
+<p>An optional argument (a named list, default <code>NULL</code>) that
+can be used to pass information to the initial arguments. The approach is
+the exact same as described above for the <code>prior_data</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>init_custom</code></td>
+<td>
+<p>Specify a custom initials object (a named list). The named
+list is directly passed to the <code>init</code> argument without checking for the
+dimensions and name matching. Note that in case initials are set for
+some parameter by using parameter specific argument (e.g., <code>a_init_beta
+ = 0</code>), then <code>init_custom</code> is only passed to those parameters for which
+initials are missing. If user want to override this behaviors i.e., to pass
+all <code>init_custom</code> ignoring parameter specific initials, then
+<code>init</code> should be set as <code>init = 'custom'</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>verbose</code></td>
+<td>
+<p>An optional argument (logical, default <code>FALSE</code>) to
+indicate whether to print information collected during setting up the model
+formula priors, and initials. As an example, the user might be interested in
+knowing the response variables created for the sub model when fitting a
+univariate-by-subgroup model. This information can then be used in setting
+the desired order of options passed to each such model such as <code>df</code>,
+<code>prior</code>, <code>initials</code> etc.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>expose_function</code></td>
+<td>
+<p>An optional argument (logical, default <code>FALSE</code>) to
+indicate whether to expose Stan function used in model fitting.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>get_stancode</code></td>
+<td>
+<p>An optional argument (logical, default <code>FALSE</code>) to
+get the stancode (see <code>brms::stancode()</code> for details).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>get_standata</code></td>
+<td>
+<p>An optional argument (logical, default <code>FALSE</code>) to
+get the standata (see <code>brms::standata()</code> for details).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>get_formula</code></td>
+<td>
+<p>An optional argument (logical, default <code>FALSE</code>) to
+get the formula. (see <code>brms::brmsformula()</code> for details).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>get_stanvars</code></td>
+<td>
+<p>An optional argument (logical, default <code>FALSE</code>) to
+get the stanvars (see <code>brms::stanvar()</code> for details).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>get_priors</code></td>
+<td>
+<p>An optional argument (logical, default <code>FALSE</code>) to
+get the priors. (see <code>brms::get_prior()</code> for details).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>get_priors_eval</code></td>
+<td>
+<p>An optional argument (logical, default <code>FALSE</code>) to
+get the priors specified by the user.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>get_init_eval</code></td>
+<td>
+<p>An optional argument (logical, default <code>FALSE</code>) to
+get the initial values specified by the user.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>validate_priors</code></td>
+<td>
+<p>An optional argument (logical, default <code>FALSE</code>) to
+validate the specified priors. (see <code>brms::validate_prior()</code> for details).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>set_self_priors</code></td>
+<td>
+<p>An optional argument (default <code>NULL</code>) to manually
+specify the priors. Note that <code>set_self_priors</code> is passed directly to
+the <code>brms::brm()</code> without performing any checks.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>set_replace_priors</code></td>
+<td>
+<p>An optional argument (default <code>NULL</code>) to
+replace part of prior object. This is for internal use only.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>set_same_priors_hierarchy</code></td>
+<td>
+<p>An optional argument (default <code>NULL</code>) to
+replace part of the prior object. This is for internal use only.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>outliers</code></td>
+<td>
+<p>An optional argument (default <code>NULL</code>) to remove outliers.
+The argument should be a named list which is passed directly to the
+<code>sitar::velout()</code> and <code>sitar::zapvelout()</code> functions. This is for internal
+use only.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>unused</code></td>
+<td>
+<p>An optional formula that defines variables that are unused in
+the model but should still be stored in the model's data frame. This can be
+useful when variables are required during the post-processing.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>chains</code></td>
+<td>
+<p>Number of Markov chains (default 4).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>iter</code></td>
+<td>
+<p>Number of total iterations per chain, including warmup (default
+2000)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>warmup</code></td>
+<td>
+<p>A positive integer specifying the number of warmup (aka burnin)
+iterations. This also specifies the number of iterations used for stepsize
+adaptation, so warmup draws should not be used for inference. The number of
+warmup should not be larger than <code>iter</code> and the default is
+<code>iter/2</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>thin</code></td>
+<td>
+<p>A positive integer. Set <code>thin &gt; 1</code> to save memory and
+computation time if <code>iter</code> is large. The <code>thin &gt; 1</code> is often used
+in cases with high autocorrelation of MCMC draws An indication of high
+autocorrelation is poor mixing of chain ( i.e., high <code>rhat</code> values)
+despite the fact that model recovers the parameters well. An easy diagnostic
+to check for autocorrelation of MCMC draws is to use the <code>mcmc_acf</code>
+function from the <span class="pkg">bayesplot</span>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>cores</code></td>
+<td>
+<p>Number of cores to be used when executing the chains in parallel.
+See <code>brms::brm()</code> for details. Note that unlike <code>brms::brm()</code>, which sets
+default <code>cores</code> argument as <code>cores=getOption("mc.cores", 1)</code>, the
+default <code>cores</code> in <span class="pkg">bsitar</span> package is
+<code>cores=getOption("mc.cores", 'optimize')</code> which optimizes the
+utilization of system resources. The maximum number of cores that can be
+deployed is calculated as the maximum number of available cores minus 1.
+When the number of available cores is greater than the number of chains (see
+<code>chains</code>), then number of cores is set equal to the number of chains.
+Another option is to set <code>cores</code> as <code>getOption("mc.cores",
+ 'maximise')</code> which sets the number of cores as the maximum number of cores
+available from the system regardless of the number of chains specified. Note
+that the user can also set <code>cores</code> argument similar to the
+<code>brms::brm()</code> i.e., <code>getOption("mc.cores", 1)</code>. All these three options
+can be set globally as <code>options(mc.cores = x</code>) where x can be
+<code>'optimize'</code>, <code>'maximise'</code> or <code>1</code>. Lastly, the <code>cores</code>
+can set by directly by specifying an integer e.g., <code>cores = 4</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>backend</code></td>
+<td>
+<p>A character string naming the package to be used when executing
+the the Stan model. Options are <code>"rstan"</code> (the default) or
+<code>"cmdstanr"</code>. Can be set globally for the current <span style="font-family: Courier New, Courier; color: #666666;"><b>R</b></span> session via the
+<code>"brms.backend"</code>. See <code>brms::brm()</code> for details.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>threads</code></td>
+<td>
+<p>Number of threads to be used in within-chain parallelization.
+Note that unlike the <code>brms::brm()</code> which sets the <code>threads</code> argument as
+<code>getOption("brms.threads", NULL)</code> implying that no within-chain
+parallelization is used by default, the <span class="pkg">bsitar</span> package, by default,
+sets <code>threads</code> as <code>getOption("brms.threads", 'optimize')</code> to
+utilize the available resources from the modern computing systems. The
+number of threads per chain is set as the maximum number of cores available
+minus 1. Another option is to set <code>threads</code> as
+<code>getOption("brms.threads", 'maximise')</code> which set the number threads
+per chains same as the  maximum number of cores available. User can also set
+the <code>threads</code> similar to the <code>brms</code> i.e.,
+<code>getOption("brms.threads", NULL)</code>. All these three options can be set
+globally as <code>options(brms.threads = x</code>) where x can be
+<code>'optimize'</code>, <code>'maximise'</code> or <code>NULL</code>.
+Alternatively, the number of threads can be set directly as <code>threads
+ = threading(x)</code> where <code>X</code> is an integer. Other arguments that can be
+passed to the <code>threads</code> are <code>grainsize</code> and the <code>static</code>. See
+<code>brms::brm()</code> for further details on within-chain parallelization.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>opencl</code></td>
+<td>
+<p>The platform and device IDs of the OpenCL device to use for
+fitting using GPU support. If you don't know the IDs of your OpenCL device,
+<code>c(0,0)</code> is most likely what you need. For more details, see
+<code>opencl</code>. Can be set globally for the current <span style="font-family: Courier New, Courier; color: #666666;"><b>R</b></span> session via the
+<code>"brms.opencl"</code> option.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>normalize</code></td>
+<td>
+<p>Indicates whether normalization constants should be included
+in the Stan code (default <code>TRUE</code>). Setting it to <code>FALSE</code> requires
+Stan version &gt;= 2.25. If <code>FALSE</code>, sampling efficiency may be increased
+but some post processing functions such as <code>brms::bridge_sampler()</code> will not
+be available. This option can be controlled globally via the
+<code>brms.normalize</code> option.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>algorithm</code></td>
+<td>
+<p>Character string naming the estimation approach to use.
+Options are <code>"sampling"</code> for MCMC (the default), <code>"meanfield"</code> for
+variational inference with independent normal distributions,
+<code>"fullrank"</code> for variational inference with a multivariate normal
+distribution, or <code>"fixed_param"</code> for sampling from fixed parameter
+values. Can be set globally for the current <span style="font-family: Courier New, Courier; color: #666666;"><b>R</b></span> session via the
+<code>"brms.algorithm"</code> option (see <code>options</code>).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>control</code></td>
+<td>
+<p>A named <code>list</code> to control the sampler's behavior. The
+default are same as <code>brms::brm()</code> with the exception that the
+<code>max_treedepth</code> has been increased form 10 to 12 to allow better
+exploration of typically challenging posterior geometry posed by the
+nonlinear model. However, another control parameter, the <code>adpat_delta</code>
+which is also  often need to be increased for nonlinear model, has be set to
+default setting as in <code>brms::brm()</code> i.e, 0.8. This is to avoid unnecessarily
+increasing the sampling time. See <code>brms::brm()</code> for full details on control
+parameters and their default values.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>sample_prior</code></td>
+<td>
+<p>Indicates whether to draw sample from priors in addition
+to the posterior draws. Options are <code>"no"</code> (the default), <code>"yes"</code>,
+and <code>"only"</code>. Among others, these draws can be used to calculate Bayes
+factors for point hypotheses via <code>brms::hypothesis()</code>. Please note that
+improper priors are not sampled, including the default improper priors used
+by <code>brm</code>. See <code>brms::set_prior()</code> on how to set (proper) priors. Please
+also note that prior draws for the overall intercept are not obtained by
+default for technical reasons. See <code>brms::brmsformula()</code> how to obtain prior
+draws for the intercept. If <code>sample_prior</code> is set to <code>"only"</code>,
+draws are drawn solely from the priors ignoring the likelihood, which allows
+among others to generate draws from the prior predictive distribution. In
+this case, all parameters must have proper priors.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>save_pars</code></td>
+<td>
+<p>An object generated by <code>save_pars</code> controlling
+which parameters should be saved in the model. The argument has no impact on
+the model fitting itself.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>drop_unused_levels</code></td>
+<td>
+<p>Should unused factors levels in the data be dropped?
+Defaults to <code>TRUE</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>stan_model_args</code></td>
+<td>
+<p>A <code>list</code> of further arguments passed to
+<code>rstan::stan_model</code> for <code>backend =
+  "rstan"</code> or <code>backend = "cmdstanr"</code>, which allows to change how
+models are compiled.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>refresh</code></td>
+<td>
+<p>An integer to set the printing of every nth iteration. Default
+<code>NULL</code> indicates that refresh will be set automatically by the
+<code>brms::brm()</code>. Setting  <code>refresh</code> is useful especially when <code>thin</code>
+is greater than <code>1</code>. In that case, the <code>refresh</code> is recalculated
+as (<code>refresh</code> * <code>thin</code>) / <code>thin</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>silent</code></td>
+<td>
+<p>Verbosity level between <code>0</code> and <code>2</code>. If <code>1</code> (the
+default), most of the informational messages of compiler and sampler are
+suppressed. If <code>2</code>, even more messages are suppressed. The actual
+sampling progress is still printed. Set <code>refresh = 0</code> to turn this off
+as well. If using <code>backend = "rstan"</code> you can also set
+<code>open_progress = FALSE</code> to prevent opening additional progress bars.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>seed</code></td>
+<td>
+<p>The seed for random number generation to make results
+reproducible. If <code>NA</code> (the default), <span class="pkg">Stan</span> will set the seed
+randomly.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>save_model</code></td>
+<td>
+<p>A character string or <code>NULL</code> (default). If not
+<code>NULL</code>, then the model's Stan code is saved via in a text file named
+after the string supplied in <code>save_model</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>fit</code></td>
+<td>
+<p>An instance of S3 class <code>brmsfit</code> derived from a previous fit;
+defaults to <code>NA</code>. If <code>fit</code> is of class <code>brmsfit</code>, the
+compiled model associated with the fitted result is re-used and all
+arguments modifying the model code or data are ignored. It is not
+recommended to use this argument directly, but to call the
+<code>update</code> method, instead.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>file</code></td>
+<td>
+<p>Either <code>NULL</code> or a character string. In the latter case, the
+fitted model object is saved via <code>saveRDS</code> in a file named after
+the string supplied in <code>file</code>. The <code>.rds</code> extension is added
+automatically. If the file already exists, <code>brm</code> will load and return
+the saved model object instead of refitting the model. Unless you specify
+the <code>file_refit</code> argument as well, the existing files won't be
+overwritten, you have to manually remove the file in order to refit and save
+the model under an existing file name. The file name is stored in the
+<code>brmsfit</code> object for later usage.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>file_compress</code></td>
+<td>
+<p>Logical or a character string, specifying one of the
+compression algorithms supported by <code>saveRDS</code>. If the
+<code>file</code> argument is provided, this compression will be used when saving
+the fitted model object.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>file_refit</code></td>
+<td>
+<p>Modifies when the fit stored via the <code>file</code> argument is
+re-used. Can be set globally for the current <span style="font-family: Courier New, Courier; color: #666666;"><b>R</b></span> session via the
+<code>"brms.file_refit"</code> option (see <code>options</code>). For
+<code>"never"</code> (default) the fit is always loaded if it exists and fitting
+is skipped. For <code>"always"</code> the model is always refitted. If set to
+<code>"on_change"</code>, brms will refit the model if model, data or algorithm as
+passed to Stan differ from what is stored in the file. This also covers
+changes in priors, <code>sample_prior</code>, <code>stanvars</code>, covariance
+structure, etc. If you believe there was a false positive, you can use
+<code>brmsfit_needs_refit</code> to see why refit is deemed necessary.
+Refit will not be triggered for changes in additional parameters of the fit
+(e.g., initial values, number of iterations, control arguments, ...). A
+known limitation is that a refit will be triggered if within-chain
+parallelization is switched on/off.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>future</code></td>
+<td>
+<p>Logical; If <code>TRUE</code>, the <span class="pkg">future</span>
+package is used for parallel execution of the chains and argument
+<code>cores</code> will be ignored. Can be set globally for the current <span style="font-family: Courier New, Courier; color: #666666;"><b>R</b></span> session
+via the <code>"future"</code> option. The execution type is controlled via
+<code>plan</code> (see the examples section below).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>parameterization</code></td>
+<td>
+<p>A character string to specify Non-centered
+parameterization, NCP (<code>'ncp'</code>) or the Centered parameterization, CP
+(<code>'cp'</code>) to draw group level random effect. The NCP is generally
+recommended when likelihood is not strong (e.g., a few number of
+observations per individual). The NCP is the default (and only) approach
+implemented in the <code>brms::brm()</code>. The CP parameterization, on the other
+hand, is often considered more efficient than NCP when a relatively large
+number of observations are available across individual. The 'relatively
+large number' is not defined in the literature and we follow a general
+approach wherein CP parameterization is used when each individual provides
+at least 10 repeated measurements and NCP otherwise. Note this automatic
+behavior is set only when the argument <code>parameterization = NULL</code>. To
+set CP parameterization, use <code>parameterization = 'cp'</code>. The default is
+<code>parameterization = 'ncp'</code>. Note that since <code>brms::brm()</code> does not
+offer CP parameterization, the <code>brms::brm()</code> generated <code>stancode</code> is
+first edited internally and then the model is fit using the <code>rstan::rstan()</code>
+or <code>cmdstanr</code>, depending on the <code>backend</code> choice. Therefore, we
+caution that CP parameterization should be considered experimental and it
+may fail if structure of the <code>brms::brm()</code> generated <code>stancode</code> changes
+in future.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Further arguments passed to <code>brms::brm()</code></p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The <em>SITAR</em> is a shape-invariant nonlinear mixed effect growth
+curve model that fits a population average (i.e., mean average) curve to
+the data, and aligns each individual's growth trajectory to the underlying
+population average curve via a set of (typically) three random effects: the
+<code>size</code>, <code>timing</code> and <code>intensity</code>. Additionally, a slope
+parameter can be included as a random effect to estimate the variability in
+adult growth rate (See <code>sitar::sitar()</code> for details). The concept of shape
+invariant model (SIM) was first described by
+Lindstrom (1995) and later used by
+Beath (2007) to model infant growth data (birth
+to 2 years). The current version of the <em>SITAR</em> model is developed by
+Cole et al. (2010) and has been used extensively for
+modelling growth data
+(see Nembidzane et al. 2020 and Sandhu 2020).
+</p>
+<p>The frequentist version of the <em>SITAR</em> model can be fit by using an
+already available R package, the <span class="pkg">sitar</span> (Cole 2022).
+The framework of Bayesian implementation of the <em>SITAR</em> model in
+<span class="pkg">bsitar</span> package is same as the <span class="pkg">sitar</span> package with the exception
+that unlike the <span class="pkg">sitar</span> package which uses B spline basis for the
+natural cubic spline design matrix (by calling the <code>splines::ns()</code>), the
+<span class="pkg">bsitar</span> package uses the truncated power basis approach (see
+Harrell and others (2001), and
+Harrell Jr. (2022) for details) to construct the spline
+design matrix. Note that <span class="pkg">bsitar</span> package builds the spline design
+matrix on the fly which is then included in the <code>functions</code> block of
+the <strong>Stan</strong> program and hence compiled (via the c++) during the model fit.
+</p>
+<p>Like <span class="pkg">sitar</span> package (Cole et al. 2010), the <span class="pkg">bsitar</span>
+package fits <em>SITAR</em> model with (usually) up to three random effects:
+the size (parameter defined as <code>a</code>), the timing (parameter defined as
+<code>b</code>) and the intensity (parameter defined as <code>c</code>). In addition,
+there is a slope parameter (defined as <code>d</code>) that models the variability
+in the adult slope of the growth curve (See <code>sitar::sitar()</code> for details).
+Please note that author of the <span class="pkg">sitar</span> package
+(Cole et al. 2010) enforces the inclusion of parameter
+<code>d</code> as a random effects only and therefore excludes it from the
+fixed fixed structure of the model. However, the <span class="pkg">bsitar</span> package allows
+inclusion of parameter <code>d</code> in fixed and/or in the random effects
+structures of the <em>SITAR</em> model. For the three parameter version of the
+<em>SITAR</em> model (default), the fixed effects structure (i.e., population
+average trajectory) is specified as <code>fixed = 'a+b+c'</code>, and the
+random effects structure that captures the deviation of individual
+trajectories from the population average curve is specified as <code>random
+ = 'a+b+c'</code>. Note that user need not to include all the three parameters in
+the fixed or the random effect structure. For example, a fixed effect
+version of the <em>SITAR</em> model can be fit by setting randoms as an empty
+string i.e., <code>random = ''</code>. Furthermore, the fixed effect structure may
+include only a sub set of the parameters e.g., size and timing parameters
+(<code>fixed = 'a+b'</code>) or the size and the intensity parameters
+(<code>fixed = 'a+c'</code>). The four parameters version of the <em>SITAR</em>
+model is fit by including parameter <code>d</code> in the <code>fixed</code> and/or the
+<code>random</code> arguments. Similar to the three parameter <em>SITAR</em> model,
+user can fit model with a sub set of the fixed and/or the random effects.
+</p>
+<p>The <span class="pkg">sitar</span> package internally depends on the <span class="pkg">brms</span>
+package (see Bürkner 2022; Bürkner 2021). The <span class="pkg">brms</span> can
+fit a wide range of hierarchical linear and nonlinear regression models
+including multivariate models. The <span class="pkg">brms</span> itself depends on the <strong>Stan</strong>
+software program full Bayesian inference
+(see Stan Development Team 2023; Gelman et al. 2015). Like
+<span class="pkg">brms</span>, the <span class="pkg">bsitar</span> package allows a wide range of prior
+specifications that encourage the users to specify priors that
+actually reflect their prior knowledge about the human growth processes,
+(such as timing and intensity of the growth spurt). For prior
+specification, we follow the carefully crafted approaches used in the
+<span class="pkg">brms</span> and <span class="pkg">rstanarm</span> packages. For example, we follow the
+<span class="pkg">brms</span> package in using the <code>student_t</code> distribution for the
+regression coefficients as well as the standard deviation for group
+level random effects, but set <code>exponential</code> distribution for the
+residual standard deviation as used in the <span class="pkg">rstanarm</span> package.
+Like <span class="pkg">brms</span> and <span class="pkg">rstanarm</span> packages, the <span class="pkg">bsitar</span> package allows
+for auto scaling of the scale parameter for the location-scale based
+distributions such as <code>normal</code> and <code>student_t</code>. While
+<span class="pkg">rstanarm</span> earlier used to set <code>autosclae</code> as <code>2.5</code> (recently
+authors changed this behavior to <code>FALSE</code>), the <span class="pkg">brms</span> package sets
+it as <code>1.0</code> or <code>2.5</code> depending on the standard deviation of the
+response variable (See <code>brms::prior()</code>). The <span class="pkg">bsitar</span> package, on the
+other hand, offers full flexibility in choosing the scale factor as any real
+number (e.g., <code>autosclae = 5.0</code>). When <code>autosclae = TRUE</code>, the
+<code>2.5</code> is the default scaling factor. We strongly recommend to go
+through the well documented details on prior specifications used in
+<span class="pkg">brms</span> and <span class="pkg">rstanarm</span> packages.
+</p>
+<p>Like <span class="pkg">brms</span> package, the <span class="pkg">bsitar</span> package offers a range of tools to
+evaluate the model fit that include posterior predictive check (see
+<code>brms::pp_check()</code>) and the leave one out (<code>loo</code>) cross validation (see
+<code>brms::loo()</code>). Furthermore, while the excellent post-processing support
+offered by the <span class="pkg">brms</span> package is directly available to the users, the
+<span class="pkg">bsitar</span> package includes many customized functions that allow for
+estimation and visualization of population average and individual specific
+distance (increase in size) and velocity (change in rate of growth), as well
+as computation of population average and individual specific growth
+parameters such as age at peak growth velocity (APGV) and the peak growth
+velocity (PGV).
+</p>
+<p>Finally, the <span class="pkg">bsitar</span> package allows three different types of model
+specifications: <code>'univariate'</code>, <code>'univariate_by'</code> and
+<code>'multivariate'</code>. A <code>'univariate'</code> fitting involves a single model
+applied to an outcome whereas both <code>'univariate_by'</code> and
+<code>'multivariate'</code> specifications comprise two or more sub models. The
+<code>'univariate_by'</code> fits two or more sub models to an outcome variable
+defined by a factor variable (e.g, sex). The data are typically stacked and
+the factor variable is used to set-up the sub models via the <code>'subset'</code>
+option available in the <code>brms::brm()</code>. The <code>'multivariate'</code> model allows
+simultaneous modelling of two or more outcomes with joint a distribution of
+the random effects. For both <code>'univariate_by'</code> and <code>'multivariate'</code>
+models, the <span class="pkg">bsitar</span> package allows full flexibility in specifying
+separate arguments such as predictor variables (<code>x</code>), degree of freedom
+(<code>df</code>) for design matrix as well as the priors and the initial values.
+Furthermore, to enhance the ease of specifying different options and to make
+it user-friendly, there is no need to enclose the character option(s) in
+single or double quotes. For example to specify the <code>'univariate_by'</code>
+for sex, the <code>univariate_by = sex</code> is same as <code>univariate_by =
+ 'sex'</code> or <code>univariate_by = "sex"</code>. The same applies for all character
+string options.
+</p>
+
+
+<h3>Value</h3>
+
+<p>An object of class <code>brmsfit, bsiatr</code>, that contains the posterior
+draws and other useful information about the model.
+</p>
+
+
+<h3>Note</h3>
+
+<p>The package is under continuous development and new models and
+post-processing features will be added soon.
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Satpal Sandhu  <a href="mailto:satpal.sandhu@bristol.ac.uk">satpal.sandhu@bristol.ac.uk</a>
+</p>
+
+
+<h3>References</h3>
+
+<p>Beath KJ (2007).
+“Infant growth modelling using a shape invariant model with random effects.”
+<em>Statistics in Medicine</em>, <b>26</b>(12), 2547–2564.
+<a href="https://doi.org/10.1002/sim.2718">doi:10.1002/sim.2718</a>, Type: Journal article.<br><br> Bürkner P (2021).
+“Bayesian Item Response Modeling in R with brms and Stan.”
+<em>Journal of Statistical Software</em>, <b>100</b>(5), 1–54.
+<a href="https://doi.org/10.18637/jss.v100.i05">doi:10.18637/jss.v100.i05</a>.<br><br> Bürkner P (2022).
+<em>brms: Bayesian Regression Models using Stan</em>.
+R package version 2.18.0, <a href="https://CRAN.R-project.org/package=brms">https://CRAN.R-project.org/package=brms</a>.<br><br> Cole T (2022).
+<em>sitar: Super Imposition by Translation and Rotation Growth Curve Analysis</em>.
+R package version 1.3.0, <a href="https://CRAN.R-project.org/package=sitar">https://CRAN.R-project.org/package=sitar</a>.<br><br> Cole TJ, Donaldson MDC, Ben-Shlomo Y (2010).
+“SITAR—a useful instrument for growth curve analysis.”
+<em>International Journal of Epidemiology</em>, <b>39</b>(6), 1558–1566.
+ISSN 0300-5771, <a href="https://doi.org/10.1093/ije/dyq115">doi:10.1093/ije/dyq115</a>, tex.eprint: https://academic.oup.com/ije/article-pdf/39/6/1558/18480886/dyq115.pdf.<br><br> Gelman A, Lee D, Guo J (2015).
+“Stan: A Probabilistic Programming Language for Bayesian Inference and Optimization.”
+<em>Journal of Educational and Behavioral Statistics</em>, <b>40</b>(5), 530-543.
+<a href="https://doi.org/10.3102/1076998615606113">doi:10.3102/1076998615606113</a>.<br><br> Harrell FE, others (2001).
+<em>Regression modeling strategies: with applications to linear models, logistic regression, and survival analysis</em>, volume 608.
+Springer.<br><br> Harrell Jr. FE (2022).
+<em>Hmisc: Harrell Miscellaneous</em>.
+R package version 4.7-2, <a href="https://hbiostat.org/R/Hmisc/">https://hbiostat.org/R/Hmisc/</a>.<br><br> Lindstrom MJ (1995).
+“Self-modelling with random shift and scale parameters and a free-knot spline shape function.”
+<em>Statistics in Medicine</em>, <b>14</b>(18), 2009-2021.
+<a href="https://doi.org/10.1002/sim.4780141807">doi:10.1002/sim.4780141807</a>, <a href="https://pubmed.ncbi.nlm.nih.gov/8677401/">https://pubmed.ncbi.nlm.nih.gov/8677401/</a>.<br><br> Nembidzane C, Lesaoana M, Monyeki KD, Boateng A, Makgae PJ (2020).
+“Using the SITAR Method to Estimate Age at Peak Height Velocity of Children in Rural South Africa: Ellisras Longitudinal Study.”
+<em>Children</em>, <b>7</b>(3), 17.
+ISSN 2227-9067, <a href="https://doi.org/10.3390/children7030017">doi:10.3390/children7030017</a>, <a href="https://www.mdpi.com/2227-9067/7/3/17">https://www.mdpi.com/2227-9067/7/3/17</a>.<br><br> Sandhu SS (2020).
+<em>Analysis of longitudinal jaw growth data to study sex differences in timing and intensity of the adolescent growth spurt for normal growth and skeletal discrepancies</em>.
+Thesis, University of Bristol.<br><br> Stan Development Team (2023).
+<em>Stan Reference Manual version 2.31</em>.
+<a href="https://mc-stan.org/docs/reference-manual/">https://mc-stan.org/docs/reference-manual/</a>.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>brms::brm()</code> <code>brms::brmsformula()</code> <code>brms::prior()</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+# Examples below fits SITAR model to the 'berkeley_exdata' which is a subset
+# of the  Berkley height data. The same subset of the  Berkley height data
+# has been used as an example data in the vignette for the 'sitar' package.
+#
+# The Berkley height data comprise of repeated growth measurements made on
+# 66 boys and 70 girls (birth to 21 years). 
+#
+# The subset of the Berkley height data analysed here include growth 
+# measurements for 70 girls (8 to 18 years).
+#
+# See 'sitar' package documentation for details on Berkley height data   
+# (help file ?sitar::berkeley ). The details on subset data for 70 girls is 
+# provided in the vignette('Fitting_models_with_SITAR', package = 'sitar').
+  
+# Fit frequentist SITAR model with df = 5 by using the sitar package 
+
+# Get 'berkeley_exdata' data that has been already saved
+berkeley_exdata &lt;- getNsObject(berkeley_exdata)
+
+model_ml &lt;- sitar::sitar(x = age, y = height, id = id, 
+                          df = 5, 
+                          data = berkeley_exdata, 
+                          xoffset = 'mean',
+                          fixed = 'a+b+c', 
+                          random = 'a+b+c',
+                          a.formula = ~1, 
+                          b.formula = ~1, 
+                          c.formula = ~1
+                          )
+
+
+# Fit Bayesian SITAR model 
+
+# To avoid mode estimation which takes time, the Bayesian SITAR model fit to  
+# the 'berkeley_exdata' has been saved as an example fit ('berkeley_exfit').
+# The model is fit using 2 chain (2000 iterations per) with thin set as 4 to 
+# save time and memory.
+
+# Check and confirm whether model fit object 'berkeley_exfit' exists
+# berkeley_exfit &lt;- bsitar:::berkeley_exfit
+ berkeley_exfit &lt;- getNsObject(berkeley_exfit)
+ 
+ print(berkeley_exfit)
+if(exists('berkeley_exfit')) {
+  model &lt;- berkeley_exfit
+} else {
+ # Fit model with default priors 
+ # See documentation for prior on each parameter
+  model &lt;- bsitar(x = age, y = height, id = id, 
+                  df = 3, 
+                  data = berkeley_exdata,
+                  xoffset = 'mean', 
+                  fixed = 'a+b+c', 
+                  random = 'a+b+c',
+                  a_formula = ~1, 
+                  b_formula = ~1, 
+                  c_formula = ~1, 
+                  threads = brms::threading(NULL),
+                  chains = 2, cores = 2, iter = 6000, thin = 15)
+                  
+# Note that we can test for the sensitivity to the priors by re fitting the
+# above model with flat (i.e., uniform) priors on the regression coefficients
+# for parameters a, b and c.
+model &lt;- bsitar(x = age, y = height, id = id, 
+                  df = 3, 
+                  data = berkeley_exdata,
+                  xoffset = 'mean', 
+                  fixed = 'a+b+c', 
+                  random = 'a+b+c',
+                  a_formula = ~1, 
+                  b_formula = ~1, 
+                  c_formula = ~1, 
+                  a_prior_beta = flat,
+                  b_prior_beta = flat,
+                  c_prior_beta = flat,
+                  threads = brms::threading(NULL),
+                  chains = 2, cores = 2, iter = 6000, thin = 15)
+}
+
+# Generate model summary
+summary(model)
+
+# Compare model summary with the maximum likelihood SITAR model
+print(model_ml)
+
+
+# Check model fit via posterior predictive checks. The plot_ppc is a based
+# on the pp_check function from the brms package.  
+
+plot_ppc(model, ndraws = 100)
+
+# Plot distance and velocity curves using plot_conditional_effects() function.
+# This function works exactly same as as conditional_effects() from the brms
+# package with the exception that plot_conditional_effects allows for 
+# plotting velocity curve also.
+
+# Distance
+plot_conditional_effects(model, deriv = 0)
+
+# Velocity
+plot_conditional_effects(model, deriv = 1)
+
+# Plot distance and velocity curve along with the parameter estimates using 
+# the plot_curves() function. This function works exactly the same way as 
+# plot.sitar from the sitar package
+
+plot_curves(model, apv = TRUE)
+
+# Compare plot with the maximum likelihood SITAR model
+
+plot(model_ml)
+
+
+
+</code></pre>
+
+
+</div>

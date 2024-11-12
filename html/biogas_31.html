@@ -1,0 +1,471 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>summBg</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>
+Summarise and Normalise Cumulative Methane Production
+</h2>
+
+<h3>Description</h3>
+
+<p>From cumulative gas production, use <code>summBg</code> to standardise, interpolate, subtract innoculum contribution, normalise by substrate mass, and summarise the output calculating mean and standard devations for each type of sample (groups of replicates). 
+The function is flexible: some, all, or none of these operations can be carried out in a call.
+Typically <code>summBg</code> is used to calculate biochemical methane potential (BMP) from cumulative methane production.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">summBg(vol, setup, id.name = "id", time.name = "time", 
+       descrip.name = "descrip", inoc.name = NULL, inoc.m.name = NULL,
+       norm.name = NULL, norm.se.name = NULL,  vol.name = "cvCH4", 
+       imethod = "linear", extrap = FALSE, when = 30, 
+       when.min = 0, rate.crit = 'net', 
+       show.obs = FALSE, show.rates = FALSE, show.more = FALSE,
+       sort = TRUE, set.name = 'set', quiet = FALSE)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>vol</code></td>
+<td>
+
+<p>a data frame with the columns bottle identification code; time of measurement (as <code>numeric</code>, or <code>POSIX</code>); and the response variable biogas volume or cumulative volume.
+The names of these columns can be specified with <code>id.name</code>, <code>time.name</code>, and <code>vol.name</code>. Or, the default names can be used. 
+Additional columns can be present– these will be returned in the output data frame.
+Optional: as of version 1.11.5, <code>vol</code> can be a list of suitable data frames.
+This is convenient for comparing different approaches for calculating methane production, for example.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>setup</code></td>
+<td>
+ 
+<p>a data frame containing information to summarise, substract inoculum effect or normalise the data. Should contain at least the column <code>id.name</code> (bottle identification code), and the additional columns depending on the operations desired. See ‘Details’ for more information.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>id.name</code></td>
+<td>
+
+<p>name of the bottle identification code column in <code>vol</code> and <code>setup</code>. Should be the same in all data frames used in the function. Default is <code>"id"</code>.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>time.name</code></td>
+<td>
+
+<p>name of column containing time data in <code>vol</code>. Default is <code>"time"</code>.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>descrip.name</code></td>
+<td>
+
+<p>(optional) name of column containing a description of bottle substrate (or a code for this) in <code>setup</code> data frame. The summary of the data will be made following this column. Default is <code>"descrip"</code>.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>inoc.name</code></td>
+<td>
+
+<p>(optional) the value in the <code>descrip.name</code> (<code>setup</code> data frame) column that is used to describe the inoculum-only bottles. Length one character vector. Argument not used by default.  
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>norm.name</code></td>
+<td>
+
+<p>(optional) the name of the column in <code>setup</code> that has the mass to perform the normalisation (typically substrate VS mass). Length one character vector. Argument not used by default.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>norm.se.name</code></td>
+<td>
+
+<p>(optional) the name of the column in <code>setup</code> that has the standard error of the data in the column <code>norm.name</code>. Length one character vector. If provided, this error in substrate mass will be included in the standard error and standard deviation given in the output. Argument not used by default.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>inoc.m.name</code></td>
+<td>
+
+<p>(optional) the name of the column in <code>setup</code> that has inoculum mass.
+If specified, these data are used to subtract the inoculum contribution to methane production.
+Length one character vector. Default is <code>"minoc"</code>. 
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>vol.name</code></td>
+<td>
+
+<p>the name of the column(s) in <code>vol</code> that contains the response variable used for the summary–typically cumulative methane volume. 
+The default is <code>"cvCH4"</code> for <em>c</em>umulative <em>v</em>olume of methane (CH4).
+Optional: as of version 1.12.0, <code>vol.name</code> may be a vector with length &gt; 1.
+In this case each response variable will be used and results will be returned for all, together in a single data frame.
+Character vector.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>imethod</code></td>
+<td>
+
+<p>the interpolation method to be used. 
+This is passed as the <code>method</code> argument to <code>interp</code>. Length one character vector. Default is <code>"linear"</code> for linear interpolation.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>extrap</code></td>
+<td>
+
+<p>should extrapolation be carried out? Set to <code>TRUE</code> if extrapolation wanted.
+Length one logical vector.
+This is passed as the <code>extrap</code> argument to <code>interp</code>. Default is <code>FALSE</code>
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>when</code></td>
+<td>
+
+<p>value(s) of <code>time.name</code> in <code>vol</code> data frame at which the results should be evaluated.
+Alternatively, set to <code>"end"</code> (to return the latest values for each bottle) or <code>"meas"</code> (to return a value for each measured time for each bottle).
+To select a time for each bottle based on the methane production rate, use, e.g., <code>"1p3d"</code> for 1% per day for at least 3 d (any values can be used, even something impractical like <code>"0.1p10d"</code>).
+In this case, the earliest time where production rate drops below 1% of cumulative production per day for at least 3 days will be used.
+Where this time differs for multiple bottles with the same <code>descrip.name</code>, the latest one will be used.
+Numeric or character vector or list (use a list for, e.g., <code>list("1p3d", "end", 30)</code>).
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>when.min</code></td>
+<td>
+
+<p>minimum duration (value of <code>when</code>) to be used with a relative duration criterion, e.g., if you want <code>"1p3d"</code> but no less than 15 days set <code>when.min = 15</code>. Ignored if <code>when</code> is numeric. Default is <code>Inf</code> (no limit).
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>rate.crit</code></td>
+<td>
+
+<p>type of rate criterion to be applied for relative <code>when</code>, e.g., <code>when = "1p3d"</code> and <code>rate.crit = "net"</code> is based on net gas production (after subtracting incoulum contribution). Options are <code>"net"</code> or <code>"gross"</code>.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>show.obs</code></td>
+<td>
+
+<p>set to <code>TRUE</code> to return all observations, otherwise means and standard deviations are returned. Default is <code>FALSE</code>. 
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>show.rates</code></td>
+<td>
+
+<p>set to <code>TRUE</code> to return all observations with relative rates. Used to check rates for evaluation time. The <code>when</code> argument will be ignored if <code>show.rates = TRUE</code>. Default is <code>FALSE</code>. 
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>show.more</code></td>
+<td>
+
+<p>set to <code>TRUE</code> to return additional details, including fraction of total methane produced by inoculum. Default is <code>FALSE</code>. 
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>sort</code></td>
+<td>
+
+<p>controls sorting of results, which is by <code>descrip.name</code> and then <code>time.name</code> by default. Set to <code>FALSE</code> to use order of <code>descrip.name</code> from the <code>setup</code> data frame. Default is <code>TRUE</code>.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>set.name</code></td>
+<td>
+
+<p>column name in result for set of observations, corresponding to elements in <code>vol</code> when it is a list.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>quiet</code></td>
+<td>
+
+<p>use to suppress messages. Default is <code>FALSE</code>.
+</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p><code>summBg</code> was primarily designed to calculate the biochemical methane potential (BMP) from cumulative methane production of a set of batch bottles through these steps: interpolation of cumulative production to a specified time (if needed), subtratction of apparent innoculum contribution, normalisation of the results by substrate mass (typically volatile solids (VS) mass, but could be the mass of anything within the bottle) and calculation of mean and standard deviation for each sample type (set of replicates, identified by <code>descrip.name</code>). 
+</p>
+<p>If needed <code>summBg</code> can return values for all observations and be used for simpler operations e.g., determining cumulative biogas production at some specified time or normalising gas volume by different substrate characteristics.
+</p>
+<p>To summarise data, the <code>setup</code> data frame should have a column with a description of bottle substrate (or a code for this). 
+The name of the column is set by the <code>descrip.name</code> argument.  
+If the inoculum effect is to be subtracted out, a column named <code>descrip.name</code> (for identifying replicates) and a column with the mass of inoculum present (any units), with a name set by <code>inoc.m.name</code> are both required in <code>setup</code>. 
+To normalise by substrate mass (or any mass to be used for normalisation), an additional column with the mass of substrate is needed in <code>setup</code> –its name is set by <code>norm.name</code>.
+</p>
+<p>This function is probably easier to understand by example.
+See ‘Examples’.
+</p>
+
+
+<h3>Value</h3>
+
+<p>a data frame, with the colums:
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>descrip</code></td>
+<td>
+<p>from the input data frame setup</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>mean</code></td>
+<td>
+<p>mean of the response variable <code>vol.name</code>, typically after subtraction of inoculum contribution and normalization by substrate mass</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>sd</code></td>
+<td>
+<p>standard deviation of the response variable <code>vol.name</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>se</code></td>
+<td>
+<p>standard error of the response variable <code>vol.name</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>n</code></td>
+<td>
+<p>number of bottles</p>
+</td>
+</tr>
+</table>
+<p>If <code>show.more = TRUE</code> additional columns are returned:
+summ2 &lt;- summ2[ , c(descrip.name, time.name, 'mean', 'se', 'sd', 'n', 'rsd.inoc', 'fv.inoc', 'se1', 'se2', 'se3')]
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>rsd.inoc</code></td>
+<td>
+<p>relative standard deviation in specific <code>vol.name</code> (methane) production by inouclum among replicates</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>fv.inoc</code></td>
+<td>
+<p>(mean) fraction of bottle <code>vol.name</code> (methane) estimated to have come from inoculum</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>se1</code></td>
+<td>
+<p>standard error contribution from variation among replicate substrate bottles</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>se2</code></td>
+<td>
+<p>standard error contribution from variation among inoculum-only bottles</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>se2</code></td>
+<td>
+<p>standard error contribution from uncertainty in substrate mass addition</p>
+</td>
+</tr>
+</table>
+<p>If <code>show.obs = TRUE</code> even more columns are returned:
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>cvCH4.tot</code></td>
+<td>
+<p>name based on <code>vol.name</code>, total <code>vol.name</code> produced by bottle, normalization applied as for <code>vol.name</code> (and may be nonsensical)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>cvCH4.inoc</code></td>
+<td>
+<p>name based on <code>vol.name</code>, <code>vol.name</code> produced by bottle estimated as coming from inoculum, normalization applied as for <code>vol.name</code> (and may be nonsensical)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>se.inoc</code></td>
+<td>
+<p>standard error from inoculum used to calculate <code>se2</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>cvCH4.se</code></td>
+<td>
+<p>name based on <code>vol.name</code>, standard error from substrate mass used to calculate <code>se3</code></p>
+</td>
+</tr>
+</table>
+<h3>Note</h3>
+
+<p>Reported standard deviation and standard error includes an estimate of variability from subtracting the inoculum contribution when this is done.
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Sasha D. Hafner and Charlotte Rennuit
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>cumBg</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">data("vol")
+data("comp") 
+data("setup") 
+
+# First need to calculate cumulative methane production data
+cum.prod &lt;- cumBg(vol, comp = comp, temp = 20, pres = 1, 
+                  time.name = "days", extrap = TRUE)
+
+head(cum.prod)
+
+# Cumulative methane production (default) at 30 d 
+# Uses default names for some columns
+summBg(vol = cum.prod, setup = setup, time.name = "days", when = 30)
+
+# Or total cumulative biogas
+summBg(vol = cum.prod, setup = setup, time.name = "days", 
+       vol.name = "cvBg", when = 30)
+
+# Cumulative CH4 only, subtract inoculum contribution
+summBg(vol = cum.prod, setup = setup, time.name = "days", 
+       inoc.name = "inoc", inoc.m.name = "minoc", when = 30)
+
+# And normalise by mvs.sub column (mass of substrate VS here) (so the result is BMP)
+summBg(vol = cum.prod, setup = setup, time.name = "days", 
+       inoc.name = "inoc", inoc.m.name = "minoc", when = 30, 
+       norm.name = "mvs.sub")
+
+# Same example, but return results for three times
+summBg(vol = cum.prod, setup = setup, time.name = "days", 
+       inoc.name = "inoc", inoc.m.name = "minoc", when = c(10, 30, 60), 
+       norm.name = "mvs.sub")
+
+# Back to earlier example, but return all individual observations 
+# (and total production and individual contributions of substrate 
+# and inoculum) 
+summBg(vol = cum.prod, setup = setup, time.name = "days", 
+       inoc.name = "inoc", inoc.m.name = "minoc", when = 30, 
+       norm.name = "mvs.sub", show.obs = TRUE)
+
+# Something different: interpolated biogas production rates
+summBg(vol = cum.prod, setup = setup, time.name = "days", 
+       vol.name = "rvBg", when = 30, show.obs = TRUE)
+
+# The when argument could also be 'meas', 'end', or '1p3d' (or related) for any of these examples 
+summBg(vol = cum.prod, setup = setup, time.name = "days", 
+       inoc.name = "inoc", inoc.m.name = "minoc", when = "end", 
+       norm.name = "mvs.sub")
+
+summBg(vol = cum.prod, setup = setup, time.name = "days", 
+       inoc.name = "inoc", inoc.m.name = "minoc", when = "meas", 
+       norm.name = "mvs.sub")
+
+summBg(vol = cum.prod, setup = setup, time.name = "days", 
+       inoc.name = "inoc", inoc.m.name = "minoc", when = "1p3d", 
+       norm.name = "mvs.sub")
+
+# Or combine multiple values of when in a list
+
+summBg(vol = cum.prod, setup = setup, time.name = "days", 
+       inoc.name = "inoc", inoc.m.name = "minoc", 
+       when = list(30, "1p3d", "end"), 
+       norm.name = "mvs.sub")
+
+# If you want to apply the 1% criterion but also want a single fixed time for all bottles,
+# you have to use two calls
+summBg(vol = cum.prod, setup = setup, time.name = "days", 
+       inoc.name = "inoc", inoc.m.name = "minoc", when = "1p3d", 
+       norm.name = "mvs.sub")
+
+# From the first call, the longest time is 42 days, so use when = 42
+summBg(vol = cum.prod, setup = setup, time.name = "days", 
+       inoc.name = "inoc", inoc.m.name = "minoc", when = 42, 
+       norm.name = "mvs.sub")
+
+# If an error is thrown because a bottle doesn't meet the 1% criterion, use 
+# show.rates = TRUE to see rates
+## Not run: 
+# Will return error
+cpshort &lt;- cum.prod[cum.prod$days &lt; 10, ]
+summBg(vol = cpshort, setup = setup, time.name = "days", 
+       inoc.name = "inoc", inoc.m.name = "minoc", when = "1p", 
+       norm.name = "mvs.sub")
+
+## End(Not run)
+
+# So then use this to see which bottles are causing problems
+cpshort &lt;- cum.prod[cum.prod$days &lt; 10, ]
+summBg(vol = cpshort, setup = setup, time.name = "days", 
+       inoc.name = "inoc", inoc.m.name = "minoc", when = "1p", 
+       norm.name = "mvs.sub", show.rates = TRUE)
+
+
+# Example with dataset with different column names
+data("vol2")
+data("comp2")
+data("setup2")
+
+# First need to calculate cumulative methane production data
+cum.prod &lt;- cumBg(vol2, comp = comp2, temp = 20, pres = 1, 
+                  id.name = "bottle", time.name = "days", 
+		  dat.name = "meas.vol", comp.name = "CH4.conc", 
+                  extrap = TRUE)
+
+head(cum.prod)
+
+# Cumulative CH4 production at 30 d, subtract inoculum contribution 
+# and normalise by sub.vs column (mass of substrate VS here) (look at setup2).
+summBg(vol = cum.prod, setup = setup2, id.name = "bottle", 
+       time.name = "days", descrip.name = "description", 
+       inoc.name = "Inoculum", inoc.m.name = "inoc.mass", 
+       norm.name = "sub.vs", when = 30)
+
+</code></pre>
+
+
+</div>

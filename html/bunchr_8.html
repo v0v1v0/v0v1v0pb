@@ -1,0 +1,204 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>kink_estimator</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Analyzing Bunching at a Kink</h2>
+
+<h3>Description</h3>
+
+<p>Given a kinked budget set, this function gets a vector of earnings and
+analyzes bunching. This function could be run independently, but best used
+through the <code>bunch</code> function.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">kink_estimator(earnings, zstar, t1, t2, cf_start = NA, cf_end = NA,
+  exclude_before = 2, exclude_after = 2, binw = 10, poly_size = 7,
+  convergence = 0.01, max_iter = 100, correct = TRUE, select = TRUE,
+  draw = TRUE, title = "Bunching Visualization", varname = "Earnings")
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>earnings</code></td>
+<td>
+<p>Vector of earnings, hopefully a very large one.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>zstar</code></td>
+<td>
+<p>Place of kink (critical earning point).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>t1</code></td>
+<td>
+<p>Marginal tax rate before kink.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>t2</code></td>
+<td>
+<p>Marginal tax rate after kink.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>cf_start</code></td>
+<td>
+<p>Number of bins before the kink bin where counter-factual
+histogram should start.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>cf_end</code></td>
+<td>
+<p>Number of bins after the kink bin where counter-factual
+histogram should start.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>exclude_before</code></td>
+<td>
+<p>Number of excluded bins before the kink bin.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>exclude_after</code></td>
+<td>
+<p>Number of excluded bins after the kink bin.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>binw</code></td>
+<td>
+<p>Bin width.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>poly_size</code></td>
+<td>
+<p>Order of polynomial used to calculate counter-factual
+histogram.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>convergence</code></td>
+<td>
+<p>Minimal rate of change of bunching estimate to stop
+iterations.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>max_iter</code></td>
+<td>
+<p>Maximum number of iterations for bunching estimates.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>correct</code></td>
+<td>
+<p>Should the counter-factual histogram be corrected to compensate
+for shifting left because of the notch? See details.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>select</code></td>
+<td>
+<p>Should model selection be used to find counter-factual
+histogram? See details.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>draw</code></td>
+<td>
+<p>Should a graph be drawn?</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>title</code></td>
+<td>
+<p>Title for plot output</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>varname</code></td>
+<td>
+<p>Name for running variable, to be desplayed in the plot</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>A histogram is created from the earnings vector, with the kink
+point zstar as the center of one of the bins.
+</p>
+<p>Correction of the counter-factual is required, as the kink-induced bunching
+will shift the whole distribution on the right side of the kink to the left.
+This option follows Chetty <em>et al</em> (2009) in correcting for this.
+</p>
+<p>Model selection works using the <code>step</code> function from the stats package.
+It runs backwards from the full polynomial model, trying to find the best
+explanatory model using the Akaike information criterion.
+</p>
+
+
+<h3>Value</h3>
+
+<p><code>kink_estimator</code> returns a list of the following variables:
+</p>
+
+<dl>
+<dt><code>e</code></dt>
+<dd>
+<p>Estimated elasticity</p>
+</dd>
+<dt><code>Bn</code></dt>
+<dd>
+<p>The sum of total estimated extra bunching in the excluded
+bins</p>
+</dd>
+<dt><code>b</code></dt>
+<dd>
+<p>The rate of extra bunching in the excluded area, divided by
+the length of area in \$</p>
+</dd>
+<dt><code>data</code></dt>
+<dd>
+<p>A data frame with bin mids, counts, counter-factual
+counts, and excluded dummy</p>
+</dd>
+</dl>
+<h3>References</h3>
+
+<p>Chetty, R., Friedman, J., Olsen, T., Pistaferri, L. (2009)
+<em>Adjustment Costs, Firm Responses, and Micro vs. Macro Labor Supply
+Elasticities: Evidence from Danish Tax Records</em>, Quarterly Journal of
+Economics, 126(2).
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>bunch</code>, <code>notch_estimator</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">ability_vec &lt;- 4000 * rbeta(100000, 2, 5)
+earning_vec &lt;- sapply(ability_vec, earning_fun, 0.2, 0, 0.2, 0, 1000)
+# bunch_viewer(earning_vec, 1000, 40, 40, 1, 1, binw = 10)
+kink_estimator(earning_vec, 1000, 0, 0.2, 40, 40, 1, 1, binw = 10, draw = FALSE)$e
+
+</code></pre>
+
+
+</div>

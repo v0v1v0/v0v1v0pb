@@ -1,0 +1,138 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>as.bimets</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>
+Convert a Time Series to BIMETS
+</h2>
+
+<h3>Description</h3>
+
+<p>This function tries to convert a time series of class <code>ts()</code> or <code>xts()</code> into a BIMETS time series that satisfy the compliance control check defined in <code>is.bimets</code><br></p>
+<p>All the information in the input time series will be preserved.<br><br> Input time series must be of class <code>ts()</code> or <code>xts()</code>, and will be converted in the BIMETS class-type specified in the global option <code>BIMETS_CONF_CCT</code> (see <code>BIMETS configuration</code>). 
+<br><br> If the input time series has a temporal discontinuity (i.e. a missing pair Date-Value in the case of <code>xts()</code> time series) then the missing pair Date-Value is inserted in the output time series with a  missing value <code>NA</code>, or with the value provided in the <code>FILLVALUE</code> argument. <br><br> If <code>BIMETS_CONF_CCT='XTS'</code>, in the case of a monthly input time series the <code>.indexCLASS</code> is converted to the class <code>yearmon()</code>; in the case of a quarterly input time series the <code>.indexCLASS</code> is converted to <code>yearqtr()</code>; in the case of other input frequency the <code>.indexCLASS</code> is converted to <code>Date()</code>. If <code>BIMETS_CONF_CCT='XTS'</code> the dates of all the output observations are set accordingly to the BIMETS global option <code>BIMETS_CONF_DIP</code>, i.e. the first or the last dates in the period (see <code>BIMETS configuration</code>). <br><br>
+If the input time series has multiple observations in the same date, e.g. an <code>xts()</code> with a two or more observations in the same date, the duplication is removed and the output time series will contain only the later observation (see example).
+<br><br> If the input time series is multivariate, the output time series will contain only the first column of the input matrix of data (where the matrix of data is the matrix built by binding input time series values as columns). <br><br> If the input time series is a daily time series of class <code>xts()</code> and the global option <code>BIMETS_CONF_CCT='TS'</code> then the 366th period of the output time series in each non-bissextile year will have the value of the 365th period in the same year (duplicated value).
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">as.bimets(x=NULL, FILLVALUE=NA, VERBOSE=FALSE, ...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+
+<p>Input time series of class <code>ts()</code> or <code>xts()</code>. 
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>FILLVALUE</code></td>
+<td>
+
+<p>Value inserted in the output time series in the case of temporal discontinuity. Defaults to missing NA.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>VERBOSE</code></td>
+<td>
+
+<p>If <code>TRUE</code>, a verbose description of inserted and/or removed observations, if any, will be shown.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+
+<p>Backward compatibility.
+</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>This function returns a BIMETS time series (see also <code>BIMETS configuration</code>)
+.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>is.bimets</code><br><code>TIMESERIES</code><br><code>BIMETS indexing</code><br><code>BIMETS configuration</code><br><code>fromBIMETStoXTS</code><br><code>fromBIMETStoTS</code><br></p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+	#xts series with dates equal to the first date in the period, 
+	#and some missing observations
+	#first...set option and work with xts
+	setBIMETSconf('BIMETS_CONF_CCT','XTS')
+	#create xts
+	xt&lt;-xts(1:10,order.by=seq(as.Date('2000-01-01'),len=10,by='year'))
+	#remove some data
+	xt&lt;-xt[-5]
+	xt&lt;-xt[-3] 
+	#convert to bimets
+	xtBimets&lt;-as.bimets(xt)
+	#print before and after...
+	print(xt)
+	print(xtBimets)
+	
+	#ts bivariate series into xts
+	setBIMETSconf('BIMETS_CONF_CCT','XTS')
+	ts&lt;-ts(matrix(c(1,2,3,4,5,6),nrow=3,ncol=2),start=c(2000,1),frequency=1)
+	print(ts)
+	xtsBimets&lt;-as.bimets(ts)
+	print(xtsBimets)
+	
+	#reset defaults
+	setBIMETSconf('BIMETS_CONF_DIP','LAST')
+	setBIMETSconf('BIMETS_CONF_CCT','TS')
+	
+	#xts quarterly with irregular dates and missings data 
+	xt&lt;-xts(1:10,order.by=seq(as.Date('2000-01-03'),len=10,by='3 months'))
+	#remove some data
+	xt&lt;-xt[-5]
+	xt&lt;-xt[-3] 
+	#convert
+	tsBimets&lt;-as.bimets(xt)
+	#print before and after
+	print(xt)
+	print(tsBimets)
+	
+	#xts daily with duplicated observations and missing data
+	xt&lt;-xts(1:11,order.by=c(as.Date('2000-01-01'),
+	                     seq(as.Date('2000-01-01'),
+	                     len=10,by='day')))
+	xt&lt;-xt[-5]
+	xt&lt;-xt[-3] 
+	#convert
+	tsBimets&lt;-as.bimets(xt)
+	#print before and after
+	print(xt)
+	print(tsBimets)
+	
+	#verbose and fillvalue
+	xt&lt;-xts(1:11,order.by=c(as.Date('2000-01-01'),
+                       seq(as.Date('2000-01-01'),
+                       len=10,by='day')))
+xt&lt;-xt[-5]
+xt&lt;-xt[-3]
+as.bimets(xt,FILLVALUE=99.99,VERBOSE=TRUE)
+
+</code></pre>
+
+
+</div>

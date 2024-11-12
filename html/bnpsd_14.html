@@ -1,0 +1,102 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>fit_tree</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Fit a tree structure to a coancestry matrix</h2>
+
+<h3>Description</h3>
+
+<p>Implements a heuristic algorithm to find the optimal tree topology based on joining pairs of subpopulations with the highest between-coancestry values, and averaging parent coancestries for the merged nodes (a variant of WPGMA hierarchical clustering <code>stats::hclust()</code>).
+Branch lengths are optimized using the non-negative least squares approach <code>nnls::nnls()</code>, which minimize the residual square error between the given coancestry matrix and the model coancestry implied by the tree.
+This algorithm recovers the true tree when the input coancestry truly belongs to this tree and there is no estimation error (i.e. it is the inverse function of <code>coanc_tree()</code>), and performs well for coancestry estimates (i.e. the result of simulating genotypes from the true tree, i.e. from <code>draw_all_admix()</code>, and estimating the coancestry using <code>popkin::popkin()</code> followed by <code>popkin::inbr_diag()</code>).
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">fit_tree(coancestry, method = "mcquitty")
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>coancestry</code></td>
+<td>
+<p>The coancestry matrix to fit a tree to.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>method</code></td>
+<td>
+<p>The hierarchical clustering method (passed to <code>stats::hclust()</code>).
+While all <code>stats::hclust()</code> methods are supported, only two really make sense for this application: "mcquitty" (i.e. WPGMA, default) and "average" (UPGMA).</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The tree is bifurcating by construction, but edges may equal zero if needed, effectively resulting in multifurcation, although this code makes no attempt to merge nodes with zero edges.
+For best fit to arbitrary data, the root edge is always fit to the data (may also be zero).
+Data fit may be poor if the coancestry does not correspond to a tree, particularly if there is admixture between subpopulations.
+</p>
+
+
+<h3>Value</h3>
+
+<p>A <code>phylo</code> object from the <code>ape</code> package (see <code>ape::read.tree()</code>), with two additional list elements at the end:
+</p>
+
+<ul>
+<li> <p><code>edge</code>: (standard <code>phylo</code>.)  A matrix describing the tree topology, listing parent and child node indexes.
+</p>
+</li>
+<li> <p><code>Nnode</code>: (standard <code>phylo</code>.)  Number of internal (non-leaf) nodes.
+</p>
+</li>
+<li> <p><code>tip.label</code>: (standard <code>phylo</code>.)  Labels for tips (leaf nodes), in order of index as in <code>edge</code> matrix above.
+These match the row names of the input <code>coancestry</code> matrix, or if names are missing, the row indexes of this matrix are used (in both cases, labels may be reordered compared to <code>rownames( coancestry )</code>).
+Tips are ordered as they appear in the above <code>edge</code> matrix (ensuring visual agreement in plots between the tree and its resulting coancestry matrix via <code>coanc_tree()</code>), and in an order that matches the input <code>coancestry</code>'s subpopulation order as much as possible (tree constraints do not permit arbitrary tip orders, but a heuristic implemented in <code>tree_reorder()</code> is used to determine a reasonable order when an exact match is not possible).
+</p>
+</li>
+<li> <p><code>edge.length</code>: (standard <code>phylo</code>.)  Values of edge lengths in same order as rows of <code>edge</code> matrix above.
+</p>
+</li>
+<li> <p><code>root.edge</code>: (standard <code>phylo</code>.)  Value of root edge length.
+</p>
+</li>
+<li> <p><code>rss</code>:  The residual sum of squares of the model coancestry versus the input coancestry.
+</p>
+</li>
+<li> <p><code>edge.length.add</code>: Additive edge values (regarding their effect on coancestry, as opposed to <code>edge.length</code> which are probabilities, see <code>coanc_tree()</code>)
+</p>
+</li>
+</ul>
+<h3>See Also</h3>
+
+<p><code>coanc_tree()</code>) for the inverse function (when the coancestry corresponds exactly to a tree).
+</p>
+<p><code>tree_reorder()</code> for reordering tree structure so that tips appear in a particular desired order.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R"># create a random tree
+library(ape)
+k &lt;- 5
+tree &lt;- rtree( k )
+# true coancestry matrix for this tree
+coanc &lt;- coanc_tree( tree )
+
+# now recover tree from this coancestry matrix:
+tree2 &lt;- fit_tree( coanc )
+# tree2 equals tree!
+
+</code></pre>
+
+
+</div>

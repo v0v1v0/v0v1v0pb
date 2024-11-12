@@ -1,0 +1,130 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>bdsvd.ht</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Hyperparameter Tuning for BD-SVD</h2>
+
+<h3>Description</h3>
+
+<p>Finds the number of non-zero elements of the sparse loading according to the high-dimensional
+Bayesian information criterion (HBIC).
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">bdsvd.ht(X, dof.lim, standardize = TRUE, anp = "2", max.iter)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>X</code></td>
+<td>
+<p>Data matrix of dimension <code class="reqn">n x p</code> with possibly <code class="reqn">p &gt;&gt; n</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>dof.lim</code></td>
+<td>
+<p>Interval limits for the number of non-zero components in the sparse loading (degrees of freedom).
+If <code class="reqn">S</code> denotes the support of <code class="reqn">v</code>, then the cardinality of the support, <code class="reqn">|S|</code>,
+corresponds to the degrees of freedom. Default is <code>dof.lim &lt;- c(0, p-1)</code> which is highly recommended to check for
+all levels of sparsity.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>standardize</code></td>
+<td>
+<p>Standardize the data to have unit variance. Default is <code>TRUE</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>anp</code></td>
+<td>
+<p>Which regularization function should be used for the HBIC. <code>anp = "1"</code> implements <code class="reqn">a_{np} = 1</code> which corresponds
+to the BIC, <code>anp = "2"</code> implements <code class="reqn">a_{np} = 1/2 log(np)</code> which corresponds to the regularization used by Bauer (202Xa), and <code>anp = "3"</code>
+implements <code class="reqn">a_{np} = log(log(np))</code> which corresponds to the regularization used by Wang et al. (2009) and Wang et al. (2013).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>max.iter</code></td>
+<td>
+<p>How many iterations should be performed for computing the sparse loading.
+Default is <code>200</code>.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The sparse loadings are computed using the method by Shen &amp; Huang (2008), implemented in
+the <code>irlba</code> package. The computation of the HBIC is outlined in Bauer (202Xa).
+</p>
+
+
+<h3>Value</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>dof</code></td>
+<td>
+
+<p>The optimal number of nonzero components (degrees of freedom) according to the HBIC.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>BIC</code></td>
+<td>
+
+<p>The HBIC for the different numbers of nonzero components.
+</p>
+</td>
+</tr>
+</table>
+<h3>References</h3>
+
+<p><cite>Bauer, J.O. (202Xa). High-dimensional block diagonal covariance structure detection using singular vectors.</cite>
+</p>
+<p><cite>Shen, H. and Huang, J.Z. (2008). Sparse principal component analysis via regularized low rank matrix approximation, J. Multivar. Anal. 99, 1015–1034.</cite>
+</p>
+<p><cite>Wang, H., B. Li, and C. Leng (2009). Shrinkage tuning parameter selection with a diverging number of parameters, J. R. Stat. Soc. B 71 (3), 671–683.</cite>
+</p>
+<p><cite>Wang, L., Y. Kim, and R. Li (2013). Calibrating nonconvex penalized regression in ultra-high dimension, Ann. Stat. 41 (5), 2505–2536.</cite>
+</p>
+
+
+<h3>See Also</h3>
+
+<p>bdsvd, single.bdsvd
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">#Replicate the illustrative example from Bauer (202Xa).
+
+
+p &lt;- 300 #Number of variables. In Bauer (202Xa), p = 3000
+n &lt;- 500 #Number of observations
+b &lt;- 3   #Number of blocks
+design &lt;- "c"
+
+#Simulate data matrix X
+set.seed(1)
+Sigma &lt;- bdsvd.cov.sim(p = p, b = b, design = design)
+X &lt;- mvtnorm::rmvnorm(n, mean=rep(0, p), sigma=Sigma)
+colnames(X) &lt;- seq_len(p)
+
+ht &lt;- bdsvd.ht(X)
+plot(0:(p-1), ht$BIC[,1], xlab = "|S|", ylab = "HBIC", main = "", type = "l")
+single.bdsvd(X, dof = ht$dof, standardize = FALSE)
+
+</code></pre>
+
+
+</div>

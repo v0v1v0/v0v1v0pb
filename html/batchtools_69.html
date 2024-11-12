@@ -1,0 +1,146 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>chunk</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Chunk Jobs for Sequential Execution</h2>
+
+<h3>Description</h3>
+
+<p>Jobs can be partitioned into “chunks” to be executed sequentially on the computational nodes.
+Chunks are defined by providing a data frame with columns “job.id” and “chunk” (integer)
+to <code>submitJobs</code>.
+All jobs with the same chunk number will be grouped together on one node to form a single
+computational job.
+</p>
+<p>The function <code>chunk</code> simply splits <code>x</code> into either a fixed number of groups, or
+into a variable number of groups with a fixed number of maximum elements.
+</p>
+<p>The function <code>lpt</code> also groups <code>x</code> into a fixed number of chunks,
+but uses the actual values of <code>x</code> in a greedy “Longest Processing Time” algorithm.
+As a result, the maximum sum of elements in minimized.
+</p>
+<p><code>binpack</code> splits <code>x</code> into a variable number of groups whose sum of elements do
+not exceed the upper limit provided by <code>chunk.size</code>.
+</p>
+<p>See examples of <code>estimateRuntimes</code> for an application of <code>binpack</code> and <code>lpt</code>.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">chunk(x, n.chunks = NULL, chunk.size = NULL, shuffle = TRUE)
+
+lpt(x, n.chunks = 1L)
+
+binpack(x, chunk.size = max(x))
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>[<code>numeric</code>]<br>
+For <code>chunk</code> an atomic vector (usually the <code>job.id</code>).
+For <code>binpack</code> and <code>lpt</code>, the weights to group.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>n.chunks</code></td>
+<td>
+<p>[<code>integer(1)</code>]<br>
+Requested number of chunks.
+The function <code>chunk</code> distributes the number of elements in <code>x</code> evenly while
+<code>lpt</code> tries to even out the sum of elements in each chunk.
+If more chunks than necessary are requested, empty chunks are ignored.
+Mutually exclusive with <code>chunks.size</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>chunk.size</code></td>
+<td>
+<p>[<code>integer(1)</code>]<br>
+Requested chunk size for each single chunk.
+For <code>chunk</code> this is the number of elements in <code>x</code>, for <code>binpack</code> the size
+is determined by the sum of values in <code>x</code>.
+Mutually exclusive with <code>n.chunks</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>shuffle</code></td>
+<td>
+<p>[<code>logical(1)</code>]<br>
+Shuffles the groups. Default is <code>TRUE</code>.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>[<code>integer</code>] giving the chunk number for each element of <code>x</code>.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>estimateRuntimes</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+ch = chunk(1:10, n.chunks = 2)
+table(ch)
+
+ch = chunk(rep(1, 10), chunk.size = 2)
+table(ch)
+
+set.seed(1)
+x = runif(10)
+ch = lpt(x, n.chunks = 2)
+sapply(split(x, ch), sum)
+
+set.seed(1)
+x = runif(10)
+ch = binpack(x, 1)
+sapply(split(x, ch), sum)
+
+# Job chunking
+tmp = makeRegistry(file.dir = NA, make.default = FALSE)
+ids = batchMap(identity, 1:25, reg = tmp)
+
+### Group into chunks with 10 jobs each
+library(data.table)
+ids[, chunk := chunk(job.id, chunk.size = 10)]
+print(ids[, .N, by = chunk])
+
+### Group into 4 chunks
+ids[, chunk := chunk(job.id, n.chunks = 4)]
+print(ids[, .N, by = chunk])
+
+### Submit to batch system
+submitJobs(ids = ids, reg = tmp)
+
+# Grouped chunking
+tmp = makeExperimentRegistry(file.dir = NA, make.default = FALSE)
+prob = addProblem(reg = tmp, "prob1", data = iris, fun = function(job, data) nrow(data))
+prob = addProblem(reg = tmp, "prob2", data = Titanic, fun = function(job, data) nrow(data))
+algo = addAlgorithm(reg = tmp, "algo", fun = function(job, data, instance, i, ...) problem)
+prob.designs = list(prob1 = data.table(), prob2 = data.table(x = 1:2))
+algo.designs = list(algo = data.table(i = 1:3))
+addExperiments(prob.designs, algo.designs, repls = 3, reg = tmp)
+
+### Group into chunks of 5 jobs, but do not put multiple problems into the same chunk
+# -&gt; only one problem has to be loaded per chunk, and only once because it is cached
+ids = getJobTable(reg = tmp)[, .(job.id, problem, algorithm)]
+ids[, chunk := chunk(job.id, chunk.size = 5), by = "problem"]
+ids[, chunk := .GRP, by = c("problem", "chunk")]
+dcast(ids, chunk ~ problem)
+</code></pre>
+
+
+</div>

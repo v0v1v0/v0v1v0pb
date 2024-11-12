@@ -1,0 +1,112 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>plotBrier</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Time-dependent Brier scores</h2>
+
+<h3>Description</h3>
+
+<p>Predict time-dependent Brier scores based on Cox regression models
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">plotBrier(
+  object,
+  survObj.new = NULL,
+  method = "mean",
+  times = NULL,
+  subgroup = 1
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>object</code></td>
+<td>
+<p>fitted object obtained with <code>BayesSurvive</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>survObj.new</code></td>
+<td>
+<p>a list containing observed data from new subjects with
+components <code>t</code>, <code>di</code>, <code>X</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>method</code></td>
+<td>
+<p>option to use the posterior mean (<code>"mean"</code>) of coefficients
+for prediction or Bayesian model averaging (<code>"BMA"</code>) for prediction</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>times</code></td>
+<td>
+<p>maximum time point to evaluate the prediction</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>subgroup</code></td>
+<td>
+<p>index of the subgroup in <code>survObj.new</code> for prediction.
+Default value is 1</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>A <code>ggplot2::ggplot</code> object. See <code>?ggplot2::ggplot</code> for more
+details of the object.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+library("BayesSurvive")
+set.seed(123)
+
+# Load the example dataset
+data("simData", package = "BayesSurvive")
+
+dataset &lt;- list(
+  "X" = simData[[1]]$X,
+  "t" = simData[[1]]$time,
+  "di" = simData[[1]]$status
+)
+
+# Initial value: null model without covariates
+initial &lt;- list("gamma.ini" = rep(0, ncol(dataset$X)))
+# Hyperparameters
+hyperparPooled &lt;- list(
+  "c0"     = 2, # prior of baseline hazard
+  "tau"    = 0.0375, # sd for coefficient prior
+  "cb"     = 20, # sd for coefficient prior
+  "pi.ga"  = 0.02, # prior variable selection probability for standard Cox models
+  "a"      = -4, # hyperparameter in MRF prior
+  "b"      = 0.1, # hyperparameter in MRF prior
+  "G"      = simData$G # hyperparameter in MRF prior
+)
+
+
+# run Bayesian Cox with graph-structured priors
+fit &lt;- BayesSurvive(
+  survObj = dataset, hyperpar = hyperparPooled,
+  initial = initial, nIter = 100
+)
+# predict survival probabilities of the train data
+plotBrier(fit, survObj.new = dataset)
+
+
+</code></pre>
+
+
+</div>

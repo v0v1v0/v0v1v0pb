@@ -1,0 +1,138 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>addProblem</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Define Problems for Experiments</h2>
+
+<h3>Description</h3>
+
+<p>Problems may consist of up to two parts: A static, immutable part (<code>data</code> in <code>addProblem</code>)
+and a dynamic, stochastic part (<code>fun</code> in <code>addProblem</code>).
+For example, for statistical learning problems a data frame would be the static problem part while
+a resampling function would be the stochastic part which creates problem instance.
+This instance is then typically passed to a learning algorithm like a wrapper around a statistical model
+(<code>fun</code> in <code>addAlgorithm</code>).
+</p>
+<p>This function serialize all components to the file system and registers the problem in the <code>ExperimentRegistry</code>.
+</p>
+<p><code>removeProblem</code> removes all jobs from the registry which depend on the specific problem.
+<code>reg$problems</code> holds the IDs of already defined problems.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">addProblem(
+  name,
+  data = NULL,
+  fun = NULL,
+  seed = NULL,
+  cache = FALSE,
+  reg = getDefaultRegistry()
+)
+
+removeProblems(name, reg = getDefaultRegistry())
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>name</code></td>
+<td>
+<p>[<code>character(1)</code>]<br>
+Unique identifier for the problem.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+<p>[<code>ANY</code>]<br>
+Static problem part. Default is <code>NULL</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>fun</code></td>
+<td>
+<p>[<code>function</code>]<br>
+The function defining the stochastic problem part.
+The static part is passed to this function with name “data” and the <code>Job</code>/<code>Experiment</code>
+is passed as “job”.
+Therefore, your function must have the formal arguments “job” and “data” (or dots <code>...</code>).
+If you do not provide a function, it defaults to a function which just returns the data part.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>seed</code></td>
+<td>
+<p>[<code>integer(1)</code>]<br>
+Start seed for this problem. This allows the “synchronization” of a stochastic
+problem across algorithms, so that different algorithms are evaluated on the same stochastic instance.
+If the problem seed is defined, the seeding mechanism works as follows:
+(1) Before the dynamic part of a problem is instantiated,
+the seed of the problem + [replication number] - 1 is set, i.e. the first
+replication uses the problem seed. (2) The stochastic part of the problem is
+instantiated. (3) From now on the usual experiment seed of the registry is used,
+see <code>ExperimentRegistry</code>.
+If <code>seed</code> is set to <code>NULL</code> (default), the job seed is used to instantiate the problem and
+different algorithms see different stochastic instances of the same problem.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>cache</code></td>
+<td>
+<p>[<code>logical(1)</code>]<br>
+If <code>TRUE</code> and <code>seed</code> is set, problem instances will be cached on the file system.
+This assumes that each problem instance is deterministic for each combination of hyperparameter setting
+and each replication number.
+This feature is experimental.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>reg</code></td>
+<td>
+<p>[<code>ExperimentRegistry</code>]<br>
+Registry. If not explicitly passed, uses the last created registry.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>[<code>Problem</code>]. Object of class “Problem” (invisibly).
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>Algorithm</code>, <code>addExperiments</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+tmp = makeExperimentRegistry(file.dir = NA, make.default = FALSE)
+addProblem("p1", fun = function(job, data) data, reg = tmp)
+addProblem("p2", fun = function(job, data) job, reg = tmp)
+addAlgorithm("a1", fun = function(job, data, instance) instance, reg = tmp)
+addExperiments(repls = 2, reg = tmp)
+
+# List problems, algorithms and job parameters:
+tmp$problems
+tmp$algorithms
+getJobPars(reg = tmp)
+
+# Remove one problem
+removeProblems("p1", reg = tmp)
+
+# List problems and algorithms:
+tmp$problems
+tmp$algorithms
+getJobPars(reg = tmp)
+</code></pre>
+
+
+</div>

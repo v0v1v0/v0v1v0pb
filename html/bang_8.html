@@ -1,0 +1,176 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>pp_check.hef</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Posterior predictive checks for a hef object</h2>
+
+<h3>Description</h3>
+
+<p><code>pp_check</code> method for class "hef".  This provides an interface
+to the functions that perform posterior predictive checks in the
+<strong>bayesplot</strong> package.  See PPC-overview for
+details of these functions.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">## S3 method for class 'hef'
+pp_check(object, fun = NULL, raw = FALSE, nrep = NULL, ...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>object</code></td>
+<td>
+<p>An object of class "hef", a result of a call to
+<code>hef</code> or <code>hanova1</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>fun</code></td>
+<td>
+<p>The plotting function to call.
+Can be any of the functions detailed at PPC-overview.
+The "ppc_" prefix can optionally be dropped if fun is specified
+as a string.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>raw</code></td>
+<td>
+<p>Only relevant if <code>object$model = "beta_binom"</code> or
+<code>object$model = "gamma_pois"</code>.
+If <code>raw = TRUE</code> then the raw responses are used in the plots.
+Otherwise, the <em>proportions</em> of successes are used in the
+<code>beta_binom</code> case and the <em>exposure-adjusted rate</em> in the
+<code>gamma_pois</code> case.  In both cases the values used are
+<code>object$data[, 1] / object$data[, 2]</code> and the equivalent
+in <code>object$data_rep</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nrep</code></td>
+<td>
+<p>The number of predictive replicates to use.  If <code>nrep</code>
+is supplied then the first <code>nrep</code> rows of <code>object$data_rep</code>
+are used.  Otherwise, or if <code>nrep</code> is greater than
+<code>nrow(object$data_rep)</code>, then all rows are used.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Additional arguments passed on to bayesplot functions.
+See <strong>Examples</strong> below.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>For details of these functions see PPC-overview.
+See also the vignettes
+<a href="https://CRAN.R-project.org/package=bang">Conjugate Hierarchical Models</a>,
+<a href="https://CRAN.R-project.org/package=bang">Hierarchical 1-way Analysis of Variance</a>
+and the <strong>bayesplot</strong> vignette
+<a href="https://CRAN.R-project.org/package=bayesplot">Graphical posterior predictive checks</a>.
+</p>
+<p>The general idea is to compare the observed data <code>object$data</code>
+with a matrix <code>object$data_rep</code> in which each row is a
+replication of the observed data simulated from the posterior predictive
+distribution.  For greater detail see Chapter 6 of Gelman et al. (2013).
+</p>
+
+
+<h3>Value</h3>
+
+<p>A ggplot object that can be further customized using the
+<strong>ggplot2</strong> package.
+</p>
+
+
+<h3>References</h3>
+
+<p>Jonah Gabry (2016). bayesplot: Plotting for Bayesian
+Models. R package version 1.1.0.
+<a href="https://CRAN.R-project.org/package=bayesplot">https://CRAN.R-project.org/package=bayesplot</a>
+</p>
+<p>Gelman, A., Carlin, J. B., Stern, H. S., Dunson, D. B.,
+Vehtari, A., and Rubin, D. B. (2013). <em>Bayesian Data Analysis</em>.
+Chapman &amp; Hall/CRC Press, London, third edition. (Chapter 6).
+<a href="http://www.stat.columbia.edu/~gelman/book/">http://www.stat.columbia.edu/~gelman/book/</a>
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>hef</code> and <code>hanova1</code> for sampling
+from posterior distributions of hierarchical models.
+</p>
+<p><strong>bayesplot</strong> functions PPC-overview,
+PPC-distributions,
+PPC-test-statistics,
+PPC-intervals,
+pp_check.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">############################ Beta-binomial #################################
+
+# ------------------------- Rat tumor data ------------------------------- #
+
+rat_res &lt;- hef(model = "beta_binom", data = rat, nrep = 50)
+
+# Overlaid density estimates
+pp_check(rat_res)
+
+# Overlaid distribution function estimates
+pp_check(rat_res, fun = "ecdf_overlay")
+
+# Multiple histograms
+pp_check(rat_res, fun = "hist", nrep = 8)
+
+# Multiple boxplots
+pp_check(rat_res, fun = "boxplot")
+# Predictive medians vs observed median
+pp_check(rat_res, fun = "stat", stat = "median")
+
+# Predictive (mean, sd) vs observed (mean, sd)
+pp_check(rat_res, fun = "stat_2d", stat = c("mean", "sd"))
+
+############################ Gamma-Poisson #################################
+
+# ------------------------ Pump failure data ------------------------------ #
+
+pump_res &lt;- hef(model = "gamma_pois", data = pump, nrep = 50)
+
+
+# Overlaid density estimates
+pp_check(pump_res)
+# Predictive (mean, sd) vs observed (mean, sd)
+pp_check(pump_res, fun = "stat_2d", stat = c("mean", "sd"))
+
+
+###################### One-way Hierarchical ANOVA ##########################
+
+#----------------- Late 21st Century Global Temperature Data ------------- #
+
+RCP26_2 &lt;- temp2[temp2$RCP == "rcp26", ]
+temp_res &lt;- hanova1(resp = RCP26_2[, 1], fac = RCP26_2[, 2], nrep = 50)
+
+# Overlaid density estimates
+pp_check(temp_res)
+# Predictive (mean, sd) vs observed (mean, sd)
+pp_check(temp_res, fun = "stat_2d", stat = c("mean", "sd"))
+
+</code></pre>
+
+
+</div>

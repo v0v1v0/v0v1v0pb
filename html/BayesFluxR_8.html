@@ -1,0 +1,120 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>bayes_by_backprop</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Use Bayes By Backprop to find Variational Approximation to BNN.</h2>
+
+<h3>Description</h3>
+
+<p>This was proposed in Blundell, C., Cornebise, J., Kavukcuoglu, K., &amp; Wierstra,
+D. (2015, June). Weight uncertainty in neural network. In International
+conference on machine learning (pp. 1613-1622). PMLR.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">bayes_by_backprop(
+  bnn,
+  batchsize,
+  epochs,
+  mc_samples = 1,
+  opt = opt.ADAM(),
+  n_samples_convergence = 10
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>bnn</code></td>
+<td>
+<p>a BNN obtained using <code>BNN</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>batchsize</code></td>
+<td>
+<p>batch size</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>epochs</code></td>
+<td>
+<p>number of epochs to run for</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>mc_samples</code></td>
+<td>
+<p>samples to use in each iteration for the MC approximation
+usually one is enough.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>opt</code></td>
+<td>
+<p>An optimiser. These all start with 'opt.'. See for example <code>opt.ADAM</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>n_samples_convergence</code></td>
+<td>
+<p>At the end of each iteration convergence is checked using this
+many MC samples.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>a list containing
+</p>
+
+<ul>
+<li>
+<p> 'juliavar' - julia variable storing VI
+</p>
+</li>
+<li>
+<p> 'juliacode' - julia representation of function call
+</p>
+</li>
+<li>
+<p> 'params' - variational family parameters for each iteration
+</p>
+</li>
+<li>
+<p> 'losses' - BBB loss in each iteration
+</p>
+</li>
+</ul>
+<h3>Examples</h3>
+
+<pre><code class="language-R">## Not run: 
+  ## Needs previous call to `BayesFluxR_setup` which is time
+  ## consuming and requires Julia and BayesFlux.jl
+  BayesFluxR_setup(installJulia=TRUE, seed=123)
+  net &lt;- Chain(RNN(5, 1))
+  like &lt;- likelihood.seqtoone_normal(net, Gamma(2.0, 0.5))
+  prior &lt;- prior.gaussian(net, 0.5)
+  init &lt;- initialise.allsame(Normal(0, 0.5), like, prior)
+  data &lt;- matrix(rnorm(10*1000), ncol = 10)
+  # Choosing sequences of length 10 and predicting one period ahead
+  tensor &lt;- tensor_embed_mat(data, 10+1)
+  x &lt;- tensor[1:10, , , drop = FALSE]
+  # Last value in each sequence is the target value
+  y &lt;- tensor[11,,]
+  bnn &lt;- BNN(x, y, like, prior, init)
+  vi &lt;- bayes_by_backprop(bnn, 100, 100)
+  vi_samples &lt;- vi.get_samples(vi, n = 1000)
+
+## End(Not run)
+
+</code></pre>
+
+
+</div>

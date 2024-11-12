@@ -1,0 +1,196 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>BchronCalibrate</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Fast radiocarbon calibration</h2>
+
+<h3>Description</h3>
+
+<p>A fast function for calibrating large numbers of radiocarbon dates involving multiple calibration curves
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">BchronCalibrate(
+  ages,
+  ageSds,
+  calCurves = rep("intcal20", length(ages)),
+  ids = NULL,
+  positions = NULL,
+  pathToCalCurves = system.file("data", package = "Bchron"),
+  allowOutside = FALSE,
+  eps = 1e-05,
+  dfs = rep(100, length(ages))
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>ages</code></td>
+<td>
+<p>A vector of ages provided in years before 1950.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ageSds</code></td>
+<td>
+<p>A vector of 1-sigma values for the ages given above</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>calCurves</code></td>
+<td>
+<p>A vector of values containing either <code>intcal20</code>, <code>shcal20</code>, <code>marine20</code>, or <code>normal</code> (older calibration curves are supposed such as intcal13). Should be the same length the number of ages supplied. Non-standard calibration curves can be used provided they are supplied in the same format as those previously mentioned and are placed in the same directory. Normal indicates a normally-distributed (non-14C) age.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ids</code></td>
+<td>
+<p>ID names for each age</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>positions</code></td>
+<td>
+<p>Position values (e.g. depths) for each age. In the case of layers of non-zero thickness, this should be the middle value of the slice</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>pathToCalCurves</code></td>
+<td>
+<p>File path to where the calibration curves are located. Defaults to the system directory where the 3 standard calibration curves are stored.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>allowOutside</code></td>
+<td>
+<p>Whether to allow calibrations to run outside the range of the calibration curve. By default this is turned off as calibrations outside of the range of the calibration curve can cause severe issues with probability ranges of calibrated dates</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>eps</code></td>
+<td>
+<p>Cut-off point for density calculation. A value of eps&gt;0 removes ages from the output which have negligible probability density</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>dfs</code></td>
+<td>
+<p>Degrees-of-freedom values for the t-distribution associated with the calibration calculation. A large value indicates Gaussian distributions assumed for the 14C ages</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>This function provides a direct numerical integration strategy for computing calibrated radiocarbon ages. The steps for each 14C age are approximately as follows:
+1) Create a grid of ages covering the range of the calibration curve
+2) Calculate the probability of each age according to the 14C age, the standard deviation supplied and the calibration curve
+3) Normalise the probabilities so that they sum to 1
+4) Remove any probabilities that are less than the value given for eps
+Multiple calibration curves can be specified so that each 14C age can have a different curve. For ages that are not 14C, use the 'normal' calibration curve which treats the ages as normally distributed with given standard deviation
+</p>
+
+
+<h3>Value</h3>
+
+<p>A list of lists where each element corresponds to a single age. Each element contains:
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>ages</code></td>
+<td>
+<p>The original age supplied</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ageSds</code></td>
+<td>
+<p>The original age standard deviation supplied</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>positions</code></td>
+<td>
+<p>The position of the age (usually the depth)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>calCurves</code></td>
+<td>
+<p>The calibration curve used for that age</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ageGrid</code></td>
+<td>
+<p>A grid of age values over which the density was created</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>densities</code></td>
+<td>
+<p>A vector of probability values indicating the probability value for each element in <code>ageGrid</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ageLab</code></td>
+<td>
+<p>The label given to the age variable</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>positionLab</code></td>
+<td>
+<p>The label given to the position variable</p>
+</td>
+</tr>
+</table>
+<h3>See Also</h3>
+
+<p><code>Bchronology</code>, <code>BchronRSL</code>, <code>BchronDensity</code>, <code>BchronDensityFast</code>, <code>createCalCurve</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R"># Calibrate a single age
+ages1 &lt;- BchronCalibrate(
+  ages = 11553,
+  ageSds = 230,
+  calCurves = "intcal20",
+  ids = "Date-1"
+)
+summary(ages1)
+plot(ages1)
+
+# Or plot with Calibration curve
+plot(ages1, includeCal = TRUE)
+
+# Calibrate multiple ages with different calibration curves
+ages2 &lt;- BchronCalibrate(
+  ages = c(3445, 11553, 7456),
+  ageSds = c(50, 230, 110),
+  calCurves = c("intcal20", "intcal20", "shcal20")
+)
+summary(ages2)
+plot(ages2)
+
+# Calibrate multiple ages with multiple calibration curves and including depth
+ages3 &lt;- BchronCalibrate(
+  ages = c(3445, 11553),
+  ageSds = c(50, 230),
+  positions = c(100, 150),
+  calCurves = c("intcal20", "normal")
+)
+summary(ages3)
+plot(ages3, withPositions = TRUE)
+</code></pre>
+
+
+</div>

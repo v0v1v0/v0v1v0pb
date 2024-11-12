@@ -1,0 +1,163 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>bezier</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Generates points along a Bezier curve or spline</h2>
+
+<h3>Description</h3>
+
+<p>This function generates points along a Bezier curve or spline (concatenated Bezier curves) at specified parametric values. The Bezier curve can be of any degree and any number of dimensions.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">bezier(t, p, start = NULL, end = NULL, deg = NULL)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>t</code></td>
+<td>
+<p>a vector of parametric value(s), on the interval <code>[0, 1]</code> for a Bezier curve and on the interval <code>[0, n]</code> for a Bezier spline of <code>n</code> concatenated Bezier curves.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>p</code></td>
+<td>
+<p>control points, input either as vector, matrix or list.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>start</code></td>
+<td>
+<p>a vector giving an initial control point (must be of the same dimensionality as <code>p</code>). If provided, the first point of <code>p</code> is assumed to be the second control point.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>end</code></td>
+<td>
+<p>a vector giving an final control point (must be of the same dimensionality as <code>p</code>). If provided, the last point of <code>p</code> is assumed to be the second to last control point.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>deg</code></td>
+<td>
+<p>a numeric indicating the degree (or order) of a Bezier spline. For Bezier curves, the degree is computed based on the number of control points.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>This function uses the generalized formula for a Bezier curve (see <a href="http://en.wikipedia.org/wiki/Bezier_curve#Explicit_definition">http://en.wikipedia.org/wiki/Bezier_curve#Explicit_definition</a>). If <code>deg</code> is <code>NULL</code>, <code>p</code> is assumed to be a Bezier curve and the degree (or order) is assumed to be the number of control points minus one. Thus, an input of two control points would return a linear Bezier curve, three control points would return a quadratic curve, four a cubic curve, etc.
+</p>
+<p>For a Bezier curve, the parametric values, <code>t</code>, should be on the interval <code>[0, 1]</code>. Values greater than one are used to generate points along a Bezier spline, treating these as concatenated Bezier curves. For example, points would be generated along a Bezier spline consisting of a single Bezier curve using the interval <code>[0, 1]</code>, for a spline consisting of two concatenated Bezier curves, the interval would be <code>[0, 2]</code>, three curves would be <code>[0, 3]</code>, etc. An interval of <code>[1, 2]</code> for a Bezier spline consisting of two concatenated Bezier curves would return points along the second Bezier curve in the spline.
+</p>
+<p>Note that evenly spaced parametric values for <code>t</code> does not produced evenly spaced points along a Bezier curve (except for a linear Bezier curve). Point density increases with sharper curvature along a Bezier. To generate evenly spaced points along a Bezier curve use the function <code>pointsOnBezier</code>.
+</p>
+<p>For <code>p</code>, the first and last values are the fixed, start and end points (through which the Bezier curve must pass) and the values in-between dictate the curvature of the Bezier between the start and end points. For a unidimensional Bezier curve, <code>p</code> is simply a vector in which <code>length(p) - 1</code> specifies the degree. For multidimensional Bezier curves, <code>p</code> can either be a matrix or a list. If <code>p</code> is a matrix, each row is a control point where <code>nrow(p) - 1</code> specifies the degree of the curve and <code>ncol(p)</code> specifies the dimensions. Thus, if <code>p</code> is a matrix of five rows and three columns, <code>bezier</code> would generate points along a four-degree, three-dimensional Bezier curve. If <code>p</code> is a list, each list element (<code>p[[1]]</code>, <code>p[[2]]</code>, etc.) is a dimension of the Bezier curve and the values of each list element (<code>p[[1]][1]</code>, <code>p[[1]][2]</code>, etc.) are the control points. The same control points can be input via either matrix or list (see <code>MATRIX VS. LIST INPUT</code> in Examples).
+</p>
+<p>Since a Bezier spline is a series of concatenated Bezier curves, the control points  alternate between end points (through which the Bezier must pass) and intermediate points (points to which the Bezier "reaches"). For a spline, the final end point of one Bezier curve is the starting end point for the next Bezier curve. Thus, for control point input the end point shared by two adjoining Bezier curves is listed just once. For example, a spline consisting of two Bezier curves with one intermediate point would require a total of five control points.
+</p>
+<p>Since Bezier curves are parametric, the degree of each dimension need not be the same (i.e. each dimension can be specified by a different number of control points). This scenario is encountered when fitting Bezier curves to points in two or more dimensions if the Bezier curves are fit to each dimension separately (as with <code>bezierCurveFit</code>). Since the Bezier formula requires that the control points be of the same degree along each dimension, <code>bezier</code> elevates the degree of each dimension to the maximum degree using the function <code>elevateBezierDegree</code> (degree elevation does not change the shape of the Bezier curve). Inputs of this type (control points input as a list of non-uniform degrees along different dimensions) must be a single Bezier curve, not a Bezier spline.
+</p>
+
+
+<h3>Value</h3>
+
+<p>a vector (unidimensional Bezier) or matrix of bezier curve or spline points.</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Aaron Olsen</p>
+
+
+<h3>References</h3>
+
+<p><a href="http://en.wikipedia.org/wiki/Bezier_curve">http://en.wikipedia.org/wiki/Bezier_curve</a></p>
+
+
+<h3>See Also</h3>
+
+<p><code>elevateBezierDegree</code>, <code>bezierArcLength</code>, <code>bezierCurveFit</code>, <code>pointsOnBezier</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## BEZIER CURVES ##
+## SPECIFY PARAMETRIC VALUES FROM 0 TO 1 FOR SAMLPING A BEZIER CURVE
+t &lt;- seq(0, 1, length=100)
+
+## BEZIER CONTROL POINTS
+p &lt;- matrix(c(0,0,0, 1,4,3, 2,2,0, 3,0,2, 5,5,0), nrow=5, ncol=3, byrow=TRUE)
+
+## CREATE A 1D, 3-POINT BEZIER CURVE
+bezier_points &lt;- bezier(t=t, p=p[1:3, 1])
+
+## CREATE THE SAME 1D, 3-POINT BEZIER CURVE, SPECIFYING THE START AND END POINTS SEPARATELY
+bezier_points &lt;- bezier(t=t, p=p[2, 1], start=p[1, 1], end=p[3, 1])
+
+## CREATE A 2D, 3-POINT BEZIER CURVE
+bezier_points &lt;- bezier(t=t, p=p[1:3, 1:2])
+
+## CREATE A 2D, 5-POINT BEZIER CURVE
+bezier_points &lt;- bezier(t=t, p=p[, 1:2])
+
+## PLOT A BEZIER CURVE
+## NOTE THAT POINTS ARE NOT EVENLY SPACED ALONG THE CURVE
+plot(bezier(t=t, p=p[, 1:2]))
+
+## CREATE A 3D, 3-POINT BEZIER CURVE
+bezier_points &lt;- bezier(t=t, p=p[1:3, ])
+
+## CREATE A 3D, 5-POINT BEZIER CURVE
+bezier_points &lt;- bezier(t=t, p=p)
+
+
+## MATRIX VS. LIST INPUT ##
+## BEZIER CURVE WITH MATRIX INPUT
+p &lt;- matrix(c(0,0,0, 1,4,3, 2,2,0, 3,0,2, 5,5,0), nrow=5, ncol=3, byrow=TRUE)
+bezier(t=seq(0, 1, length=10), p=p)
+
+## THE SAME CONTROL POINTS INPUT AS LIST
+p &lt;- list(c(0, 1, 2, 3, 5), c(0, 4, 2, 0, 5), c(0, 3, 0, 2, 0))
+bezier(t=seq(0, 1, length=10), p=p)
+
+
+## BEZIER SPLINES ##
+## SPECIFY PARAMETRIC VALUES FROM 0 TO 3 FOR SAMLPING A BEZIER SPLINE
+t &lt;- seq(0, 3, length=100)
+
+## BEZIER CONTROL POINTS
+p &lt;- matrix(c(0,0,0, 1,4,3, 2,2,0, 3,0,2, 5,5,0, 8,0,4, 8,3,7), nrow=7, ncol=3, byrow=TRUE)
+
+## CREATE A 2D BEZIER SPLINE WITH 3, 2-DEGREE BEZIER CURVES
+bezier_points &lt;- bezier(t=t, p=p[, 1:2], deg=2)
+
+## PLOT BEZIER SPLINE
+plot(bezier_points)
+
+## PLOT FIXED POINTS ALONG SPLINE IN RED
+points(rbind(p[1, ], p[3, ], p[5, ], p[7, ]), col="red", cex=0.75)
+
+## CREATE A 3D BEZIER SPLINE WITH 3, 2-DEGREE BEZIER CURVES
+bezier_points &lt;- bezier(t=t, p=p, deg=2)
+
+
+## BEZIER CURVE WITH DIFFERENT DEGREES FOR EACH DIMENSION ##
+## LIST OF CONTROL POINTS FOR TWO DIMENSIONS
+p_list &lt;- list(c(0, 2, 1, 0), c(0, 4, 2, 0, 5, 0))
+
+## CREATE 2D BEZIER CURVE WITH DIFFERENT NUMBERS OF CONTROL POINTS FOR EACH DIMENSION
+bezier(t=seq(0, 1, length=100), p=p_list)
+</code></pre>
+
+
+</div>

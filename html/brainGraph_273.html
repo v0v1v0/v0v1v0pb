@@ -1,0 +1,355 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>brainGraphList</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Create a list of brainGraph graphs</h2>
+
+<h3>Description</h3>
+
+<p><code>make_brainGraphList</code> creates a <code>brainGraphList</code> object, a list
+containing a set of graphs for all subjects (or group-average graphs) in a
+study at a specific threshold (or density), in addition to some graph-level
+attributes common to those graphs.
+</p>
+<p>The <code>[</code> method will let you subset/slice the graphs for individual
+subjects and/or <em>groups</em>.
+</p>
+<p><code>as_brainGraphList</code> coerces a list of graphs to a <code>brainGraphList</code>
+object. It is assumed that certain metadata attributes – threshold, package
+version, atlas, imaging modality, edge weighting, and whether they are
+random graphs – are identical for all graphs in the list.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">make_brainGraphList(x, atlas, type = c("observed", "random"),
+  level = c("subject", "group", "contrast"), set.attrs = TRUE,
+  modality = NULL, weighting = NULL, threshold = NULL,
+  gnames = NULL, ...)
+
+## S3 method for class 'array'
+make_brainGraphList(x, atlas, type = c("observed",
+  "random"), level = c("subject", "group", "contrast"),
+  set.attrs = TRUE, modality = NULL, weighting = NULL,
+  threshold = NULL, gnames = NULL, grpNames = NULL, subnet = NULL,
+  mode = "undirected", weighted = NULL, diag = FALSE,
+  .progress = getOption("bg.progress"), ...)
+
+## S3 method for class 'corr_mats'
+make_brainGraphList(x, atlas = x$atlas,
+  type = "observed", level = "group", set.attrs = TRUE,
+  modality = NULL, weighting = NULL, threshold = x$densities,
+  gnames = names(x$r.thresh), grpNames = gnames, mode = "undirected",
+  weighted = NULL, diag = FALSE,
+  .progress = getOption("bg.progress"), ...)
+
+## S3 method for class 'brainGraphList'
+x[i, g = NULL, drop = TRUE]
+
+## S3 method for class 'brainGraphList'
+print(x, ...)
+
+is.brainGraphList(x)
+
+## S3 method for class 'brainGraphList'
+nobs(object, ...)
+
+as_brainGraphList(g.list, type = c("observed", "random"),
+  level = c("subject", "group", "contrast"))
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>3-D numeric array of all subjects' connectivity matrices (for a
+single threshold) or a <code>corr_mats</code> object</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>atlas</code></td>
+<td>
+<p>Character string specifying the brain atlas</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>type</code></td>
+<td>
+<p>Character string indicating the type of graphs. Default:
+<code>observed</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>level</code></td>
+<td>
+<p>Character string indicating whether the graphs are subject-,
+group-, or contrast-specific. Default: <code>'subject'</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>set.attrs</code></td>
+<td>
+<p>Logical indicating whether to assign all graph-, vertex-,
+and edge-level attributes (via <code>set_brainGraph_attr</code>). Default:
+<code>TRUE</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>modality</code></td>
+<td>
+<p>Character string indicating imaging modality (e.g. 'dti').
+Default: <code>NULL</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>weighting</code></td>
+<td>
+<p>Character string indicating how the edges are weighted
+(e.g., 'fa', 'pearson', etc.). Default: <code>NULL</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>threshold</code></td>
+<td>
+<p>Integer or number indicating the threshold used when
+“sparsifying” the connectivity matrix (if any). Default: <code>NULL</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>gnames</code></td>
+<td>
+<p>Character vector of graph names (e.g., study IDs if
+<code>level='subject'</code>). Default: <code>NULL</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Other arguments passed to <code>set_brainGraph_attr</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>grpNames</code></td>
+<td>
+<p>Character (or factor) vector of group names. If <code>level ==
+'group'</code>, then you do not need to include this argument (the group names
+will be the same as <code>gnames</code>). Default: <code>NULL</code>)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>subnet</code></td>
+<td>
+<p>Integer or character vector indicating the vertices to keep, if
+you are interested in working with a subset of an atlas. By default, all
+vertices are used.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>mode</code></td>
+<td>
+<p>Character string defining how the matrix should be interpreted.
+Default: <code>'undirected'</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>weighted</code></td>
+<td>
+<p>Logical specifying whether to create a weighted network</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>diag</code></td>
+<td>
+<p>Logical indicating whether to include the diagonal of the
+connectivity matrix. Default: <code>FALSE</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>.progress</code></td>
+<td>
+<p>Logical indicating whether to print a progress bar. Default:
+<code>getOption('bg.progress')</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>i</code></td>
+<td>
+<p>Integer, character, or logical vector for subsetting by subject, or
+by group (if <code>x$level='group'</code>)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>g</code></td>
+<td>
+<p>Integer, character, or logical vector for subsetting by group (if
+<code>x$level='subject'</code>)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>drop</code></td>
+<td>
+<p>If <code>TRUE</code> (the default), then return only the list of
+graphs; otherwise, subset the graphs and return the entire object</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>object</code></td>
+<td>
+<p>A <code>brainGraphList</code> object</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>g.list</code></td>
+<td>
+<p>List of graph objects</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>In addition to creating the initial <code>igraph</code> graphs from the
+connectivity matrices, then attributes will be calculated and assigned for
+each graph via <code>set_brainGraph_attr</code> if <code>set.attrs=TRUE</code>.
+Other arguments can be passed to that function. You may display a progress
+bar by setting <code>.progress=TRUE</code>.
+</p>
+<p>This object can be considered comparable to a 4-D <em>NIfTI</em> file,
+particularly that returned by FSL's <em>TBSS</em> “prestats” step since
+that file contains the FA volumes for all study subjects.
+</p>
+<p>To convert an object with 3 “levels” (i.e., subject-level lists from
+an older <code>brainGraph</code> version), see the code in the Examples below.
+</p>
+
+
+<h3>Value</h3>
+
+<p><code>make_brainGraphList</code> returns an object of class
+<code>brainGraphList</code> with elements:
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>threshold</code></td>
+<td>
+<p>The specified threshold/density</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>version</code></td>
+<td>
+<p>The versions of <code>R</code>, <code>igraph</code>, and
+<code>brainGraph</code> used when creating the graphs</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>atlas</code></td>
+<td>
+<p>The atlas common to all the graphs</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>modality</code></td>
+<td>
+<p>The imaging modality (if supplied)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>weighting</code></td>
+<td>
+<p>A string indicating what edge weights represent (if
+applicable)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>graphs</code></td>
+<td>
+<p>A <em>named list</em> of <code>brainGraph</code> graphs; the names
+correspond to the individual graphs' Study IDs</p>
+</td>
+</tr>
+</table>
+<p><code>[</code> – A <code>brainGraphList</code> object (if <code>drop=FALSE</code>) or
+a list of graphs
+</p>
+
+
+<h3>Subsetting/extracting</h3>
+
+<p>The first index is for subsetting the individual graphs. The second index is
+for subsetting by group membership and requires that the graphs have a
+<code>Group</code> graph attribute. When both are included, the first index cannot
+have length or numeric value greater than the number of <em>remaining</em>
+subjects <em>after</em> subsetting by group.
+</p>
+<p>If the indexing vector(s) is (are) <code>character</code>, the vector(s) must
+contain one (or more) of the subject or group names. If <code>logical</code>, its
+length must equal the number of subjects or groups.
+</p>
+
+
+<h3>Note</h3>
+
+<p>If the input is a <code>corr_mats</code> object, and the extent of the 3-D
+array is greater than 1, then only the first will be converted to a graph.
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Christopher G. Watson, <a href="mailto:cgwatson@bu.edu">cgwatson@bu.edu</a>
+</p>
+
+
+<h3>See Also</h3>
+
+<p>Other Graph creation functions: <code>Creating_Graphs_GLM</code>,
+<code>Creating_Graphs</code>,
+<code>make_ego_brainGraph</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## Not run: 
+# Create a list, one for each threshold
+g &lt;- vector('list', length(thresholds))
+for (i in seq_along(thresholds)) {
+  g[[i]] &lt;- make_brainGraphList(A.norm.sub[[i]], thresholds[i], atlas,
+      covars.dti$Study.ID, covars.dti$Group, modality='dti', weighting='fa')
+}
+
+## End(Not run)
+## Not run: 
+# Subset the first 10 subjects, irrespective of group
+my.bgl[1:10]
+
+# Return object for only 'Control' subjects
+my.bgl[, 'Control']
+
+# Return object with graphs from groups 1 and 3
+my.bgl[g=c(1, 3), drop=FALSE]
+
+# Subset the first 10 subjects of group 2
+my.bgl[1:10, 2]
+
+## End(Not run)
+## Not run: 
+## Convert old version single-subject graph lists
+## g[[1]] is group 1, g[[1]][[1]] is threshold 1, g[[1]][[1]][[1]] is subj. 1
+kNumThresholds &lt;- length(g[[1]])
+g.l &lt;- vector('list', kNumThresholds)
+for (i in seq_len(kNumThresholds)) {
+  g.l[[i]] &lt;- as_brainGraphList(do.call(Map, c(c, g))[[i]])
+}
+
+## End(Not run)
+</code></pre>
+
+
+</div>

@@ -1,0 +1,131 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>predict.big_SVD</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Scores of PCA</h2>
+
+<h3>Description</h3>
+
+<p>Get the scores of PCA associated with an svd decomposition (class <code>big_SVD</code>).
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">## S3 method for class 'big_SVD'
+predict(
+  object,
+  X = NULL,
+  ind.row = rows_along(X),
+  ind.col = cols_along(X),
+  block.size = block_size(nrow(X)),
+  ...
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>object</code></td>
+<td>
+<p>A list returned by <code>big_SVD</code> or <code>big_randomSVD</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>X</code></td>
+<td>
+<p>An object of class FBM.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ind.row</code></td>
+<td>
+<p>An optional vector of the row indices that are used.
+If not specified, all rows are used. <strong>Don't use negative indices.</strong></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ind.col</code></td>
+<td>
+<p>An optional vector of the column indices that are used.
+If not specified, all columns are used. <strong>Don't use negative indices.</strong></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>block.size</code></td>
+<td>
+<p>Maximum number of columns read at once.
+Default uses block_size.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Not used.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>A matrix of size <code class="reqn">n \times K</code> where <code>n</code> is the number of samples
+corresponding to indices in <code>ind.row</code> and K the number of PCs
+computed in <code>object</code>. If <code>X</code> is not specified, this just returns
+the scores of the training set of <code>object</code>.
+</p>
+
+
+<h3>See Also</h3>
+
+<p>predict big_SVD big_randomSVD
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">set.seed(1)
+
+X &lt;- big_attachExtdata()
+n &lt;- nrow(X)
+
+# Using only half of the data
+ind &lt;- sort(sample(n, n/2))
+
+test &lt;- big_SVD(X, fun.scaling = big_scale(), ind.row = ind)
+str(test)
+plot(test$u)
+
+pca &lt;- prcomp(X[ind, ], center = TRUE, scale. = TRUE)
+
+# same scaling
+all.equal(test$center, pca$center)
+all.equal(test$scale,  pca$scale)
+
+# scores and loadings are the same or opposite
+# except for last eigenvalue which is equal to 0
+# due to centering of columns
+scores &lt;- test$u %*% diag(test$d)
+class(test)
+scores2 &lt;- predict(test) # use this function to predict scores
+all.equal(scores, scores2)
+dim(scores)
+dim(pca$x)
+tail(pca$sdev)
+plot(scores2, pca$x[, 1:ncol(scores2)])
+plot(test$v[1:100, ], pca$rotation[1:100, 1:ncol(scores2)])
+
+# projecting on new data
+X2 &lt;- sweep(sweep(X[-ind, ], 2, test$center, '-'), 2, test$scale, '/')
+scores.test &lt;- X2 %*% test$v
+ind2 &lt;- setdiff(rows_along(X), ind)
+scores.test2 &lt;- predict(test, X, ind.row = ind2) # use this
+all.equal(scores.test, scores.test2)
+scores.test3 &lt;- predict(pca, X[-ind, ])
+plot(scores.test2, scores.test3[, 1:ncol(scores.test2)])
+</code></pre>
+
+
+</div>

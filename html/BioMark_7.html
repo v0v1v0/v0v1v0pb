@@ -1,0 +1,200 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>get.biom</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Get biomarkers discriminating between two classes</h2>
+
+<h3>Description</h3>
+
+<p>Biomarkers can be identified in several ways: the classical way
+is to look at those variables with large model coefficients or large t
+statistics. One other is based on the higher criticism approach (HC),
+and the third possibility assesses the stability of these coefficients
+under subsampling of the data set.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">get.biom(X, Y, fmethod = "all", type = c("stab", "HC", "coef"),
+         ncomp = 2, biom.opt = biom.options(), scale.p = "auto",
+         ...)
+## S3 method for class 'BMark'
+coef(object, ...)
+## S3 method for class 'BMark'
+print(x, ...)
+## S3 method for class 'BMark'
+summary(object, ...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>X</code></td>
+<td>
+<p>Data matrix. Usually the number of columns (variables) is
+(much) larger than the number of rows (samples).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Y</code></td>
+<td>
+<p>Class indication. For classification with two or more factors
+a factor; a numeric vector will be interpreted as a regression
+situation, which can only be tackled by <code>fmethod = "lasso"</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>fmethod</code></td>
+<td>
+<p>Modelling method(s) employed. The default is to use
+<code>"all"</code>, which will test all methods in the current
+<code>biom.options$fmethods</code> list. Note that from version 0.4.0,
+<code>"plsda"</code> and <code>"pclda"</code> are no longer in the list of
+methods - they have been replaced by <code>"pls"</code> and <code>"pcr"</code>,
+respectively. For compatibility reasons, using the old terms will
+not lead to an error but only a warning.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>type</code></td>
+<td>
+<p>Whether to use coefficient size as a criterion
+(<code>"coef"</code>), <code>"stab"</code> or <code>"HC"</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ncomp</code></td>
+<td>
+<p>Number of latent variables to use in PCR and PLS (VIP)
+modelling. In function <code>get.biom</code> this may be a vector; in all
+other functions it should be one number. Default: 2.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>biom.opt</code></td>
+<td>
+<p>Options for the biomarker selection - a list with
+several named elements. See <code>biom.options</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>scale.p</code></td>
+<td>
+<p>Scaling. This is performed individually in every
+crossvalidation iteration, and can have a profound effect on the
+results. Default: "auto" (autoscaling). Other possible choices:
+"none" for no scaling, "pareto" for pareto scaling, "log" and "sqrt" for log
+and square root scaling, respectively.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>object, x</code></td>
+<td>
+<p>A BMark object.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Further arguments for modelling functions. Often used to
+catch unused arguments.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>Function <code>get.biom</code> returns an object of class "BMark", a
+list containing an element 
+for every <code>fmethod</code> that is selected, as well as an element
+<code>info</code>. The individual elements contain information depending on
+the type chosen: for <code>type == "coef"</code>, the only element returned
+is a matrix containing coefficient sizes. For <code>type == "HC"</code>
+and <code>type == "stab"</code>, a list is returned containing elements
+<code>biom.indices</code>, and either <code>pvals</code> (for <code>type == "HC"</code>)
+or <code>fraction.selected</code> (for <code>type == "stab"</code>).
+Element <code>biom.indices</code> contains the indices of
+the selected variables, and can be extracted using function
+<code>selection</code>. Element <code>pvals</code> contains the p values
+used to perform HC thresholding; these are presented in the original
+order of the variables, and can be obtained directly from e.g. t
+statistics, or from permutation sampling. Element
+<code>fraction.selected</code> indicates in what fraction of the
+stability selection iterations a particular variable has been
+selected. The more often it has been selected, the more stable it is
+as a biomarker. Generic function <code>coef.biom</code> extracts model
+coefficients, p values or stability fractions for types <code>"coef"</code>,
+<code>"HC"</code> and <code>"stab"</code>, respectively.</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Ron Wehrens</p>
+
+
+<h3>See Also</h3>
+
+<p><code>biom.options</code>, <code>get.segments</code>,
+<code>selection</code>, <code>scalefun</code></p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## Real apple data (small set)
+data(spikedApples)
+apple.coef &lt;- get.biom(X = spikedApples$dataMatrix,
+                       Y = factor(rep(1:2, each = 10)),
+                       ncomp = 2:3, type = "coef")
+coef.sizes &lt;- coef(apple.coef) 
+sapply(coef.sizes, range)
+
+## stability-based selection
+set.seed(17)
+apple.stab &lt;- get.biom(X = spikedApples$dataMatrix,
+                       Y = factor(rep(1:2, each = 10)),
+                       ncomp = 2:3, type = "stab")
+selected.variables &lt;- selection(apple.stab)
+unlist(sapply(selected.variables, function(x) sapply(x, length)))
+## Ranging from more than 70 for pcr, approx 40 for pls and student t,
+## to 0-29 for the lasso
+unlist(sapply(selected.variables,
+              function(x) lapply(x, function(xx, y) sum(xx %in% y),
+              spikedApples$biom)))
+## TPs (stab): all find 5/5, except pcr.2 and the lasso with values for lambda
+## larger than 0.0484
+
+unlist(sapply(selected.variables,
+              function(x) lapply(x, function(xx, y) sum(!(xx %in% y)),
+              spikedApples$biom)))
+## FPs (stab): PCR finds most FPs (approx. 60), other latent-variable
+## methods approx 40, lasso allows for the optimal selection around 
+## lambda = 0.0702
+
+## regression example
+data(gasoline) ## from the pls package
+gasoline.stab &lt;- get.biom(gasoline$NIR, gasoline$octane,
+                          fmethod = c("pcr", "pls", "lasso"), type = "stab")
+
+
+## Not run: 
+## Same for HC-based selection
+## Warning: takes a long time!
+apple.HC &lt;- get.biom(X = spikedApples$dataMatrix,
+                     Y = factor(rep(1:2, each = 10)),
+                     ncomp = 2:3, type = "HC")
+sapply(apple.HC[names(apple.HC) != "info"],
+       function(x, y) sum(x$biom.indices %in% y),
+       spikedApples$biom)
+sapply(apple.HC[names(apple.HC) != "info"],
+       function(x, y) sum(!(x$biom.indices %in% y)),
+       spikedApples$biom)
+
+## End(Not run)
+</code></pre>
+
+
+</div>

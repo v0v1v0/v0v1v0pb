@@ -1,0 +1,183 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>binarizeTimeSeries</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>
+Binarize a set of real-valued time series
+</h2>
+
+<h3>Description</h3>
+
+<p>Binarizes a set of real-valued time series using k-means clustering, edge detection, or scan statistics.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">binarizeTimeSeries(measurements, 
+                   method = c("kmeans","edgeDetector","scanStatistic"), 
+                   nstart = 100, 
+                   iter.max = 1000, 
+                   edge = c("firstEdge","maxEdge"),                    
+                   scaling = 1, 
+                   windowSize = 0.25, 
+                   sign.level = 0.1,
+                   dropInsignificant = FALSE)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>measurements</code></td>
+<td>
+
+<p>A list of matrices, each corresponding to one time series. Each row of these matrices contains real-valued measurements for one gene on a time line, i. e. column <code>i+1</code> contains the successor states of column <code>i+1</code>. The genes must be the same for all matrices in the list. 
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>method</code></td>
+<td>
+<p>The employed binarization technique. "kmeans" uses k-means clustering for binarization. "edgeDetector" searches for a large gradient in the sorted measurements. "scanStatistic" searches for accumulations in the measurements. See Details for descriptions of the techniques.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nstart</code></td>
+<td>
+
+<p>If <code>method="kmeans"</code>, this is the number of restarts for k-means. See <code>kmeans</code> for details.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>iter.max</code></td>
+<td>
+
+<p>If <code>method="kmeans"</code>, the maximum number of iterations for k-means. See <code>kmeans</code> for details.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>edge</code></td>
+<td>
+<p>If <code>method="edgeDetector"</code>, this decides which of the edges is used as a threshold for binarization. If set to "firstEdge",the binarization threshold is the first combination of two successive sorted values whose difference exceeds a predefined value (average gradient * <code>scaling</code>). The parameter <code>scaling</code> can be used to adjust this value. 
+</p>
+<p>If set to "maxEdge", the binarization threshold is the position of the edge with the overall highest gradient.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>scaling</code></td>
+<td>
+<p>If <code>method="edgeDetector"</code> and <code>edge="firstEdge"</code>, this holds the scaling factor used for adjustment of the average gradient.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>windowSize</code></td>
+<td>
+<p>If <code>method="scanStatistic"</code>, this specifies the size of the scanning window (see Details). The size is given as a fraction of the whole range of input values for a gene. Default is 0.25.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>sign.level</code></td>
+<td>
+<p>If <code>method="scanStatistic"</code>, the significance level used for the scan statistic (see Details).
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>dropInsignificant</code></td>
+<td>
+
+<p>If this is set to true, genes whose binarizations are insignificant in the scan statistic (see Details) are removed from the binarized time series. Otherwise, a warning is printed if such genes exist.
+</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>This method supports three binarization techniques:
+</p>
+
+<dl>
+<dt>k-means clustering</dt>
+<dd>
+<p>For each gene, k-means clusterings are performed to determine a good separation of groups. The values belonging to the cluster with the smaller centroid are set to 0, and the values belonging to the greater centroid are set to 1.</p>
+</dd> 
+<dt>Edge detector</dt>
+<dd>
+<p>This approach first sorts the measurements for each gene. In the sorted measurements, the algorithm searches for differences of two successive values that satisfy a predefined condition: If the "firstEdge" method was chosen, the pair of values whose difference exceeds the scaled average gradient of all values is chosen and used as maximum and minimum value of the two groups. If the "maxEdge" method was chosen, the largest difference between two successive values is taken. For details, see Shmulevich et al.</p>
+</dd>
+<dt>Scan statistic</dt>
+<dd>
+<p>The scan statistic assumes that the measurements for each gene are uniformly and independently distributed independently over a certain range. The scan statistic shifts a scanning window across the data and decides for each window position whether there is an unusual accumulation of data points based on an approximated test statistic (see Glaz et al.). The window with the smallest p-value is remembered. The boundaries of this window form two thresholds, from which the value that results in more balanced groups is taken for binarization. Depending on the supplied significance level, gene binarizations are rated according to the p-value of the chosen window.</p>
+</dd>
+</dl>
+<h3>Value</h3>
+
+<p>Returns a list with the following elements:
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>binarizedMeasurements</code></td>
+<td>
+<p>A list of matrices with the same structure as <code>measurements</code> containing the binarized time series measurements</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>reject</code></td>
+<td>
+<p>If <code>method="scanStatistic"</code>, a Boolean vector indicating for each gene whether the scan statistic algorithm was able to find a significant binarization window (FALSE) or not (TRUE). Rejected genes should probably be excluded from the data.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>thresholds</code></td>
+<td>
+<p>The thresholds used for binarization</p>
+</td>
+</tr>
+</table>
+<h3>References</h3>
+
+<p>I. Shmulevich and W. Zhang (2002), Binary analysis and optimization-based normalization of gene expression data. Bioinformatics 18(4):555–565.
+</p>
+<p>J. Glaz, J. Naus, S. Wallenstein (2001), Scan Statistics. New York: Springer.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>reconstructNetwork</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R"># load test data
+data(yeastTimeSeries)
+			
+# perform binarization with k-means
+bin &lt;- binarizeTimeSeries(yeastTimeSeries)
+print(bin)
+
+# perform binarization with scan statistic
+# - will find and remove 2 insignificant genes!
+bin &lt;- binarizeTimeSeries(yeastTimeSeries, method="scanStatistic",
+                          dropInsignificant=TRUE, sign.level=0.2)
+print(bin)
+
+# perform binarization with edge detector
+bin &lt;- binarizeTimeSeries(yeastTimeSeries, method="edgeDetector")
+print(bin)
+
+# reconstruct a network from the data
+reconstructed &lt;- reconstructNetwork(bin$binarizedMeasurements,
+                                    method="bestfit", maxK=4)
+print(reconstructed)
+</code></pre>
+
+
+</div>

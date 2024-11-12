@@ -1,0 +1,167 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>createProposalGenerator</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Factory that creates a proposal generator</h2>
+
+<h3>Description</h3>
+
+<p>Factory that creates a proposal generator
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">createProposalGenerator(
+  covariance,
+  gibbsProbabilities = NULL,
+  gibbsWeights = NULL,
+  otherDistribution = NULL,
+  otherDistributionLocation = NULL,
+  otherDistributionScaled = F,
+  message = F,
+  method = "chol",
+  scalingFactor = 2.38
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>covariance</code></td>
+<td>
+<p>covariance matrix. Can also be vector of the sqrt of diagonal elements –&gt; standard deviation</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>gibbsProbabilities</code></td>
+<td>
+<p>optional probabilities for the number of parameters to vary in a Metropolis within gibbs style - for 4 parameters, c(1,1,0.5,0) means that at most 3 parameters will be varied, and it is double as likely to vary one or two than varying 3</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>gibbsWeights</code></td>
+<td>
+<p>optional probabilities for parameters to be varied in a Metropolis within gibbs style - default ist equal weight for all parameters - for 4 parameters, c(1,1,1,100) would mean that if 2 parameters would be selected, parameter 4 would be 100 times more likely to be picked than the others. If 4 is selected, the remaining parameters have equal probability.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>otherDistribution</code></td>
+<td>
+<p>optional additinal distribution to be mixed with the default multivariate normal. The distribution needs to accept a parameter vector (to allow for the option of making the distribution dependend on the parameter values), but it is still assumed that the change from the current values is returned, not the new absolute values.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>otherDistributionLocation</code></td>
+<td>
+<p>a vector with 0 and 1, denoting which parameters are modified by the otherDistribution</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>otherDistributionScaled</code></td>
+<td>
+<p>should the other distribution be scaled if gibbs updates are calculated?</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>message</code></td>
+<td>
+<p>print out parameter settings</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>method</code></td>
+<td>
+<p>method for covariance decomposition</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>scalingFactor</code></td>
+<td>
+<p>scaling factor for the proposals</p>
+</td>
+</tr>
+</table>
+<h3>Author(s)</h3>
+
+<p>Florian Hartig
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>updateProposalGenerator</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">testMatrix = matrix(rep(c(0,0,0,0), 1000), ncol = 4)
+testVector = c(0,0,0,0)
+
+
+##Standard multivariate normal proposal generator
+
+testGenerator &lt;- createProposalGenerator(covariance = c(1,1,1,1), message = TRUE)
+
+methods(class = "proposalGenerator")
+print(testGenerator)
+
+x = testGenerator$returnProposal(testVector)
+x
+
+x &lt;- testGenerator$returnProposalMatrix(testMatrix)
+boxplot(x)
+
+##Changing the covariance
+testGenerator$covariance = diag(rep(100,4))
+testGenerator &lt;- testGenerator$updateProposalGenerator(testGenerator, message = TRUE)
+
+testGenerator$returnProposal(testVector)
+x &lt;- testGenerator$returnProposalMatrix(testMatrix)
+boxplot(x)
+
+
+##-Changing the gibbs probabilities / probability to modify 1-n parameters
+
+testGenerator$gibbsProbabilities = c(1,1,0,0)
+testGenerator &lt;- testGenerator$updateProposalGenerator(testGenerator)
+
+testGenerator$returnProposal(testVector)
+x &lt;- testGenerator$returnProposalMatrix(testMatrix)
+boxplot(x)
+
+
+##-Changing the gibbs weights / probability to pick each parameter
+
+testGenerator$gibbsWeights = c(0.3,0.3,0.3,100)
+testGenerator &lt;- testGenerator$updateProposalGenerator(testGenerator)
+
+testGenerator$returnProposal(testVector)
+x &lt;- testGenerator$returnProposalMatrix(testMatrix)
+boxplot(x)
+
+
+##-Adding another function
+
+otherFunction &lt;- function(x) sample.int(10,1)
+
+testGenerator &lt;- createProposalGenerator(
+  covariance = c(1,1,1), 
+  otherDistribution = otherFunction, 
+  otherDistributionLocation = c(0,0,0,1),
+  otherDistributionScaled = TRUE
+)
+
+testGenerator$returnProposal(testVector)
+x &lt;- testGenerator$returnProposalMatrix(testMatrix)
+boxplot(x)
+table(x[,4])
+</code></pre>
+
+
+</div>

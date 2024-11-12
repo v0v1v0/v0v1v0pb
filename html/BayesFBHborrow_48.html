@@ -1,0 +1,182 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>GibbsMH</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>S3 generic, calls the correct GibbsMH sampler</h2>
+
+<h3>Description</h3>
+
+<p>An MCMC sampler for Bayesian borrowing with time-to-event data. 
+We obtain a flexible baseline hazard function by making the split points 
+random within a piecewise exponential model and using a Gaussian Markov 
+random field prior to smooth the baseline hazards. Only calls the sampler and
+does not run any input checks. Best practice is to call BayesFBHborrow(), if the 
+user is not familiar with the model at hand.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">GibbsMH(
+  Y,
+  I,
+  X,
+  Y_0 = NULL,
+  I_0 = NULL,
+  X_0 = NULL,
+  tuning_parameters,
+  hyperparameters,
+  lambda_hyperparameters,
+  iter,
+  warmup_iter,
+  refresh,
+  max_grid
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>Y</code></td>
+<td>
+<p>data</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>I</code></td>
+<td>
+<p>event indicator</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>X</code></td>
+<td>
+<p>design matrix</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Y_0</code></td>
+<td>
+<p>historical data, default is NULL</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>I_0</code></td>
+<td>
+<p>historical event indicator, default is NULL</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>X_0</code></td>
+<td>
+<p>historical design matrix, default is NULL</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>tuning_parameters</code></td>
+<td>
+<p>list of "cprop_beta", "cprop_beta_0", "alpha", "Jmax",
+and "pi_b"</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>hyperparameters</code></td>
+<td>
+<p>list containing the hyperparameters c("a_tau", "b_tau",
+"c_tau", "d_tau","type", "p_0", "a_sigma", "b_sigma", "Jmax", "clam_smooth",
+"cprop_beta", "phi", "pi_b"). Default is list("a_tau" = 1,"b_tau" = 1,"c_tau" = 1,
+"d_tau" = 0.001, "type" = "mix", "p_0" = 0.5, "a_sigma" = 2, "b_sigma" = 2,
+"Jmax" = 20, "clam_smooth" = 0.8, "cprop_beta" = 0.5, "phi" = 3, "pi_b" = 0.5)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>lambda_hyperparameters</code></td>
+<td>
+<p>contains two hyperparameters (a_lambda and b_lambda) used 
+for the update of lambda and lambda_0</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>iter</code></td>
+<td>
+<p>number of iterations for MCMC sampler, excluding warmup, 
+default is 2000</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>warmup_iter</code></td>
+<td>
+<p>number of warmup iterations (burn-in) for MCMC sampler, 
+default is 2000</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>refresh</code></td>
+<td>
+<p>number of iterations between printed screen updates, 
+default is 500</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>max_grid</code></td>
+<td>
+<p>grid size for the smoothed baseline hazard, default is 2000</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>depending on if the user wishes to borrow; returns a list with values
+after each iteration for parameters: out_fixed (J, mu, sigma2, beta), lambda,
+lambda_0, tau, s, as well as tuning values of the total number of accepts:
+lambda_move, lambda_0_move and beta_move. Also included is the out_slam which
+contains the shrunk estimate of the baseline hazard.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">set.seed(123)
+# Load example data and set your initial values and hyper parameters
+data(weibull_cc, package = "BayesFBHborrow")
+data(weibull_hist, package = "BayesFBHborrow")
+
+# The datasets consists of 3 (2) columns named "tte", "event" and "X" 
+# (only for concurrent). To explicitly run the sampler, extract the samples as
+# following
+Y &lt;- weibull_cc$tte
+I &lt;- weibull_cc$event
+X &lt;- matrix(weibull_cc$X_trt)
+
+Y_0 &lt;- weibull_hist$tte
+I_0 &lt;- weibull_hist$event
+X_0 &lt;- NULL
+
+# Specify hyperparameters and tuning parameters
+hyper &lt;-  list("a_tau" = 1, 
+               "b_tau" = 0.001,
+               "c_tau" = 1,
+               "d_tau" = 1, 
+               "type" = 'all',
+               "p_0" = 0.5, 
+               "a_sigma" = 2,
+               "b_sigma" = 2,
+               "clam_smooth" = 0.5,
+               "phi" = 3)
+
+tuning_parameters &lt;- list("Jmax" = 5,
+                          "pi_b" = 0.5,
+                          "cprop_beta" = 0.5,
+                          "alpha" = 0.4)
+                          
+output &lt;- GibbsMH(Y, I, X, Y_0, I_0, X_0,
+                  tuning_parameters, hyper, 
+                  iter = 5, warmup_iter = 1)
+</code></pre>
+
+
+</div>

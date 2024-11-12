@@ -1,0 +1,172 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>BM_gaussian_covariates</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Perform estimation on blockmodels for gaussian probability distribution
+with covariates</h2>
+
+<h3>Description</h3>
+
+<p>With the provided network and blockmodel type, estimate number of groups,
+parameters and node membership and impact vector of covariates</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">## S4 method for signature 'new'
+BM_gaussian_covariates(
+    membership_type, 
+    adj, 
+    covariates, 
+    verbosity=6,
+    autosave='',
+    plotting=character(0),
+    exploration_factor=1.5,
+    exploration_direction=numeric(0),
+    explore_min=4,
+    explore_max=Inf,
+    ncores=detectCores())</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>membership_type</code></td>
+<td>
+<p>The type of node membership, i.e. 'SBM', 'SBM_sym' or 'LBM'</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>adj</code></td>
+<td>
+<p>The adjacency matrix</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>covariates</code></td>
+<td>
+<p>Covariates matrix, or list of covariates matrices. Covariates matrix must have the same size than the adjacency matrix.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>verbosity</code></td>
+<td>
+<p>The verbosity level, 0 means quiet. Level 1 display the phase of reinitialization. Level 2 display the level 1 and the ascending and descending phase for the number of groups. Level 3 display the level 2 and the number current number of groups which is estimated. Level 4 display the level 3 and the steps inside the estimation. Level 5 display the level 4, the current status of parallel running jobs and the current sub-step. Level 6 display level 5 and informations about ICL criteria found. Default is level 6. This parameter can be changed by accessing to the field $verbosity of the object.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>autosave</code></td>
+<td>
+<p>If <var>autosave</var> != ”, after each estimation, the model object is writed into file <var>autosave</var>. The model object is readable by the function <var>readRDS</var>. Use-it for long computation to allow restarting the estimation on system crash. You can use it to alanyze the partial results when the estimation is running. This parameter can be changed by accessing to the field $autosave of the object.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>plotting</code></td>
+<td>
+<p>Control plot of ICL values while the estimation is running. If plotting==character(0) (the default), plots are done on screen, if plotting==”, no plot are done, if plotting is a filename, plots are done in this filename. This parameter can be changed by accessing the field $plotting of the object.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>exploration_factor</code></td>
+<td>
+<p>Control the exploration of the number of groups. The exploration is stop when the number of groups reach exploration factor times the current maximum. By default 1.5. This parameter can be changed by accessing the field $exploration_factor of the object.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>explore_min</code></td>
+<td>
+<p>Explore to the explore_min number of groups even if the exploration_factor rule is satisfied. By default 4. This parameter can be changed by accessing the field $explore_min of the object.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>explore_max</code></td>
+<td>
+<p>Stop exploration after explore_max number of group in any case. By default Inf. This parameter can be changed by accessing the field $explore_max of the object.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>exploration_direction</code></td>
+<td>
+<p>Only for LBM membership. Control the exploration direction for groups number. When provided, the exploring strategy is made to explore the provided group number. Must be a vector of two integer value representing the row group number and the column group number.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ncores</code></td>
+<td>
+<p>Number of parallel jobs to launch different EM intializations. By default detectCores(). This parameter can be changed by accessing the field $ncores of the object. This parameters is used only on Linux. Parallism is disabled on other plateform. (Not working on Windows, not tested on Mac OS, not tested on *BSD.)</p>
+</td>
+</tr>
+</table>
+<h3>Examples</h3>
+
+<pre><code class="language-R">## Not run: 
+
+##
+## SBM
+##
+
+## generation of one SBM network
+npc &lt;- 30 # nodes per class
+Q &lt;- 3 # classes
+n &lt;- npc * Q # nodes
+Z&lt;-diag(Q)%x%matrix(1,npc,1)
+Mu&lt;-20*matrix(runif(Q*Q),Q,Q)
+Y1 &lt;- matrix(runif(n*n),n,n)
+Y2 &lt;- matrix(runif(n*n),n,n)
+M&lt;-matrix(rnorm(n*n,sd=5),n,n)+Z%*%Mu%*%t(Z)+4.2*Y1-1.6*Y2 ## adjacency matrix
+
+## estimation
+my_model &lt;- BM_gaussian_covariates("SBM",M,list(Y1,Y2) )
+my_model$estimate()
+which.max(my_model$ICL)
+
+##
+## SBM symmetric
+##
+
+## generation of one SBM_sym network
+npc &lt;- 30 # nodes per class
+Q &lt;- 3 # classes
+n &lt;- npc * Q # nodes
+Z&lt;-diag(Q)%x%matrix(1,npc,1)
+Mu&lt;-20*matrix(runif(Q*Q),Q,Q)
+Mu[lower.tri(Mu)]&lt;-t(Mu)[lower.tri(Mu)]
+Y1 &lt;- matrix(runif(n*n),n,n)
+Y2 &lt;- matrix(runif(n*n),n,n)
+Y1[lower.tri(Y1)]&lt;-t(Y1)[lower.tri(Y1)]
+Y2[lower.tri(Y2)]&lt;-t(Y2)[lower.tri(Y2)]
+M&lt;-matrix(rnorm(n*n,sd=5),n,n)+Z%*%Mu%*%t(Z)+4.2*Y1-1.6*Y2 ## adjacency matrix
+M[lower.tri(M)]&lt;-t(M)[lower.tri(M)]
+
+## estimation
+my_model &lt;- BM_gaussian_covariates("SBM_sym",M,list(Y1,Y2) )
+my_model$estimate()
+which.max(my_model$ICL)
+
+##
+## LBM
+##
+
+## generation of one LBM network
+npc &lt;- c(50,40) # nodes per class
+Q &lt;- c(2,3) # classes
+n &lt;- npc * Q # nodes
+Z1&lt;-diag(Q[1])%x%matrix(1,npc[1],1)
+Z2&lt;-diag(Q[2])%x%matrix(1,npc[2],1)
+Mu&lt;-20*matrix(runif(Q[1]*Q[2]),Q[1],Q[2])
+Y1 &lt;- matrix(runif(n[1]*n[2]),n[1],n[2])
+Y2 &lt;- matrix(runif(n[1]*n[2]),n[1],n[2])
+M&lt;-matrix(rnorm(n[1]*n[2],sd=5),n[1],n[2])+Z1%*%Mu%*%t(Z2)+4.2*Y1-1.6*Y2 ## adjacency matrix
+
+## estimation
+my_model &lt;- BM_gaussian_covariates("LBM",M,list(Y1,Y2) )
+my_model$estimate()
+which.max(my_model$ICL)
+
+## End(Not run)</code></pre>
+
+
+</div>

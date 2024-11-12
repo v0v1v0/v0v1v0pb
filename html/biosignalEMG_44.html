@@ -1,0 +1,156 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>on/off detection quality measures</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>
+Measure the quality of an automatic on/off detection
+</h2>
+
+<h3>Description</h3>
+
+<p>These quantities measure different aspects of the
+accuracy in the determination of activity changes of an electric
+signal.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">ANDP(b, bE)
+MNChPD(b, bE)
+PCE(b, bE)
+PR(b, bE, t)
+TD(b, bE, t)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>b</code></td>
+<td>
+
+<p>reference vector (target values) indicating for each position if the datum corresponds to a silence phase (0) or an active phase (1 or a greater integer indicating the level of activation).
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>bE</code></td>
+<td>
+
+<p>detected vector (output of an automatic detector) indicating for each position if the datum corresponds to a silence phase (0) or an active phase (1 or a greater integer indicating the level of activation).
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>t</code></td>
+<td>
+
+<p>tolerance value (see <b>Details</b>).
+</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>These quality measures are defined as
+</p>
+
+<table>
+<tr>
+<td style="text-align: left;">
+ANDP</td>
+<td style="text-align: left;"> The absolute difference of the number of detected phases and the actual number of pahses</td>
+</tr>
+<tr>
+<td style="text-align: left;">
+MNChPD </td>
+<td style="text-align: left;"> The mean of the distances of each detected change-point to the nearest actual change-point</td>
+</tr>
+<tr>
+<td style="text-align: left;">
+PCE </td>
+<td style="text-align: left;"> The percentage of incorrectly classified points (silence-activity)</td>
+</tr>
+<tr>
+<td style="text-align: left;">
+TD </td>
+<td style="text-align: left;"> temporal deviation</td>
+</tr>
+<tr>
+<td style="text-align: left;">
+PR </td>
+<td style="text-align: left;"> computes the true positive ratio (TPR) and the false positive ratio (FPR).
+</td>
+</tr>
+</table>
+<p><code>TD</code> and <code>PR</code> depends on the value of <code>t</code>, which is a tolerance for the difference between the calculated and exact changepoints.
+</p>
+<p>See Guerrero et.al. (2014) for details on the computation of these measures.
+</p>
+
+
+<h3>Value</h3>
+
+<p>ANDP, MNChPD, PCE, TD: a numeric value.
+PR: a list of two numeric values (TPR and FPR).
+</p>
+
+
+<h3>Note</h3>
+
+<p>The parameter <code>t</code> should be adjusted in terms of the sampling rate of the <abbr><span class="acronym">EMG</span></abbr>.
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>J.A. Guerrero <a href="mailto:jaguerrero@correo.uaa.mx">jaguerrero@correo.uaa.mx</a>
+</p>
+
+
+<h3>References</h3>
+
+<p>Guerrero J.A., Macias-Diaz J.E. (2014) A computational method for the detection of activation/deactivation patterns in biological signals with three levels of electric intensity. <em>Math. Biosci.</em> <b>248</b>, 117–127.
+</p>
+<p>Pistohl T., Schmidt T.S.B., Ball T., Schulze-Bonhage A., Aertsen A., Mehring C. (2013) Grasp detection from human ECoG during natural reach-to-grasp movements. <em>PLoS ONE</em> <b>8</b>
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>onoff_bonato</code>, <code>onoff_singlethres</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R"># Simulate 10 seconds of an EMG
+emgx &lt;- syntheticemg(n.length.out = 10000, on.sd = 1, on.duration.mean = 350, 
+    on.duration.sd = 10, off.sd = 0.05, off.duration.mean = 300, off.duration.sd = 20, 
+    on.mode.pos = 0.75, shape.factor = 0.5, samplingrate = 1000, units = "mV", 
+    data.name = "Synthetic EMG")
+
+# Detect the phases of activation in emgx
+b_bonato &lt;- onoff_bonato(emgx, sigma_n = 0.05, m = 10, minL = 30)
+b_singlet &lt;- onoff_singlethres(emgx, t = 0.2)
+
+# Compute the quality measures
+qm_bonato &lt;- c(ANDP(b_bonato, emgx$on.off), MNChPD(b_bonato, emgx$on.off), 
+    PCE(b_bonato, emgx$on.off), PR(b_bonato, emgx$on.off, t = 10), TD(b_bonato, 
+        emgx$on.off, t = 10))
+
+qm_singlet &lt;- c(ANDP(b_singlet, emgx$on.off), MNChPD(b_singlet, emgx$on.off), 
+    PCE(b_singlet, emgx$on.off), PR(b_singlet, emgx$on.off, t = 10), TD(b_singlet, 
+        emgx$on.off, t = 10))
+
+res &lt;- as.matrix(cbind(qm_bonato, qm_singlet))
+rownames(res) &lt;- c("ANDP", "MNChPD", "PCE", "TPR", "FPR", "TD")
+print(res)
+</code></pre>
+
+
+</div>

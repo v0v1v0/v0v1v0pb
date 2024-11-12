@@ -1,0 +1,325 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>GLM fits</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Fit design matrices to one or multiple outcomes</h2>
+
+<h3>Description</h3>
+
+<p>These are the “base” model-fitting functions that solve the
+<em>least squares problem</em> to estimate model coefficients, residuals, etc.
+for brain network data.
+</p>
+<p><code>fastLmBG_t</code> and <code>fastLmBG_f</code> calculate contrast-based statistics
+for T or F contrasts, respectively. It accepts any number of <em>contrasts</em>
+(i.e., a multi-row contrast matrix).
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">fastLmBG(X, Y, QR = qr.default(X), Q = qr_Q2(QR, n = n, p = p),
+  R = qr_R2(QR, p), n = dim(X)[1L], p = QR$rank, ny = dim(Y)[2L],
+  dfR = n - p, XtXinv = inv(QR))
+
+fastLmBG_3d(X, Y, runX, QR = qr(X[, , runX, drop = FALSE]),
+  Q = lapply(QR, qr_Q2, n = n, p = p), R = lapply(QR, qr_R2, p),
+  n = dim(X)[1L], p = QR[[1L]]$rank, ny = length(runX), dfR = n -
+  p, XtXinv = inv(QR))
+
+fastLmBG_3dY(X, Y, runX, QR = qr(X[, , runX, drop = FALSE]),
+  Q = lapply(QR, qr_Q2, n = n, p = p), R = lapply(QR, qr_R2, p),
+  n = dim(X)[1L], p = QR[[1L]]$rank, ny = length(runX), dfR = n -
+  p, XtXinv = inv(QR))
+
+fastLmBG_3dY_1p(X, Y, runX, QR = qr(X[, , runX, drop = FALSE]),
+  Q = lapply(QR, qr_Q2, diag(1L, n, 1L), n, 1L), R = lapply(QR,
+  function(r) r$qr[1L]), n = dim(X)[1L], p = 1L, ny = length(runX),
+  dfR = n - 1L, XtXinv = inv(QR))
+
+fastLmBG_t(fits, contrasts, alternative = c("two.sided", "less",
+  "greater"), alpha = NULL)
+
+fastLmBG_f(fits, contrasts, rkC = NULL, nC = length(contrasts))
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>X</code></td>
+<td>
+<p>Design matrix or 3D array of design matrices</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Y</code></td>
+<td>
+<p>Numeric matrix; there should be 1 column for each outcome variable
+(so that in a graph-level analysis, this is a column matrix)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>QR, Q, R</code></td>
+<td>
+<p>The QR decomposition(s) and Q and R matrix(es) of the design
+matrix(es). If <code>X</code> is a 3D array, these should be <em>lists</em></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>n, p, ny, dfR</code></td>
+<td>
+<p>Integers; the number of observations, model <em>rank</em>,
+number of regions/outcome variables, and residual degrees of freedom</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>XtXinv</code></td>
+<td>
+<p>Numeric matrix or array; the inverse of the cross-product of
+the design matrix(es)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>runX</code></td>
+<td>
+<p>Character vector of the regions for which the design matrix is
+not singular</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>fits</code></td>
+<td>
+<p>List object output by one of the model fitting functions (e.g.,
+<code>fastLmBG</code>)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>contrasts</code></td>
+<td>
+<p>Numeric matrix (for T statistics) or list of matrices (for F
+statistics) specifying the contrast(s) of interest; if only one contrast is
+desired, you can supply a vector (for T statistics)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>alternative</code></td>
+<td>
+<p>Character string, whether to do a two- or one-sided test.
+Default: <code>'two.sided'</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>alpha</code></td>
+<td>
+<p>Numeric; the significance level. Default: 0.05</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>rkC, nC</code></td>
+<td>
+<p>Integers; the rank of the contrast matrix and number of
+contrasts, respectively (for F contrasts)</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>A list with elements
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>coefficients</code></td>
+<td>
+<p>Parameter estimates</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>rank</code></td>
+<td>
+<p>Model rank</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>df.residual</code></td>
+<td>
+<p>Residual degrees of freedom</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>residuals</code></td>
+<td>
+<p>Model residuals</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>sigma</code></td>
+<td>
+<p>The residual standard deviation, or <em>root mean square
+error (RMSE)</em></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>fitted.values</code></td>
+<td>
+<p>Model fitted values</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>qr</code></td>
+<td>
+<p>The design matrix QR decomposition(s)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>cov.unscaled</code></td>
+<td>
+<p>The “unscaled covariance matrix”</p>
+</td>
+</tr>
+</table>
+<p><code>fastLmBG_t</code> – A multidimensional array with the third
+dimension equaling the number of contrasts; each matrix contains the
+contrast of parameter estimates, standard error of the contrast,
+T-statistics, P-values, FDR-adjusted P-values, and confidence intervals (if
+<code>alpha</code> is given)
+</p>
+<p><code>fastLmBG_f</code> – A numeric matrix with columns for the effect
+size, standard error, F statistic, P-values, and FDR-adjusted P-values
+</p>
+
+
+<h3>Parameter estimation</h3>
+
+<p>These functions use the <em>QR</em> decomposition to calculate the least
+squares solution which is the same as the base <code>lm</code>
+function. If we substitute <code class="reqn">X = QR</code> in the standard normal equations, the
+equation to be solved reduces to
+</p>
+<p style="text-align: center;"><code class="reqn">X^T X \hat{\beta} = X^T y \Rightarrow R \hat{\beta} = Q^T y</code>
+</p>
+
+<p>Since <code>R</code> is an <em>upper-triangular</em> matrix, we can use the
+<code>backsolve</code> function which is a bit faster than
+<code>solve</code>. In some cases, the <code>fastLmBG*</code> functions are about
+as fast or faster (particularly when <code>X</code> is not permuted) as one in
+which the normal equations are solved directly; additionally, using the
+<em>QR</em> method affords greater numerical stability.
+</p>
+
+
+<h3>Different scenarios</h3>
+
+<p>There are a few different scenarios for fitting models of the data, with a
+separate function for each:
+</p>
+
+<dl>
+<dt>fastLmBG</dt>
+<dd>
+<p>The main function for when there is a single design matrix
+<code class="reqn">X</code> and any number of outcome variables <code class="reqn">Y</code>.</p>
+</dd>
+<dt>fastLmBG_3d</dt>
+<dd>
+<p>Fits models when there is a different design matrix
+<code class="reqn">X</code> for each region and a single outcome variable <code class="reqn">Y</code>, which in
+this case will be a column matrix.</p>
+</dd>
+<dt>fastLmBG_3dY</dt>
+<dd>
+<p>Fits models when there is both a different design
+matrix <code class="reqn">X</code> and outcome variable <code class="reqn">Y</code> for each region. Occurs under
+permutation for the Freedman-Lane, ter Braak, and Still-White methods.</p>
+</dd>
+<dt>fastLmBG_3dY_1p</dt>
+<dd>
+<p>Fits models when there is both a different design
+and outcome variable for each region, and also when <code class="reqn">X</code> is a rank-1
+matrix (i.e., it has 1 column). Only occurs under permutation with the
+Still-White method if there is a single regressor of interest.</p>
+</dd>
+</dl>
+<p>In the last case above, model coefficients are calculated by simple (i.e.,
+non-matrix) algebra.
+</p>
+
+
+<h3>Improving speed/efficiency</h3>
+
+<p>Speed/efficiency gains will be vast for analyses in which there is a single
+design matrix <code class="reqn">X</code> for all regions, there are multiple outcome variables
+(i.e., vertex-level analysis), and the permutation method chosen does
+not permute <code class="reqn">X</code>. Specifically, these are <em>Freedman-Lane</em>, <em>ter
+Braak</em>, and <em>Manly</em> methods. Therefore, the QR decomposition, the
+<code class="reqn">Q</code> and <code class="reqn">R</code> matrices, and the “unscaled covariance matrix”
+(which is <code class="reqn">(X^T X)^{-1}</code>) only need to be calculated once for the entire
+analysis. Other functions (e.g., <code>lm.fit</code>) would recalculate these for
+each permutation.
+</p>
+<p>Furthermore, this (and the other model fitting functions in the package) will
+likely only work in models with full rank. I sacrifice proper error checking
+in favor of speed, but hopefully any issues with the model will be identified
+prior to the permutation step. Finally, the number of observations, model
+rank, number of outcome variables, and degrees of freedom will not change and
+therefore do not need to be recalculated (although these probably amount to a
+negligible speed boost).
+</p>
+<p>In case there are multiple design matrices, or the permutation method
+permutes the design, then the QR decomposition will need to be calculated
+each time anyway. For these cases, I use more simplified functions
+<code>qr_Q2</code> and <code>qr_R2</code> to calculate the <code class="reqn">Q</code> and <code class="reqn">R</code> matrices,
+and then the fitted values, residuals, and residual standard deviation are
+calculated at the same time (whereas <code>lm.fit</code> and others would calculate
+these each time).
+</p>
+
+
+<h3>Contrast-based statistics</h3>
+
+<p>The <em>contrast of parameter estimates</em>, <code class="reqn">\gamma</code>, for T contrasts is
+</p>
+<p style="text-align: center;"><code class="reqn">\gamma = C \hat{\beta}</code>
+</p>
+
+<p>where <code class="reqn">C</code> is the contrast matrix with size <code class="reqn">k \times p</code> (where
+<code class="reqn">k</code> is the number of contrasts) and <code class="reqn">\hat{\beta}</code> is the matrix of
+parameter estimates with size <code class="reqn">p \times r</code> (where <code class="reqn">r</code> is the number
+of regions). For F contrasts, the effect size is the <em>extra sum of
+squares</em> and is calculated as
+</p>
+<p style="text-align: center;"><code class="reqn">\gamma (C (X^T X)^{-1} C^T)^{-1} \gamma^T</code>
+</p>
+
+<p>The <em>standard error</em> of a T contrast is
+</p>
+<p style="text-align: center;"><code class="reqn">\sqrt{\hat{\sigma} (X^T X)^{-1}}</code>
+</p>
+
+<p>where <code class="reqn">\hat{\sigma}</code> is the <em>residual standard deviation</em> of the
+model and the second term is the unscaled covariance matrix. The standard
+error for F contrasts is simply the <em>residual sum of squares</em>. P-values
+and FDR-adjusted P-values (across regions) are also calculated. Finally, if
+<code class="reqn">\alpha</code> is provided for T contrasts, confidence limits are calculated.
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Christopher G. Watson, <a href="mailto:cgwatson@bu.edu">cgwatson@bu.edu</a>
+</p>
+
+
+<h3>See Also</h3>
+
+<p>randomise
+</p>
+<p>Other GLM functions: <code>GLM design</code>,
+<code>GLM</code>, <code>mtpc</code>
+</p>
+
+
+</div>

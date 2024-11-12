@@ -1,0 +1,163 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>ASCOV_FastICAdefl_est</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>
+Asymptotic covariance matrices of deflation-based FastICA estimates</h2>
+
+<h3>Description</h3>
+
+<p>The regular deflation-based FastICA finds the independent components one by one using a nonlinearity function. The adaptive deflation-based FastICA chooses, for each component separately, the best nonlinearity from a set of nonlinearities. This function computes estimates of the covariance matrices of the different deflation-based FastICA mixing and unmixing matrix estimates.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">ASCOV_FastICAdefl_est(X, gs, dgs, Gs=NULL, method="adapt", 
+                      name=NULL, mixed=TRUE)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>X</code></td>
+<td>
+<p>a numeric data matrix.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>gs</code></td>
+<td>
+<p>a list of nonlinearity functions.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>dgs</code></td>
+<td>
+<p>the first derivative functions of the nonlinearity functions.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Gs</code></td>
+<td>
+<p>the integral function of the nonlinearity function. Is needed only when <code>method="G"</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>method</code></td>
+<td>
+<p>"adapt" or "G", see details.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>name</code></td>
+<td>
+<p>a list of strings, which labels the nonlinearities.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>mixed</code></td>
+<td>
+<p>logical, see details.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+ 
+<p>Depending on the argument <code>method</code>, the function computes the asymptotic covariance matrices for two different extraction orders of the independent components. The choice <code>method="adapt"</code> picks the adaptive deflation-based FastICA estimate, which extracts the components in asymptotically optimal order and uses the best nonlinearity from the set of nonlinearities <code>gs</code>. 
+When <code>method="G"</code>, the order is based on the deviance from normality measured by <code>Gs</code>. This method uses only one nonlinearity, and if <code>gs</code> and <code>dgs</code> contain more than one function, the first one is taken. 
+</p>
+<p>If <code>mixed</code> is TRUE, then <code>X</code> will be transformed by the adaptive FastICA estimate. The option FALSE can be used, for example, to estimate the covariance when <code>X</code> are source estimates given by some other method than FastICA.</p>
+
+
+<h3>Value</h3>
+
+<p>A list with the following components:
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>W</code></td>
+<td>
+<p>estimated mean of the unmixing matrix estimate.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>COV_W</code></td>
+<td>
+<p>estimated covariance matrix of the unmixing matrix estimate.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>A</code></td>
+<td>
+<p>estimated mean of the mixing matrix estimate.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>COV_A</code></td>
+<td>
+<p>estimated covariance matrix of the mixing matrix estimate.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>used_gs</code></td>
+<td>
+<p>indicates which nonlinearity is used in estimation of each rows of the unmixing matrix.</p>
+</td>
+</tr>
+</table>
+<h3>Author(s)</h3>
+
+<p>Jari Miettinen</p>
+
+
+<h3>References</h3>
+
+<p><cite>Miettinen, J., Nordhausen, K., Oja, H. and Taskinen, S. (2014), Deflation-based FastICA with adaptive choices of nonlinearities, <em>IEEE Transactions on Signal Processing</em>, 62(21), 5716–5724.</cite>
+</p>
+<p><cite>Nordhausen, K., Ilmonen, P., Mandal, A., Oja, H. and Ollila, E. (2011), Deflation-based FastICA reloaded,
+in <em>Proc. "19th European Signal Processing Conference 2011 (EUSIPCO 2011)",</em> Barcelona, 1854–1858.</cite>
+</p>
+
+
+<h3>See Also</h3>
+
+<p>ASCOV_FastICAdefl, adapt_fICA</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R"># source components have uniform- and exponential(1)- distribution  
+s1 &lt;- runif(1000,-sqrt(3),sqrt(3))
+s2 &lt;- rexp(1000)
+S &lt;- cbind(s1,s2)
+
+# couple of nonlinearities
+g_pow3 &lt;- function(x){x^3}
+dg_pow3 &lt;- function(x){3*x^2}
+G_pow3 &lt;- function(x){x^4/4}
+
+g_gaus &lt;- function(x){x*exp(-x^2/2)}
+dg_gaus &lt;- function(x){exp(-x^2/2)-x^2*exp(-x^2/2)}
+
+gs &lt;- c(g_pow3,g_gaus)
+dgs &lt;- c(dg_pow3,dg_gaus)
+
+A&lt;-matrix(rnorm(4),2,2)
+
+X &lt;- S %*% t(A)
+
+round(1000*ASCOV_FastICAdefl_est(X, gs=gs, dgs=dgs)$COV_W,2)
+
+round(1000*ASCOV_FastICAdefl_est(X, gs=c(g_pow3), dgs=c(dg_pow3),
+Gs=c(G_pow3), method="G")$COV_W,2)
+
+</code></pre>
+
+
+</div>

@@ -1,0 +1,278 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>posteriorMCMC</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>MCMC sampler for parametric spectral measures</h2>
+
+<h3>Description</h3>
+
+<p>Generates a posterior parameters sample, and computes the posterior  mean and component-wise variance on-line.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">posteriorMCMC(
+  prior = function(type = c("r", "d"), n, par, Hpar, log, dimData) {
+     NULL
+ },
+  proposal = function(type = c("r", "d"), cur.par, prop.par, MCpar, log) {
+     NULL
+ },
+  likelihood = function(x, par, log, vectorial) {
+     NULL
+ },
+  Nsim,
+  dat,
+  Hpar,
+  MCpar,
+  Nbin = 0,
+  par.start = NULL,
+  show.progress = floor(seq(1, Nsim, length.out = 20)),
+  seed = NULL,
+  kind = "Mersenne-Twister",
+  save = FALSE,
+  class = NULL,
+  name.save = NULL,
+  save.directory = "~",
+  name.dat = "",
+  name.model = ""
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>prior</code></td>
+<td>
+<p>The prior distribution: of type <br><code>function(type=c("r","d"), 
+n ,par, Hpar, log, dimData
+)</code>,
+where <code>dimData</code> is the dimension of the sample
+space (<em>e.g.</em>, for
+the two-dimensional simplex (triangle), <code>dimData=3</code>.
+Should return either a matrix with <code>n</code> rows containing a
+random parameter sample generated under the prior
+(if <code>type == "d"</code>), or the density of the
+parameter <code>par</code> (the logarithm of the density if
+<code>log==TRUE</code>.
+See <code>prior.pb</code> and <code>prior.nl</code> for templates.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>proposal</code></td>
+<td>
+<p>The proposal function: of type <br><code>function(type = c("r","d"),  
+cur.par, prop.par, MCpar, log)
+</code>.
+Should
+return the (logarithm of) the proposal density for the move
+<code>cur.par --&gt; prop.par</code> if <code>type == "d"</code>. If
+<code>type =="r"</code>, <code>proposal</code> must return a candidate
+parameter, depending on <code>cur.par</code>, as a vector.
+See <code>proposal.pb</code> or <code>proposal.nl</code>
+for templates.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>likelihood</code></td>
+<td>
+<p>The likelihood function.
+Should be of type<br><code>function(x, par, log, vectorial)</code>, where <code>log</code> and
+<code>vectorial</code> are logical flags indicating respectively if
+the result is to be  returned on the log-scale, and if the
+value is   a vector of length <code>nrow(x)</code> or a single number
+(the likelihood, or the log-likelihood, for the data set <code>x</code>).
+See <code>dpairbeta</code> or <code>dnestlog</code>
+for templates.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Nsim</code></td>
+<td>
+<p>Total number of iterations to perform.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>dat</code></td>
+<td>
+<p>An angular data set, <em>e.g.</em>, constructed by
+<code>cons.angular.dat</code>: A matrix which rows are the Cartesian coordinates of points on the unit simplex (summing to one).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Hpar</code></td>
+<td>
+<p>A list containing  Hyper-parameters to be passed to
+<code>prior</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>MCpar</code></td>
+<td>
+<p>A list containing  MCMC tuning parameters to be
+passed to <code>proposal</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Nbin</code></td>
+<td>
+<p>Length of the burn-in period.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>par.start</code></td>
+<td>
+<p>Starting point for the MCMC sampler.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>show.progress</code></td>
+<td>
+<p>An vector of integers containing the times
+(iteration numbers) at  which a message showing progression
+will be printed on the standard output.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>seed</code></td>
+<td>
+<p>The seed to be set <em>via</em>
+<code>set.seed</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>kind</code></td>
+<td>
+<p>The kind of random numbers generator. Default to
+"Mersenne-Twister". See <code>set.seed</code> for details.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>save</code></td>
+<td>
+<p>Logical. Should the result be saved ?</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>class</code></td>
+<td>
+<p>Optional character string: additional class attribute to be assigned to the result. A predefined class <code>"PBNLpostsample"</code> exists, for which a method performing  convergence diagnostics is defined (see <code>diagnose</code> )</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>name.save</code></td>
+<td>
+<p>A character string giving the name under which
+the result is to be saved. If <code>NULL</code> (default),
+nothing is saved. Otherwise, the result is saved in file <br><code>paste(save.directory,"/",
+name.save,".rda",sep="")</code>.
+A "log" list  is also saved,  named <br><code>paste(name.save, ".log", sep="")</code>,  in file <br><code>paste(save.directory,"/", name.log,".rda",sep="")</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>save.directory</code></td>
+<td>
+<p>A character string giving the directory where the result is to be saved (without trailing slash).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>name.dat</code></td>
+<td>
+<p>A character string naming  the data set used for inference. Default to <code>""</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>name.model</code></td>
+<td>
+<p>A character string naming the model. Default to <code>""</code>.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>A list made of
+</p>
+
+<ul>
+<li> <p><code>stored.vals</code>: A <code>(Nsim-Nbin)*d</code> matrix, where
+<code>d</code>
+is the dimension of the parameter space.
+</p>
+</li>
+<li> <p><code>llh</code> A vector of size <code>(Nsim-Nbin)</code> containing the loglikelihoods evaluated at each parameter of the posterior sample.
+</p>
+</li>
+<li> <p><code>lprior</code> A vector of size <code>(Nsim-Nbin)</code> containing the logarithm of the prior densities evaluated at each parameter of the posterior sample.
+</p>
+</li>
+<li> <p><code>elapsed</code>: The time elapsed, as given by
+<code>proc.time</code> between the start and the end of the run.
+</p>
+</li>
+<li> <p><code>Nsim</code>: The same as the passed argument
+</p>
+</li>
+<li> <p><code>Nbin</code>: idem.
+</p>
+</li>
+<li>
+<p><code>n.accept</code>: The total number of accepted proposals.
+</p>
+</li>
+<li> <p><code>n.accept.kept</code>: The number of accepted proposals after the burn-in period.
+</p>
+</li>
+<li> <p><code>emp.mean</code> The estimated posterior parameters mean
+</p>
+</li>
+<li> <p><code>emp.sd</code> The empirical posterior sample  standard deviation.</p>
+</li>
+</ul>
+<h3>See Also</h3>
+
+<p><code>posteriorMCMC.pb</code>,
+<code>posteriorMCMC.pb</code> for specific uses
+in the PB and the NL models.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">data(Leeds)
+data(pb.Hpar)
+data(pb.MCpar)
+postsample1 &lt;- posteriorMCMC(Nsim=1e+3,Nbin=500,
+         dat= Leeds,
+         prior = prior.pb,
+         proposal = proposal.pb,
+         likelihood = dpairbeta,
+         Hpar=pb.Hpar,
+         MCpar=pb.MCpar)
+
+dim(postsample1[[1]])
+postsample1[-1]
+
+## Not run: 
+## a more realistic one:
+
+postsample2 &lt;- posteriorMCMC(Nsim=50e+3,Nbin=15e+3,
+         dat= Leeds,
+         prior = prior.pb,
+         proposal = proposal.pb,
+         likelihood = dpairbeta,
+         Hpar=pb.Hpar,
+         MCpar=pb.MCpar)
+dim(postsample2[[1]])
+postsample2[-1]
+
+## End(Not run)
+
+</code></pre>
+
+
+</div>

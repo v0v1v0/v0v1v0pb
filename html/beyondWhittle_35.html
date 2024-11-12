@@ -1,0 +1,243 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>gibbs_ar</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Gibbs sampler for an autoregressive model with PACF parametrization.</h2>
+
+<h3>Description</h3>
+
+<p>Obtain samples of the posterior of a Bayesian autoregressive model of fixed order.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">gibbs_ar(
+  data,
+  ar.order,
+  Ntotal,
+  burnin,
+  thin = 1,
+  print_interval = 500,
+  numerical_thresh = 1e-07,
+  adaption.N = burnin,
+  adaption.batchSize = 50,
+  adaption.tar = 0.44,
+  full_lik = F,
+  rho.alpha = rep(1, ar.order),
+  rho.beta = rep(1, ar.order),
+  sigma2.alpha = 0.001,
+  sigma2.beta = 0.001
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+<p>numeric vector; NA values are interpreted as missing values and treated as random</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ar.order</code></td>
+<td>
+<p>order of the autoregressive model (integer &gt;= 0)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Ntotal</code></td>
+<td>
+<p>total number of iterations to run the Markov chain</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>burnin</code></td>
+<td>
+<p>number of initial iterations to be discarded</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>thin</code></td>
+<td>
+<p>thinning number (postprocessing)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>print_interval</code></td>
+<td>
+<p>Number of iterations, after which a status is printed to console</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>numerical_thresh</code></td>
+<td>
+<p>Lower (numerical pointwise) bound for the spectral density</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>adaption.N</code></td>
+<td>
+<p>total number of iterations, in which the proposal variances (of rho) are adapted</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>adaption.batchSize</code></td>
+<td>
+<p>batch size of proposal adaption for the rho_i's (PACF)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>adaption.tar</code></td>
+<td>
+<p>target acceptance rate for the rho_i's (PACF)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>full_lik</code></td>
+<td>
+<p>logical; if TRUE, the full likelihood for all observations is used; if FALSE, the partial likelihood for the last n-p observations</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>rho.alpha, rho.beta</code></td>
+<td>
+<p>prior parameters for the rho_i's: 2*(rho-0.5)~Beta(rho.alpha,rho.beta), default is Uniform(-1,1)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>sigma2.alpha, sigma2.beta</code></td>
+<td>
+<p>prior parameters for sigma2 (inverse gamma)</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>Partial Autocorrelation Structure (PACF, uniform prior) and the residual variance sigma2 (inverse gamma prior) is used as model parametrization.
+The DIC is computed with two times the posterior variance of the deviance as effective number of parameters, see (7.10) in the referenced book by Gelman et al.
+Further details can be found in the simulation study section in the referenced paper by C. Kirch et al.
+For more information on the PACF parametrization, see the referenced paper by Barndorff-Nielsen and Schou.
+</p>
+
+
+<h3>Value</h3>
+
+<p>list containing the following fields:
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>rho</code></td>
+<td>
+<p>matrix containing traces of the PACF parameters (if p&gt;0)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>sigma2</code></td>
+<td>
+<p>trace of sigma2</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>DIC</code></td>
+<td>
+<p>a list containing the numeric value <code>DIC</code> of the Deviance Information Criterion (DIC) and the effective number of parameters <code>ENP</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>psd.median,psd.mean</code></td>
+<td>
+<p>psd estimates: (pointwise) posterior median and mean</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>psd.p05,psd.p95</code></td>
+<td>
+<p>pointwise credibility interval</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>psd.u05,psd.u95</code></td>
+<td>
+<p>uniform credibility interval</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>lpost</code></td>
+<td>
+<p>trace of log posterior</p>
+</td>
+</tr>
+</table>
+<h3>References</h3>
+
+<p>C. Kirch et al. (2018)
+<em>Beyond Whittle: Nonparametric Correction of a Parametric Likelihood With a Focus on Bayesian Time Series Analysis</em>
+Bayesian Analysis
+&lt;doi:10.1214/18-BA1126&gt;
+</p>
+<p>A. Gelman et al. (2013)
+<em>Bayesian Data Analysis, Third Edition</em>
+</p>
+<p>O. Barndorff-Nielsen and G. Schou
+On the parametrization of autoregressive models by partial autocorrelations
+Journal of Multivariate Analysis (3),408-419
+&lt;doi:10.1016/0047-259X(73)90030-4&gt;
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## Not run: 
+
+##
+## Example 1: Fit an AR(p) model to sunspot data:
+##
+
+# Use this variable to set the AR model order
+p &lt;- 2
+
+data &lt;- sqrt(as.numeric(sunspot.year))
+data &lt;- data - mean(data)
+
+# If you run the example be aware that this may take several minutes
+print("example may take some time to run")
+mcmc &lt;- gibbs_ar(data=data, ar.order=p, Ntotal=10000, burnin=4000, thin=2)
+
+# Plot spectral estimate, credible regions and periodogram on log-scale
+plot(mcmc, log=T)
+
+
+##
+## Example 2: Fit an AR(p) model to high-peaked AR(1) data
+##
+
+# Use this variable to set the AR model order
+p &lt;- 1
+
+n &lt;- 256
+data &lt;- arima.sim(n=n, model=list(ar=0.95)) 
+data &lt;- data - mean(data)
+omega &lt;- fourier_freq(n)
+psd_true &lt;- psd_arma(omega, ar=0.95, ma=numeric(0), sigma2=1)
+
+# If you run the example be aware that this may take several minutes
+print("example may take some time to run")
+mcmc &lt;- gibbs_ar(data=data, ar.order=p, Ntotal=10000, burnin=4000, thin=2)
+
+# Compare estimate with true function (green)
+plot(mcmc, log=F, pdgrm=F, credib="uniform")
+lines(x=omega, y=psd_true, col=3, lwd=2)
+
+# Compute the Integrated Absolute Error (IAE) of posterior median
+cat("IAE=", mean(abs(mcmc$psd.median-psd_true)[-1]) , sep="")
+
+## End(Not run)
+</code></pre>
+
+
+</div>

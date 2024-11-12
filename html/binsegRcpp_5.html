@@ -1,0 +1,112 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>binseg_normal_cv</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Binary segmentation, normal change in mean, cross-validation for model selection</h2>
+
+<h3>Description</h3>
+
+<p>Efficient implementation of binary segmentation for change in
+mean, with automatic model selection via cross-validation.</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">binseg_normal_cv(data.vec, 
+    max.segments = length(data.vec), 
+    position.vec = seq_along(data.vec), 
+    n.validation.sets = 100L, 
+    prop.validation = 0.5)</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>data.vec</code></td>
+<td>
+<p>Vector of numeric data to segment.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>max.segments</code></td>
+<td>
+<p>Maximum number of segments to compute, default=length(<code>data.vec</code>).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>position.vec</code></td>
+<td>
+<p>integer vector of positions at which data are measured,
+default=1:length(<code>data.vec</code>).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>n.validation.sets</code></td>
+<td>
+<p>Number of validation sets.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>prop.validation</code></td>
+<td>
+<p>Proportion of validation set.</p>
+</td>
+</tr>
+</table>
+<h3>Author(s)</h3>
+
+<p>Toby Dylan Hocking</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+data.table::setDTthreads(1)
+
+seg.mean.vec &lt;- 1:5
+data.mean.vec &lt;- rep(seg.mean.vec, each=20)
+set.seed(1)
+n.data &lt;- length(data.mean.vec)
+data.vec &lt;- rnorm(n.data, data.mean.vec, 0.2)
+plot(data.vec)
+(fit &lt;- binsegRcpp::binseg_normal_cv(data.vec))
+seg.dt &lt;- coef(fit)
+model.color &lt;- "red"
+seg.dt[, segments(start.pos, mean, end.pos, mean, col=model.color)]
+seg.dt[start&gt;1, abline(v=start.pos, col=model.color)]
+
+## plot method shows number of times selected.
+plot(fit)
+
+if(requireNamespace("neuroblastoma")){
+  data(neuroblastoma, package="neuroblastoma", envir=environment())
+  library(data.table)
+  profiles.dt &lt;- data.table(neuroblastoma$profiles)
+  one.chrom &lt;- profiles.dt[profile.id=="4" &amp; chromosome=="2"]
+  fit &lt;- one.chrom[, binsegRcpp::binseg_normal_cv(
+    logratio, position.vec=position)]
+  selected.segs &lt;- coef(fit)
+  if(require(ggplot2)){
+    ggplot()+
+      geom_point(aes(
+        position, logratio),
+        data=one.chrom)+
+      geom_segment(aes(
+        start.pos, mean,
+        xend=end.pos, yend=mean),
+        data=selected.segs,
+        color=model.color)+
+      geom_vline(aes(
+        xintercept=start.pos),
+        data=selected.segs[start&gt;1],
+        color=model.color)
+  }
+}
+
+</code></pre>
+
+
+</div>

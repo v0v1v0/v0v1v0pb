@@ -1,0 +1,126 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>calc.ic</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Calculate an information criterion.</h2>
+
+<h3>Description</h3>
+
+<p>Calculate a specified information criterion (IC) for an estimate or a group of estimates.
+The choices of IC include AIC, BIC, AICc, BICc, GCV and Mallows' Cp.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">calc.ic(
+  y_hat,
+  y,
+  ic = c("aicc", "bicc", "aic", "bic", "gcv", "cp"),
+  df,
+  sigma = NULL
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>y_hat</code></td>
+<td>
+<p>A vector of fitted values with <code>length(y_hat)=length(y)=n</code>, or
+a matrix, with <code>nrow(coef)=length(y)=n</code> and <code>ncol(y_hat)=m</code>, containing m different fits.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>y</code></td>
+<td>
+<p>A vector of response variable, with <code>length(y)=n</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ic</code></td>
+<td>
+<p>A specified IC to calculate. Default is AICc ('aicc'). Other choices include AIC ('aic'),
+BIC ('bic'), BICc ('bicc'), GCV ('gcv') and Mallows' Cp ('cp').</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>df</code></td>
+<td>
+<p>A number if y_hat is a vector, or a vector with <code>length(df)=ncol(y_hat)=m</code> if y_hat is
+a matrix. df represents the degrees of freedom for each fit.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>sigma</code></td>
+<td>
+<p>Standard deviation of the error term. It only needs to be specified if the argument <code>ic='cp'</code>.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>This function enables the computation of various common IC for model fits, which can
+further be used to choose the optimal fit. This allows user comparing the effect of different IC.
+In order to calculate an IC, degrees of freedoms (df) needs to be specified. To be more specific,
+here are the formulas used to calculate each IC:
+</p>
+<p style="text-align: center;"><code class="reqn">AIC = \log(\frac{RSS}{n}) + 2\frac{df}{n}</code>
+</p>
+
+<p style="text-align: center;"><code class="reqn">BIC = \log(\frac{RSS}{n}) + \log(n)\frac{df}{n}</code>
+</p>
+
+<p style="text-align: center;"><code class="reqn">AICc = \log(\frac{RSS}{n}) + 2\frac{df+1}{n-df-2}</code>
+</p>
+
+<p style="text-align: center;"><code class="reqn">BICc = \log(\frac{RSS}{n}) + \log(n)\frac{df+1}{n-df-2}</code>
+</p>
+
+<p style="text-align: center;"><code class="reqn">GCV = \frac{RSS}{(n-df)^2}</code>
+</p>
+
+<p style="text-align: center;"><code class="reqn">Mallows' Cp = RSS + 2\times \sigma^2 \times df</code>
+</p>
+
+
+
+<h3>Value</h3>
+
+<p>The value(s) of the specified IC for each fit.
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Sen Tian
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## Generate a trivial dataset, X has mean 0 and norm 1, y has mean 0
+set.seed(11)
+n = 20
+p = 5
+x = matrix(rnorm(n*p), nrow=n, ncol=p)
+x = scale(x, center = colMeans(x))
+x = scale(x, scale = sqrt(colSums(x^2)))
+beta = c(1, 1, 0, 0, 0)
+y = x%*%beta + scale(rnorm(20, sd=0.01), center = TRUE, scale = FALSE)
+
+## Fit the model
+boss_result = boss(x, y)
+## Print the values of AICc-hdf for all subsets given by BOSS
+print(boss_result$IC_boss$aicc)
+## calculate them manually using the calc.ic function
+y_hat = cbind(rep(1,n),x)%*%boss_result$beta_boss
+print(calc.ic(y_hat, y, df=boss_result$hdf_boss))
+</code></pre>
+
+
+</div>

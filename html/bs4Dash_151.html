@@ -1,0 +1,258 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>tabsetPanel</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Create a tabsetPanel</h2>
+
+<h3>Description</h3>
+
+<p>Imported by bs4TabCard but can be used alone. This is a modified shiny::tabsetPanel,
+to handle bootstrap 4. This function will be upgraded 
+starting from shiny 1.7.0 (support Bootstrap 4 tabs).
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">tabsetPanel(
+  ...,
+  id = NULL,
+  selected = NULL,
+  type = c("tabs", "pills", "hidden"),
+  vertical = FALSE,
+  side = "left",
+  .list = NULL
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p><code>tabPanel()</code> elements to include in the tabset</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>id</code></td>
+<td>
+<p>If provided, you can use <code style="white-space: pre;">⁠input$⁠</code><em><code>id</code></em> in your
+server logic to determine which of the current tabs is active. The value
+will correspond to the <code>value</code> argument that is passed to
+<code>tabPanel()</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>selected</code></td>
+<td>
+<p>The <code>value</code> (or, if none was supplied, the <code>title</code>)
+of the tab that should be selected by default. If <code>NULL</code>, the first
+tab will be selected.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>type</code></td>
+<td>
+
+<dl>
+<dt>'"tabs"'</dt>
+<dd>
+<p>Standard tab look</p>
+</dd>
+<dt>'"pills"'</dt>
+<dd>
+<p>Selected tabs use the background fill color</p>
+</dd>
+</dl>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>vertical</code></td>
+<td>
+<p>Whether to displays tabs vertically. Default to FALSE.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>side</code></td>
+<td>
+<p>Tabs side: <code>"left" or "right"</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>.list</code></td>
+<td>
+<p>In case of programmatically generated items. See example.</p>
+</td>
+</tr>
+</table>
+<h3>Author(s)</h3>
+
+<p>David Granjon, <a href="mailto:dgranjon@ymail.com">dgranjon@ymail.com</a>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">if(interactive()){
+ library(shiny)
+ library(bs4Dash)
+
+ shinyApp(
+   ui = dashboardPage(
+    header = dashboardHeader(),
+    sidebar = dashboardSidebar(),
+    controlbar = dashboardControlbar(),
+    footer = dashboardFooter(),
+    title = "Bootstrap 4 tabsetPanel",
+    body = dashboardBody(
+     # manually inserted panels
+     tabsetPanel(
+      id = "tabcard",
+      tabPanel(
+       title = "Tab 1", 
+       "Content 1"
+      ),
+      tabPanel(
+       title = "Tab 2", 
+       "Content 2"
+      ),
+      tabPanel(
+       title = "Tab 3", 
+       "Content 3"
+      )
+     ),
+     
+     br(), br(),
+     # programmatically inserted panels
+     tabsetPanel(
+       id = "tabset",
+       .list = lapply(1:3, function(i) {
+         tabPanel(
+           title = paste0("Tab", i), 
+           active = FALSE,
+           paste("Content", i)
+         )
+       })
+      )
+    )
+   ),
+   server = function(input, output) {}
+ )
+ 
+ # update tabsetPanel
+ shinyApp(
+  ui = dashboardPage(
+   title = "updateTabsetPanel",
+   header = dashboardHeader(),
+   body = dashboardBody(
+     tabsetPanel(
+       id = "tabset1",
+       selected = "Tab 2",
+       tabPanel(
+         title = "Tab 1", 
+         numericInput("val", "Value:", 10, min = 1, max = 100),
+         verbatimTextOutput("value")
+       ),
+       tabPanel(
+         title = "Tab 2", 
+         "Content 2"
+       ),
+       tabPanel(
+         title = "Tab 3", 
+         checkboxGroupInput(
+           inline = TRUE,
+           "variable", "Variables to show:",
+           c("Cylinders" = "cyl",
+             "Transmission" = "am",
+             "Gears" = "gear")
+         ),
+         tableOutput("data")
+       )
+     ),
+     uiOutput("tabSetPanel2")
+   ),
+   sidebar = dashboardSidebar(
+     skin = "light",
+     sliderInput(
+       inputId = "controller",
+       label = "Update the first tabset",
+       min = 1,
+       max = 3,
+       value = 2
+     ),
+     br(),
+     sliderInput(
+       inputId = "controller2",
+       label = "Update the second tabset",
+       min = 1,
+       max = 3,
+       value = 3
+     )
+   ),
+   controlbar = dashboardControlbar(collapsed = FALSE),
+   footer = dashboardFooter()
+ ),
+ server = function(input, output, session) {
+ 
+   output$tabSetPanel2 &lt;- renderUI({
+    tabsetPanel(
+      id = "tabset2",
+      tabPanel(
+        title = "Tab 1", 
+        p("Tab 1 ")
+      ),
+      tabPanel(
+        title = "Tab 2", 
+        p("Tab 2")
+      ),
+      tabPanel(
+        title = "Tab 3", 
+        p("Tab 3")
+      )
+    )
+   })
+   
+   # update tabset1
+   observeEvent(input$controller, {
+     updateTabsetPanel(
+       session, 
+       inputId = "tabset1", 
+       selected = paste("Tab", input$controller)
+     )
+   }, ignoreInit = TRUE)
+   
+   # update tabset 2
+   observeEvent(input$controller2, {
+     updateTabsetPanel(
+       session, 
+       inputId = "tabset2", 
+       selected = paste("Tab", input$controller2)
+     )
+   }, ignoreInit = TRUE)
+   
+   output$distPlot &lt;- renderPlot({
+     hist(rnorm(input$obs))
+   })
+   
+   output$data &lt;- renderTable({
+     mtcars[, c("mpg", input$variable), drop = FALSE]
+   }, rownames = TRUE)
+   
+   output$txt &lt;- renderText({
+     paste("You chose", input$rb)
+   })
+   
+   output$value &lt;- renderText({ input$val })
+   
+  }
+ )
+}
+
+</code></pre>
+
+
+</div>

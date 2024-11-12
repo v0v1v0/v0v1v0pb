@@ -1,0 +1,248 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>Gb.Choudhury</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Boundary Layer Conductance according to Choudhury &amp; Monteith 1988</h2>
+
+<h3>Description</h3>
+
+<p>A formulation for the canopy boundary layer conductance 
+for heat transfer according to Choudhury &amp; Monteith 1988.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">Gb.Choudhury(
+  data,
+  Tair = "Tair",
+  pressure = "pressure",
+  wind = "wind",
+  ustar = "ustar",
+  H = "H",
+  leafwidth,
+  LAI,
+  zh,
+  zr,
+  d,
+  z0m = NULL,
+  stab_formulation = c("Dyer_1970", "Businger_1971"),
+  Sc = NULL,
+  Sc_name = NULL,
+  constants = bigleaf.constants()
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+<p>Data.frame or matrix containing all required variables</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Tair</code></td>
+<td>
+<p>Air temperature (degC)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>pressure</code></td>
+<td>
+<p>Atmospheric pressure (kPa)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>wind</code></td>
+<td>
+<p>Wind speed at sensor height (m s-1)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ustar</code></td>
+<td>
+<p>Friction velocity (m s-1)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>H</code></td>
+<td>
+<p>Sensible heat flux (W m-2)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>leafwidth</code></td>
+<td>
+<p>Leaf width (m)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>LAI</code></td>
+<td>
+<p>One-sided leaf area index</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>zh</code></td>
+<td>
+<p>Canopy height (m)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>zr</code></td>
+<td>
+<p>Instrument (reference) height (m)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>d</code></td>
+<td>
+<p>Zero-plane displacement height (-), can be calculated using <code>roughness.parameters</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>z0m</code></td>
+<td>
+<p>Roughness length for momentum (m). If not provided, calculated from <code>roughness.parameters</code> 
+within <code>wind.profile</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>stab_formulation</code></td>
+<td>
+<p>Stability correction function used (If <code>stab_correction = TRUE</code>).
+Either <code>"Dyer_1970"</code> or <code>"Businger_1971"</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Sc</code></td>
+<td>
+<p>Optional: Schmidt number of additional quantities to be calculated</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Sc_name</code></td>
+<td>
+<p>Optional: Name of the additonal quantities, has to be of same length than 
+<code>Sc_name</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>constants</code></td>
+<td>
+<p>k - von-Karman constant <br>
+Sc_CO2 - Schmidt number for CO2 <br> 
+Pr - Prandtl number (if <code>Sc</code> is provided)</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>Boundary layer conductance according to Choudhury &amp; Monteith 1988 is
+given by:
+</p>
+<p style="text-align: center;"><code class="reqn">Gb_h = LAI((2a/\alpha)*sqrt(u(h)/w)*(1-exp(-\alpha/2)))</code>
+</p>
+
+<p>where u(zh) is the wind speed at the canopy surface, approximated from
+measured wind speed at sensor height zr and a wind extinction coefficient <code class="reqn">\alpha</code>:
+</p>
+<p style="text-align: center;"><code class="reqn">u(zh) = u(zr) / (exp(\alpha(zr/zh -1)))</code>
+</p>
+<p>.
+</p>
+<p><code class="reqn">\alpha</code> is modeled as an empirical relation to LAI (McNaughton &amp; van den Hurk 1995):
+</p>
+<p style="text-align: center;"><code class="reqn">\alpha = 4.39 - 3.97*exp(-0.258*LAI)</code>
+</p>
+
+<p>Gb (=1/Rb) for water vapor and heat are assumed to be equal in this package.
+Gb for other quantities x is calculated as (Hicks et al. 1987):
+</p>
+<p style="text-align: center;"><code class="reqn">Gb_x = Gb / (Sc_x / Pr)^0.67</code>
+</p>
+
+<p>where Sc_x is the Schmidt number of quantity x, and Pr is the Prandtl number (0.71).
+</p>
+
+
+<h3>Value</h3>
+
+<p>A data frame with the following columns:
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>Gb_h</code></td>
+<td>
+<p>Boundary layer conductance for heat transfer (m s-1)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Rb_h</code></td>
+<td>
+<p>Boundary layer resistance for heat transfer (s m-1)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>kB_h</code></td>
+<td>
+<p>kB-1 parameter for heat transfer</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Gb_Sc_name</code></td>
+<td>
+<p>Boundary layer conductance for <code>Sc_name</code> (m s-1). Only added if <code>Sc_name</code> and 
+<code>Sc_name</code> are provided</p>
+</td>
+</tr>
+</table>
+<h3>Note</h3>
+
+<p>If the roughness length for momentum (<code>z0m</code>) is not provided as input, it is estimated 
+from the function <code>roughness.parameters</code> within <code>wind.profile</code>. This function
+estimates a single <code>z0m</code> value for the entire time period! If a varying <code>z0m</code> value 
+(e.g. across seasons or years) is required, <code>z0m</code> should be provided as input argument.
+</p>
+
+
+<h3>References</h3>
+
+<p>Choudhury, B. J., Monteith J.L., 1988: A four-layer model for the heat
+budget of homogeneous land surfaces. Q. J. R. Meteorol. Soc. 114, 373-398.
+</p>
+<p>McNaughton, K. G., Van den Hurk, B.J.J.M., 1995: A 'Lagrangian' revision of
+the resistors in the two-layer model for calculating the energy budget of a
+plant canopy. Boundary-Layer Meteorology 74, 261-288.
+</p>
+<p>Hicks, B.B., Baldocchi, D.D., Meyers, T.P., Hosker, J.R., Matt, D.R., 1987:
+A preliminary multiple resistance routine for deriving dry deposition velocities
+from measured quantities. Water, Air, and Soil Pollution 36, 311-330.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>Gb.Thom</code>, <code>Gb.Su</code>, <code>aerodynamic.conductance</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## bulk canopy boundary layer resistance for a closed canopy (LAI=5) 
+## with large leaves (leafwdith=0.1)            
+df &lt;- data.frame(Tair=25,pressure=100,wind=c(3,4,5),ustar=c(0.5,0.6,0.65),H=c(200,230,250))    
+Gb.Choudhury(data=df,leafwidth=0.1,LAI=5,zh=25,d=17.5,zr=40)
+
+## same conditions, but smaller leaves (leafwidth=0.01)
+Gb.Choudhury(data=df,leafwidth=0.01,LAI=5,zh=25,d=17.5,zr=40) 
+
+</code></pre>
+
+
+</div>

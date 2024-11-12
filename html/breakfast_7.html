@@ -1,0 +1,145 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>model.sdll</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Estimating change-points in the piecewise-constant or piecewise-linear mean of a noisy data sequence via the Steepest Drop to Low Levels method</h2>
+
+<h3>Description</h3>
+
+<p>This function estimates the number and locations of change-points in the piecewise-constant or piecewise-linear mean of a noisy data sequence via the Steepest Drop to Low Levels method.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">model.sdll(
+  cptpath.object,
+  sigma = stats::mad(diff(cptpath.object$x)/sqrt(2)),
+  universal = TRUE,
+  th.const = NULL,
+  th.const.min.mult = 0.3,
+  lambda = 0.9
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>cptpath.object</code></td>
+<td>
+<p>A solution-path object, returned by a <code>sol.[name]</code> routine. The <code>cptpath.object$type</code> variable decides the model type: piecewise-constant (<code>type == "const"</code>),
+piecewise-linear and continuous (<code>type == "lin.cont"</code>) or piecewise-linear and discontinuous (<code>type == "lin.discont"</code>). In the piecewise-constant model, SDLL model selection should work well 
+when <code>cptpath.object</code> is an object returned by the <code>sol.wbs2</code> routine. In the piecewise-linear model (whether continuous or not), the output of <code>sol.idetect</code> should be supplied as
+<code>cptpath.object</code>. Note that the field <code>cptpath.object$x</code> contains the input data sequence.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>sigma</code></td>
+<td>
+<p>An estimate of the standard deviation of the noise in the data <code>cptpath.object$x</code>. Can be a functional of <code>cptpath.object$x</code> or a specific value if known. 
+The default in the piecewise-constant model is the Median Absolute Deviation of the vector <code>diff(cptpath.object$x)/sqrt(2)</code>, tuned to the Gaussian distribution.
+In the piecewise-linear models, <code>diff(cptpath.object$x, differences = 2)/sqrt(6)</code> is used by default.
+Note that <code>model.sdll</code> works particularly well when the noise is i.i.d. Gaussian.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>universal</code></td>
+<td>
+<p>If <code>TRUE</code>, then the threshold that decides if there are any change-points is chosen automatically, so that the probability of type-I error (i.e. indicating change-points if there are none) 
+is approximately <code>1 - alpha</code>. If <code>FALSE</code>, then <code>th.const</code> must be specified.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>th.const</code></td>
+<td>
+<p>Only relevant if <code>universal == FALSE</code>; in that case a numerical value must be provided. Used to create the threshold (applicable to the contrast magnitudes stored in <code>cptpath.object</code>) 
+that decides if there are any change-points in the mean vector; that threshold is then <code>th.const * sqrt(2 * log(n)) * sigma</code>, where <code>n</code> is the length of the data vector <code>cptpath.object$x</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>th.const.min.mult</code></td>
+<td>
+<p>A fractional multiple of the threshold, used to decide the lowest magnitude of contrasts from <code>cptpath.object</code> still considered by the SDLL model selection criterion as potentially change-point-carrying.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>lambda</code></td>
+<td>
+<p>Only relevant if <code>universal == TRUE</code>; can be set to 0.9 or 0.95. The approximate probability of not detecting any change-points if the truth does not contain any.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The Steepest Drop to Low Levels method is described in 
+"Detecting possibly frequent change-points: Wild Binary Segmentation 2 and steepest-drop model selection", P. Fryzlewicz (2020), Journal of the Korean Statistical Society, 49, 1027–1070.
+</p>
+
+
+<h3>Value</h3>
+
+<p>An S3 object of class <code>cptmodel</code>, which contains the following fields: 
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>solution.path</code></td>
+<td>
+<p>The solution path method used to obtain <code>cptpath.object</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>type</code></td>
+<td>
+<p>The model type used, inherited from the given <code>cptpath.object</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>model.selection</code></td>
+<td>
+<p>The model selection method used to return the final change-point estimators object, here its value is <code>"sdll"</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>no.of.cpt</code></td>
+<td>
+<p>The number of estimated change-points</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>cpts</code></td>
+<td>
+<p>The locations of estimated change-points</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>est</code></td>
+<td>
+<p>An estimate of the mean of the vector <code>cptpath.object$x</code></p>
+</td>
+</tr>
+</table>
+<h3>References</h3>
+
+<p>P. Fryzlewicz (2020). Detecting possibly frequent change-points: Wild Binary Segmentation 2 and steepest-drop model selection. <em>Journal of the Korean Statistical Society</em>, 49, 1027–1070.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>sol.idetect</code>, <code>sol.idetect_seq</code>, <code>sol.not</code>, <code>sol.tguh</code>, <code>sol.wbs</code>, <code>sol.wbs2</code>, <code>breakfast</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">f &lt;- rep(rep(c(0, 1), each = 50), 10)
+x &lt;- f + rnorm(length(f))
+model.sdll(sol.wbs2(x))
+</code></pre>
+
+
+</div>

@@ -1,0 +1,198 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>getSeries</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>
+Download Time-Series Data from Bundesbank
+</h2>
+
+<h3>Description</h3>
+
+<p>Download time-series from the website of the Bundesbank.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">getSeries(series,
+          start = NULL,
+          end = format(Sys.Date(), "%Y-%m"),
+          return.class = "data.frame",
+          verbose = TRUE, dest.dir = NULL,
+          column1.only = TRUE)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>series</code></td>
+<td>
+<p>The series name as given by the Bundesbank
+(e.g. ‘<abbr><span class="acronym">BBK01.ST0316</span></abbr>’ for 3-Month
+<abbr><span class="acronym">EURIBOR</span></abbr>).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>start</code></td>
+<td>
+<p>character in format
+‘<abbr><span class="acronym">YYYY</span></abbr>-<abbr><span class="acronym">MM</span></abbr>’ or
+‘<abbr><span class="acronym">YYYY</span></abbr>’.  If omitted, the function
+downloads data from the earliest available
+date. Currently ignored for real-time datasets.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>end</code></td>
+<td>
+<p>character in format
+‘<abbr><span class="acronym">YYYY</span></abbr>.<abbr><span class="acronym">MM</span></abbr>’ or
+‘<abbr><span class="acronym">YYYY</span></abbr>’.  If omitted, the function
+downloads data up to the most recent available
+date. Currently ignored for real-time datasets.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>return.class</code></td>
+<td>
+<p>character or <code>NULL</code>. Currently
+supported are <code>"zoo"</code> and <code>"data.frame"</code>. If
+<code>NULL</code> or <code>"list"</code>, a <code>list</code> is
+returned for time-series. Real-time data are always
+returned as a <code>data.frame</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>verbose</code></td>
+<td>
+<p>logical</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>dest.dir</code></td>
+<td>
+<p><code>NULL</code> or <code>character</code>. If
+character, it must be the path to an existing
+directory. See Details.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>column1.only</code></td>
+<td>
+<p><code>logical</code>, and default is
+<code>TRUE</code>, which is required for <code>return.class</code>
+<code>zoo</code>.  If <code>FALSE</code>, additional columns are
+kept; such columns typically contain comments and
+notes.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The data can be downloaded in CSV-format from the
+Bundesbank's website
+<a href="https://www.bundesbank.de/en/statistics/time-series-databases">https://www.bundesbank.de/en/statistics/time-series-databases</a> .
+</p>
+<p>If <code>dest.dir</code> is provided, the downloaded
+dataset gets a date prefix (today in format
+<code>YYYYMMDD</code>) and is stored in directory
+<code>dest.dir</code>. Before any download is attempted,
+the function checks whether a file with today's
+prefix exist in <code>dest.dir</code>; if yes, the file is
+used.
+</p>
+
+
+<h3>Value</h3>
+
+<p>A data.frame with two (or more) columns:
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>dates</code></td>
+<td>
+<p>dates (of class <code>Date</code>)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>values</code></td>
+<td>
+<p>numerical values</p>
+</td>
+</tr>
+</table>
+<p>The result for single time-series may have an
+attribute <code>info</code>, which is a character vector
+and holds additional information for <code>series</code>
+(such as its unit). See Examples.
+</p>
+<p>Real-time datasets are always organised as a
+<code>data.frame</code>,
+in which the rows correspond to the reporting period
+and the columns to the publication date.
+Real-time  datasets always have several attributes,
+in particular <code>date</code>, which corresponds to the
+publication date.
+</p>
+<p>If a download files, the function will print the error
+message, but evaluate to <code>NULL</code> (invisibly).
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Maintainer: Enrico Schumann &lt;es@enricoschumann.net&gt;
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+## (Internet connection required)
+
+series &lt;- "BBK01.ST0304" ## Eonia
+res &lt;- getSeries(series) ## retrieve all available data
+res &lt;- getSeries(series, start = "2012-01")
+res &lt;- getSeries(series, end   = "2012-01")
+res &lt;- getSeries(series, start = "2012-01", end = "2012-05")
+
+## If the download fails, 'res' will be NULL.
+## This typically happens when the website of the
+## Bundesbank is not available.
+
+if (!is.null(res)) {
+
+    ## make 'zoo' series
+    if (require("zoo")) {
+        Eonia &lt;- zoo(res$values, res$dates)
+        plot(Eonia)
+    }
+
+    ## check comments
+    writeLines(strwrap(paste("- ", attr(res, "info")),
+               width = 60, exdent = 2))
+
+    ## real-time dataset (Gross domestic product)
+    gdp &lt;- getSeries("BBKRT.A.DE.N.A.AG1.CA010.V.A")
+
+    ## use caching
+    ## ==&gt; the example uses a temporary directory, but
+    ##     better is to use a less ephemeral destination,
+    ##     e.g. '~/Downloads/bundesbank'
+    gdp &lt;- getSeries("BBKRT.A.DE.N.A.AG1.CA010.V.A",
+                     dest.dir = tempdir())
+    ### Downloading data from Bundesbank ... Done.
+
+    gdp &lt;- getSeries("BBKRT.A.DE.N.A.AG1.CA010.V.A",
+                     dest.dir = tempdir())
+    ### Using cache ... Done.
+}
+
+</code></pre>
+
+
+</div>

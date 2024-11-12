@@ -1,0 +1,129 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>createBetaPrior</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Convenience function to create a beta prior</h2>
+
+<h3>Description</h3>
+
+<p>Convenience function to create a beta prior
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">createBetaPrior(a, b, lower = 0, upper = 1)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>a</code></td>
+<td>
+<p>shape1 of the beta distribution</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>b</code></td>
+<td>
+<p>shape2 of the beta distribution</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>lower</code></td>
+<td>
+<p>lower values for the parameters</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>upper</code></td>
+<td>
+<p>upper values for the parameters</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>This creates a beta prior, assuming that lower / upper values for parameters are are fixed. The beta is the calculated relative to this lower / upper space.
+</p>
+
+
+<h3>Note</h3>
+
+<p>for details see <code>createPrior</code>
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Florian Hartig
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>createPriorDensity</code> <br><code>createPrior</code> <br><code>createTruncatedNormalPrior</code> <br><code>createUniformPrior</code> <br><code>createBayesianSetup</code> <br></p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R"># the BT package includes a number of convenience functions to specify
+# prior distributions, including createUniformPrior, createTruncatedNormalPrior
+# etc. If you want to specify a prior that corresponds to one of these
+# distributions, you should use these functions, e.g.:
+
+prior &lt;- createUniformPrior(lower = c(0,0), upper = c(0.4,5))
+
+prior$density(c(2, 3)) # outside of limits -&gt; -Inf
+prior$density(c(0.2, 2)) # within limits, -0.6931472
+
+# All default priors include a sampling function, i.e. you can create
+# samples from the prior via
+prior$sampler()
+# [1] 0.2291413 4.5410389
+
+# if you want to specify a prior that does not have a default function, 
+# you should use the createPrior function, which expects a density and 
+# optionally a sampler function:
+
+density = function(par){
+  d1 = dunif(par[1], -2,6, log =TRUE)
+  d2 = dnorm(par[2], mean= 2, sd = 3, log =TRUE)
+  return(d1 + d2)
+}
+
+sampler = function(n=1){
+  d1 = runif(n, -2,6)
+  d2 = rnorm(n, mean= 2, sd = 3)
+  return(cbind(d1,d2))
+}
+
+prior &lt;- createPrior(density = density, sampler = sampler, 
+                     lower = c(-10,-20), upper = c(10,20), best = NULL)
+
+# note that the createPrior supports additional truncation
+
+
+# To use a prior in an MCMC, include it in a BayesianSetup 
+
+set.seed(123)
+ll &lt;- function(x) sum(dnorm(x, log = TRUE)) # multivariate normal ll
+bayesianSetup &lt;- createBayesianSetup(likelihood = ll, prior = prior)
+
+settings = list(iterations = 100)
+out &lt;- runMCMC(bayesianSetup = bayesianSetup, settings = settings)
+
+# use createPriorDensity to create a new (estimated) prior from MCMC output
+
+newPrior = createPriorDensity(out, method = "multivariate",
+                              eps = 1e-10, lower = c(-10,-20), 
+                              upper = c(10,20), best = NULL, scaling = 0.5)
+
+</code></pre>
+
+
+</div>

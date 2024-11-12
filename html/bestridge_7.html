@@ -1,0 +1,234 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>gen.data</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Generate simulated data</h2>
+
+<h3>Description</h3>
+
+<p>Generate data for simulations under the generalized linear model and Cox
+model.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">gen.data(
+  n,
+  p,
+  k = NULL,
+  rho = 0,
+  family = c("gaussian", "binomial", "poisson", "cox"),
+  beta = NULL,
+  cortype = 1,
+  snr = 10,
+  censoring = TRUE,
+  c = 1,
+  scal,
+  sigma = 1,
+  seed = 1
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>n</code></td>
+<td>
+<p>The number of observations.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>p</code></td>
+<td>
+<p>The number of predictors of interest.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>k</code></td>
+<td>
+<p>The number of nonzero coefficients in the underlying regression
+model. Can be omitted if <code>beta</code> is supplied.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>rho</code></td>
+<td>
+<p>A parameter used to characterize the pairwise correlation in
+predictors. Default is <code>0</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>family</code></td>
+<td>
+<p>The distribution of the simulated data. <code>"gaussian"</code> for
+gaussian data.<code>"binomial"</code> for binary data. <code>"poisson"</code> for count data. <code>"cox"</code>
+for survival data.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>beta</code></td>
+<td>
+<p>The coefficient values in the underlying regression model.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>cortype</code></td>
+<td>
+<p>The correlation structure. <code>cortype = 1</code> denotes the exponential structure,
+where the covariance matrix has <code class="reqn">(i,j)</code> entry equals <code class="reqn">rho^{|i-j|}</code>.
+codecortype = 2 denotes the constant structure, where the <code class="reqn">(i,j)</code> entry of covariance
+matrix is <code class="reqn">rho</code> for every <code class="reqn">i \neq j</code> and 1 elsewhere. <code>cortype = 3</code> denotes the moving average
+structure. Details can be found below.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>snr</code></td>
+<td>
+<p>A numerical value controlling the signal-to-noise ratio (SNR). The SNR is defined as
+as the variance of <code class="reqn">x\beta</code> divided
+by the variance of a gaussian noise: <code class="reqn">\frac{Var(x\beta)}{\sigma^2}</code>.
+The gaussian noise <code class="reqn">\epsilon</code> is set with mean 0 and variance.
+The noise is added to the linear predictor <code class="reqn">\eta</code> = <code class="reqn">x\beta</code>. Default is <code>snr = 10</code>.
+This option is invalid for <code>cortype = 3</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>censoring</code></td>
+<td>
+<p>Whether data is censored or not. Valid only for <code>family = "cox"</code>. Default is <code>TRUE</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>c</code></td>
+<td>
+<p>The censoring rate. Default is <code>1</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>scal</code></td>
+<td>
+<p>A parameter in generating survival time based on the Weibull distribution. Only used for the "<code>cox</code>" family.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>sigma</code></td>
+<td>
+<p>A parameter used to control the signal-to-noise ratio. For linear regression,
+it is the error variance <code class="reqn">\sigma^2</code>. For logistic regression and Cox's model,
+the larger the value of sigma, the higher the signal-to-noise ratio. Valid only for <code>cortype = 3</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>seed</code></td>
+<td>
+<p>seed to be used in generating the random numbers.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>We generate an <code class="reqn">n \times p</code> random Gaussian matrix
+<code class="reqn">X</code> with mean 0 and a covariance matrix with an exponential structure
+or a constant structure. For the exponential structure, the covariance matrix
+has <code class="reqn">(i,j)</code> entry equals <code class="reqn">rho^{|i-j|}</code>. For the constant structure,
+the <code class="reqn">(i,j)</code> entry of the covariance matrix is <code class="reqn">rho</code> for every <code class="reqn">i
+\neq j</code> and 1 elsewhere. For the moving average structure,  For the design matrix <code class="reqn">X</code>,
+we first generate an <code class="reqn">n \times p</code> random Gaussian matrix <code class="reqn">\bar{X}</code>
+whose entries are i.i.d. <code class="reqn">\sim N(0,1)</code> and then normalize its columns
+to the <code class="reqn">\sqrt n</code> length. Then the design matrix <code class="reqn">X</code> is generated with
+<code class="reqn">X_j = \bar{X}_j + \rho(\bar{X}_{j+1}+\bar{X}_{j-1})</code> for <code class="reqn">j=2,\dots,p-1</code>.
+</p>
+<p>For <code>family = "gaussian"</code> , the data model is </p>
+<p style="text-align: center;"><code class="reqn">Y = X \beta +
+\epsilon.</code>
+</p>
+
+<p>The underlying regression coefficient <code class="reqn">\beta</code> has uniform distribution [m, 100m], <code class="reqn">m=5 \sqrt{2log(p)/n}.</code>
+</p>
+<p>For <code>family= "binomial"</code>, the data model is </p>
+<p style="text-align: center;"><code class="reqn">Prob(Y = 1) = \exp(X
+\beta + \epsilon)/(1 + \exp(X \beta + \epsilon)).</code>
+</p>
+
+<p>The underlying regression coefficient <code class="reqn">\beta</code> has uniform distribution [2m, 10m], <code class="reqn">m = 5\sigma \sqrt{2log(p)/n}.</code>
+</p>
+<p>For <code>family = "poisson"</code> , the data is modeled to have an exponential distribution: </p>
+<p style="text-align: center;"><code class="reqn">Y = Exp(\exp(X \beta +
+\epsilon)).</code>
+</p>
+
+<p>For <code>family = "cox"</code>, the data model is
+</p>
+<p style="text-align: center;"><code class="reqn">T = (-\log(S(t))/\exp(X \beta))^{1/scal}.</code>
+</p>
+
+<p>The centering time is generated from uniform distribution <code class="reqn">[0, c]</code>,
+then we define the censor status as <code class="reqn">\delta = I\{T \leq C\}, R = min\{T, C\}</code>.
+The underlying regression coefficient <code class="reqn">\beta</code> has uniform distribution [2m, 10m], <code class="reqn">m = 5\sigma \sqrt{2log(p)/n}.</code>
+In the above models, <code class="reqn">\epsilon \sim N(0,
+\sigma^2 ),</code> where <code class="reqn">\sigma^2</code> is determined by the <code>snr</code>.
+</p>
+
+
+<h3>Value</h3>
+
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>Design matrix of predictors.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>y</code></td>
+<td>
+<p>Response variable.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Tbeta</code></td>
+<td>
+<p>The coefficients used in the underlying regression model.</p>
+</td>
+</tr>
+</table>
+<h3>Author(s)</h3>
+
+<p>Liyuan Hu, Kangkang Jiang, Yanhang Zhang, Jin Zhu, Canhong Wen and Xueqin Wang.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>bsrr</code>, <code>predict.bsrr</code>.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+# Generate simulated data
+n &lt;- 200
+p &lt;- 20
+k &lt;- 5
+rho &lt;- 0.4
+SNR &lt;- 10
+cortype &lt;- 1
+seed &lt;- 10
+Data &lt;- gen.data(n, p, k, rho, family = "gaussian", cortype = cortype, snr = SNR, seed = seed)
+x &lt;- Data$x[1:140, ]
+y &lt;- Data$y[1:140]
+x_new &lt;- Data$x[141:200, ]
+y_new &lt;- Data$y[141:200]
+lambda.list &lt;- exp(seq(log(5), log(0.1), length.out = 10))
+lm.bsrr &lt;- bsrr(x, y, method = "pgsection")
+</code></pre>
+
+
+</div>

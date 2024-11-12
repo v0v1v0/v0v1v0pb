@@ -1,0 +1,115 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>bridgesample</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Calculates the marginal likelihood of a chain via bridge sampling</h2>
+
+<h3>Description</h3>
+
+<p>Calculates the marginal likelihood of a chain via bridge sampling
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">bridgesample(chain, nParams, lower = NULL, upper = NULL, posterior, ...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>chain</code></td>
+<td>
+<p>a single mcmc chain with samples as rows and parameters and posterior density as columns.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nParams</code></td>
+<td>
+<p>number of parameters</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>lower</code></td>
+<td>
+<p>optional - lower bounds of the prior</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>upper</code></td>
+<td>
+<p>optional - upper bounds of the prior</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>posterior</code></td>
+<td>
+<p>posterior density function</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>arguments passed to bridge_sampler</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>This function uses "bridge_sampler" from the package "bridgesampling".
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Tankred Ott
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>marginalLikelihood</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">means &lt;- c(0, 1, 2)
+sds &lt;- c(1, 0.6, 3)
+
+# log-likelihood
+ll &lt;- function (x) {
+  return(sum(dnorm(x, mean = means, sd = sds, log = TRUE)))
+}
+
+# lower and upper bounds for prior
+lb &lt;- rep(-10, 3)
+ub &lt;- rep(10, 3)
+
+# create setup and run MCMC
+setup &lt;- createBayesianSetup(likelihood = ll,
+                             lower = lb,
+                             upper = ub)
+
+out &lt;- runMCMC(bayesianSetup = setup,
+               settings = list(iterations = 1000),
+               sampler = "DEzs")
+
+# sample from MCMC output with "burn-in" of 25%
+sample &lt;- getSample(out$chain, start = 250, numSamples = 500)
+
+# use bridge sampling to get marginal likelihood
+bs_result &lt;- bridgesample(chain = sample,
+                          nParams = out$setup$numPars,
+                          lower = lb,
+                          upper = ub,
+                          posterior = out$setup$posterior$density)
+bs_result
+</code></pre>
+
+
+</div>

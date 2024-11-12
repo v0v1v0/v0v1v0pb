@@ -1,0 +1,142 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>predict.zicreg</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Predictions for univariate zero-inflated count regression models</h2>
+
+<h3>Description</h3>
+
+<p>Predicts the mean, probability, count mean, or zero-inflation
+probability for new data using parameters from a fitted zero-inflated count
+regression model.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">## S3 method for class 'zicreg'
+predict(object, newdata = NULL, y.new = NULL, type = "mean", ...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>object</code></td>
+<td>
+<p>A fitted <code>zic.reg</code> object.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>newdata</code></td>
+<td>
+<p>A <code>data.frame</code> containing new values of the same covariates appearing in fitted model.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>y.new</code></td>
+<td>
+<p>An optional vector of new response values, used only for <code>type = "prob"</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>type</code></td>
+<td>
+<p>String, one of <code>c("mean", "prob", "psi", "lambda")</code>. <code>"mean"</code>
+will predict the conditional mean of the mixture distribution, <code>"prob"</code>
+will predict the probability of a new response value, <code>"psi"</code> will predict
+the probability of zero-inflation, and <code>"lambda"</code> will predict the mean of
+the count portion of the mixture distribution. NOTE: Setting <code>type = "mean"</code> and leaving <code>newdata = NULL</code> is the same as calling
+<code>fitted(object)</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Ignored.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>A numeric vector containing the predictions using the model parameters.
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>John Niehaus
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R"># Simulate some zip data
+n=1000
+x = cbind(1, rnorm(n))
+z = cbind(1, rbeta(n, 4, 8))
+b = c(1, 2.2)
+g = c(-1, 1.7)
+lam = exp(x %*% b)
+psi = plogis(z %*% g)
+
+
+y = bizicount::rzip(n, lambda = lam, psi=psi)
+dat = cbind.data.frame(x = x[,-1], z = z[,-1], y = y)
+
+# estimate model
+
+mod = zic.reg(y ~ x | z, data = dat, keep = TRUE)
+
+
+### Predict on observed/training data
+# predict conditional mean (fitted values)
+predict(mod, type = "mean")
+
+# predict probabilty Y = y
+probs_pred_obs = predict(mod, type = "prob")
+
+# predict mean of count distribution (lambda)
+lambda_pred_obs = predict(mod, type = "lambda")
+
+# mse predicted vs true lambda values
+mean((lam - lambda_pred_obs)**2)
+
+# predict zero inflation probability (psi)
+psi_pred_obs = predict(mod, type = "psi")
+
+# MSE predicted vs true zero-inflation probabilities
+mean((psi-psi_pred_obs)**2)
+
+
+### Predict on test data
+# simulate some test data
+
+x = cbind(1, rnorm(n, mean = -0.5, sd = 1.25))
+z = cbind(1, rbeta(n, 6, 12))
+y = rzip(n, lambda = exp(x %*% coef(mod)[1:2]), psi = plogis(z %*% coef(mod)[3:4]))
+dat_new = cbind.data.frame(x = x[,-1], z = z[,-1], y = y)
+
+# predict conditional mean
+mean_new = predict(mod, type = "mean", newdata = dat_new)
+mean((y - mean_new)**2)
+
+# predict probability of Y = y
+probs_new = predict(mod, type = "prob", newdata = dat_new, y.new = y)
+
+# predict lambda
+lambda_new = predict(mod, type = "lambda", newdata = dat_new)
+
+# predict zero inflation probability
+psi_new = predict(mod, type = "psi", newdata = dat_new)
+
+
+
+
+</code></pre>
+
+
+</div>

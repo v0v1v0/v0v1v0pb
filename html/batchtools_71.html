@@ -1,0 +1,112 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>makeClusterFunctionsDocker</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>ClusterFunctions for Docker</h2>
+
+<h3>Description</h3>
+
+<p>Cluster functions for Docker/Docker Swarm (<a href="https://docs.docker.com/engine/swarm/">https://docs.docker.com/engine/swarm/</a>).
+</p>
+<p>The <code>submitJob</code> function executes
+<code>docker [docker.args] run --detach=true [image.args] [resources] [image] [cmd]</code>.
+Arguments <code>docker.args</code>, <code>image.args</code> and <code>image</code> can be set on construction.
+The <code>resources</code> part takes the named resources <code>ncpus</code> and <code>memory</code>
+from <code>submitJobs</code> and maps them to the arguments <code>--cpu-shares</code> and <code>--memory</code>
+(in Megabytes). The resource <code>threads</code> is mapped to the environment variables “OMP_NUM_THREADS”
+and “OPENBLAS_NUM_THREADS”.
+To reliably identify jobs in the swarm, jobs are labeled with “batchtools=[job.hash]” and named
+using the current login name (label “user”) and the job hash (label “batchtools”).
+</p>
+<p><code>listJobsRunning</code> uses <code>docker [docker.args] ps --format={{.ID}}</code> to filter for running jobs.
+</p>
+<p><code>killJobs</code> uses <code>docker [docker.args] kill [batch.id]</code> to filter for running jobs.
+</p>
+<p>These cluster functions use a Hook to remove finished jobs before a new submit and every time the Registry
+is synchronized (using <code>syncRegistry</code>).
+This is currently required because docker does not remove terminated containers automatically.
+Use <code>docker ps -a --filter 'label=batchtools' --filter 'status=exited'</code> to identify and remove terminated
+containers manually (or usa a cron job).
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">makeClusterFunctionsDocker(
+  image,
+  docker.args = character(0L),
+  image.args = character(0L),
+  scheduler.latency = 1,
+  fs.latency = 65
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>image</code></td>
+<td>
+<p>[<code>character(1)</code>]<br>
+Name of the docker image to run.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>docker.args</code></td>
+<td>
+<p>[<code>character</code>]<br>
+Additional arguments passed to “docker” *before* the command (“run”, “ps” or “kill”) to execute (e.g., the docker host).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>image.args</code></td>
+<td>
+<p>[<code>character</code>]<br>
+Additional arguments passed to “docker run” (e.g., to define mounts or environment variables).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>scheduler.latency</code></td>
+<td>
+<p>[<code>numeric(1)</code>]<br>
+Time to sleep after important interactions with the scheduler to ensure a sane state.
+Currently only triggered after calling <code>submitJobs</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>fs.latency</code></td>
+<td>
+<p>[<code>numeric(1)</code>]<br>
+Expected maximum latency of the file system, in seconds.
+Set to a positive number for network file systems like NFS which enables more robust (but also more expensive) mechanisms to
+access files and directories.
+Usually safe to set to <code>0</code> to disable the heuristic, e.g. if you are working on a local file system.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>[<code>ClusterFunctions</code>].
+</p>
+
+
+<h3>See Also</h3>
+
+<p>Other ClusterFunctions: 
+<code>makeClusterFunctionsInteractive()</code>,
+<code>makeClusterFunctionsLSF()</code>,
+<code>makeClusterFunctionsMulticore()</code>,
+<code>makeClusterFunctionsOpenLava()</code>,
+<code>makeClusterFunctionsSGE()</code>,
+<code>makeClusterFunctionsSSH()</code>,
+<code>makeClusterFunctionsSlurm()</code>,
+<code>makeClusterFunctionsSocket()</code>,
+<code>makeClusterFunctionsTORQUE()</code>,
+<code>makeClusterFunctions()</code>
+</p>
+
+
+</div>

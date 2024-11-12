@@ -1,0 +1,159 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>predict_inactivation</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Prediction of Dynamic Inactivation</h2>
+
+<h3>Description</h3>
+
+<p>Predicts the inactivation of a microorganism under isothermal or
+non-isothermal temperature conditions. The thermal resistence of
+the microorganism are defined with the input arguments.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">predict_inactivation(simulation_model, times, parms, temp_profile, ...,
+  tol0 = 1e-05)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>simulation_model</code></td>
+<td>
+<p>character identifying the model to be used.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>times</code></td>
+<td>
+<p>numeric vector of output times.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>parms</code></td>
+<td>
+<p>list of parameters defining the parameters of the model.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>temp_profile</code></td>
+<td>
+<p>data frame with discrete values of the temperature for
+each time. It must have one column named <code>time</code> and another named
+<code>temperature</code> providing discrete values of the temperature at
+time points.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Additional arguments passed to <code>ode</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>tol0</code></td>
+<td>
+<p>numeric. Observations at time 0 make Weibull-based models singular.
+The time for observatins taken at time 0 are changed for this value.
+By default ('tol0 = 1e-5')</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The value of the temperature is calculated at each value of time by
+linear interpolation of the values provided by the input argument
+<code>temp_profile</code>.
+The function <code>ode</code> of the package <code>deSolve</code> is
+used for the resolution of the differential equation.
+</p>
+
+
+<h3>Value</h3>
+
+<p>A list of class <code>SimulInactivation</code> with the results. It has
+the following entries:
+</p>
+
+<ul>
+<li>
+<p> model: character defining the model use for the prediction.
+</p>
+</li>
+<li>
+<p> model_parameters: named numeric vector with the values of
+the model parameters used.
+</p>
+</li>
+<li>
+<p> temp_approximations: function used for the interpolation of
+the temperature. For a numeric value of
+time given, returns the value of the
+temperature and its first derivative.
+</p>
+</li>
+<li>
+<p> simulation: A data frame with the results calculated. Its
+first column contains the times at which the
+solution has been calculated. The following
+columns the values of the variables of the
+model. The three last columns provide the
+values of <code>logN</code>, <code>S</code> and
+<code>logS</code>.
+</p>
+</li>
+</ul>
+<h3>See Also</h3>
+
+<p><code>ode</code>, <code>get_model_data</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## EXAMPLE 1 -----------
+
+## Retrieve the model keys available for dynamic models.
+get_model_data()
+
+## Set the input arguments
+example_model &lt;- "Geeraerd"  # Geeraerd's model will be used
+times &lt;- seq(0, 5, length=100)  # values of time for output
+
+model_data &lt;- get_model_data(example_model)  # Retrive the data of the model used
+print(model_data$parameters)
+print(model_data$variables)
+model_parms &lt;- c(D_R = 1,
+                 z = 10,
+                 N_min = 100,
+                 temp_ref = 100,
+                 N0 = 100000,
+                 C_c0 = 1000
+                 )
+
+## Define the temperature profile for the prediction
+temperature_profile &lt;- data.frame(time = c(0, 1.25, 2.25, 4.6),
+                                  temperature = c(70, 105, 105, 70))
+
+## Call the prediction function
+prediction_results &lt;- predict_inactivation(example_model, times,
+                                           model_parms, temperature_profile)
+
+## Show the results
+head(prediction_results$simulation)
+plot(prediction_results)
+time_to_logreduction(1.5, prediction_results)
+
+## END EXAMPLE 1 -----------
+
+</code></pre>
+
+
+</div>

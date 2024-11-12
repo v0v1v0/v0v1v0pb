@@ -1,0 +1,320 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>bfast</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Break Detection in the Seasonal and Trend Component of a Univariate Time
+Series</h2>
+
+<h3>Description</h3>
+
+<p>Iterative break detection in seasonal and trend component of a time series.
+Seasonal breaks is a function that combines the iterative decomposition of
+time series into trend, seasonal and remainder components with significant
+break detection in the decomposed components of the time series.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">bfast(
+  Yt,
+  h = 0.15,
+  season = c("dummy", "harmonic", "none"),
+  max.iter = 10,
+  breaks = NULL,
+  hpc = "none",
+  level = 0.05,
+  decomp = c("stl", "stlplus"),
+  type = "OLS-MOSUM",
+  ...
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>Yt</code></td>
+<td>
+<p>univariate time series to be analyzed. This should be an object of
+class "ts" with a frequency greater than one.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>h</code></td>
+<td>
+<p>minimal segment size between potentially detected breaks in the
+trend model given as fraction relative to the sample size (i.e. the minimal
+number of observations in each segment divided by the total length of the
+timeseries).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>season</code></td>
+<td>
+<p>the seasonal model used to fit the seasonal component and
+detect seasonal breaks (i.e. significant phenological change).  There are
+three options: "dummy", "harmonic", or "none" where "dummy" is the model
+proposed in the first Remote Sensing of Environment paper and "harmonic" is
+the model used in the second Remote Sensing of Environment paper (See paper
+for more details) and where "none" indicates that no seasonal model will be
+fitted (i.e. St = 0 ). If there is no seasonal cycle (e.g. frequency of the
+time series is 1) "none" can be selected to avoid fitting a seasonal model.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>max.iter</code></td>
+<td>
+<p>maximum amount of iterations allowed for estimation of
+breakpoints in seasonal and trend component.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>breaks</code></td>
+<td>
+<p>integer specifying the maximal number of breaks to be
+calculated. By default the maximal number allowed by h is used.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>hpc</code></td>
+<td>
+<p>A character specifying the high performance computing support.
+Default is "none", can be set to "foreach". Install the "foreach" package
+for hpc support.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>level</code></td>
+<td>
+<p>numeric; threshold value for the sctest.efp
+test; if a length 2 vector is passed, the first value is used for the trend,
+the second for the seasonality</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>decomp</code></td>
+<td>
+<p>"stlplus" or "stl": the function to use for decomposition.
+<code>stl</code> can handle sparse time series (1 &lt; frequency &lt; 4), <code>stlplus</code>
+can handle <code>NA</code> values in the time series.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>type</code></td>
+<td>
+<p>character, indicating the type argument to
+efp</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>additional arguments passed to <code>stlplus::stlplus()</code>, if
+its usage has been enabled, otherwise ignored.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The algorithm decomposes the input time series <code>Yt</code> into three components:
+trend, seasonality and remainder, using the function defined by the <code>decomp</code>
+parameter. Then each component is checked for at least one significant
+break using <code>strucchangeRcpp::efp()</code>, and if there is one, <code>strucchangeRcpp::breakpoints()</code>
+is run on the component. The result allows differentiating between breaks in
+trend and seasonality.
+</p>
+
+
+<h3>Value</h3>
+
+<p>An object of the class "bfast" is a list with the following
+elements: </p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>Yt</code></td>
+<td>
+<p> equals the Yt used as input.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>output</code></td>
+<td>
+<p> is a list
+with the following elements (for each iteration): </p>
+
+<table>
+<tr>
+<td style="text-align: left;"> <code>Tt</code>
+</td>
+<td style="text-align: left;"> the fitted trend component</td>
+</tr>
+<tr>
+<td style="text-align: left;"> <code>St</code> </td>
+<td style="text-align: left;"> the fitted seasonal
+component</td>
+</tr>
+<tr>
+<td style="text-align: left;"> <code>Nt</code> </td>
+<td style="text-align: left;"> the noise or remainder component</td>
+</tr>
+<tr>
+<td style="text-align: left;"> <code>Vt</code>
+</td>
+<td style="text-align: left;"> equals the deseasonalized data <code>Yt - St</code> for each iteration</td>
+</tr>
+<tr>
+<td style="text-align: left;">
+<code>bp.Vt</code> </td>
+<td style="text-align: left;"> output of the <code>breakpoints</code>
+function for the trend model. Note that the output breakpoints are index
+numbers of <code>na.omit(as.numeric(Vt))</code>.</td>
+</tr>
+<tr>
+<td style="text-align: left;"> <code>ci.Vt</code> </td>
+<td style="text-align: left;"> output of the
+<code>breakpoints</code> confint function for the trend
+model</td>
+</tr>
+<tr>
+<td style="text-align: left;"> <code>Wt</code> </td>
+<td style="text-align: left;"> equals the detrended data <code>Yt - Tt</code> for each
+iteration</td>
+</tr>
+<tr>
+<td style="text-align: left;"> <code>bp.Wt</code> </td>
+<td style="text-align: left;"> output of the
+<code>breakpoints</code> function for the seasonal model.
+Note that the output breakpoints are index numbers of <code>na.omit(as.numeric(Wt))</code>. </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+<code>ci.Wt</code> </td>
+<td style="text-align: left;"> output of the <code>breakpoints</code>
+confint function for the seasonal model </td>
+</tr>
+</table>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nobp</code></td>
+<td>
+<p> is a list with the
+following elements: </p>
+
+<table>
+<tr>
+<td style="text-align: left;"> <code>nobp.Vt</code> </td>
+<td style="text-align: left;"> logical, TRUE if there
+are no breakpoints detected</td>
+</tr>
+<tr>
+<td style="text-align: left;"> <code>nobp.Wt</code> </td>
+<td style="text-align: left;"> logical, TRUE if there
+are no breakpoints detected </td>
+</tr>
+</table>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Magnitude</code></td>
+<td>
+<p> magnitude of the biggest
+change detected in the trend component</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Time</code></td>
+<td>
+<p> timing of the biggest
+change detected in the trend component</p>
+</td>
+</tr>
+</table>
+<h3>Author(s)</h3>
+
+<p>Jan Verbesselt
+</p>
+
+
+<h3>References</h3>
+
+<p>Verbesselt J, Hyndman R, Newnham G, Culvenor D (2010).
+“Detecting trend and seasonal changes in satellite image time series.”
+<em>Remote Sensing of Environment</em>, <b>114</b>(1), 106–115.
+ISSN 0034-4257, doi: <a href="https://doi.org/10.1016/j.rse.2009.08.014">10.1016/j.rse.2009.08.014</a>, <a href="https://doi.org/10.1016/j.rse.2009.08.014">https://doi.org/10.1016/j.rse.2009.08.014</a>.
+</p>
+<p>Verbesselt J, Hyndman R, Zeileis A, Culvenor D (2010).
+“Phenological change detection while accounting for abrupt and gradual trends in satellite image time series.”
+<em>Remote Sensing of Environment</em>, <b>114</b>(12), 2970–2980.
+ISSN 0034-4257, doi: <a href="https://doi.org/10.1016/j.rse.2010.08.003">10.1016/j.rse.2010.08.003</a>, <a href="https://doi.org/10.1016/j.rse.2010.08.003">https://doi.org/10.1016/j.rse.2010.08.003</a>.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>plot.bfast</code> for plotting of bfast() results.
+<br><code>breakpoints</code> for more examples and background
+information about estimation of breakpoints in time series.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## Simulated Data
+plot(simts) # stl object containing simulated NDVI time series
+datats &lt;- ts(rowSums(simts$time.series))
+# sum of all the components (season,abrupt,remainder)
+tsp(datats) &lt;- tsp(simts$time.series) # assign correct time series attributes
+plot(datats)
+
+fit &lt;- bfast(datats, h = 0.15, season = "dummy", max.iter = 1)
+plot(fit, sim = simts)
+fit
+# prints out whether breakpoints are detected
+# in the seasonal and trend component
+ 
+## Real data
+## The data should be a regular ts() object without NA's
+## See Fig. 8 b in reference
+plot(harvest, ylab = "NDVI")
+# MODIS 16-day cleaned and interpolated NDVI time series
+
+(rdist &lt;- 10/length(harvest))
+# ratio of distance between breaks (time steps) and length of the time series
+
+fit &lt;- bfast(harvest, h = rdist, season = "harmonic", max.iter = 1, breaks = 2)
+plot(fit)
+## plot anova and slope of the trend identified trend segments
+plot(fit, ANOVA = TRUE)
+## plot the trend component and identify the break with
+## the largest magnitude of change
+plot(fit, type = "trend", largest = TRUE)
+
+## plot all the different available plots
+plot(fit, type = "all")
+
+## output
+niter &lt;- length(fit$output) # nr of iterations
+out &lt;- fit$output[[niter]]
+# output of results of the final fitted seasonal and trend models and
+## #nr of breakpoints in both.
+
+## running bfast on yearly data
+t &lt;- ts(as.numeric(harvest), frequency = 1, start = 2006)
+fit &lt;- bfast(t, h = 0.23, season = "none", max.iter = 1)
+plot(fit)
+fit
+
+## handling missing values with stlplus
+(NDVIa &lt;- as.ts(zoo::zoo(som$NDVI.a, som$Time)))
+fit &lt;- bfast(NDVIa, season = "harmonic", max.iter = 1, decomp = "stlplus")
+plot(fit)
+fit
+</code></pre>
+
+
+</div>

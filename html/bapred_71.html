@@ -1,0 +1,162 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>svaba</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>
+Batch effect adjustment using SVA
+</h2>
+
+<h3>Description</h3>
+
+<p>Performs batch effect adjustment using Surrogate Variable Analysis (SVA) and additionally returns information necessary for addon batch effect adjustment with frozen SVA.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">svaba(x, y, batch, nbf = NULL, algorithm = "fast")
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+
+<p>matrix. The covariate matrix. Observations in rows, variables in columns.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>y</code></td>
+<td>
+
+<p>factor. Binary target variable. Has to have two factor levels, where each of them correponds to one of the two classes of the target variable.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>batch</code></td>
+<td>
+
+<p>factor. Batch variable. Each factor level (or 'category') corresponds to one of the batches. For example, if there are four batches, this variable would have four factor levels and observations with the same factor level would belong to the same batch.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nbf</code></td>
+<td>
+
+<p>integer. Number of latent factors to estimate.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>algorithm</code></td>
+<td>
+
+<p>character. If <code>method = "fast"</code> the "approximate fSVA algorithm" will be used in frozen SVA. If <code>method = "exact"</code> the "exact fSVA algorithm" will be used. See Parker et al. (2014).
+</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>This is essentially a wrapper function of the function <code>sva()</code> from the Bioconductor package of the same name.
+</p>
+
+
+<h3>Value</h3>
+
+<p><code>svaba</code> returns an object of class <code>svatrain</code>.
+An object of class "<code>svatrain</code>" is a list containing the following components: 
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>xadj</code></td>
+<td>
+<p> matrix of adjusted (training) data </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>xtrain</code></td>
+<td>
+<p> the unadjusted covariate matrix. Used in frozen SVA. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ytrain</code></td>
+<td>
+<p> binary target variable. Used in frozen SVA. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>svobj</code></td>
+<td>
+<p> output of the function <code>sva()</code>. Used in frozen SVA. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>algorithm</code></td>
+<td>
+<p> algorithm to use in frozen SVA </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nbatches</code></td>
+<td>
+<p> number of batches </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>batch</code></td>
+<td>
+<p> batch variable </p>
+</td>
+</tr>
+</table>
+<h3>Author(s)</h3>
+
+<p>Roman Hornung
+</p>
+
+
+<h3>References</h3>
+
+<p>Leek, J. T., Storey, J. D. (2007). Capturing Heterogeneity in Gene Expression Studies by Surrogate Variable Analysis. PLoS Genetics 3:1724-1735, &lt;doi: <a href="https://doi.org/10.1371/journal.pgen.0030161">10.1371/journal.pgen.0030161</a>&gt;.
+</p>
+<p>Parker, H. S., Bravo, H. C., Leek, J. T. (2014). Removing batch effects for prediction problems with frozen surrogate variable analysis. PeerJ 2:e561, &lt;doi: <a href="https://doi.org/10.7717/peerj.561">10.7717/peerj.561</a>&gt;.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">data(autism)
+
+# Random subset of 150 variables:
+set.seed(1234)
+Xsub &lt;- X[,sample(1:ncol(X), size=150)]
+
+# In cases of batches with more than 20 observations
+# select 20 observations at random:
+subinds &lt;- unlist(sapply(1:length(levels(batch)), function(x) {
+  indbatch &lt;- which(batch==x)
+  if(length(indbatch) &gt; 20)
+    indbatch &lt;- sort(sample(indbatch, size=20))
+  indbatch
+}))
+Xsub &lt;- Xsub[subinds,]
+batchsub &lt;- batch[subinds]
+ysub &lt;- y[subinds]
+
+
+
+params &lt;- svaba(x=Xsub, y=ysub, batch=batchsub)
+</code></pre>
+
+
+</div>

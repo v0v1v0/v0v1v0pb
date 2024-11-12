@@ -1,0 +1,337 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>optimize_model.bgmfit</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Optimize SITAR model</h2>
+
+<h3>Description</h3>
+
+<p>Select the best fitting SITAR model that involves choosing the
+optimum degrees of freedom (<code>df</code>) for the natural cubic-spline curve
+and the appropriate transformations of the predictor <code>x</code> and response
+<code>y</code> variables.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">## S3 method for class 'bgmfit'
+optimize_model(
+  model,
+  newdata = NULL,
+  optimize_df = NULL,
+  optimize_x = list(NULL, log, sqrt),
+  optimize_y = list(NULL, log, sqrt),
+  transform_prior_class = c("beta", "sd", "rsd", "sigma", "dpar"),
+  transform_beta_coef = c("b", "c", "d"),
+  transform_sd_coef = c("b", "c", "d"),
+  exclude_default_funs = TRUE,
+  add_fit_criteria = NULL,
+  add_bayes_R = NULL,
+  byresp = FALSE,
+  digits = 2,
+  cores = 1,
+  verbose = FALSE,
+  expose_function = NULL,
+  usesavedfuns = FALSE,
+  clearenvfuns = NULL,
+  envir = NULL,
+  ...
+)
+
+optimize_model(model, ...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>model</code></td>
+<td>
+<p>An object of class <code>bgmfit</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>newdata</code></td>
+<td>
+<p>An optional data frame to be used in estimation. If
+<code>NULL</code> (default), the <code>newdata</code> is retrieved from the
+<code>model</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>optimize_df</code></td>
+<td>
+<p>A list of integers specifying the degree of freedom
+(<code>df</code>) values to be optimized. If <code>NULL</code> (default), the <code>df</code>
+is taken from the original model. For optimization over different
+<code>df</code>, say for example <code>df</code> 4 and <code>df</code> 5, the corresponding
+code is <code>optimize_df = list(4,5)</code>. For <code>univariate_by</code> and
+<code>multivariate</code> models, <code>optimize_df</code> can be a single integer
+(e.g., <code>optimize_df = 4</code>) or a list (e.g., <code>optimize_df =
+  list(4,5)</code>), or a a list of lists. As an example, consider optimization
+over <code>df</code> 4 and <code>df</code> 5 for the first sub model, and <code>df</code> 5
+and <code>df</code> 6 for the second sub model, the corresponding code is
+<code>optimize_df = list(list(4,5), list(5,6))</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>optimize_x</code></td>
+<td>
+<p>A vector specifying the transformations for the predictor
+variable (i.e., <code>x</code>). The options available are <code>NULL</code>,
+<code>'log'</code>, <code>'sqrt'</code>, or their combinations. Note that user need not
+to enclose these options in a single or double quotes as they are take care
+of internally. The default setting is to explore all possible combination
+i.e., <code>optimize_x = list(NULL, log,  sqrt)</code>. Similar to the
+<code>optimize_df</code>, user can specify different <code>optimize_x</code> for
+<code>univariate_by</code> and <code>multivariate</code> sub models.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>optimize_y</code></td>
+<td>
+<p>A vector specifying the transformations of the the response
+variable (i.e., <code>y</code>). The approach and options available for
+<code>optimize_y</code> are same as described above for the <code>optimize_x</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>transform_prior_class</code></td>
+<td>
+<p>A character vector (default <code>NULL</code>)
+specifying the transformations of location-scale based priors such as
+<code>normal()</code> when response variable (i.e., <code>y</code>) is <code>'log'</code> or
+<code>'sqrt'</code> transformed. The prior type that could be transformed are
+<code>'beta'</code>, <code>'sd'</code>, <code>'rsd'</code>, <code>'sigma'</code> and <code>'dpar'</code>.
+Currently it is available only for <code>'log'</code> transformed <code>y</code>. Each
+prior type (i.e., <code>'beta', 'sd', 'rsd', 'sigma', 'dpar'</code>) specified
+via <code>transform_prior_class</code> is log transformed as follows: <br><code>log_location = log(location / sqrt(scale^2 / location^2 + 1))</code>, <br><code>log_scale = sqrt(log(scale^2 / location^2 + 1))</code>, <br>
+where location and scale are the original parameters supplied by the user
+and the log_location and log_scale are the equivalent parameters on the log
+scale. For more details, see <code>a_prior_beta</code> argument in <code>bsitar()</code>
+function. Note that <code>transform_prior_class</code> is used as an experiment
+and therefore results may not be what user intended. Thus we recommend to
+explicitly set the desired prior and not to use
+<code>transform_prior_class</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>transform_beta_coef</code></td>
+<td>
+<p>A character vector (default <code>NULL</code>)
+specifying the transformations of location-scale based priors for specific
+regression coefficient(s) when response variable (i.e., <code>y</code>) is
+<code>'log'</code> or <code>'sqrt'</code> transformed. The coefficient that could be
+transformed are <code>'a'</code>, <code>'b'</code>, <code>'c'</code>, <code>'d'</code> and
+<code>'s'</code>. The default is <code>transform_beta_coef = c('b',' b', 'd')</code>
+which implies that parameters <code>'a'</code>, <code>'a'</code> and <code>'a'</code> will be
+transformed whereas parameter <code>'a'</code> will be left unchanged because
+default prior for parameter <code>'a'</code> is based on outcome  <code>y</code> itself
+(e.g., <code>a_prior_beta = normal(ymean, ysd)</code>) which has be transformed.
+However, we strongly suggest that user explicitly set the desired prior and
+not to rely on <code>transform_beta_coef</code> because it is included on
+experimental basis. See <code>transform_prior_class</code> for details.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>transform_sd_coef</code></td>
+<td>
+<p>A character vector (default <code>NULL</code>) specifying
+the transformations of location-scale based priors for specific group level
+coefficient(s) when response variable (i.e., <code>y</code>) is <code>'log'</code> or
+<code>'sqrt'</code> transformed. The coefficient that could be transformed are
+<code>'a'</code>, <code>'b'</code>, <code>'c'</code>, <code>'d'</code> and <code>'s'</code>. The default
+is <code>transform_beta_coef = c('b',' b', 'd')</code>. See
+<code>transform_prior_class</code> and <code>transform_beta_coef</code>  for details.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>exclude_default_funs</code></td>
+<td>
+<p>A logical to indicate whether transformations for
+(<code>x</code> and <code>y</code>) variables used in the original model fit should be
+excluded. If <code>TRUE</code> (default), the transformations specified for the
+<code>x</code> and <code>y</code> variables in the original model fit are excluded from
+the <code>optimize_x</code> and <code>optimize_y</code>. From example, if original
+model is fit with <code>xvar = log</code> and <code>yvar = NULL</code>, then
+<code>optimize_x</code> is translated into <code>optimize_x = list(NULL, sqrt)</code>,
+and similarly <code>optimize_y</code> is reset as <code>optimize_y = list(log,
+  sqrt)</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>add_fit_criteria</code></td>
+<td>
+<p>An optional argument (default <code>NULL</code>) to
+indicate whether to add fit criteria to the returned model fit. Options
+available are <code>'loo'</code> and <code>'waic'</code>. Please see
+<code>brms::add_criterion()</code> for details.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>add_bayes_R</code></td>
+<td>
+<p>An optional argument (default <code>NULL</code>) to indicate
+whether to add Bayesian R square to the returned model fit. To estimate and
+add <code>bayes_R2</code> to the model fit, the argument <code>add_bayes_R</code> is
+set as <code>add_bayes_R = 'bayes_R2'</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>byresp</code></td>
+<td>
+<p>A logical (default <code>FALSE</code>) to indicate if response wise
+fit criteria to be calculated. This argument is evaluated only for the
+<code>multivariate</code> model in which user can select whether to get joint
+calculation of point wise log likelihood (<code>byresp = FALSE</code>) or
+response specific (<code>byresp = TRUE</code>). For, <code>univariate_by</code> model,
+the only option available is to calculate separate point wise log
+likelihood for each sub-model, i.e., <code>byresp = TRUE</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>digits</code></td>
+<td>
+<p>An integer (default <code>2</code>) to set the decimal argument for
+the <code>base::round()</code> function.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>cores</code></td>
+<td>
+<p>The number of cores to used in parallel processing (default
+<code>1</code>). The argument <code>cores</code> is passed to the
+<code>brms::add_criterion()</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>verbose</code></td>
+<td>
+<p>An optional argument (logical, default <code>FALSE</code>) to
+indicate whether to print information collected during setting up the
+object(s).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>expose_function</code></td>
+<td>
+<p>An optional logical argument to indicate whether to
+expose Stan functions (default <code>FALSE</code>). Note that if user has already
+exposed Stan functions during model fit by setting <code>expose_function =
+  TRUE</code> in the <code>bsitar()</code>, then those exposed functions are saved and can be
+used during post processing of the posterior draws and therefore
+<code>expose_function</code> is by default set as <code>FALSE</code> in all post
+processing functions except <code>optimize_model()</code>. For <code>optimize_model()</code>, the
+default setting is <code>expose_function = NULL</code>. The reason is that each
+optimized model has different Stan function and therefore it need to be re
+exposed and saved. The <code>expose_function = NULL</code> implies that the
+setting for <code>expose_function</code> is taken from the original <code>model</code>
+fit. Note that <code>expose_function</code> must be set to <code>TRUE</code> when
+adding <code>fit criteria</code> and/or <code>bayes_R2</code> during model
+optimization.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>usesavedfuns</code></td>
+<td>
+<p>A logical (default <code>NULL</code>) to indicate whether to
+use the already exposed and saved <code>Stan</code> functions. Depending on
+whether the user have exposed Stan functions within the <code>bsitar()</code> call via
+<code>expose_functions</code> argument in the <code>bsitar()</code>, the <code>usesavedfuns</code>
+is automatically set to <code>TRUE</code> (if <code>expose_functions = TRUE</code>) or
+<code>FALSE</code> (if <code>expose_functions = FALSE</code>). Therefore, manual
+setting of <code>usesavedfuns</code> as <code>TRUE</code>/<code>FALSE</code> is rarely
+needed. This is for internal purposes only and mainly used during the
+testing of the functions and therefore should not be used by users as it
+might lead to unreliable estimates.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>clearenvfuns</code></td>
+<td>
+<p>A logical to indicate whether to clear the exposed
+function from the environment (<code>TRUE</code>) or not (<code>FALSE</code>). If
+<code>NULL</code> (default), then <code>clearenvfuns</code> is set as <code>TRUE</code> when
+<code>usesavedfuns</code> is <code>TRUE</code>, and <code>FALSE</code> if <code>usesavedfuns</code>
+is <code>FALSE</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>envir</code></td>
+<td>
+<p>Environment used for function evaluation. The default is
+<code>NULL</code> which will set <code>parent.frame()</code> as default environment.
+Note that since most of post processing functions are based on <span class="pkg">brms</span>,
+the functions needed for evaluation should be in the <code>.GlobalEnv</code>.
+Therefore, it is strongly recommended to set <code> envir = globalenv()</code>
+(or <code>envir = .GlobalEnv</code>). This is particularly true for the
+derivatives such as velocity curve.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Other arguments passed to <code>update_model</code>.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>A list containing the optimized models of class <code>bgmfit</code>, and
+the the summary statistics if <code>add_fit_criteria</code> and/or
+<code>add_bayes_R</code> are specified.
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Satpal Sandhu  <a href="mailto:satpal.sandhu@bristol.ac.uk">satpal.sandhu@bristol.ac.uk</a>
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>brms::add_criterion()</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+
+
+# Fit Bayesian SITAR model 
+
+# To avoid mode estimation which takes time, the Bayesian SITAR model fit to 
+# the 'berkeley_exdata' has been saved as an example fit ('berkeley_exfit').
+# See 'bsitar' function for details on 'berkeley_exdata' and 'berkeley_exfit'.
+
+# Check and confirm whether model fit object 'berkeley_exfit' exists
+ berkeley_exfit &lt;- getNsObject(berkeley_exfit)
+
+model &lt;- berkeley_exfit
+
+# Below example shows dummy call to optimization to save time. 
+# Note that in case degree of freedom and both  optimize_x and optimize_y are
+# NULL (i.e., nothing to optimize), the original model object is returned.   
+# To explicitly get this information whether model is being optimized or not, 
+# user can set verbose = TRUE. The verbose = TRUE also useful in getting the
+# information regarding what all arguments have been changed as compared to
+# the original model.
+
+model2 &lt;- optimize_model(model, 
+  optimize_df = NULL, 
+  optimize_x = NULL, 
+  optimize_y = NULL,
+  verbose = TRUE)
+
+
+
+</code></pre>
+
+
+</div>

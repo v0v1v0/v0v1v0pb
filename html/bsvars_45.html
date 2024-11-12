@@ -1,0 +1,205 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>estimate.BSVARMSH</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Bayesian estimation of a Structural Vector Autoregression with 
+Markov-switching heteroskedasticity via Gibbs sampler</h2>
+
+<h3>Description</h3>
+
+<p>Estimates the SVAR with Markov-switching heteroskedasticity with <code>M</code> regimes (MS(M)) proposed by Woźniak &amp; Droumaguet (2022).
+Implements the Gibbs sampler proposed by Waggoner &amp; Zha (2003)
+for the structural matrix <code class="reqn">B</code> and the equation-by-equation sampler by Chan, Koop, &amp; Yu (2024)
+for the autoregressive slope parameters <code class="reqn">A</code>. Additionally, the parameter matrices <code class="reqn">A</code> and <code class="reqn">B</code>
+follow a Minnesota prior and generalised-normal prior distributions respectively with the matrix-specific
+overall shrinkage parameters estimated thanks to a hierarchical prior distribution. The MS
+model is estimated using the prior distributions and algorithms proposed by Woźniak &amp; Droumaguet (2024),
+Lütkepohl &amp; Woźniak (2020), and Song &amp; Woźniak (2021). See section <b>Details</b> for the model equations.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">## S3 method for class 'BSVARMSH'
+estimate(specification, S, thin = 1, show_progress = TRUE)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>specification</code></td>
+<td>
+<p>an object of class BSVARMSH generated using the <code>specify_bsvar_msh$new()</code> function.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>S</code></td>
+<td>
+<p>a positive integer, the number of posterior draws to be generated</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>thin</code></td>
+<td>
+<p>a positive integer, specifying the frequency of MCMC output thinning</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>show_progress</code></td>
+<td>
+<p>a logical value, if <code>TRUE</code> the estimation progress bar is visible</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The heteroskedastic SVAR model is given by the reduced form equation:
+</p>
+<p style="text-align: center;"><code class="reqn">Y = AX + E</code>
+</p>
+
+<p>where <code class="reqn">Y</code> is an <code>NxT</code> matrix of dependent variables, <code class="reqn">X</code> is a <code>KxT</code> matrix of explanatory variables, 
+<code class="reqn">E</code> is an <code>NxT</code> matrix of reduced form error terms, and <code class="reqn">A</code> is an <code>NxK</code> matrix of autoregressive slope coefficients and parameters on deterministic terms in <code>X</code>.
+</p>
+<p>The structural equation is given by
+</p>
+<p style="text-align: center;"><code class="reqn">BE = U</code>
+</p>
+
+<p>where <code class="reqn">U</code> is an <code>NxT</code> matrix of structural form error terms, and
+<code class="reqn">B</code> is an <code>NxN</code> matrix of contemporaneous relationships.
+</p>
+<p>Finally, the structural shocks, <code class="reqn">U</code>, are temporally and contemporaneously independent and jointly normally distributed with zero mean.
+The conditional variance of the <code>n</code>th shock at time <code>t</code> is given by:
+</p>
+<p style="text-align: center;"><code class="reqn">Var_{t-1}[u_{n.t}] = s^2_{n.s_t}</code>
+</p>
+
+<p>where <code class="reqn">s_t</code> is a Markov process driving the time-variability of 
+the regime-specific conditional variances of structural shocks <code class="reqn">s^2_{n.s_t}</code>. 
+In this model, the variances of each of the structural shocks sum to <code>M</code>.
+</p>
+<p>The Markov process <code class="reqn">s_t</code> is either:
+</p>
+
+<ul>
+<li>
+<p> stationary, irreducible, and aperiodic which requires all regimes to have 
+a positive number occurrences over the sample period, or
+</p>
+</li>
+<li>
+<p> sparse with potentially many regimes with zero occurrences over the sample period
+and in which the number of regimes is estimated.
+</p>
+</li>
+</ul>
+<p>These model selection also with this respect is made using function <code>specify_bsvar_msh</code>.
+</p>
+
+
+<h3>Value</h3>
+
+<p>An object of class PosteriorBSVARMSH containing the Bayesian estimation output and containing two elements:
+</p>
+<p><code>posterior</code> a list with a collection of <code>S</code> draws from the posterior distribution generated via Gibbs sampler containing:
+</p>
+
+<dl>
+<dt>A</dt>
+<dd>
+<p>an <code>NxKxS</code> array with the posterior draws for matrix <code class="reqn">A</code></p>
+</dd>
+<dt>B</dt>
+<dd>
+<p>an <code>NxNxS</code> array with the posterior draws for matrix <code class="reqn">B</code></p>
+</dd>
+<dt>hyper</dt>
+<dd>
+<p>a <code>5xS</code> matrix with the posterior draws for the hyper-parameters of the hierarchical prior distribution</p>
+</dd>
+<dt>sigma2</dt>
+<dd>
+<p>an <code>NxMxS</code> array with the posterior draws for the structural shocks conditional variances</p>
+</dd>
+<dt>PR_TR</dt>
+<dd>
+<p>an <code>MxMxS</code> array with the posterior draws for the transition matrix.</p>
+</dd>
+<dt>xi</dt>
+<dd>
+<p>an <code>MxTxS</code> array with the posterior draws for the regime allocation matrix.</p>
+</dd>
+<dt>pi_0</dt>
+<dd>
+<p>an <code>MxS</code> matrix with the posterior draws for the initial state probabilities</p>
+</dd>
+<dt>sigma</dt>
+<dd>
+<p>an <code>NxTxS</code> array with the posterior draws for the structural shocks conditional standard deviations' series over the sample period</p>
+</dd>
+</dl>
+<p><code>last_draw</code> an object of class BSVARMSH with the last draw of the current MCMC run as the starting value to be passed to the continuation of the MCMC estimation using <code>estimate()</code>.
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Tomasz Woźniak <a href="mailto:wozniak.tom@pm.me">wozniak.tom@pm.me</a>
+</p>
+
+
+<h3>References</h3>
+
+<p>Chan, J.C.C., Koop, G, and Yu, X. (2024) Large Order-Invariant Bayesian VARs with Stochastic Volatility. <em>Journal of Business &amp; Economic Statistics</em>, <b>42</b>, <a href="https://doi.org/10.1080/07350015.2023.2252039">doi:10.1080/07350015.2023.2252039</a>.
+</p>
+<p>Lütkepohl, H., and Woźniak, T., (2020) Bayesian Inference for Structural Vector Autoregressions Identified by Markov-Switching Heteroskedasticity. <em>Journal of Economic Dynamics and Control</em> <b>113</b>, 103862, <a href="https://doi.org/10.1016/j.jedc.2020.103862">doi:10.1016/j.jedc.2020.103862</a>.
+</p>
+<p>Song, Y., and Woźniak, T., (2021) Markov Switching. <em>Oxford Research Encyclopedia of Economics and Finance</em>, Oxford University Press, <a href="https://doi.org/10.1093/acrefore/9780190625979.013.174">doi:10.1093/acrefore/9780190625979.013.174</a>.
+</p>
+<p>Waggoner, D.F., and Zha, T., (2003) A Gibbs sampler for structural vector autoregressions. <em>Journal of Economic Dynamics and Control</em>, <b>28</b>, 349–366, <a href="https://doi.org/10.1016/S0165-1889%2802%2900168-9">doi:10.1016/S0165-1889(02)00168-9</a>.
+</p>
+<p>Woźniak, T., and Droumaguet, M., (2024) Bayesian Assessment of Identifying Restrictions for Heteroskedastic Structural VARs
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>specify_bsvar_msh</code>, <code>specify_posterior_bsvar_msh</code>, <code>normalise_posterior</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R"># simple workflow
+############################################################
+# upload data
+data(us_fiscal_lsuw)
+
+# specify the model and set seed
+specification  = specify_bsvar_msh$new(us_fiscal_lsuw, p = 1, M = 2)
+set.seed(123)
+
+# run the burn-in
+burn_in        = estimate(specification, 5)
+
+# estimate the model
+posterior      = estimate(burn_in, 10, thin = 2)
+
+# workflow with the pipe |&gt;
+############################################################
+set.seed(123)
+us_fiscal_lsuw |&gt;
+  specify_bsvar_msh$new(p = 1, M = 2) |&gt;
+  estimate(S = 5) |&gt; 
+  estimate(S = 10, thin = 2) |&gt; 
+  compute_impulse_responses(horizon = 4) -&gt; irf
+
+</code></pre>
+
+
+</div>

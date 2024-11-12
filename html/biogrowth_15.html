@@ -1,0 +1,152 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>check_growth_guess</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Visual check of an initial guess of the model parameters</h2>
+
+<h3>Description</h3>
+
+<p><a href="https://lifecycle.r-lib.org/articles/stages.html#stable"><img src="../help/figures/lifecycle-stable.svg" alt="[Stable]"></a>
+</p>
+<p>Generates a plot comparing a set of data points against the model prediction
+corresponding to an initial guess of the model parameters
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">check_growth_guess(
+  fit_data,
+  model_keys,
+  guess,
+  environment = "constant",
+  env_conditions = NULL,
+  approach = "single",
+  logbase_mu = 10,
+  formula = logN ~ time
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>fit_data</code></td>
+<td>
+<p>Tibble (or data.frame) of data for the fit. It must have two columns, one with
+the elapsed time (<code>time</code> by default) and another one with the decimal logarithm
+of the populatoin size (<code>logN</code> by default). Different column names can be
+defined using the <code>formula</code> argument.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>model_keys</code></td>
+<td>
+<p>Named the equations of the secondary model as in <code>fit_growth()</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>guess</code></td>
+<td>
+<p>Named vector with the initial guess of the model parameters as in <code>fit_growth()</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>environment</code></td>
+<td>
+<p>type of environment. Either "constant" (default) or "dynamic" (see below for details
+on the calculations for each condition)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>env_conditions</code></td>
+<td>
+<p>Tibble describing the variation of the environmental
+conditions for dynamic experiments. See <code>fit_growth()</code>. Ignored when <code>environment = "constant"</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>approach</code></td>
+<td>
+<p>whether "single" (default) or "global". Please see <code>fit_growth()</code> for details.“</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>logbase_mu</code></td>
+<td>
+<p>Base of the logarithm the growth rate is referred to.
+By default, 10 (i.e. log10). See vignette about units for details.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>formula</code></td>
+<td>
+<p>an object of class "formula" describing the x and y variables.
+<code>logN ~ time</code> as a default.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>A <code>ggplot()</code> comparing the model prediction against the data
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+## Examples under constant environmental conditions -------------------------
+
+## We need some data
+
+my_data &lt;- data.frame(time = 0:9,
+                      logN = c(2, 2.1, 1.8, 2.5, 3.1, 3.4, 4, 4.5, 4.8, 4.7)
+                      )
+                      
+## We can directly plot the comparison for some values
+
+check_growth_guess(my_data, list(primary = "modGompertz"),
+                   c(logN0 = 1.5, mu = .8, lambda = 4, C = 3)
+                   )
+                   
+## Ot it can be combined with the automatic initial guess
+
+check_growth_guess(my_data, list(primary = "modGompertz"),
+                   make_guess_primary(my_data, "modGompertz")
+                   )
+                   
+## Examples under dynamic environmental conditions --------------------------
+
+## We will use the datasets included in the package
+
+data("example_dynamic_growth")
+data("example_env_conditions")
+
+## Model equations are assigned as in fit_growth
+
+sec_models &lt;- list(temperature = "CPM", aw = "CPM")
+
+## Guesses of model parameters are also defined as in fit_growth
+
+guess &lt;- list(Nmax = 1e4, 
+              N0 = 1e0, Q0 = 1e-3,
+              mu_opt = 4, 
+              temperature_n = 1,
+              aw_xmax = 1, aw_xmin = .9, aw_n = 1,
+              temperature_xmin = 25, temperature_xopt = 35,
+              temperature_xmax = 40, aw_xopt = .95
+              )
+              
+## We can now check our initial guess
+
+check_growth_guess(example_dynamic_growth, sec_models, guess,
+                   "dynamic",
+                   example_env_conditions)
+
+</code></pre>
+
+
+</div>

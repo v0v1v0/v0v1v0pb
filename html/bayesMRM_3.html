@@ -1,0 +1,158 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>convdiag_bmrm</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Convergence Diagnostics on MCMC samples in <code>bmrm</code>
+</h2>
+
+<h3>Description</h3>
+
+<p>Compute convergence diagnostics of
+Geweke (1992), Heidelberger and Welch (1983), Raftery and Lewis(1992).
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">convdiag_bmrm(x , var="P", convdiag="geweke",print=TRUE,...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>an object of class <code>bmrm</code>, the output of the <code>bmrm</code> function</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>var</code></td>
+<td>
+<p>name of a variable to which convergence disagnostics apply. It should be one of "A" (source contribution matrix),
+"P" (source composition or profile matrix), "Sigma" (error variance).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>convdiag</code></td>
+<td>
+<p>vector of convergence diagnostic methods. It should be any subvector
+of ("geweke", "heidel","raftery" ) (default="geweke").</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>print</code></td>
+<td>
+<p>TRUE/FALSE, print convergence diagnostics results (default=TRUE)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>arguments to be passed to methods</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>Geweke's convergence diagnostic for Markov chains is based on
+a test for equality of the means of the first and last part of a Markov chain
+(by default the first 10% and the last 50%).
+If the samples are drawn from the stationary distribution of the chain,
+the two means should be equal and Geweke's statistic has an asymptotically
+standard normal distribution. We use the function <code>geweke.diag</code> in <b>coda</b>
+package (with default option) which provides the test statistics
+(standard Z-scores) and the upper bound of
+and p-values.
+</p>
+<p>Heidelberger and Welch's  convergence diagnostic tests the
+null hypothesis that the sampled values come from a stationary distribution.
+The test is successively applied, firstly to the whole chain, then after
+discarding the first 10%, 20%, ... of the chain until either
+the null hypothesis is accepted, or 50% of the chain has been discarded.
+We use the function  <code>heidel.diag</code> (with default option)
+which provides the staionary test results and p-values.
+</p>
+<p>Raftery and Lewis's diagnostic estimates the minimum number of iterations, burn-in,
+thinning interval for zero autocorrelation, satisfying specified conditions
+regarding quantile <code class="reqn">q</code> of parameters of interest. The conditions are
+specified by a posterior quantile <code class="reqn">q</code> of parameters, an acceptable
+tolerance (accuracy) <code class="reqn">r</code> for <code class="reqn">q</code>, a probability <code class="reqn">s</code> of being
+within the interval <code class="reqn">q-r, q+r</code>.
+We use the function  <code>raftery.diag</code> (with default option).
+</p>
+
+
+<h3>Value</h3>
+
+<p>A list of  convergence diagnostics results
+</p>
+
+<dl>
+<dt>convdiag</dt>
+<dd>
+<p>selected convergence diagnostic methods</p>
+</dd>
+<dt>geweke</dt>
+<dd>
+<p>Geweke's z-scores and p-values if <code>convdiag</code>
+includes "geweke", NULL if <code>convdiag</code> does not include "geweke"</p>
+</dd>
+<dt>heidel</dt>
+<dd>
+<p>Heidelberger and Welch's stationary test results
+and p-values if <code>convdiag</code> includes "heidel"; NULL if
+<code>convdiag</code> does not include "heidel"</p>
+</dd>
+<dt>raftery</dt>
+<dd>
+<p>Raftery and Lewis's estimates of burn-in, minimum number of iterations,
+and thinning if <code>convdiag</code> includes "raftery"; NULL if
+<code>convdiag</code> does not include "raftery"</p>
+</dd>
+</dl>
+<h3>References</h3>
+
+<p>Geweke, J.(1992) Evaluating the accuracy of sampling-based
+approaches to calculating posterior moments. In Bayesian Statistics 4
+(ed JM Bernado, JO Berger, AP Dawid and AFM Smith). Clarendon Press.
+</p>
+<p>Heidelberger P, and Welch PD. (1981) A spectral method for
+confidence interval generation and run length control in simulations.
+Comm. ACM. 24, 233-245.
+</p>
+<p>Heidelberger P. and Welch PD.(1983) Simulation run length
+control in the presence of an initial transient.
+Opns Res., 31, 1109-44,Oxford, UK.
+</p>
+<p>Plummer, M., Best, N., Cowles, K. and Vines K. (2006) CODA:
+Convergence Diagnosis and Output Analysis for MCMC, R News, Vol 6, pp. 7-11.
+</p>
+<p>Raftery, A.E. and Lewis, S.M. (1992). One long run with diagnostics:
+Implementation strategies for Markov chain Monte Carlo. Statistical Science, 7, 493-497.
+</p>
+<p>Raftery, A.E. and Lewis, S.M. (1995). The number of iterations,
+convergence diagnostics and generic Metropolis algorithms. In Practical Markov Chain Monte
+Carlo (W.R. Gilks, D.J. Spiegelhalter and S. Richardson, eds.). London, U.K.: Chapman and Hall.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+data(Elpaso)
+Y=Elpaso$Y ; muP=Elpaso$muP
+q=nrow(muP)
+out.Elpaso &lt;- bmrm(Y,q,muP, nAdapt=1000,nBurnIn=5000,nIter=5000,nThin=1)
+conv1&lt;-convdiag_bmrm(out.Elpaso,var="P",convdiag="raftery" )
+conv2&lt;-convdiag_bmrm(out.Elpaso,var="A", convdiag="geweke")
+conv3&lt;-convdiag_bmrm(out.Elpaso,var="Sigma", convdiag=c("geweke","heidel"))
+conv4&lt;-convdiag_bmrm(out.Elpaso,var="Sigma", convdiag=c("geweke","heidel", "raftery"))
+
+</code></pre>
+
+
+</div>

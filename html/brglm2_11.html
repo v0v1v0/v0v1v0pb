@@ -1,0 +1,399 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>brglmFit</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Fitting function for <code>glm()</code> for reduced-bias estimation and
+inference</h2>
+
+<h3>Description</h3>
+
+<p><code>brglmFit()</code> is a fitting method for <code>glm()</code> that fits generalized
+linear models using implicit and explicit bias reduction methods
+(Kosmidis, 2014), and other penalized maximum likelihood
+methods. Currently supported methods include the mean bias-reducing
+adjusted scores approach in Firth (1993) and Kosmidis &amp; Firth
+(2009), the median bias-reduction adjusted scores approach in Kenne
+Pagui et al. (2017), the correction of the asymptotic bias in
+Cordeiro &amp; McCullagh (1991), the mixed bias-reduction adjusted
+scores approach in Kosmidis et al (2020), maximum penalized
+likelihood with powers of the Jeffreys prior as penalty, and
+maximum likelihood. Estimation is performed using a quasi Fisher
+scoring iteration (see <code>vignette("iteration", "brglm2")</code>, which, in
+the case of mean-bias reduction, resembles an iterative correction
+of the asymptotic bias of the Fisher scoring iterates.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">brglmFit(
+  x,
+  y,
+  weights = rep(1, nobs),
+  start = NULL,
+  etastart = NULL,
+  mustart = NULL,
+  offset = rep(0, nobs),
+  family = gaussian(),
+  control = list(),
+  intercept = TRUE,
+  fixed_totals = NULL,
+  singular.ok = TRUE
+)
+
+brglm_fit(
+  x,
+  y,
+  weights = rep(1, nobs),
+  start = NULL,
+  etastart = NULL,
+  mustart = NULL,
+  offset = rep(0, nobs),
+  family = gaussian(),
+  control = list(),
+  intercept = TRUE,
+  fixed_totals = NULL,
+  singular.ok = TRUE
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>a design matrix of dimension <code>n * p</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>y</code></td>
+<td>
+<p>a vector of observations of length <code>n</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>weights</code></td>
+<td>
+<p>an optional vector of ‘prior weights’ to be used
+in the fitting process.  Should be <code>NULL</code> or a numeric vector.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>start</code></td>
+<td>
+<p>starting values for the parameters in the linear
+predictor. If <code>NULL</code> (default) then the maximum likelihood
+estimates are calculated and used as starting values.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>etastart</code></td>
+<td>
+<p>applied only when start is not <code>NULL</code>. Starting
+values for the linear predictor to be passed to
+<code>glm.fit()</code> when computing starting values using maximum
+likelihood.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>mustart</code></td>
+<td>
+<p>applied only when start is not <code>NULL</code>. Starting
+values for the vector of means to be passed to
+<code>glm.fit()</code> when computing starting values using maximum
+likelihood.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>offset</code></td>
+<td>
+<p>this can be used to specify an <em>a priori</em> known
+component to be included in the linear predictor during fitting.
+This should be <code>NULL</code> or a numeric vector of length equal to
+the number of cases.  One or more <code>offset</code> terms can be
+included in the formula instead or as well, and if more than one is
+specified their sum is used.  See <code>model.offset</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>family</code></td>
+<td>
+<p>a description of the error distribution and link
+function to be used in the model.  For <code>glm</code> this can be a
+character string naming a family function, a family function or the
+result of a call to a family function.  For <code>glm.fit</code> only the
+third option is supported.  (See <code>family</code> for details of
+family functions.)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>control</code></td>
+<td>
+<p>a list of parameters controlling the fitting
+process. See <code>brglmControl()</code> for details.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>intercept</code></td>
+<td>
+<p>logical. Should an intercept be included in the
+<em>null</em> model?</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>fixed_totals</code></td>
+<td>
+<p>effective only when <code>family</code> is
+<code>poisson()</code>. Either <code>NULL</code> (no effect) or a vector that
+indicates which counts must be treated as a group. See Details
+for more information and <code>brmultinom()</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>singular.ok</code></td>
+<td>
+<p>logical. If <code>FALSE</code>, a singular model is an
+error.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>A detailed description of the supported adjustments and the quasi
+Fisher scoring iteration is given in the iteration vignette (see,
+<code>vignette("iteration", "brglm2")</code> or Kosmidis et al, 2020).  A
+shorter description of the quasi Fisher scoring iteration is also
+given in one of the vignettes of the <em>enrichwith</em> R package (see,
+<a href="https://cran.r-project.org/package=enrichwith/vignettes/bias.html">https://cran.r-project.org/package=enrichwith/vignettes/bias.html</a>).
+Kosmidis and Firth (2010) describe a parallel quasi Newton-Raphson
+iteration with the same stationary point.
+</p>
+<p>In the special case of generalized linear models for binomial,
+Poisson and multinomial responses, the adjusted score equation
+approaches for <code>type = "AS_mixed"</code>, <code>type = "AS_mean"</code>, and <code>type = "AS_median"</code> (see below for what methods each <code>type</code> corresponds)
+return estimates with improved frequentist properties, that are
+also always finite, even in cases where the maximum likelihood
+estimates are infinite (e.g. complete and quasi-complete separation
+in multinomial regression). See, Kosmidis and Firth (2021) for a
+proof for binomial-response GLMs with Jeffreys-prior penalties to
+the log-likelihood, which is equivalent to mean bias reduction for
+logistic regression. See, also,
+<code>detectseparation::detect_separation()</code> and
+<code>detectseparation::check_infinite_estimates()</code> for pre-fit and
+post-fit methods for the detection of infinite estimates in
+binomial response generalized linear models.
+</p>
+<p>The type of score adjustment to be used is specified through the
+<code>type</code> argument (see <code>brglmControl()</code> for details). The available
+options are
+</p>
+
+<ul>
+<li> <p><code>type = "AS_mixed"</code>: the mixed bias-reducing score adjustments in
+Kosmidis et al (2020) that result in mean bias reduction for the
+regression parameters and median bias reduction for the dispersion
+parameter, if any; default.
+</p>
+</li>
+<li> <p><code>type = "AS_mean"</code>: the mean bias-reducing score adjustments in
+Firth, 1993 and Kosmidis &amp; Firth, 2009. <code>type = "AS_mixed"</code> and
+<code>type = "AS_mean"</code> will return the same results when <code>family</code> is
+<code>binomial()</code> or <code>poisson()</code>, i.e. when the dispersion is fixed
+</p>
+</li>
+<li> <p><code>type = "AS_median"</code>: the median bias-reducing score
+adjustments in Kenne Pagui et al. (2017)
+</p>
+</li>
+<li> <p><code>type = "MPL_Jeffreys"</code>: maximum penalized likelihood
+with powers of the Jeffreys prior as penalty.
+</p>
+</li>
+<li> <p><code>type = "ML"</code>: maximum likelihood.
+</p>
+</li>
+<li> <p><code>type = "correction"</code>: asymptotic bias correction, as in
+Cordeiro &amp; McCullagh (1991).
+</p>
+</li>
+</ul>
+<p>The null deviance is evaluated based on the fitted values using the
+method specified by the <code>type</code> argument (see <code>brglmControl()</code>).
+</p>
+<p>The <code>family</code> argument of the current version of <code>brglmFit()</code> can
+accept any combination of <code>"family"</code> objects and link functions,
+including families with user-specified link functions, <code>mis()</code>
+links, and <code>power()</code> links, but excluding <code>quasi()</code>,
+<code>quasipoisson()</code> and <code>quasibinomial()</code> families.
+</p>
+<p>The description of <code>method</code> argument and the <code style="white-space: pre;">⁠Fitting functions⁠</code>
+section in <code>glm()</code> gives information on supplying fitting
+methods to <code>glm()</code>.
+</p>
+<p><code>fixed_totals</code> specifies groups of observations for which the sum
+of the means of a Poisson model will be held fixed to the observed
+count for each group. This argument is used internally in
+<code>brmultinom()</code> and <code>bracl()</code> for baseline-category logit models and
+adjacent category logit models, respectively.
+</p>
+<p><code>brglm_fit()</code> is an alias to <code>brglmFit()</code>.
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Ioannis Kosmidis <code style="white-space: pre;">⁠[aut, cre]⁠</code> <a href="mailto:ioannis.kosmidis@warwick.ac.uk">ioannis.kosmidis@warwick.ac.uk</a>, Euloge Clovis Kenne Pagui <code style="white-space: pre;">⁠[ctb]⁠</code> <a href="mailto:kenne@stat.unipd.it">kenne@stat.unipd.it</a>
+</p>
+
+
+<h3>References</h3>
+
+<p>Kosmidis I, Firth D (2021). Jeffreys-prior penalty, finiteness
+and shrinkage in binomial-response generalized linear
+models. <em>Biometrika</em>, <strong>108</strong>, 71-82. <a href="https://doi.org/10.1093/biomet/asaa052">doi:10.1093/biomet/asaa052</a>.
+</p>
+<p>Kosmidis I, Kenne Pagui E C, Sartori N (2020). Mean and median bias
+reduction in generalized linear models. <em>Statistics and Computing</em>,
+<strong>30</strong>, 43-59. <a href="https://doi.org/10.1007/s11222-019-09860-6">doi:10.1007/s11222-019-09860-6</a>.
+</p>
+<p>Cordeiro G M, McCullagh P (1991). Bias correction in generalized
+linear models. <em>Journal of the Royal Statistical Society. Series B
+(Methodological)</em>, <strong>53</strong>, 629-643. <a href="https://doi.org/10.1111/j.2517-6161.1991.tb01852.x">doi:10.1111/j.2517-6161.1991.tb01852.x</a>.
+</p>
+<p>Firth D (1993). Bias reduction of maximum likelihood estimates.
+<em>Biometrika</em>. <strong>80</strong>, 27-38. <a href="https://doi.org/10.2307/2336755">doi:10.2307/2336755</a>.
+</p>
+<p>Kenne Pagui E C, Salvan A, Sartori N (2017). Median bias
+reduction of maximum likelihood estimates. <em>Biometrika</em>, <strong>104</strong>,
+923–938. <a href="https://doi.org/10.1093/biomet/asx046">doi:10.1093/biomet/asx046</a>.
+</p>
+<p>Kosmidis I, Firth D (2009). Bias reduction in exponential family
+nonlinear models. <em>Biometrika</em>, <strong>96</strong>, 793-804. <a href="https://doi.org/10.1093/biomet/asp055">doi:10.1093/biomet/asp055</a>.
+</p>
+<p>Kosmidis I, Firth D (2010). A generic algorithm for reducing
+bias in parametric estimation. <em>Electronic Journal of Statistics</em>,
+<strong>4</strong>, 1097-1112. <a href="https://doi.org/10.1214/10-EJS579">doi:10.1214/10-EJS579</a>.
+</p>
+<p>Kosmidis I (2014). Bias in parametric estimation: reduction and
+useful side-effects. <em>WIRE Computational Statistics</em>, <strong>6</strong>,
+185-196. <a href="https://doi.org/10.1002/wics.1296">doi:10.1002/wics.1296</a>.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>brglmControl()</code>, <code>glm.fit()</code>, <code>glm()</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## The lizards example from ?brglm::brglm
+data("lizards")
+# Fit the model using maximum likelihood
+lizardsML &lt;- glm(cbind(grahami, opalinus) ~ height + diameter +
+                 light + time, family = binomial(logit), data = lizards,
+                 method = "glm.fit")
+# Mean bias-reduced fit:
+lizardsBR_mean &lt;- glm(cbind(grahami, opalinus) ~ height + diameter +
+                      light + time, family = binomial(logit), data = lizards,
+                      method = "brglmFit")
+# Median bias-reduced fit:
+lizardsBR_median &lt;- glm(cbind(grahami, opalinus) ~ height + diameter +
+                        light + time, family = binomial(logit), data = lizards,
+                        method = "brglmFit", type = "AS_median")
+summary(lizardsML)
+summary(lizardsBR_median)
+summary(lizardsBR_mean)
+
+# Maximum penalized likelihood with Jeffreys prior penatly
+lizards_Jeffreys &lt;- glm(cbind(grahami, opalinus) ~ height + diameter +
+                        light + time, family = binomial(logit), data = lizards,
+                        method = "brglmFit", type = "MPL_Jeffreys")
+# lizards_Jeffreys is the same fit as lizardsBR_mean (see Firth, 1993)
+all.equal(coef(lizardsBR_mean), coef(lizards_Jeffreys))
+
+# Maximum penalized likelihood with powers of the Jeffreys prior as
+# penalty. See Kosmidis &amp; Firth (2021) for the finiteness and
+# shrinkage properties of the maximum penalized likelihood
+# estimators in binomial response models
+
+a &lt;- seq(0, 20, 0.5)
+coefs &lt;- sapply(a, function(a) {
+      out &lt;- glm(cbind(grahami, opalinus) ~ height + diameter +
+             light + time, family = binomial(logit), data = lizards,
+             method = "brglmFit", type = "MPL_Jeffreys", a = a)
+      coef(out)
+})
+# Illustration of shrinkage as a grows
+matplot(a, t(coefs), type = "l", col = 1, lty = 1)
+abline(0, 0, col = "grey")
+
+
+
+## Another example from
+## King, Gary, James E. Alt, Nancy Elizabeth Burns and Michael Laver
+## (1990).  "A Unified Model of Cabinet Dissolution in Parliamentary
+## Democracies", _American Journal of Political Science_, **34**, 846-870
+
+data("coalition", package = "brglm2")
+# The maximum likelihood fit with log link
+coalitionML &lt;- glm(duration ~ fract + numst2, family = Gamma, data = coalition)
+# The mean bias-reduced fit
+coalitionBR_mean &lt;- update(coalitionML, method = "brglmFit")
+# The bias-corrected fit
+coalitionBC &lt;- update(coalitionML, method = "brglmFit", type = "correction")
+# The median bias-corrected fit
+coalitionBR_median &lt;- update(coalitionML, method = "brglmFit", type = "AS_median")
+
+
+
+## An example with offsets from Venables &amp; Ripley (2002, p.189)
+data("anorexia", package = "MASS")
+
+anorexML &lt;- glm(Postwt ~ Prewt + Treat + offset(Prewt),
+                family = gaussian, data = anorexia)
+anorexBC &lt;- update(anorexML, method = "brglmFit", type = "correction")
+anorexBR_mean &lt;- update(anorexML, method = "brglmFit")
+anorexBR_median &lt;- update(anorexML, method = "brglmFit", type = "AS_median")
+
+# All methods return the same estimates for the regression
+# parameters because the maximum likelihood estimator is normally
+# distributed around the `true` value under the model (hence, both
+# mean and component-wise median unbiased). The Wald tests for
+# anorexBC and anorexBR_mean differ from anorexML because the
+# bias-reduced estimator of the dispersion is the unbiased, by
+# degree of freedom adjustment (divide by n - p), estimator of the
+# residual variance. The Wald tests from anorexBR_median are based
+# on the median bias-reduced estimator of the dispersion that
+# results from a different adjustment of the degrees of freedom
+# (divide by n - p - 2/3)
+summary(anorexML)
+summary(anorexBC)
+summary(anorexBR_mean)
+summary(anorexBR_median)
+
+
+## endometrial data from Heinze &amp; Schemper (2002) (see ?endometrial)
+data("endometrial", package = "brglm2")
+endometrialML &lt;- glm(HG ~ NV + PI + EH, data = endometrial,
+                     family = binomial("probit"))
+endometrialBR_mean &lt;- update(endometrialML, method = "brglmFit",
+                             type = "AS_mean")
+endometrialBC &lt;- update(endometrialML, method = "brglmFit",
+                        type = "correction")
+endometrialBR_median &lt;- update(endometrialML, method = "brglmFit",
+                               type = "AS_median")
+summary(endometrialML)
+summary(endometrialBC)
+summary(endometrialBR_mean)
+summary(endometrialBR_median)
+
+</code></pre>
+
+
+</div>

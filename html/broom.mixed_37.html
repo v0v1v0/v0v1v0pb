@@ -1,0 +1,248 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>rstanarm_tidiers</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Tidying methods for an rstanarm model</h2>
+
+<h3>Description</h3>
+
+<p>These methods tidy the estimates from <code>rstanarm</code> fits
+(<code>stan_glm</code>, <code>stan_glmer</code>, etc.)
+into a summary.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">## S3 method for class 'stanreg'
+tidy(
+  x,
+  effects = "fixed",
+  conf.int = FALSE,
+  conf.level = 0.9,
+  conf.method = c("quantile", "HPDinterval"),
+  exponentiate = FALSE,
+  ...
+)
+
+## S3 method for class 'stanreg'
+glance(x, looic = FALSE, ...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>Fitted model object from the <span class="pkg">rstanarm</span> package. See
+<code>stanreg-objects</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>effects</code></td>
+<td>
+<p>A character vector including one or more of <code>"fixed"</code>,
+<code>"ran_vals"</code>, or <code>"ran_pars"</code>.
+See the Value section for details.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>conf.int</code></td>
+<td>
+<p>If <code>TRUE</code> columns for the lower (<code>conf.low</code>) and upper (<code>conf.high</code>) bounds of the
+<code>100*prob</code>% posterior uncertainty intervals are included. See
+<code>posterior_interval</code> for details.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>conf.level</code></td>
+<td>
+<p>See <code>posterior_interval</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>conf.method</code></td>
+<td>
+<p>method for computing confidence intervals
+("quantile" or "HPDinterval")</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>exponentiate</code></td>
+<td>
+<p>whether to exponentiate the fixed-effect coefficient estimates and confidence intervals (common for logistic regression); if <code>TRUE</code>, also scales the standard errors by the exponentiated coefficient, transforming them to the new scale</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>For <code>glance</code>, if <code>looic=TRUE</code>, optional arguments to
+<code>loo.stanfit</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>looic</code></td>
+<td>
+<p>Should the LOO Information Criterion (and related info) be
+included? See <code>loo.stanfit</code> for details. (This
+can be slow for models fit to large datasets.)</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>All tidying methods return a <code>data.frame</code> without rownames.
+The structure depends on the method chosen.
+</p>
+<p>When <code>effects="fixed"</code> (the default), <code>tidy.stanreg</code> returns
+one row for each coefficient, with three columns:
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>term</code></td>
+<td>
+<p>The name of the corresponding term in the model.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>estimate</code></td>
+<td>
+<p>A point estimate of the coefficient (posterior median).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>std.error</code></td>
+<td>
+<p>A standard error for the point estimate based on
+<code>mad</code>. See the <em>Uncertainty estimates</em> section in
+<code>print.stanreg</code> for more details.</p>
+</td>
+</tr>
+</table>
+<p>For models with group-specific parameters (e.g., models fit with
+<code>stan_glmer</code>), setting <code>effects="ran_vals"</code>
+selects the group-level parameters instead of the non-varying regression
+coefficients. Addtional columns are added indicating the <code>level</code> and
+<code>group</code>. Specifying <code>effects="ran_pars"</code> selects the
+standard deviations and (for certain models) correlations of the group-level
+parameters.
+</p>
+<p>Setting <code>effects="auxiliary"</code> will select parameters other than those
+included by the other options. The particular parameters depend on which
+<span class="pkg">rstanarm</span> modeling function was used to fit the model. For example, for
+models fit using <code>stan_glm</code> the overdispersion
+parameter is included if <code>effects="aux"</code>, for
+<code>stan_lm</code> the auxiliary parameters include the residual
+SD, R^2, and log(fit_ratio), etc.
+</p>
+<p><code>glance</code> returns one row with the columns
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>algorithm</code></td>
+<td>
+<p>The algorithm used to fit the model.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>pss</code></td>
+<td>
+<p>The posterior sample size (except for models fit using
+optimization).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nobs</code></td>
+<td>
+<p>The number of observations used to fit the model.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>sigma</code></td>
+<td>
+<p>The square root of the estimated residual variance, if
+applicable. If not applicable (e.g., for binomial GLMs), <code>sigma</code> will
+be given the value <code>1</code> in the returned object.</p>
+</td>
+</tr>
+</table>
+<p>If <code>looic=TRUE</code>, then the following additional columns are also
+included:
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>looic</code></td>
+<td>
+<p>The LOO Information Criterion.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>elpd_loo</code></td>
+<td>
+<p>The expected log predictive density (<code>elpd_loo = -2 *
+  looic</code>).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>p_loo</code></td>
+<td>
+<p>The effective number of parameters.</p>
+</td>
+</tr>
+</table>
+<h3>See Also</h3>
+
+<p><code>summary,stanfit-method</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+if (require("rstanarm")) {
+## Not run: 
+#'     ## original models
+  fit &lt;- stan_glmer(mpg ~ wt + (1|cyl) + (1+wt|gear), data = mtcars,
+                      iter = 500, chains = 2)
+  fit2 &lt;- stan_glmer((mpg&gt;20) ~ wt + (1 | cyl) + (1 + wt | gear),
+                    data = mtcars,
+                    family = binomial,
+                    iter = 500, chains = 2
+  
+## End(Not run)
+## load example data
+  load(system.file("extdata", "rstanarm_example.rda", package="broom.mixed"))
+
+  # non-varying ("population") parameters
+  tidy(fit, conf.int = TRUE, conf.level = 0.5)
+  tidy(fit, conf.int = TRUE, conf.method = "HPDinterval", conf.level = 0.5)
+
+  #  exponentiating (in this case, from log-odds to odds ratios)
+  (tidy(fit2, conf.int = TRUE, conf.level = 0.5)
+          |&gt; dplyr::filter(term != "(Intercept)")
+  )
+  (tidy(fit2, conf.int = TRUE, conf.level = 0.5, exponentiate = TRUE)
+          |&gt; dplyr::filter(term != "(Intercept)")
+  )
+
+  # hierarchical sd &amp; correlation parameters
+  tidy(fit, effects = "ran_pars")
+
+  # group-specific deviations from "population" parameters
+  tidy(fit, effects = "ran_vals")
+
+  # glance method
+   glance(fit)
+  ## Not run: 
+     glance(fit, looic = TRUE, cores = 1)
+  
+## End(Not run)
+} ## if require("rstanarm")
+</code></pre>
+
+
+</div>

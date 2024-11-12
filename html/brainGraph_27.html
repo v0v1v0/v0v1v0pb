@@ -1,0 +1,228 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>brainGraph_permute</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Permutation test for group difference of graph measures</h2>
+
+<h3>Description</h3>
+
+<p><code>brainGraph_permute</code> draws permutations from linear model residuals to
+determine the significance of between-group differences of a global or
+vertex-wise graph measure. It is intended for structural covariance networks
+(in which there is only one graph per group), but can be extended to other
+types of data.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">brainGraph_permute(densities, resids, N = 5000, perms = NULL,
+  auc = FALSE, level = c("graph", "vertex", "other"),
+  measure = c("btwn.cent", "coreness", "degree", "eccentricity",
+  "clo.cent", "communicability", "ev.cent", "lev.cent", "pagerank",
+  "subg.cent", "E.local", "E.nodal", "knn", "Lp", "transitivity",
+  "vulnerability"), .function = NULL)
+
+## S3 method for class 'brainGraph_permute'
+summary(object, measure = object$measure,
+  alternative = c("two.sided", "less", "greater"), alpha = 0.05,
+  p.sig = c("p", "p.fdr"), ...)
+
+## S3 method for class 'brainGraph_permute'
+plot(x, measure = x$measure,
+  alternative = c("two.sided", "less", "greater"), alpha = 0.05,
+  p.sig = c("p", "p.fdr"), ptitle = NULL, ...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>densities</code></td>
+<td>
+<p>Numeric vector of graph densities</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>resids</code></td>
+<td>
+<p>An object of class <code>brainGraph_resids</code> (the output from
+<code>get.resid</code>)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>N</code></td>
+<td>
+<p>Integer; the number of permutations (default: 5e3)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>perms</code></td>
+<td>
+<p>Numeric matrix of permutations, if you would like to provide
+your own (default: <code>NULL</code>)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>auc</code></td>
+<td>
+<p>Logical indicating whether or not to calculate differences in the
+area-under-the-curve of metrics (default: <code>FALSE</code>)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>level</code></td>
+<td>
+<p>A character string for the attribute “level” to calculate
+differences (default: <code>graph</code>)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>measure</code></td>
+<td>
+<p>A character string specifying the vertex-level metric to
+calculate, only used if <code>level='vertex'</code> (default: <code>btwn.cent</code>).
+For the <code>summary</code> method, this is to focus on a single
+<em>graph-level</em> measure (since multiple are calculated at once).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>.function</code></td>
+<td>
+<p>A custom function you can pass if <code>level='other'</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>object, x</code></td>
+<td>
+<p>A <code>brainGraph_permute</code> object (output by
+<code>brainGraph_permute</code>).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>alternative</code></td>
+<td>
+<p>Character string, whether to do a two- or one-sided test.
+Default: <code>'two.sided'</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>alpha</code></td>
+<td>
+<p>Numeric; the significance level. Default: 0.05</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>p.sig</code></td>
+<td>
+<p>Character string specifying which p-value to use for displaying
+significant results (default: <code>p</code>)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Unused</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ptitle</code></td>
+<td>
+<p>Character string specifying a title for the plot (default:
+<code>NULL</code>)</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>If you would like to calculate differences in the area-under-the-curve (AUC)
+across densities, then specify <code>auc=TRUE</code>.
+</p>
+<p>There are three possible “levels”:
+</p>
+
+<ol>
+<li> <p><em>graph</em> Calculate modularity (Louvain algorithm), clustering
+coefficient, characteristic path length, degree assortativity, and global
+efficiency.
+</p>
+</li>
+<li> <p><em>vertex</em> Choose one of: centrality metrics (betweenness,
+closeness, communicability, eigenvector, leverage, pagerank, subgraph);
+k-core; degree; eccentricity; nodal or local efficiency; k-nearest neighbor
+degree; shortest path length; transitivity; or vulnerability.
+</p>
+</li>
+<li> <p><em>other</em> Supply your own function. This is useful if you want to
+calculate something that I haven't hard-coded. It must take as its own
+arguments: <code>g</code> (a list of lists of <code>igraph</code> graph objects); and
+<code>densities</code> (numeric vector).
+</p>
+</li>
+</ol>
+<h3>Value</h3>
+
+<p>An object of class <code>brainGraph_permute</code> with input arguments in
+addition to:
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>DT</code></td>
+<td>
+<p>A data table with permutation statistics</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>obs.diff</code></td>
+<td>
+<p>A data table of the observed group differences</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Group</code></td>
+<td>
+<p>Group names</p>
+</td>
+</tr>
+</table>
+<p>The <code>plot</code> method returns a <em>list</em> of <code>ggplot</code> objects
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Christopher G. Watson, <a href="mailto:cgwatson@bu.edu">cgwatson@bu.edu</a>
+</p>
+
+
+<h3>See Also</h3>
+
+<p>Other Group analysis functions: <code>Bootstrapping</code>,
+<code>GLM</code>, <code>Mediation</code>,
+<code>NBS</code>, <code>mtpc</code>
+</p>
+<p>Other Structural covariance network functions: <code>Bootstrapping</code>,
+<code>IndividualContributions</code>,
+<code>Residuals</code>, <code>corr.matrix</code>,
+<code>import_scn</code>, <code>plot_volumetric</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## Not run: 
+myResids &lt;- get.resid(lhrh, covars)
+myPerms &lt;- shuffleSet(n=nrow(myResids$resids.all), nset=1e3)
+out &lt;- brainGraph_permute(densities, m, perms=myPerms)
+out &lt;- brainGraph_permute(densities, m, perms=myPerms, level='vertex')
+out &lt;- brainGraph_permute(densities, m, perms=myPerms,
+  level='other', .function=myFun)
+
+## End(Not run)
+</code></pre>
+
+
+</div>

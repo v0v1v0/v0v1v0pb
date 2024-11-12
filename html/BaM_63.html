@@ -1,0 +1,186 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>sir</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>sir</h2>
+
+<h3>Description</h3>
+
+<p>Implementation of Rubin's SIR, see pages 338-341 (2nd Edition)
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">sir(data.mat,theta.vector,theta.mat,M,m,tol=1e-06,ll.func,df=0)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>data.mat</code></td>
+<td>
+<p>A matrix with two columns of normally distributed data</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>theta.vector</code></td>
+<td>
+<p>The initial coefficient estimates</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>theta.mat</code></td>
+<td>
+<p>The initial vc matrix</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>M</code></td>
+<td>
+<p>The number of draws</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>m</code></td>
+<td>
+<p>The desired number of accepted values</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>tol</code></td>
+<td>
+<p>The rounding/truncing tolerance</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ll.func</code></td>
+<td>
+<p>loglike function for empirical posterior</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>df</code></td>
+<td>
+<p>The df for using the t distribution as the approx distribution</p>
+</td>
+</tr>
+</table>
+<h3>Author(s)</h3>
+
+<p>Jeff Gill
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## Not run:  
+sir &lt;- function(data.mat,theta.vector,theta.mat,M,m,tol=1e-06,ll.func,df=0) {
+ importance.ratio &lt;- rep(NA,M)
+ rand.draw &lt;- rmultinorm(M,theta.vector,theta.mat,tol = 1e-04)
+ if (df &gt; 0)
+   rand.draw &lt;- rand.draw/(sqrt(rchisq(M,df)/df))
+ empirical.draw.vector &lt;- apply(rand.draw,1,ll.func,data.mat)
+ if (sum(is.na(empirical.draw.vector)) == 0) {
+   print("SIR: finished generating from posterior density function")
+   print(summary(empirical.draw.vector))
+ }
+ else {
+   print(paste("SIR: found",sum(is.na(empirical.draw.vector)),
+               "NA(s) in generating from posterior density function, quiting"))
+   return()
+ }
+ if (df == 0) {
+   normal.draw.vector &lt;- apply(rand.draw,1,normal.posterior.ll,data.mat)
+ }
+ else {
+   theta.mat &lt;- ((df-2)/(df))*theta.mat
+   normal.draw.vector &lt;- apply(rand.draw,1,t.posterior.ll,data.mat,df)
+ }
+ if (sum(is.na(normal.draw.vector)) == 0) {
+   print("SIR: finished generating from approximation distribution")
+   print(summary(normal.draw.vector))
+ }
+ else {
+   print(paste("SIR: found",sum(is.na(normal.draw.vector)),
+               "NA(s) in generating from approximation distribution, quiting"))
+   return()
+ }
+ importance.ratio &lt;- exp(empirical.draw.vector - normal.draw.vector)
+ importance.ratio[is.finite=F] &lt;- 0
+ importance.ratio &lt;- importance.ratio/max(importance.ratio)
+if (sum(is.na(importance.ratio)) == 0) {
+ print("SIR: finished calculating importance weights")
+ print(summary(importance.ratio))
+}
+else {
+  print(paste("SIR: found",sum(is.na(importance.ratio)),
+              "NA(s) in calculating importance weights, quiting"))
+  return()
+}
+ accepted.mat &lt;- rand.draw[1:2,]
+while(nrow(accepted.mat) &lt; m+2) {
+  rand.unif &lt;- runif(length(importance.ratio))
+  accepted.loc &lt;- seq(along=importance.ratio)[(rand.unif-tol) &lt;= importance.ratio]
+  rejected.loc &lt;- seq(along=importance.ratio)[(rand.unif-tol) &gt; importance.ratio]
+  accepted.mat &lt;- rbind(accepted.mat,rand.draw[accepted.loc,])
+  rand.draw &lt;- rand.draw[rejected.loc,]
+  importance.ratio &lt;- importance.ratio[rejected.loc]
+  print(paste("SIR: cycle complete,",(nrow(accepted.mat)-2),"now accepted"))
+}
+accepted.mat[3:nrow(accepted.mat),]
+}
+# The following are log likelihood functions that can be plugged into the sir function above.
+
+logit.posterior.ll &lt;- function(theta.vector,X) {
+  Y &lt;- X[,1]
+  X[,1] &lt;- rep(1,nrow(X))
+  sum( -log(1+exp(-X
+                  -log(1+exp(X)))))
+}
+
+normal.posterior.ll &lt;- function(coef.vector,X) {
+  dimnames(coef.vector) &lt;- NULL
+  Y &lt;- X[,1]
+  X[,1] &lt;- rep(1,nrow(X))
+  e &lt;- Y - X
+  sigma &lt;- var(e)
+  return(-nrow(X)*(1/2)*log(2*pi)
+         -nrow(X)*(1/2)*log(sigma)
+         -(1/(2*sigma))*(t(Y-X)*(Y-X)))
+}
+
+t.posterior.ll &lt;- function(coef.vector,X,df) {
+  Y &lt;- X[,1]
+  X[,1] &lt;- rep(1,nrow(X))
+  e &lt;- Y - X
+  sigma &lt;- var(e)*(df-2)/(df)
+  d &lt;- length(coef.vector)
+ return(log(gamma((df+d)/2)) - log(gamma(df/2))
+       - (d/2)*log(df)
+       -(d/2)*log(pi) - 0.5*(log(sigma))
+       -((df+d)/2*sigma)*log(1+(1/df)*
+                               (t(Y-X*(Y-X)))))
+}
+
+probit.posterior.ll &lt;- function (theta.vector,X,tol = 1e-05) {
+  Y &lt;- X[,1]
+  X[,1] &lt;- rep(1,nrow(X))
+  Xb &lt;- X
+  h &lt;- pnorm(Xb)
+  h[h&lt;tol] &lt;- tol
+  g &lt;- 1-pnorm(Xb)
+  g[g&lt;tol] &lt;- tol
+  sum( log(h)*Y + log(g)*(1-Y) )
+}
+
+## End(Not run)
+
+</code></pre>
+
+
+</div>

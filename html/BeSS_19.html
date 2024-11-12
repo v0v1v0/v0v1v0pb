@@ -1,0 +1,168 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>gen.data</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Generate simulated data</h2>
+
+<h3>Description</h3>
+
+<p>Generate data for simulations under the generalized linear model and Cox model.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">  gen.data(n, p, family, K, rho = 0, sigma = 1, beta = NULL, censoring = TRUE,
+           c = 1, scal)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>n</code></td>
+<td>
+<p>The number of observations.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>p</code></td>
+<td>
+<p>The number of predictors of interest.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>family</code></td>
+<td>
+<p>The distribution of the simulated data. "<code>gaussian</code>" for gaussian data."<code>binomial</code>" for binary data. "<code>cox</code>" for survival data </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>K</code></td>
+<td>
+<p>The number of nonzero coefficients in the underlying regression model.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>rho</code></td>
+<td>
+<p>A parameter used to characterize the pairwise correlation in predictors. Default is 0.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>sigma</code></td>
+<td>
+<p>A parameter used to control the signal-to-noise ratio. For linear regression, it is the error variance <code class="reqn">\sigma^2</code>. For logistic regression and Cox's model, the larger the value of sigma, the higher the signal-to-noise ratio. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>beta</code></td>
+<td>
+<p>The coefficient values in the underlying regression model.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>censoring</code></td>
+<td>
+<p>Whether data is censored or not. Default is TRUE</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>c</code></td>
+<td>
+<p>The censoring rate. Default is 1.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>scal</code></td>
+<td>
+<p>A parameter in generating survival time based on the Weibull distribution. Only used for the "<code>cox</code>" family. </p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>For the design matrix <code class="reqn">X</code>, we first generate an n x p random Gaussian matrix <code class="reqn">\bar{X}</code> whose entries are i.i.d. <code class="reqn">\sim N(0,1)</code> and then normalize its columns to the <code class="reqn">\sqrt n</code> length. Then the design matrix <code class="reqn">X</code> is generated with <code class="reqn">X_j = \bar{X}_j + \rho(\bar{X}_{j+1}+\bar{X}_{j-1})</code> for <code class="reqn">j=2,\dots,p-1</code>.
+</p>
+<p>For "<code>gaussian</code>" family, the data model is
+</p>
+<p style="text-align: center;"><code class="reqn">Y = X \beta + \epsilon,  where  \epsilon \sim N(0, \sigma^2 ).</code>
+</p>
+
+<p>The underlying regression coefficient <code class="reqn">\beta</code> has uniform distribution [m, 100m], <code class="reqn">m=5 \sqrt{2log(p)/n}.</code>
+</p>
+<p>For "<code>binomial</code>" family, the data model is
+</p>
+<p style="text-align: center;"><code class="reqn">Prob(Y = 1) = exp(X \beta)/(1 + exp(X \beta))</code>
+</p>
+
+<p>The underlying regression coefficient <code class="reqn">\beta</code> has uniform distribution [2m, 10m], <code class="reqn">m = 5\sigma \sqrt{2log(p)/n}.</code>
+</p>
+<p>For "<code>cox</code>" family, the data model is
+</p>
+<p style="text-align: center;"><code class="reqn">T = (-log(S(t))/exp(X \beta))^(1/scal),</code>
+</p>
+
+<p>The centerning time <code>C</code> is generated from uniform distribution [0, c], then we define the censor status as <code class="reqn">\delta = I{T &lt;= C}, R = min{T, C}</code>.
+The underlying regression coefficient <code class="reqn">\beta</code> has uniform distribution [2m, 10m], <code class="reqn">m = 5\sigma \sqrt{2log(p)/n}.</code>
+</p>
+
+
+<h3>Value</h3>
+
+<p>A list with the following components: x, y, Tbeta.
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>Design matrix of predictors.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>y</code></td>
+<td>
+<p>Response variable</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Tbeta</code></td>
+<td>
+<p>The coefficients used in the underlying regression model.</p>
+</td>
+</tr>
+</table>
+<h3>Author(s)</h3>
+
+<p>Canhong Wen, Aijun Zhang, Shijie Quan, and Xueqin Wang.
+</p>
+
+
+<h3>References</h3>
+
+<p>Wen, C., Zhang, A., Quan, S. and Wang, X. (2020). BeSS: An R Package for Best Subset Selection in Linear, Logistic and Cox Proportional Hazards Models, <em>Journal of Statistical Software</em>, Vol. 94(4).  doi:10.18637/jss.v094.i04.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+# Generate simulated data
+n &lt;- 500
+p &lt;- 20
+K &lt;-10
+sigma &lt;- 1
+rho &lt;- 0.2
+data &lt;- gen.data(n, p, family = "gaussian", K, rho, sigma)
+
+# Best subset selection
+fit &lt;- bess(data$x, data$y, family = "gaussian")
+
+
+</code></pre>
+
+
+</div>

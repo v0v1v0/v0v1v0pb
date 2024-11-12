@@ -1,0 +1,243 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>surface.conductance</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Surface Conductance to Water Vapor</h2>
+
+<h3>Description</h3>
+
+<p>Calculates surface conductance to water vapor from the inverted Penman-Monteith
+equation (by default) or from a simple flux-gradient approach.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">surface.conductance(
+  data,
+  Tair = "Tair",
+  pressure = "pressure",
+  Rn = "Rn",
+  G = NULL,
+  S = NULL,
+  VPD = "VPD",
+  LE = "LE",
+  Ga = "Ga_h",
+  missing.G.as.NA = FALSE,
+  missing.S.as.NA = FALSE,
+  formulation = c("Penman-Monteith", "Flux-Gradient"),
+  Esat.formula = c("Sonntag_1990", "Alduchov_1996", "Allen_1998"),
+  constants = bigleaf.constants()
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+<p>Data.frame or matrix containing all required input variables</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Tair</code></td>
+<td>
+<p>Air temperature (deg C)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>pressure</code></td>
+<td>
+<p>Atmospheric pressure (kPa)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Rn</code></td>
+<td>
+<p>Net radiation (W m-2)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>G</code></td>
+<td>
+<p>Ground heat flux (W m-2); optional</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>S</code></td>
+<td>
+<p>Sum of all storage fluxes (W m-2); optional</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>VPD</code></td>
+<td>
+<p>Vapor pressure deficit (kPa)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>LE</code></td>
+<td>
+<p>Latent heat flux (W m-2)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Ga</code></td>
+<td>
+<p>Aerodynamic conductance to heat/water vapor (m s-1)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>missing.G.as.NA</code></td>
+<td>
+<p>if <code>TRUE</code>, missing G are treated as <code>NA</code>s, otherwise they are set to 0.
+Only used if <code>formulation = "Penman-Monteith"</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>missing.S.as.NA</code></td>
+<td>
+<p>if <code>TRUE</code>, missing S are treated as <code>NA</code>s, otherwise they are set to 0. 
+Only used if <code>formulation = "Penman-Monteith"</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>formulation</code></td>
+<td>
+<p>Formulation used. Either <code>"Penman-Monteith"</code> (the default) 
+using the inverted Penman-Monteith equation, or <code>"Flux-Gradient"</code>,
+for a simple flux-gradient approach requiring ET, pressure, and VPD only.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Esat.formula</code></td>
+<td>
+<p>Optional: formula to be used for the calculation of esat and the slope of esat.
+One of <code>"Sonntag_1990"</code> (Default), <code>"Alduchov_1996"</code>, or <code>"Allen_1998"</code>. 
+Only used if <code>formulation = "Penman-Monteith"</code>. See <code>Esat.slope</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>constants</code></td>
+<td>
+<p>cp - specific heat of air for constant pressure (J K-1 kg-1) <br>
+eps - ratio of the molecular weight of water vapor to dry air (-) <br>
+Rd - gas constant of dry air (J kg-1 K-1) <br>
+Rgas - universal gas constant (J mol-1 K-1) <br>
+Kelvin - conversion degree Celsius to Kelvin <br>
+Mw - molar mass of water vapor (kg mol-1) <br>
+Pa2kPa - conversion pascal (Pa) to kilopascal (kPa)</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>If <code>formulation = "Penman-Monteith"</code> (the default), surface conductance (Gs) in m s-1 
+is calculated from the inverted Penman-Monteith equation:
+</p>
+<p style="text-align: center;"><code class="reqn">Gs = ( LE * Ga * \gamma ) / ( \Delta * A + \rho * cp * Ga * VPD - LE * ( \Delta + \gamma ) )</code>
+</p>
+
+<p>Where <code class="reqn">\gamma</code> is the psychrometric constant (kPa K-1), <code class="reqn">\Delta</code> is the slope of the 
+saturation vapor pressure curve (kPa K-1), and <code class="reqn">\rho</code> is air density (kg m-3).
+Available energy (A) is defined as A = Rn - G - S. If G and/or S are not provided, A = Rn.
+</p>
+<p>By default, any missing data in G and S are set to 0. If <code>missing.S.as.NA = TRUE</code>
+or <code>missing.S.as.NA = TRUE</code>, Gs will give <code>NA</code> for these timesteps.
+</p>
+<p>If <code>formulation="Flux-Gradient"</code>, Gs (in mol m-2 s-1) is calculated from VPD and ET only:
+</p>
+<p style="text-align: center;"><code class="reqn">Gs = ET/pressure * VPD</code>
+</p>
+
+<p>where ET is in mol m-2 s-1. Note that this formulation assumes fully coupled conditions (i.e. Ga = inf).
+This formulation is equivalent to the inverted form of Eq.6 in McNaughton &amp; Black 1973:
+</p>
+<p style="text-align: center;"><code class="reqn">Gs = LE * \gamma / (\rho * cp * VPD)</code>
+</p>
+
+<p>which gives Gs in m s-1. Note that Gs &gt; Gc (canopy conductance) under conditions 
+when a significant fraction of ET comes from interception or soil evaporation. 
+</p>
+<p>If <code>pressure</code> is not available, it can be approximated by elevation using the 
+function <code>pressure.from.elevation</code>
+</p>
+
+
+<h3>Value</h3>
+
+<p>a dataframe with the following columns: 
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>Gs_ms</code></td>
+<td>
+<p>Surface conductance in m s-1</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Gs_mol</code></td>
+<td>
+<p>Surface conductance in mol m-2 s-1</p>
+</td>
+</tr>
+</table>
+<h3>References</h3>
+
+<p>Monteith, J., 1965: Evaporation and environment. In Fogg, G. E. (Ed.),
+The state and movement of water in living organisms (pp.205-234).
+19th Symp. Soc. Exp. Biol., Cambridge University Press, Cambridge
+</p>
+<p>McNaughton, K.G., Black, T.A., 1973: A study of evapotranspiration
+from a Douglas Fir forest using the energy balance approach. Water
+Resources Research 9, 1579-1590.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## filter data to ensure that Gs is a meaningful proxy to canopy conductance (Gc)
+DE_Tha_Jun_2014_2 &lt;- filter.data(DE_Tha_Jun_2014,quality.control=FALSE,
+                                 vars.qc=c("Tair","precip","VPD","H","LE"),
+                                 filter.growseas=FALSE,filter.precip=TRUE,
+                                 filter.vars=c("Tair","PPFD","ustar","LE"),
+                                 filter.vals.min=c(5,200,0.2,0),
+                                 filter.vals.max=c(NA,NA,NA,NA),NA.as.invalid=TRUE,
+                                 quality.ext="_qc",good.quality=c(0,1),
+                                 missing.qc.as.bad=TRUE,GPP="GPP",doy="doy",
+                                 year="year",tGPP=0.5,ws=15,min.int=5,precip="precip",
+                                 tprecip=0.1,precip.hours=24,records.per.hour=2)
+
+# calculate Gs based on a simple gradient approach
+Gs_gradient &lt;- surface.conductance(DE_Tha_Jun_2014_2,Tair="Tair",pressure="pressure",
+                                   VPD="VPD",formulation="Flux-Gradient")
+summary(Gs_gradient)
+
+# calculate Gs from the the inverted PM equation (now Rn, and Ga are needed),
+# using a simple estimate of Ga based on Thom 1972
+Ga &lt;- aerodynamic.conductance(DE_Tha_Jun_2014_2,Rb_model="Thom_1972")[,"Ga_h"]
+
+# if G and/or S are available, don't forget to indicate (they are ignored by default).
+# Note that Ga is not added to the data.frame 'DE_Tha_Jun_2014'
+Gs_PM &lt;- surface.conductance(DE_Tha_Jun_2014_2,Tair="Tair",pressure="pressure",
+                             Rn="Rn",G="G",S=NULL,VPD="VPD",Ga=Ga,
+                             formulation="Penman-Monteith")
+summary(Gs_PM)
+
+                              
+# now add Ga to the data.frame 'DE_Tha_Jun_2014' and repeat
+DE_Tha_Jun_2014_2$Ga &lt;- Ga
+Gs_PM2 &lt;- surface.conductance(DE_Tha_Jun_2014_2,Tair="Tair",pressure="pressure",
+                              Rn="Rn",G="G",S=NULL,VPD="VPD",Ga="Ga",
+                              formulation="Penman-Monteith")
+# note the difference to the previous version (Ga="Ga")
+summary(Gs_PM2)
+
+</code></pre>
+
+
+</div>

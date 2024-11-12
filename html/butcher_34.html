@@ -1,0 +1,101 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>axe-randomForest</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Axing an randomForest.</h2>
+
+<h3>Description</h3>
+
+<p>randomForest objects are created from the <code>randomForest</code>
+package, which is used to train random forests based on Breiman's
+2001 work. The package supports ensembles of classification and
+regression trees.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">## S3 method for class 'randomForest'
+axe_call(x, verbose = FALSE, ...)
+
+## S3 method for class 'randomForest'
+axe_ctrl(x, verbose = FALSE, ...)
+
+## S3 method for class 'randomForest'
+axe_env(x, verbose = FALSE, ...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>A model object.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>verbose</code></td>
+<td>
+<p>Print information each time an axe method is executed.
+Notes how much memory is released and what functions are
+disabled. Default is <code>FALSE</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Any additional arguments related to axing.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>Axed randomForest object.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+# Load libraries
+library(parsnip)
+library(rsample)
+library(randomForest)
+data(kyphosis, package = "rpart")
+
+# Load data
+set.seed(1234)
+split &lt;- initial_split(kyphosis, prop = 9/10)
+spine_train &lt;- training(split)
+
+# Create model and fit
+randomForest_fit &lt;- rand_forest(mode = "classification",
+                                mtry = 2,
+                                trees = 2,
+                                min_n = 3) %&gt;%
+  set_engine("randomForest") %&gt;%
+  fit_xy(x = spine_train[,2:4], y = spine_train$Kyphosis)
+
+out &lt;- butcher(randomForest_fit, verbose = TRUE)
+
+# Another randomForest object
+wrapped_rf &lt;- function() {
+  some_junk_in_environment &lt;- runif(1e6)
+  randomForest_fit &lt;- randomForest(mpg ~ ., data = mtcars)
+  return(randomForest_fit)
+}
+
+# Remove junk
+cleaned_rf &lt;- axe_env(wrapped_rf(), verbose = TRUE)
+
+# Check size
+lobstr::obj_size(cleaned_rf)
+
+</code></pre>
+
+
+</div>

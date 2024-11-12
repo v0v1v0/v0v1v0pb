@@ -1,0 +1,171 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>clustering_partition</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Obtain a partition of the spatial domain using the density-based spatial clustering (DBSC) algorithm described in Santafé et al. (2021)</h2>
+
+<h3>Description</h3>
+
+<p>The function takes an object of class <code>SpatialPolygonsDataFrame</code> or <code>sf</code> and defines a spatial partition using the DBSC algorithm described in Santafé et al. (2021).
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">clustering_partition(
+  carto,
+  ID.area = NULL,
+  var = NULL,
+  n.cluster = 10,
+  min.size = NULL,
+  W = NULL,
+  l = 1,
+  Wk = NULL,
+  distance = "euclidean",
+  verbose = TRUE
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>carto</code></td>
+<td>
+<p>object of class <code>SpatialPolygonsDataFrame</code> or <code>sf</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ID.area</code></td>
+<td>
+<p>character; name of the variable that contains the IDs of spatial areal units.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>var</code></td>
+<td>
+<p>character; name of the variable that contains the data of interest to compute spatial clusters, usually the vector of log-SMR.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>n.cluster</code></td>
+<td>
+<p>numeric; value to fix the number of cluster centers in the DBSC algorithm. Default to 10.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>min.size</code></td>
+<td>
+<p>numeric (default <code>NULL</code>); value to fix the minimum size of areas in each spatial partition.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>W</code></td>
+<td>
+<p>optional argument with the binary adjacency matrix of the spatial areal units. If <code>NULL</code> (default), this object is computed from the <code>carto</code> argument (two areas are considered as neighbours if they share a common border).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>l</code></td>
+<td>
+<p>numeric value with the neighbourhood order used to assign areas to each cluster. If <code>k=1</code> (default), only areas that share a common border are considered.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Wk</code></td>
+<td>
+<p>previously computed binary adjacency matrix of l-order neighbours. If this argument is included (default <code>NULL</code>), the parameter <code>l</code> is ignored.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>distance</code></td>
+<td>
+<p>the distance measure to be used (default <code>"euclidean"</code>). See the <code>method</code> argument of <code>dist</code> function for other options.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>verbose</code></td>
+<td>
+<p>logical value (default <code>TRUE</code>); indicates if the function runs in verbose mode.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The DBSC algorithm implemented in this function is a new spatial clustering algorithm based on the density clustering algorithm introduced by Rodriguez and Laio (2014) and the posterior modification presented by Wang and Song (2016).
+This algorithm is able to obtain a single clustering partition of the data by automatically detecting clustering centers and assigning each area to its nearest cluster centroid.
+The algorithm has its basis in the assumption that cluster centers are points with high local density and relatively large distance to other points with higher local densities.
+See Santafé et al. (2021) for more details.
+</p>
+
+
+<h3>Value</h3>
+
+<p><code>sf</code> object with the original data and a grouping variable named 'ID.group'.
+</p>
+
+
+<h3>References</h3>
+
+<p>Rodriguez A, Laio A (2014).
+“Clustering by fast search and find of density peaks.”
+<em>Science</em>, <b>344</b>(6191), 1492–1496.
+<a href="https://doi.org/10.1126/science.1242072">doi:10.1126/science.1242072</a>.
+</p>
+<p>Santafé G, Adin A, Lee D, Ugarte MD (2021).
+“Dealing with risk discontinuities to estimate cancer mortality risks when the number of small areas is large.”
+<em>Statistical Methods in Medical Research</em>, <b>30</b>(1), 6–21.
+<a href="https://doi.org/10.1177/0962280220946502">doi:10.1177/0962280220946502</a>.
+</p>
+<p>Wang G, Song Q (2016).
+“Automatic clustering via outward statistical testing on density metrics.”
+<em>IEEE Transactions on Knowledge and Data Engineering</em>, <b>28</b>(8), 1971–1985.
+<a href="https://doi.org/10.1109/TKDE.2016.2535209">doi:10.1109/TKDE.2016.2535209</a>.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## Not run: 
+library(sf)
+library(tmap)
+
+## Load the Spain colorectal cancer mortality data ##
+data(Carto_SpainMUN)
+
+## Define a spatial partition using the DBSC algorithm ##
+Carto_SpainMUN$logSMR &lt;- log(Carto_SpainMUN$obs/Carto_SpainMUN$exp+0.0001)
+
+carto.new &lt;- clustering_partition(carto=Carto_SpainMUN, ID.area="ID", var="logSMR",
+                                  n.cluster=20, l=2, min.size=100, verbose=TRUE)
+table(carto.new$ID.group)
+
+## Plot of the grouping variable 'ID.group' ##
+carto.data &lt;- st_set_geometry(carto.new, NULL)
+carto.partition &lt;- aggregate(carto.new[,"geometry"], list(ID.group=carto.data[,"ID.group"]), head)
+
+tmap4 &lt;- packageVersion("tmap") &gt;= "3.99"
+
+if(tmap4){
+        tm_shape(carto.new) +
+                tm_polygons(fill="ID.group", fill.scale=tm_scale(values="brewer.set3")) +
+                tm_shape(carto.partition) +
+                tm_borders(col="black", lwd=2) +
+                tm_layout(legend.outside=TRUE, legend.frame=FALSE)
+}else{
+        tm_shape(carto.new) +
+                tm_polygons(col="ID.group") +
+                tm_shape(carto.partition) +
+                tm_borders(col="black", lwd=2) +
+                tm_layout(legend.outside=TRUE)
+}
+
+## End(Not run)
+
+</code></pre>
+
+
+</div>

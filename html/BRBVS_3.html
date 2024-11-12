@@ -1,0 +1,160 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>BRBVS</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Bivariate Rank-Based Variable Selection</h2>
+
+<h3>Description</h3>
+
+<p>This function performs bivariate rank-based variable selection (BRBVS) based on copula survival copula models.
+It computes rankings for covariates and selects a specified number of variables according to the estimated probabilities.
+The function returns rankings and selected variables for different criteria.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">BRBVS(y, x, kmax, copula, margins, m, tau, n.rep, metric)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>y</code></td>
+<td>
+<p>Time to events and censoring matrix as a data frame.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>Covariates matrix as a data frame. Input matrix containing the predictor variables.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>kmax</code></td>
+<td>
+<p>Numeric. The maximum number of variables to be selected. Must be positive, non-zero, and
+less than or equal to the number of columns in <code>x</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>copula</code></td>
+<td>
+<p>Character. Type of copula employed in the algorithm. Must be one of the following types:
+<code>N</code>, <code>C0</code>, <code>C90</code>, <code>C180</code>, <code>C270</code>, <code>GAL0</code>, <code>GAL90</code>, <code>GAL180</code>, <code>GAL270</code>,
+<code>J0</code>, <code>J90</code>, <code>J180</code>, <code>J270</code>, <code>G0</code>, <code>G90</code>, <code>G180</code>, <code>G270</code>, <code>F</code>, <code>AMH</code>,
+<code>FGM</code>, <code>T</code>, <code>PL</code>, <code>HO</code> default is <code>C0</code>.
+See GJRM package documentation for details: <a href="https://CRAN.R-project.org/package=GJRM">GJRM package</a>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>margins</code></td>
+<td>
+<p>Character. Type of margin employed in the algorithm. Must be one of <code>PH</code>, <code>PO</code>, <code>probit</code>.
+Default is c(<code>PH</code>, <code>PO</code>).
+See GJRM package documentation for more on margins: <a href="https://CRAN.R-project.org/package=GJRM">GJRM package</a>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>m</code></td>
+<td>
+<p>Numeric. Subsample size, typically set to n/2 where n is the number of observations.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>tau</code></td>
+<td>
+<p>Numeric. A user-defined threshold for variable selection. Must be in the interval (0,1), exclusive.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>n.rep</code></td>
+<td>
+<p>Integer. Number of Bootstrap replicates. Must be positive.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>metric</code></td>
+<td>
+<p>Character, specifies the metric used for ranking the variables.
+Must be one of 'CE', 'FIM', 'Abs'. Default is 'FIM'.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>A list containing the following components:
+</p>
+
+<ul>
+<li> <p><code>mtx.act1E</code>: Numeric vector of indices of the active variables selected based on the first survival function. Remaining positions (up to 'kmax') are filled with 0.
+</p>
+</li>
+<li> <p><code>score.r1E</code>: Numeric vector of the ranked scores for variable selection based on the first survival function, with remaining positions (up to 'kmax'-1) filled with 0.
+</p>
+</li>
+<li> <p><code>freq.rel1E</code>: Numeric vector of the relative frequencies of selected variables based on the first survival function (frequencies divided by 'n.rep').
+</p>
+</li>
+<li> <p><code>mtx.act2E</code>: Numeric vector of indices of the active variables selected based on the second survival function. Remaining positions (up to 'kmax') are filled with 0.
+</p>
+</li>
+<li> <p><code>score.r2E</code>: Numeric vector of the ranked scores for variable selection based on the second survival function, with remaining positions (up to 'kmax'-1) filled with 0.
+</p>
+</li>
+<li> <p><code>freq.rel2E</code>: Numeric vector of the relative frequencies of selected variables based on the second survival function (frequencies divided by 'n.rep').
+</p>
+</li>
+<li> <p><code>metric</code>: The metric used for ranking the variables.
+</p>
+</li>
+<li> <p><code>kmax</code>: The maximum number of variables to be selected.
+</p>
+</li>
+<li> <p><code>copula</code>: The type of copula employed in the algorithm.
+</p>
+</li>
+<li> <p><code>margins</code>: The type of margins employed in the algorithm.
+.  - <code>Namecondings</code>: Table with name of covariates and encoding used in the output.
+</p>
+</li>
+</ul>
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+###############################################
+# Example based on AREDS dataset
+# This analysis serves solely as a
+# demonstration of the function's capabilities.
+###############################################
+
+data(AREDS)
+Y&lt;- AREDS[,c('t11','t12', 't21', 't22', 'cens1', 'cens2', 'cens')]
+X&lt;- AREDS[,c(3, 9)]
+# Including just 1 covariates as example
+X$SevScale1E &lt;- scale(as.numeric( X$SevScale1E))
+X$SevScale2E &lt;- scale(as.numeric(X$SevScale1E))
+
+
+Bivrbvs&lt;- BRBVS(y=Y, x=X, kmax=2,copula='C0',
+                      margins=c('PO','PO'),
+                      m=628 , # try to set m=628 (628 is the sample size)
+                      tau=0.5,
+                      n.rep=1, # number of bootstrap = 1
+                      metric='FIM')
+                      
+
+
+
+
+
+
+</code></pre>
+
+
+</div>

@@ -1,0 +1,209 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>detection_distance</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Measure detection distance of sound</h2>
+
+<h3>Description</h3>
+
+<p><code>detection_distance</code> detection distance of sounds.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">detection_distance(
+  X,
+  cores = getOption("mc.cores", 1),
+  pb = getOption("pb", TRUE),
+  hop.size = getOption("hop.size", 11.6),
+  wl = getOption("wl", NULL),
+  path = getOption("sound.files.path", "."),
+  spl = NULL,
+  spl.cutoff = NULL,
+  temp = 20,
+  rh = 60,
+  pa = 101325,
+  hab.att.coef = 0.02,
+  max.distance = 1000,
+  resolution = 0.1,
+  subtract.bgn = TRUE,
+  envelope = c("abs", "hil"),
+  mar = NULL
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>X</code></td>
+<td>
+<p>The output of <code>set_reference_sounds</code> which is an object of class 'data.frame', 'selection_table' or 'extended_selection_table' (the last 2 classes are created by the function <code>selection_table</code> from the warbleR package) with the reference to the test sounds . Must contain the following columns: 1) "sound.files": name of the .wav files, 2) "selec": unique selection identifier (within a sound file), 3) "start": start time and 4) "end": end time of selections, 5) "bottom.freq": low frequency for bandpass, 6) "top.freq": high frequency for bandpass, 7) "sound.id": ID of sounds used to identify counterparts across distances and 8) "reference": identity of sounds to be used as reference for each test sound (row). See <code>set_reference_sounds</code> for more details on the structure of 'X'.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>cores</code></td>
+<td>
+<p>Numeric vector of length 1. Controls whether parallel computing is applied by specifying the number of cores to be used. Default is 1 (i.e. no parallel computing). Can be set globally for the current R session via the "mc.cores" option (see <code>options</code>).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>pb</code></td>
+<td>
+<p>Logical argument to control if progress bar is shown. Default is <code>TRUE</code>.  Can be set globally for the current R session via the "pb" option (see <code>options</code>).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>hop.size</code></td>
+<td>
+<p>A numeric vector of length 1 specifying the time window duration (in ms). Default is 11.6 ms, which is equivalent to 512 wl for a 44.1 kHz sampling rate. Ignored if 'wl' is supplied. Can be set globally for the current R session via the "hop.size" option (see <code>options</code>).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>wl</code></td>
+<td>
+<p>a vector with a single even integer number specifying the window length of the spectrogram, default is <code>NULL</code>. If supplied, 'hop.size' is ignored. Odd integers will be rounded up to the nearest even number. Can be set globally for the current R session via the "wl" option (see <code>options</code>).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>path</code></td>
+<td>
+<p>Character string containing the directory path where the sound files are found. Only needed when 'X' is not an extended selection table. If not supplied the current working directory is used. Can be set globally for the current R session via the "sound.files.path" option (see <code>options</code>).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>spl</code></td>
+<td>
+<p>A numeric vector of length 1 specifying the sound pressure level of sounds. If not supplied then it will be measured from the sounds  themselves.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>spl.cutoff</code></td>
+<td>
+<p>A numeric vector of length 1 specifying the sound pressure level cutoff to define if the sound is no longer detected. Ideally it should be estimated based on the sound detection threshold of the species.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>temp</code></td>
+<td>
+<p>Numeric vector of length 1 with frequency (in Celsius). Default is 20.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>rh</code></td>
+<td>
+<p>Numeric vector of length 1 with relative humidity (in percentage). Default is 60.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>pa</code></td>
+<td>
+<p>Numeric vector of length 1 with ambient pressure in Pa (standard: 101325, default). Used for Atmospheric attenuation.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>hab.att.coef</code></td>
+<td>
+<p>Attenuation coefficient of the habitat (in dB/kHz/m).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>max.distance</code></td>
+<td>
+<p>Numeric vector of length 1 with the maximum distance (in m) at which detection would be evaluated. Note that the function calculates the expected sound pressure level values along a vector of distances to find the distance at which the expected sound pressure level equates 'spl.cutoff'. Default is 1000 m.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>resolution</code></td>
+<td>
+<p>Numeric vector of length 1 with the distance resolution (in m) for estimated detection distance. Higher resolutions take longer to estimate. Default is 0.1 m.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>subtract.bgn</code></td>
+<td>
+<p>Logical argument to control if SPL from background noise is excluded from the measured signal SPL. Default is <code>FALSE</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>envelope</code></td>
+<td>
+<p>Character string vector with the method to calculate amplitude envelopes (in which SPL is measured, used required if 'spl' is not supplied), as in <code>env</code>. Must be either 'abs' (absolute envelope, default) or 'hil' (Hilbert transformation).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>mar</code></td>
+<td>
+<p>numeric vector of length 1. Specifies the margins adjacent to
+the start and end points of selection over which to measure background noise. This is required to subtract background noise sound pressure level (so only needed when 'subtract.bgn = TRUE').</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The function computes the maximum distance at which a sound would be detected, which is calculated as the distance in which the sound pressure level (SPL) goes below the specified SPL cutoff ('spl.cutoff')). This is returned as an additional column 'detection.distance' (in m). The function uses internally <code>attenuation</code> to estimate SPL at increasing values until it reaches the defined cutoff. The peak frequency (calculated on the power spectrum of the reference sound) of the reference sound for each sound ID is used as the carrier frequency for distance estimation. The sound recorded at the lowest distance is used as reference. <strong>This function assumes that all recordings have been made at the same recording volume</strong>.
+</p>
+
+
+<h3>Value</h3>
+
+<p>Object 'X' with an additional column, 'detection.distance',
+containing the computed detection distances (in m).
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Marcelo Araya-Salas (<a href="mailto:marcelo.araya@ucr.ac.cr">marcelo.araya@ucr.ac.cr</a>)
+</p>
+
+
+<h3>References</h3>
+
+
+<p>Araya-Salas M., E. Grabarczyk, M. Quiroz-Oliva, A. Garcia-Rodriguez, A. Rico-Guevara. (2023), baRulho: an R package to quantify degradation in animal acoustic signals .bioRxiv 2023.11.22.568305.
+</p>
+<p>Clark, C.W., Marler, P. &amp; Beeman K. (1987). Quantitative analysis of animal vocal phonology: an application to Swamp Sparrow song. Ethology. 76:101-115.
+
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>attenuation</code>
+</p>
+<p>Other quantify degradation: 
+<code>blur_ratio()</code>,
+<code>envelope_correlation()</code>,
+<code>plot_blur_ratio()</code>,
+<code>plot_degradation()</code>,
+<code>set_reference_sounds()</code>,
+<code>signal_to_noise_ratio()</code>,
+<code>spcc()</code>,
+<code>spectrum_blur_ratio()</code>,
+<code>spectrum_correlation()</code>,
+<code>tail_to_signal_ratio()</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## Not run: 
+# load example data
+data("test_sounds_est")
+
+# add reference to X
+X &lt;- set_reference_sounds(X = test_sounds_est)
+
+detection_distance(X = X[X$distance %in% c(1, 10), ], spl.cutoff = 5, mar = 0.05)
+
+## End(Not run)
+
+</code></pre>
+
+
+</div>

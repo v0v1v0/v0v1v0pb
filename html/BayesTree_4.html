@@ -1,0 +1,316 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>pdbart</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Partial Dependence Plots for BART</h2>
+
+<h3>Description</h3>
+
+<p>Run <code>bart</code> at test observations constructed so that
+a  plot can be created
+displaying the effect of
+a single variable (<code>pdbart</code>) or pair of variables (<code>pd2bart</code>).
+Note the y is a binary with <code class="reqn">P(Y=1 | x) =F(f(x))</code> with <code class="reqn">F</code> the standard
+normal cdf, then the plots are all on the <code class="reqn">f</code> scale.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">   pdbart(
+      x.train, y.train,
+      xind=1:ncol(x.train), levs=NULL, levquants=c(.05,(1:9)/10,.95),
+      pl=TRUE,  plquants=c(.05,.95), ...)
+   ## S3 method for class 'pdbart'
+plot(
+      x,
+      xind = 1:length(x$fd),
+      plquants =c(.05,.95),cols=c('black','blue'), ...)
+   pd2bart(
+      x.train, y.train,
+      xind=1:2, levs=NULL, levquants=c(.05,(1:9)/10,.95),
+      pl=TRUE, plquants=c(.05,.95), ...)
+   ## S3 method for class 'pd2bart'
+plot(
+      x,
+      plquants =c(.05,.95), contour.color='white',
+      justmedian=TRUE, ...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>x.train</code></td>
+<td>
+
+<p>Explanatory variables for training (in sample) data.<br>
+Must be a matrix (typeof double)
+with (as usual) rows corresponding to observations and columns to variables.<br>
+Note that for a categorical variable you need to use dummies and if there
+are more than two categories, you need to put all the dummies in
+(unlike linear regression).
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>y.train</code></td>
+<td>
+
+<p>Dependent variable for training (in sample) data.<br>
+Must be a vector (typeof double) with length equal to the number of observations
+(equal to the number of rows of x.train).
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>xind</code></td>
+<td>
+
+<p>Integer vector indicating which variables are to be plotted.<br>
+In <code>pdbart</code>, variables (columns of x.train) for which plot is to be constructed.<br>
+In <code>plot.pdbart</code>, indices in list returned by <code>pdbart</code> for which plot is to be constructed.<br>
+In <code>pd2bart</code>, integer vector of length 2,
+indicating the pair of variables (columns of x.train) to plot.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>levs</code></td>
+<td>
+
+<p>Gives the values of a variable at which the plot is to be constructed.<br>
+List, where
+<code class="reqn">i^{th}</code> component gives the values for <code class="reqn">i^{th}</code> variable.<br>
+In <code>pdbart</code>, should have same length as xind.<br>
+In <code>pd2bart</code>, should have length 2.<br>
+See also argument levquants.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>levquants</code></td>
+<td>
+
+<p>If levs in NULL, the values of each variable used in the plot is
+set to the quantiles (in x.train) indicated by levquants.<br>
+Double vector.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>pl</code></td>
+<td>
+
+<p>For <code>pdbart</code> and <code>pd2bart</code>, if true, plot is made (by calling plot.*).
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>plquants</code></td>
+<td>
+
+<p>In the plots, beliefs about <code class="reqn">f(x)</code> are indicated by plotting the
+posterior median and a lower and upper quantile.
+plquants is a double vector of length two giving the lower and upper quantiles.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+
+<p>Additional arguments.<br>
+In <code>pdbart</code>,<code>pd2bart</code>, passed on to <code>bart</code>.<br>
+In <code>plot.pdbart</code>, passed on to <code>plot</code>.<br>
+In <code>plot.pd2bart</code>, passed on to <code>image</code>
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+
+<p>For plot.*, object returned from pdbart or pd2bart.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>cols</code></td>
+<td>
+
+<p>Vector of two colors.<br>
+First color is for median of <code class="reqn">f</code>, second color is for the upper and lower quantiles.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>contour.color</code></td>
+<td>
+
+<p>Color for contours plotted on top of the image.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>justmedian</code></td>
+<td>
+
+<p>Boolean, if true just one plot is created for
+the median of <code class="reqn">f(x)</code> draws.  If false, three plots are created
+one for the median and two additional ones for the lower and upper quantiles.
+In this case, mfrow is set to c(1,3).
+</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>We divide the predictor vector <code class="reqn">x</code> into a subgroup of interest,
+<code class="reqn">x_s</code> and the complement <code class="reqn">x_c=x\setminus x_s</code>.
+A prediction <code class="reqn">f(x)</code> can
+then be written as <code class="reqn">f(x_s,x_c)</code>. To estimate the effect of <code class="reqn">x_s</code>
+on the prediction, Friedman suggests the partial dependence
+function
+</p>
+<p style="text-align: center;"><code class="reqn">
+   f_s(x_s) = \frac{1}{n}\sum_{i=1}^n f(x_s,x_{ic})
+   </code>
+</p>
+
+<p>where <code class="reqn">x_{ic}</code> is the <code class="reqn">i^{th}</code> observation of <code class="reqn">x_c</code> in the data. Note
+that <code class="reqn">(x_s,x_{ic})</code> will generally not be one of the observed data
+points. Using BART it is straightforward to then estimate and even
+obtain uncertainty bounds for <code class="reqn">f_s(x_s)</code>.  A draw of <code class="reqn">f^*_s(x_s)</code>
+from the induced BART posterior on <code class="reqn">f_s(x_s)</code> is obtained by
+simply computing <code class="reqn">f^*_s(x_s)</code> as a byproduct of each MCMC draw
+<code class="reqn">f^*</code>. The median (or average)
+of these MCMC draws <code class="reqn">f^*_s(x_s)</code> then yields an
+estimate of <code class="reqn">f_s(x_s)</code>, and lower and upper quantiles can be used
+to obtain intervals for <code class="reqn">f_s(x_s)</code>.
+</p>
+<p>In <code>pdbart</code> <code class="reqn">x_s</code> consists of a single variable in <code class="reqn">x</code> and in
+<code>pd2bart</code> it is a pair of variables.
+</p>
+<p>This is a computationally intensive procedure.
+For example, in <code>pdbart</code>, to compute the partial dependence plot
+for 5 <code class="reqn">x_s</code> values, we need
+to compute <code class="reqn">f(x_s,x_c)</code> for all possible <code class="reqn">(x_s,x_{ic})</code> and there
+would be <code class="reqn">5n</code> of these where <code class="reqn">n</code> is the sample size.
+All of that computation would be done for each kept BART draw.
+For this reason running BART with keepevery larger than 1 (eg. 10)
+makes the procedure much faster.
+</p>
+
+
+<h3>Value</h3>
+
+<p>The plot methods produce the plots and don't return anything.
+</p>
+<p><code>pdbart</code> and <code>pd2bart</code> return lists with components
+given below.  The list returned by <code>pdbart</code> is assigned class
+‘pdbart’ and the list returned by <code>pd2bart</code> is assigned
+class ‘pd2bart’.
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>fd</code></td>
+<td>
+
+<p>A matrix whose <code class="reqn">(i,j)</code> value is the <code class="reqn">i^{th}</code>
+draw of <code class="reqn">f_s(x_s)</code> for the <code class="reqn">j^{th}</code> value of <code class="reqn">x_s</code>.
+“fd” is for “function draws”.
+</p>
+<p>For <code>pdbart</code> fd is actually a list whose
+<code class="reqn">k^{th}</code> component is the matrix described above
+corresponding to the <code class="reqn">k^{th}</code> variable chosen by argument xind.<br>
+The number of columns in each matrix will equal the number of values
+given in the corresponding component of argument levs (or number of values in levquants).
+</p>
+<p>For <code>pd2bart</code>, fd is a single matrix.
+The columns correspond to all possible pairs of values for the pair
+of variables indicated by xind.
+That is, all possible <code class="reqn">(x_i,x_j)</code> where <code class="reqn">x_i</code> is a value in
+the levs component corresponding to the first <code class="reqn">x</code> and
+<code class="reqn">x_j</code> is a value in the levs components corresponding to the second one.<br>
+The first <code class="reqn">x</code> changes first.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>levs</code></td>
+<td>
+
+<p>The list of levels used, each component corresponding to a variable.<br>
+If argument levs was supplied it is unchanged.<br>
+Otherwise, the levels in levs are as constructed using argument levquants.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>xlbs</code></td>
+<td>
+
+<p>vector of character strings which are the plotting labels used for the variables.
+</p>
+</td>
+</tr>
+</table>
+<p>The remaining components returned in the list are the same as in the value of <code>bart</code>.
+They are simply passed on from the BART run used to create the partial dependence plot.
+The function <code>plot.bart</code> can be applied to the object returned by <code>pdbart</code> or
+<code>pd2bart</code> to examine the BART run.
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Hugh Chipman: <a href="mailto:hugh.chipman@gmail.com">hugh.chipman@gmail.com</a>.<br>
+Robert McCulloch: <a href="mailto:robert.e.mcculloch@gmail.com">robert.e.mcculloch@gmail.com</a>.
+</p>
+
+
+<h3>References</h3>
+
+<p>Chipman, H., George, E., and McCulloch R. (2010)
+Bayesian Additive Regression Trees.
+<em>The Annals of Applied Statistics</em>, <b>4,1</b>, 266-298.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">##simulate data 
+f = function(x) { return(.5*x[,1] + 2*x[,2]*x[,3]) }
+sigma=.2 # y = f(x) + sigma*z
+n=100 #number of observations
+set.seed(27)
+x = matrix(2*runif(n*3)-1,ncol=3) ; colnames(x) = c('rob','hugh','ed')
+Ey = f(x)
+y = Ey +  sigma*rnorm(n)
+lmFit = lm(y~.,data.frame(x,y)) #compare lm fit to BART later
+par(mfrow=c(1,3)) #first two for pdbart, third for pd2bart
+##pdbart: one dimensional partial dependence plot
+set.seed(99)
+pdb1 = pdbart(x,y,xind=c(1,2),
+   levs=list(seq(-1,1,.2),seq(-1,1,.2)),pl=FALSE,
+   keepevery=10,ntree=100,nskip=100,ndpost=200) #should run longer!
+plot(pdb1,ylim=c(-.6,.6))
+##pd2bart: two dimensional partial dependence plot
+set.seed(99)
+pdb2 = pd2bart(x,y,xind=c(2,3),
+   levquants=c(.05,.1,.25,.5,.75,.9,.95),pl=FALSE,
+   ntree=100,keepevery=10,verbose=FALSE,nskip=100,ndpost=200) #should run longer!
+plot(pdb2)
+##compare BART fit to linear model and truth = Ey
+fitmat = cbind(y,Ey,lmFit$fitted,pdb1$yhat.train.mean)
+colnames(fitmat) = c('y','Ey','lm','bart')
+print(cor(fitmat))
+## plot.bart(pdb1) displays the BART run used to get the plot.
+</code></pre>
+
+
+</div>

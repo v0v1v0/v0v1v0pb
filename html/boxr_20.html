@@ -1,0 +1,201 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>box_dir_diff</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Compare the contents of Remote and Local Directories</h2>
+
+<h3>Description</h3>
+
+<p><code>box_dir_diff</code> is the internal function used by
+<code>box_fetch()</code> and <code>box_push()</code> to determine how to
+which files and folders should be uploaded/downloaded, updated,
+or deleted, to synchronize remote and local directories.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">box_dir_diff(
+  dir_id = box_getwd(),
+  local_dir = getwd(),
+  load = "up",
+  folders = FALSE
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>dir_id</code></td>
+<td>
+<p>The id of the box.com folder which you'd like to use for the
+comparison</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>local_dir</code></td>
+<td>
+<p>The path of the local folder which you'd like to use for the
+comparison</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>load</code></td>
+<td>
+<p><code>logical</code>. Should the results be in the context of an upload
+or a download operation? Permitted values are <code>"up"</code> or <code>"down"</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>folders</code></td>
+<td>
+<p><code>logical</code>. Should folders/directories be included in the
+result?</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p><code>box_dir_diff</code> works by comparing files in the <strong>'origin'</strong> to
+those in the <strong>'destination'</strong>.
+</p>
+<p>For downloading files (e.g. with <code>box_fetch()</code>), the origin is
+the remote folder on box.com specified with <code>dir_id</code>, and the
+destination would be the local directory specified by <code>local_dir</code>.
+</p>
+<p>The reverse is true for uploads (e.g. via <code>box_fetch()</code>).
+</p>
+<p><code>box_dir_diff</code> decides what should happen to a file based on three
+</p>
+
+<dl>
+<dt><strong>Presence</strong></dt>
+<dd>
+<p>Is the file present in both the origin and destination? The filename
+(within the directory structure) is used to determine this.
+</p>
+</dd>
+<dt><strong>Content</strong></dt>
+<dd>
+<p>If a file is present in both the origin and the destination, does it
+have the same content? The definition comes from the file's <code>sha1</code>
+hash, which for local files is determined using the
+<code>digest()</code> function from the package of the same name. For
+remote files, it is queried from the box.com API.
+</p>
+</dd>
+<dt><strong>Modification Date</strong></dt>
+<dd>
+<p>If a file is present in both the origin and destination, and the
+content is different in each, boxr will prefer the file which was most
+recently modified.
+</p>
+<p>For local files, the 'content modified time' is used; the <code>mtime</code>
+variable returned by <code>file.info()</code>.
+</p>
+<p>For remote files, the <code>modified_at</code> date returned by the box.com API.
+This is the time that the file was modified on the box.com servers, as
+opposed to the time that the content itself was modified.
+</p>
+</dd>
+</dl>
+<p><strong>Why not use the content modified time for both?</strong>
+</p>
+<p>With regards to the box.com API, <code>modified_at</code> is preferred to
+<code>content_modified_at</code>, as it includes changes to the file outside of
+just it's content. This means that, for example, a collaborator could
+roll back to a previous version of a file, or upload a preferred but
+older version. These actions count as modifications on the box.com
+servers, but not to the content of the file itself (they are reflected
+in <code>modified_at</code>, but not <code>content_modified_at</code>).
+</p>
+<p>Implementing similar functionality for local files is not possible in a
+platform-independent manner; content modified time is the only file-based
+timestamp which has a consistent definition for UNIX and Windows
+systems.
+</p>
+
+
+<h3>Value</h3>
+
+<p>An object of class <code>boxr_dir_comparison</code>, describing the
+differences between the files.
+</p>
+<p>It is a named list, it's entries containing data frames,
+describing the files in each of the following categories:
+</p>
+
+<dl>
+<dt><strong><code>new</code></strong></dt>
+<dd>
+<p>Files which are present in the origin, but not the destination. These
+will be downloaded by <code>box_fetch()</code>/uploaded by
+<code>box_push()</code>.
+</p>
+</dd>
+<dt><strong><code>superfluous</code></strong></dt>
+<dd>
+<p>These are files which are present in the destination, but not the
+origin. If <code>delete</code> is set to <code>TRUE</code> in
+<code>box_fetch()</code>/<code>box_push()</code>, they will be deleted.
+</p>
+</dd>
+<dt><strong><code>to_update</code></strong></dt>
+<dd>
+<p>Files which are present in both the origin and the destination, but
+which have more recently modified copies in the origin. If downloading
+with <code>box_fetch()</code>, and <code>overwrite</code> set to <code>TRUE</code>,
+new files will overwrite existing local copies. If uploading with
+<code>box_push()</code> (and <code>overwrite</code> set to <code>TRUE</code>), the
+new version will be uploaded to box.com, with a new version number, and
+the old version still being available.
+</p>
+</dd>
+<dt><strong><code>up_to_date</code></strong></dt>
+<dd>
+<p>Files present in both origin and destination, with the same content.
+Note: A file may be modified at later date, but if it has identical
+contents according to it's <code>sha1</code> hash, it will be considered
+up-to-date. <code>box_fetch()</code>/<code>box_push()</code> do nothing for these
+files.
+</p>
+</dd>
+<dt><strong><code>behind</code></strong></dt>
+<dd>
+<p>Files which are present in both origin and destination, but where the
+content differs, and the version in the destination has been more
+recently updated. <code>box_fetch()</code>/<code>box_push()</code> do nothing for these
+files.
+</p>
+</dd>
+<dt><strong><code>new_folders</code></strong></dt>
+<dd>
+<p>Analogous to the file operation, but for directories/folders.
+</p>
+</dd>
+<dt><strong><code>superfluous_folders</code></strong></dt>
+<dd>
+<p>Analogous to the file operation, but for directories/folders.
+</p>
+</dd>
+</dl>
+<h3>References</h3>
+
+<p><a href="https://developer.box.com/guides/folders/">https://developer.box.com/guides/folders/</a>
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>box_fetch()</code> and <code>box_push()</code>, which depend on
+this internal function, <code>file.info()</code> for timestamps describing
+local files, <code>digest()</code> for details of the <code>sha1</code> algorithm
+implementation.
+</p>
+
+
+</div>

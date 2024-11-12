@@ -1,0 +1,140 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>set_bscui_attributes</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Set attributes of elements of a bscui widget</h2>
+
+<h3>Description</h3>
+
+<p>Set attributes of elements of a bscui widget
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">set_bscui_attributes(
+  widget,
+  element_attributes,
+  to_ignore = NULL,
+  targeted_tags = widget$x$structure_shapes,
+  append = FALSE
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>widget</code></td>
+<td>
+<p>a <code>bscui</code> object</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>element_attributes</code></td>
+<td>
+<p>a data frame with an <strong>id</strong> column
+providing the element identifier and one column per attribute name.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>to_ignore</code></td>
+<td>
+<p>identifiers of elements to ignore:
+if those elements are children of elements to update they won't be updated</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>targeted_tags</code></td>
+<td>
+<p>targeted_tags affected tag names
+(by default: structure_shapes of the scui object)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>append</code></td>
+<td>
+<p>if TRUE the value will be concatenate with the existing value</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>The modified <code>bscui</code> object
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">##################################@
+### Preparing data ----
+
+library(bscui)
+library(xml2)
+library(readr)
+library(dplyr)
+
+svg &lt;- xml2::read_xml(system.file(
+   "examples", "Animal_cells.svg.gz",
+   package="bscui"
+))
+info &lt;- readr::read_tsv(system.file(
+   "examples", "uniprot_cellular_locations.txt.gz",
+   package="bscui"
+), col_types=strrep("c", 6)) |&gt;
+   mutate(id = sub("-", "", `Subcellular location ID`))
+
+##################################@
+### Building the figure ----
+
+figure &lt;- bscui(svg) |&gt;
+   set_bscui_ui_elements(
+      info |&gt;
+         mutate(
+            ui_type = "selectable",
+            title = Name
+         ) |&gt;
+         select(id, ui_type, title)
+   ) |&gt;
+   set_bscui_styles(
+      info |&gt;
+         filter(Name == "Cytosol") |&gt;
+         mutate(fill = "#FF7F7F") |&gt;
+         select(id, fill)
+   ) |&gt;
+   set_bscui_attributes(
+      info |&gt;
+         filter(Name == "Cytoskeleton") |&gt;
+         mutate(display = "none") |&gt;
+         select(id, display)
+   ) |&gt;
+   set_bscui_selection("SL0188") |&gt;
+   set_bscui_options(zoom_min=1, clip=TRUE)
+figure
+
+##################################@
+### Saving the figure ----
+
+if(interactive()){
+   ## Temporary directory to save example file
+   tdir &lt;- tempdir()
+
+   ## Interactive html file
+   f_path &lt;- file.path(tdir, "figure.html")
+   figure |&gt; htmlwidgets::saveWidget(file=f_path)
+   cat(f_path)
+
+   ## PNG image
+   f_path &lt;- file.path(tdir, "figure.png")
+   figure |&gt;
+      set_bscui_options(show_menu = FALSE) |&gt;
+      export_bscui_to_image(file=f_path, zoom=2)
+   cat(f_path)
+}
+</code></pre>
+
+
+</div>

@@ -1,0 +1,177 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>plot.pairwise.BMSC</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Plot estimates from a <code>pairwise.BMSC</code> object.</h2>
+
+<h3>Description</h3>
+
+<p>Plot estimates from a <code>pairwise.BMSC</code> object.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">## S3 method for class 'pairwise.BMSC'
+plot(x, type = "interval", CI = 0.95, ...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>An object of class pairwise.BMSC.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>type</code></td>
+<td>
+<p>a parameter to select the typology of graph
+</p>
+
+<dl>
+<dt>interval</dt>
+<dd>
+<p>the estimates will be represented by means of pointrange, with median and the boundaries of the credible interval</p>
+</dd>
+<dt>area</dt>
+<dd>
+<p>a density plot</p>
+</dd>
+<dt>hist</dt>
+<dd>
+<p>a density histogram</p>
+</dd>
+</dl>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>CI</code></td>
+<td>
+<p>the dimension of the Credible Interval (or Equally Tailed Interval). Default 0.95.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>other arguments are ignored.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>a list of two ggplot2 objects
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R"> 
+
+######################################
+# simulation of controls' group data
+######################################
+
+# Number of levels for each condition and trials
+NCond1  &lt;- 2
+NCond2  &lt;- 2
+Ntrials &lt;- 8
+NSubjs  &lt;- 30
+
+betas &lt;- c( 0 , 0 , 0 ,  0.2)
+
+data.sim &lt;- expand.grid(
+  trial      = 1:Ntrials,
+  ID         = factor(1:NSubjs),
+  Cond1      = factor(1:NCond1),
+  Cond2      = factor(1:NCond2)
+)
+
+contrasts(data.sim$Cond1) &lt;- contr.sum(2)
+contrasts(data.sim$Cond2) &lt;- contr.sum(2)
+
+### d.v. generation
+y &lt;- rep( times = nrow(data.sim) , NA )
+
+# cheap simulation of individual random intercepts
+set.seed(1)
+rsubj &lt;- rnorm(NSubjs , sd = 0.1)
+
+for( i in 1:length( levels( data.sim$ID ) ) ){
+
+  sel &lt;- which( data.sim$ID == as.character(i) )
+
+  mm  &lt;- model.matrix(~ Cond1 * Cond2 , data = data.sim[ sel , ] )
+
+  set.seed(1 + i)
+  y[sel] &lt;- mm %*% as.matrix(betas + rsubj[i]) +
+    rnorm( n = Ntrials * NCond1 * NCond2 )
+
+}
+
+data.sim$y &lt;- y
+
+# just checking the simulated data...
+boxplot(y~Cond1*Cond2, data = data.sim)
+
+######################################
+# simulation of patient data
+######################################
+
+betas.pt &lt;- c( 0 , 0.8 , 0 ,  0)
+
+data.pt &lt;- expand.grid(
+  trial      = 1:Ntrials,
+  Cond1      = factor(1:NCond1),
+  Cond2      = factor(1:NCond2)
+)
+
+contrasts(data.pt$Cond1) &lt;- contr.sum(2)
+contrasts(data.pt$Cond2) &lt;- contr.sum(2)
+
+### d.v. generation
+mm  &lt;- model.matrix(~ Cond1 * Cond2 , data = data.pt )
+
+set.seed(5)
+data.pt$y &lt;- (mm %*% as.matrix(betas.pt) +
+                rnorm( n = Ntrials * NCond1 * NCond2 ))[,1]
+
+# just checking the simulated data...
+boxplot(y~Cond1*Cond2, data = data.pt)
+
+mdl &lt;- BMSC(y ~ Cond1 * Cond2 + ( 1 | ID ),
+            data_ctrl = data.sim, data_sc = data.pt, seed = 77,
+            typeprior = "cauchy", s = 1)
+
+summary(mdl)
+
+pp_check(mdl)
+
+# compute pairwise contrasts
+ph &lt;- pairwise.BMSC( mdl, contrast = "Cond11:Cond21")
+
+ph
+
+# plot pairwise comparisons
+
+plot(ph)
+
+plot(ph , type = "area")
+
+# customization of pairiwse comparisons plot
+
+plot(ph)[[1]]+theme_bw(base_size = 18)
+
+plot(ph , type = "area")[[1]]+theme_bw(base_size = 18)+
+   theme(strip.text.y = element_text( angle = 0))
+
+
+</code></pre>
+
+
+</div>

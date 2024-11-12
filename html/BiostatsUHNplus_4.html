@@ -1,0 +1,180 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>caterpillar_plot</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Caterpillar plot. Useful for plotting random effects from hierarchical models,
+such as MCMCglmm::MCMCglmm() object, that have binary outcome.</h2>
+
+<h3>Description</h3>
+
+<p>Caterpillar plot. Useful for plotting random effects from hierarchical models,
+such as MCMCglmm::MCMCglmm() object, that have binary outcome.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">caterpillar_plot(
+  subjID,
+  subjLabel = NULL,
+  remove.text.subjID = FALSE,
+  mcmcglmm_object,
+  orig_dataset,
+  binaryOutcomeVar,
+  prob = NULL,
+  title = NULL,
+  no.title = FALSE,
+  subtitle = NULL,
+  ncol = NULL,
+  fonts = NULL,
+  columnTextWidth = NULL,
+  break.label.summary = FALSE
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>subjID</code></td>
+<td>
+<p>key identifier field for participant ID in data sets</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>subjLabel</code></td>
+<td>
+<p>text label field in dataset to replace key identifier field for
+participant ID with in plot (if provided)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>remove.text.subjID</code></td>
+<td>
+<p>boolean indicating if non-numeric text should be
+removed from subjID in plot label. Note that this can only be used if there
+are non-duplicate participant IDs when non-numeric text is removed. Default
+is FALSE (if provided)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>mcmcglmm_object</code></td>
+<td>
+<p>MCMCglmm model output</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>orig_dataset</code></td>
+<td>
+<p>data frame supplied to MCMCglmm function</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>binaryOutcomeVar</code></td>
+<td>
+<p>name of binary variable (0,1) that denotes outcome
+in MCMCglmm model</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>prob</code></td>
+<td>
+<p>probability for highest posterior density interval, similar to a
+confidence interval. Default is 0.95 (if provided)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>title</code></td>
+<td>
+<p>title of the plot. Overrides default title (if provided)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>no.title</code></td>
+<td>
+<p>boolean that denotes if title should be outputted in plot. Default
+is TRUE (if provided)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>subtitle</code></td>
+<td>
+<p>subtitle of the plot. Overrides default subtitle (if provided)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ncol</code></td>
+<td>
+<p>number of columns in plot. Default is 2 (if provided)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>fonts</code></td>
+<td>
+<p>character text that denotes font for title, subtitle, category labels,
+x-axis plot labels (if provided)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>columnTextWidth</code></td>
+<td>
+<p>numeric that denotes character width for label text before
+breaking to start new line. Default is 20 characters (if provided)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>break.label.summary</code></td>
+<td>
+<p>boolean to indicate if new line should start in label
+before (n, event) summary. Default is FALSE</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>ggplot object of caterpillar plot
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">data("ae");
+
+ae$G3Plus &lt;- 0;
+ae$G3Plus[ae$AE_SEV_GD %in% c("3", "4", "5")] &lt;- 1;
+ae$Drug_1_Attribution &lt;- 0;
+ae$Drug_1_Attribution[ae$CTC_AE_ATTR_SCALE %in% c("Definite", "Probable", "Possible")] &lt;- 1;
+ae$Drug_2_Attribution &lt;- 0;
+ae$Drug_2_Attribution[ae$CTC_AE_ATTR_SCALE_1 %in% c("Definite", "Probable", "Possible")] &lt;- 1;
+
+prior2RE &lt;- list(R = list(V = diag(1), fix = 1),
+  G=list(G1=list(V=1, nu=0.02), G2=list(V=1, nu=0.02)));
+  
+model1 &lt;- MCMCglmm::MCMCglmm(G3Plus ~ Drug_1_Attribution + Drug_2_Attribution, 
+  random=~Subject + ae_category, family="categorical", data=ae, saveX=TRUE, 
+  verbose=FALSE, burnin=2000, nitt=10000, thin=10, pr=TRUE, prior=prior2RE);
+  
+p &lt;- caterpillar_plot(subjID = "Subject",
+  mcmcglmm_object = model1,
+  prob = 0.99,
+  orig_dataset = ae,
+  binaryOutcomeVar = "G3Plus")
+  
+p &lt;- caterpillar_plot(subjID = "ae_category",
+  mcmcglmm_object = model1,
+  prob = 0.95,
+  orig_dataset = ae,
+  remove.text.subjID = FALSE,
+  ncol = 4,
+  binaryOutcomeVar = "G3Plus",
+  subtitle = "System organ class (n, event)",
+  title = "Odds Ratio for G3+ Severity with 95% Highest Posterior Density Interval",
+  fonts = c("Arial", "Arial", "Arial", "Arial"),
+  break.label.summary = TRUE)
+</code></pre>
+
+
+</div>

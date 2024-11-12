@@ -1,0 +1,282 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>setup_rank_data</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Setup rank data</h2>
+
+<h3>Description</h3>
+
+<p>Prepare rank or preference data for further analyses.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">setup_rank_data(
+  rankings = NULL,
+  preferences = NULL,
+  user_ids = numeric(),
+  observation_frequency = NULL,
+  validate_rankings = TRUE,
+  na_action = c("augment", "fail", "omit"),
+  cl = NULL,
+  max_topological_sorts = 1,
+  timepoint = NULL,
+  n_items = NULL
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>rankings</code></td>
+<td>
+<p>A matrix of ranked items, of size <code style="white-space: pre;">⁠n_assessors x n_items⁠</code>.
+See <code>create_ranking()</code> if you have an ordered set of items that need to be
+converted to rankings. If <code>preferences</code> is provided, <code>rankings</code> is an
+optional initial value of the rankings. If <code>rankings</code> has column names,
+these are assumed to be the names of the items. <code>NA</code> values in rankings are
+treated as missing data and automatically augmented; to change this
+behavior, see the <code>na_action</code> argument to <code>set_model_options()</code>. A vector
+length <code>n_items</code> is silently converted to a matrix of length <code style="white-space: pre;">⁠1 x n_items⁠</code>,
+and names (if any), are used as column names.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>preferences</code></td>
+<td>
+<p>A data frame with one row per pairwise comparison, and
+columns <code>assessor</code>, <code>top_item</code>, and <code>bottom_item</code>. Each column contains the
+following:
+</p>
+
+<ul>
+<li> <p><code>assessor</code> is a numeric vector containing the assessor index.
+</p>
+</li>
+<li> <p><code>bottom_item</code> is a numeric vector containing the index of the item that
+was disfavored in each pairwise comparison.
+</p>
+</li>
+<li> <p><code>top_item</code> is a numeric vector containing the index of the item that was
+preferred in each pairwise comparison.
+</p>
+</li>
+</ul>
+<p>So if we have two assessors and five items, and assessor 1 prefers item 1
+to item 2 and item 1 to item 5, while assessor 2 prefers item 3 to item 5,
+we have the following <code>df</code>:
+</p>
+
+<table>
+<tr>
+<td style="text-align: right;">
+<strong>assessor</strong> </td>
+<td style="text-align: right;"> <strong>bottom_item</strong> </td>
+<td style="text-align: right;"> <strong>top_item</strong>
+</td>
+</tr>
+<tr>
+<td style="text-align: right;">
+1 </td>
+<td style="text-align: right;"> 2 </td>
+<td style="text-align: right;"> 1</td>
+</tr>
+<tr>
+<td style="text-align: right;">
+1 </td>
+<td style="text-align: right;"> 5 </td>
+<td style="text-align: right;"> 1</td>
+</tr>
+<tr>
+<td style="text-align: right;">
+2 </td>
+<td style="text-align: right;"> 5 </td>
+<td style="text-align: right;"> 3</td>
+</tr>
+<tr>
+<td style="text-align: right;">
+</td>
+</tr>
+</table>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>user_ids</code></td>
+<td>
+<p>Optional <code>numeric</code> vector of user IDs. Only only used by
+<code>update_mallows()</code>. If provided, new data can consist of updated partial
+rankings from users already in the dataset, as described in Section 6 of
+Stein (2023).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>observation_frequency</code></td>
+<td>
+<p>A vector of observation frequencies (weights) to
+apply do each row in <code>rankings</code>. This can speed up computation if a large
+number of assessors share the same rank pattern. Defaults to <code>NULL</code>, which
+means that each row of <code>rankings</code> is multiplied by 1. If provided,
+<code>observation_frequency</code> must have the same number of elements as there are
+rows in <code>rankings</code>, and <code>rankings</code> cannot be <code>NULL</code>. See
+<code>compute_observation_frequency()</code> for a convenience function for computing
+it.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>validate_rankings</code></td>
+<td>
+<p>Logical specifying whether the rankings provided (or
+generated from <code>preferences</code>) should be validated. Defaults to <code>TRUE</code>.
+Turning off this check will reduce computing time with a large number of
+items or assessors.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>na_action</code></td>
+<td>
+<p>Character specifying how to deal with <code>NA</code> values in the
+<code>rankings</code> matrix, if provided. Defaults to <code>"augment"</code>, which means that
+missing values are automatically filled in using the Bayesian data
+augmentation scheme described in
+Vitelli et al. (2018). The other options for this
+argument are <code>"fail"</code>, which means that an error message is printed and the
+algorithm stops if there are <code>NA</code>s in <code>rankings</code>, and <code>"omit"</code> which simply
+deletes rows with <code>NA</code>s in them.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>cl</code></td>
+<td>
+<p>Optional computing cluster used for parallelization when generating
+transitive closure based on preferences, returned from
+<code>parallel::makeCluster()</code>. Defaults to <code>NULL</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>max_topological_sorts</code></td>
+<td>
+<p>When preference data are provided, multiple
+rankings will be consistent with the preferences stated by each users.
+These rankings are the topological sorts of the directed acyclic graph
+corresponding to the transitive closure of the preferences. This number
+defaults to one, which means that the algorithm stops when it finds a
+single initial ranking which is compatible with the rankings stated by the
+user. By increasing this number, multiple rankings compatible with the
+pairwise preferences will be generated, and one initial value will be
+sampled from this set.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>timepoint</code></td>
+<td>
+<p>Integer vector specifying the timepoint. Defaults to <code>NULL</code>,
+which means that a vector of ones, one for each observation, is generated.
+Used by <code>update_mallows()</code> to identify data with a given iteration of the
+sequential Monte Carlo algorithm. If not <code>NULL</code>, must contain one integer
+for each row in <code>rankings</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>n_items</code></td>
+<td>
+<p>Integer specifying the number of items. Defaults to <code>NULL</code>,
+which means that the number of items is inferred from <code>rankings</code> or from
+<code>preferences</code>. Setting <code>n_items</code> manually can be useful with pairwise
+preference data in the SMC algorithm, i.e., when <code>rankings</code> is <code>NULL</code> and
+<code>preferences</code> is non-<code>NULL</code>, and contains a small number of pairwise
+preferences for a subset of users and items.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>An object of class <code>"BayesMallowsData"</code>, to be provided in the <code>data</code>
+argument to <code>compute_mallows()</code>.
+</p>
+
+
+<h3>Note</h3>
+
+<p>Setting <code>max_topological_sorts</code> larger than 1 means that many possible
+orderings of each assessor's preferences are generated, and one of them is
+picked at random. This can be useful when experiencing convergence issues,
+e.g., if the MCMC algorithm does not mix properly.
+</p>
+<p>It is assumed that the items are labeled starting from 1. For example, if a
+single comparison of the following form is provided, it is assumed that
+there is a total of 30 items (<code>n_items=30</code>), and the initial ranking is a
+permutation of these 30 items consistent with the preference 29&lt;30.
+</p>
+
+<table>
+<tr>
+<td style="text-align: right;">
+<strong>assessor</strong> </td>
+<td style="text-align: right;"> <strong>bottom_item</strong> </td>
+<td style="text-align: right;"> <strong>top_item</strong>
+</td>
+</tr>
+<tr>
+<td style="text-align: right;">
+1 </td>
+<td style="text-align: right;"> 29 </td>
+<td style="text-align: right;"> 30</td>
+</tr>
+<tr>
+<td style="text-align: right;">
+</td>
+</tr>
+</table>
+<p>If in reality there are only two items, they should be relabeled to 1 and
+2, as follows:
+</p>
+
+<table>
+<tr>
+<td style="text-align: right;">
+<strong>assessor</strong> </td>
+<td style="text-align: right;"> <strong>bottom_item</strong> </td>
+<td style="text-align: right;"> <strong>top_item</strong>
+</td>
+</tr>
+<tr>
+<td style="text-align: right;">
+1 </td>
+<td style="text-align: right;"> 1 </td>
+<td style="text-align: right;"> 2</td>
+</tr>
+<tr>
+<td style="text-align: right;">
+</td>
+</tr>
+</table>
+<h3>References</h3>
+
+<p>Stein A (2023).
+<em>Sequential Inference with the Mallows Model</em>.
+Ph.D. thesis, Lancaster University.<br><br> Vitelli V, Sørensen, Crispino M, Arjas E, Frigessi A (2018).
+“Probabilistic Preference Learning with the Mallows Rank Model.”
+<em>Journal of Machine Learning Research</em>, <b>18</b>(1), 1–49.
+<a href="https://jmlr.org/papers/v18/15-481.html">https://jmlr.org/papers/v18/15-481.html</a>.
+</p>
+
+
+<h3>See Also</h3>
+
+<p>Other preprocessing: 
+<code>get_transitive_closure()</code>,
+<code>set_compute_options()</code>,
+<code>set_initial_values()</code>,
+<code>set_model_options()</code>,
+<code>set_priors()</code>,
+<code>set_progress_report()</code>,
+<code>set_smc_options()</code>
+</p>
+
+
+</div>

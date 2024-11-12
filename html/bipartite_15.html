@@ -1,0 +1,151 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>ND</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Normalised degree, betweenness and closeness centrality</h2>
+
+<h3>Description</h3>
+
+<p>Calculates normalised degrees, and two measures of centrality, betweenness and closeness. These two are based on one-mode representations of the network and invoke functions from <span class="pkg">sna</span>.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">ND(web, normalised=TRUE)
+BC(web, rescale=TRUE, cmode="undirected", weighted=TRUE, ...)
+CC(web, cmode="suminvundir", rescale=TRUE, ...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>web</code></td>
+<td>
+<p>A matrix with lower trophic level species as rows, higher trophic level species
+as columns and number of interactions as entries.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>normalised</code></td>
+<td>
+<p>Shall the degrees be normalised? If so (default), the degree for a species is divided by the number of species in the other level (see, e.g., Martín González et al. 2010).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>rescale</code></td>
+<td>
+<p>If TRUE (default), centrality scores are rescaled such that they sum to 1.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>cmode</code></td>
+<td>
+<p>String indicating the type of betweenness/closeness centrality being computed (directed or undirected geodesics, or a variant form - see help for <code>closeness</code> and <code>betweenness</code> in <span class="pkg">sna</span> for details). The default, <span class="option">"suminvundir"</span> for <code>CC</code> and <span class="option">"undirected"</span> for <code>BC</code>, uses a formula that can also be applied to disconnected (=compartmented) graphs. Other cmodes may not.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>weighted</code></td>
+<td>
+<p>Logical; if TRUE, bipartite projection will include edge weights, i.e. number of interactions. Defaults to TRUE.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Options passed on to <code>betweenness</code> and <code>closeness</code>, respectively. Notice that in particular the option <span class="option">ignore.eval=FALSE</span> will yield VERY different values than the default. BC and CC use defaults of <code>sna::betweenness</code> and <code>sna::closeness</code>, respectively, but that does not imply that these settings are per se the best! (Thanks to Michael Pocock for drawing my attention to this issue!)</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>These functions are convenience functions to enable easy reproduction of the type of analyses by Martín González et al. (2010). BC and CC are wrappers calling two functions from <span class="pkg">sna</span>, which uses one-mode, rather than bipartite data. 
+</p>
+<p>One-mode projections of two-mode networks are carried out by assigning a link to two species that share a interaction with a member of the other set (plant in case of pollinators, or pollinators in case of plants). There are different ways to do this (see <code>as.one.mode</code>), and many authors do not communicate well, which approach they have taken.
+</p>
+<p>If the network is fully connected, all species of the same level will be linked to each other through only one step and hence have the same betweenness. This leads to values of 0.
+</p>
+<p>BC reflects the number of unique shortest paths going through the focal node. Note that different packages compute divergent values for betweenness, as detailed in the vignette (section 5.4.1)! CC is the inverse of the average distance from the focal node to all other nodes.
+
+</p>
+<p>Both BC and CC can be normalised so that they sum to 1 (using <span class="option">rescale=TRUE</span>). This only affects the absolute values, but not the qualitative results.
+</p>
+<p>The interested user may want to also have a look at the networkX homepage (<a href="https://networkx.org">https://networkx.org</a>) for a Python-based tool to analyse, depict and manipulate (one-mode) networks. It is not specifically meant for bipartite networks such as this package, though.
+</p>
+
+
+<h3>Value</h3>
+
+<p>A list with two entries, “lower” and “higher”, which contain a named vector of normalised degrees, betweenness centrality and closeness centrality, respectively. The lower-entry contains the lower trophic level species, the higher analogously the higher trophic level species.
+</p>
+
+
+<h3>Note</h3>
+
+ 
+<p>Experimental. Should work most of the time, but not necessarily always. Also, on trials with the same data as those of Martín González et al. (2010), numerical values differed. Whether this is due to rounding errors, different non-linear least square fits in JMP and R or whatever I cannot tell. See example for my attempt to reproduce their values for the network “Azores” (aka <code>olesen2002flores</code>).
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p> Carsten F. Dormann <a href="mailto:carsten.dormann@biom.uni-freiburg.de">carsten.dormann@biom.uni-freiburg.de</a> </p>
+
+
+<h3>References</h3>
+
+<p>Martín Gonzáles, A.M., Dalsgaard, B. and Olesen, J.M. 2010. Centrality measures and the importance of generalist species in pollination networks. <em>Ecological Complexity</em> <b> 7</b>, 36–41
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>centralization</code>, <code>betweenness</code> and <code>closeness</code> in <span class="pkg">sna</span>; <code>specieslevel</code> which calls them
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## example:
+data(olesen2002flores)
+(ndi &lt;- ND(olesen2002flores))
+(cci &lt;- CC(olesen2002flores))
+(bci &lt;- BC(olesen2002flores))
+
+cor.test(bci[[1]], ndi[[1]], method="spear") # 0.532
+cor.test(cci[[1]], ndi[[1]], method="spear") # 0.403
+
+cor.test(bci[[2]], ndi[[2]], method="spear") # 0.738
+cor.test(cci[[2]], ndi[[2]], method="spear") # 0.827
+## Not run: 
+## PLANTS:
+bc &lt;- bci[[1]]
+cc &lt;- cci[[1]]
+nd &lt;- ndi[[1]]
+# CC:
+summary(nls(cc ~ a*nd+b, start=list(a=1,b=1))) # lower RSE
+summary(nls(cc ~ c*nd^d, start=list(c=0.072,d=0.2))) 
+# BC:
+summary(nls(bc ~ a*nd+b, start=list(a=1,b=1)))
+summary(nls(bc ~ c*nd^d, start=list(c=2,d=2))) # lower RSE
+
+## ANIMALS:
+bc &lt;- bci[[2]]
+cc &lt;- cci[[2]]
+nd &lt;- ndi[[2]]
+# CC:
+summary(nls(cc ~ a*nd+b, start=list(a=1,b=1)))  
+summary(nls(cc ~ c*nd^d, start=list(c=0.2,d=2))) # lower RSE 
+# BC:
+summary(nls(bc ~ a*nd+b, start=list(a=1,b=1)))
+summary(nls(bc ~ c*nd^d, start=list(c=0.2,d=2))) # lower RSE
+
+## End(Not run)
+</code></pre>
+
+
+</div>

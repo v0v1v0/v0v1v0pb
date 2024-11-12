@@ -1,0 +1,211 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>BIFIE.logistreg</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>
+Logistic Regression
+</h2>
+
+<h3>Description</h3>
+
+<p>Computes logistic regression. Explained variance <code class="reqn">R^2</code> is computed
+by the approach of McKelvey and Zavoina.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">BIFIE.logistreg(BIFIEobj, dep=NULL, pre=NULL, formula=NULL,
+    group=NULL, group_values=NULL, se=TRUE, eps=1E-8, maxiter=100)
+
+## S3 method for class 'BIFIE.logistreg'
+summary(object,digits=4,...)
+
+## S3 method for class 'BIFIE.logistreg'
+coef(object,...)
+
+## S3 method for class 'BIFIE.logistreg'
+vcov(object,...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>BIFIEobj</code></td>
+<td>
+
+<p>Object of class <code>BIFIEdata</code>
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>dep</code></td>
+<td>
+<p>String for the dependent variable in the regression model</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>pre</code></td>
+<td>
+
+<p>Vector of predictor variables. If the intercept should be included,
+then use the variable <code>one</code> for specifying it (see Examples).
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>formula</code></td>
+<td>
+<p>An <span style="font-family: Courier New, Courier; color: #666666;"><b>R</b></span> formula object which can be applied instead of
+providing <code>dep</code> and <code>pre</code>. Note that there is
+additional computation time needed for model matrix creation.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>group</code></td>
+<td>
+
+<p>Optional grouping variable(s)
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>group_values</code></td>
+<td>
+
+<p>Optional vector of grouping values. This can be omitted and grouping
+values will be determined automatically.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>se</code></td>
+<td>
+<p>Optional logical indicating whether statistical inference
+based on replication should be employed.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>eps</code></td>
+<td>
+<p>Convergence criterion for parameters</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>maxiter</code></td>
+<td>
+<p>Maximum number of iterations</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>object</code></td>
+<td>
+<p>Object of class <code>BIFIE.logistreg</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>digits</code></td>
+<td>
+<p>Number of digits for rounding output</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Further arguments to be passed</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>A list with following entries
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>stat</code></td>
+<td>
+<p>Data frame with regression coefficients</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>output</code></td>
+<td>
+<p>Extensive output with all replicated statistics</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>More values</p>
+</td>
+</tr>
+</table>
+<h3>See Also</h3>
+
+<p><code>survey::svyglm</code>,
+<code>stats::glm</code>
+</p>
+<p>For linear regressions see <code>BIFIE.linreg</code>.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">#############################################################################
+# EXAMPLE 1: TIMSS dataset | Logistic regression
+#############################################################################
+
+data(data.timss2)
+data(data.timssrep)
+
+# create BIFIE.dat object
+bdat &lt;- BIFIEsurvey::BIFIE.data( data.list=data.timss2, wgt=data.timss2[[1]]$TOTWGT,
+                      wgtrep=data.timssrep[, -1 ] )
+
+#**** Model 1: Logistic regression - prediction of migrational background
+res1 &lt;- BIFIEsurvey::BIFIE.logistreg( BIFIEobj=bdat, dep="migrant",
+           pre=c("one","books","lang"), group="female", se=FALSE )
+summary(res1)
+
+## Not run: 
+# same model, but with formula specification and standard errors
+res1a &lt;- BIFIEsurvey::BIFIE.logistreg( BIFIEobj=bdat,
+              formula=migrant ~ books + lang, group="female"  )
+summary(res1a)
+
+#############################################################################
+# SIMULATED EXAMPLE 2: Comparison of stats::glm and BIFIEsurvey::BIFIE.logistreg
+#############################################################################
+
+#*** (1) simulate data
+set.seed(987)
+N &lt;- 300
+x1 &lt;- stats::rnorm(N)
+x2 &lt;- stats::runif(N)
+ypred &lt;- -0.75+.2*x1 + 3*x2
+y &lt;- 1*( stats::plogis(ypred) &gt; stats::runif(N) )
+data &lt;- data.frame( "y"=y, "x1"=x1, "x2"=x2 )
+
+#*** (2) estimation logistic regression using glm
+mod1 &lt;- stats::glm( y ~ x1 + x2, family="binomial")
+
+#*** (3) estimation logistic regression using BIFIEdata
+# create BIFIEdata object by defining 30 Jackknife zones
+bifiedata &lt;- BIFIEsurvey::BIFIE.data.jack( data, jktype="JK_RANDOM", ngr=30 )
+summary(bifiedata)
+# estimate logistic regression
+mod2 &lt;- BIFIEsurvey::BIFIE.logistreg( bifiedata, formula=y ~ x1+x2 )
+
+#*** (4) compare results
+summary(mod2)    # BIFIE.logistreg
+summary(mod1)   # glm
+
+## End(Not run)
+</code></pre>
+
+
+</div>

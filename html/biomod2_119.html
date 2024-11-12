@@ -1,0 +1,195 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>bm_VariablesImportance</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Variables' importance calculation</h2>
+
+<h3>Description</h3>
+
+<p>This internal <span class="pkg">biomod2</span> function allows the user to compute a variable 
+importance value for each variable involved in the given model.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">bm_VariablesImportance(
+  bm.model,
+  expl.var,
+  variables = NULL,
+  method = "full_rand",
+  nb.rep = 1,
+  seed.val = NULL,
+  do.progress = TRUE,
+  temp.workdir = NULL
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>bm.model</code></td>
+<td>
+<p>a <code>biomod2_model</code> object (or <code>nnet</code>, <code>rpart</code>, <code>fda</code>, 
+<code>gam</code>, <code>glm</code>, <code>lm</code>, <code>gbm</code>, <code>mars</code>, <code>randomForest</code>, 
+<code>xgb.Booster</code>) that can be obtained with the <code>get_formal_model</code> function</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>expl.var</code></td>
+<td>
+<p>a <code>data.frame</code> containing the explanatory variables that will be used to 
+compute the variables importance</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>variables</code></td>
+<td>
+<p>(<em>optional, default</em> <code>NULL</code>) <br> 
+A <code>vector</code> containing the names of the explanatory variables that will be considered</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>method</code></td>
+<td>
+<p>a <code>character</code> corresponding to the randomisation method to be used, must be 
+<code>full_rand</code> (<em>only method available so far</em>)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nb.rep</code></td>
+<td>
+<p>an <code>integer</code> corresponding to the number of permutations to be done for 
+each variable</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>seed.val</code></td>
+<td>
+<p>(<em>optional, default</em> <code>NULL</code>) <br> 
+An <code>integer</code> value corresponding to the new seed value to be set</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>do.progress</code></td>
+<td>
+<p>(<em>optional, default</em> <code>TRUE</code>) <br> 
+A <code>logical</code> value defining whether the progress bar is to be rendered or not</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>temp.workdir</code></td>
+<td>
+<p>(<em>optional, default</em> <code>NULL</code>) <br> 
+A <code>character</code> value corresponding to the folder name containing temporal prediction files 
+when using <code>MAXENT</code></p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>For each variable to be evaluated :
+</p>
+
+<ol>
+<li>
+<p> shuffle the original variable
+</p>
+</li>
+<li>
+<p> compute model prediction with shuffled variable
+</p>
+</li>
+<li>
+<p> calculate Pearson's correlation between reference and shuffled predictions
+</p>
+</li>
+<li>
+<p> return score as <code>1 - cor</code>
+</p>
+</li>
+</ol>
+<p>The highest the value, the less reference and shuffled predictions are correlated, and the 
+more influence the variable has on the model. A value of <code>0</code> assumes no influence of 
+the variable on the model.
+</p>
+<p><em>Note that this calculation does not account for variables' interactions.</em>
+</p>
+<p>The same principle is used in <code>randomForest</code>.
+</p>
+
+
+<h3>Value</h3>
+
+<p>A <code>3</code> columns <code>data.frame</code> containing variable's importance scores for each 
+permutation run :
+</p>
+
+<ul>
+<li> <p><code>expl.var</code> : the considered explanatory variable (the one permuted)
+</p>
+</li>
+<li> <p><code>rand</code> : the ID of the permutation run
+</p>
+</li>
+<li> <p><code>var.imp</code> : the variable's importance score
+</p>
+</li>
+</ul>
+<h3>Author(s)</h3>
+
+<p>Damien Georges
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>randomForest</code>, 
+<code>bm_RunModelsLoop</code>, <code>BIOMOD_Modeling</code>, 
+<code>BIOMOD_EnsembleModeling</code>, <code>bm_PlotVarImpBoxplot</code>, 
+<code>get_variables_importance</code>
+</p>
+<p>Other Secundary functions: 
+<code>bm_BinaryTransformation()</code>,
+<code>bm_CrossValidation()</code>,
+<code>bm_FindOptimStat()</code>,
+<code>bm_MakeFormula()</code>,
+<code>bm_ModelingOptions()</code>,
+<code>bm_PlotEvalBoxplot()</code>,
+<code>bm_PlotEvalMean()</code>,
+<code>bm_PlotRangeSize()</code>,
+<code>bm_PlotResponseCurves()</code>,
+<code>bm_PlotVarImpBoxplot()</code>,
+<code>bm_PseudoAbsences()</code>,
+<code>bm_RunModelsLoop()</code>,
+<code>bm_SRE()</code>,
+<code>bm_SampleBinaryVector()</code>,
+<code>bm_SampleFactorLevels()</code>,
+<code>bm_Tuning()</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## Create simple simulated data
+myResp.s &lt;- sample(c(0, 1), 20, replace = TRUE)
+myExpl.s &lt;- data.frame(var1 = sample(c(0, 1), 100, replace = TRUE),
+                       var2 = rnorm(100),
+                       var3 = 1:100)
+
+## Compute variables importance
+mod &lt;- glm(var1 ~ var2 + var3, data = myExpl.s)
+bm_VariablesImportance(bm.model = mod, 
+                       expl.var = myExpl.s[, c('var2', 'var3')],
+                       method = "full_rand",
+                       nb.rep = 3)
+
+
+</code></pre>
+
+
+</div>

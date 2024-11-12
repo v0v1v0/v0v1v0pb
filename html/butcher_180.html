@@ -1,0 +1,96 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>axe-lm</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Axing an lm.</h2>
+
+<h3>Description</h3>
+
+<p>lm objects are created from the base <span class="pkg">stats</span> package.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">## S3 method for class 'lm'
+axe_call(x, verbose = FALSE, ...)
+
+## S3 method for class 'lm'
+axe_env(x, verbose = FALSE, ...)
+
+## S3 method for class 'lm'
+axe_fitted(x, verbose = FALSE, ...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>A model object.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>verbose</code></td>
+<td>
+<p>Print information each time an axe method is executed.
+Notes how much memory is released and what functions are
+disabled. Default is <code>FALSE</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Any additional arguments related to axing.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>Axed lm object.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+# Load libraries
+library(parsnip)
+library(rsample)
+
+# Load data
+split &lt;- initial_split(mtcars, prop = 9/10)
+car_train &lt;- training(split)
+
+# Create model and fit
+lm_fit &lt;- linear_reg() %&gt;%
+  set_engine("lm") %&gt;%
+  fit(mpg ~ ., data = car_train)
+
+out &lt;- butcher(lm_fit, verbose = TRUE)
+
+# Another lm object
+wrapped_lm &lt;- function() {
+  some_junk_in_environment &lt;- runif(1e6)
+  fit &lt;- lm(mpg ~ ., data = mtcars)
+  return(fit)
+}
+
+# Remove junk
+cleaned_lm &lt;- axe_env(wrapped_lm(), verbose = TRUE)
+
+# Check size
+lobstr::obj_size(cleaned_lm)
+
+# Compare environment in terms component
+lobstr::obj_size(attr(wrapped_lm()$terms, ".Environment"))
+lobstr::obj_size(attr(cleaned_lm$terms, ".Environment"))
+
+</code></pre>
+
+
+</div>

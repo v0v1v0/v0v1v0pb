@@ -1,0 +1,394 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>BayesMfp</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Bayesian model inference for multiple fractional polynomial models</h2>
+
+<h3>Description</h3>
+
+<p>Bayesian model inference for multiple fractional polynomial
+models is conducted by means of either exhaustive model space
+evaluation or posterior model sampling.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">BayesMfp(formula = formula(data), data = parent.frame(), family =
+gaussian, priorSpecs = list(a = 4, modelPrior = "flat"), method =
+c("ask", "exhaustive", "sampling"), subset = NULL, na.action = na.omit,
+verbose = TRUE, nModels = NULL, nCache=1e9L, chainlength = 1e5L)
+
+bfp(x, max = 2, scale = TRUE, rangeVals=NULL)
+
+uc(x)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>formula</code></td>
+<td>
+<p>model formula</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+<p>optional data.frame for model variables (defaults to the
+parent frame)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>family</code></td>
+<td>
+<p>distribution and link: only gaussian("identity") supported at the moment</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>priorSpecs</code></td>
+<td>
+<p>prior specifications, see details</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>method</code></td>
+<td>
+<p>which method should be used to explore the  posterior
+model space? (default: ask the user)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>subset</code></td>
+<td>
+<p>optional subset expression</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>na.action</code></td>
+<td>
+<p>default is to skip rows with missing data, and no other
+option supported at the moment</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>verbose</code></td>
+<td>
+<p>should information on computation progress be given? (default)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nModels</code></td>
+<td>
+<p>how many best models should be saved? (default: 1% of
+the explored models or the chainlength, 1 would mean only the
+maximum a posteriori [MAP] model)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nCache</code></td>
+<td>
+<p>maximum number of best models to be cached at the same
+time during the model sampling (only has an effect if sampling has
+been chosen as method)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>chainlength</code></td>
+<td>
+<p>length of the model sampling chain (only has an
+effect if sampling has been chosen as method)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>variable</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>max</code></td>
+<td>
+<p>maximum degree for this FP (default: 2)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>scale</code></td>
+<td>
+<p>use pre-transformation scaling to avoid numerical
+problems? (default)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>rangeVals</code></td>
+<td>
+<p>extra numbers if the scaling should consider values
+in this range. Use this argument if you have test data with larger
+range than the training range.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The formula is of the form
+<code>y ~ bfp (x1, max = 4) + uc (x2 + x3)</code>, that is, the
+auxiliary functions <code>bfp</code> and <code>uc</code> must be
+used for defining the fractional polynomial and uncertain fixed form
+covariates terms, respectively. There must be an intercept, and no
+other fixed covariates are allowed. All <code>max</code> arguments of the
+<code>bfp</code> terms must be identical.
+</p>
+<p>The prior specifications are a list:
+</p>
+
+<dl>
+<dt>a</dt>
+<dd>
+<p>hyperparameter for hyper-g prior which must be greater than
+3 and is recommended to be not greater than 4 (default is 4)</p>
+</dd>
+<dt>modelPrior</dt>
+<dd>
+<p>choose if a flat model prior (default,
+<code>"flat"</code>), a model prior favoring 
+sparse models explicitly (<code>"sparse"</code>), or a dependent model
+prior (<code>"dependent"</code>) should be used.</p>
+</dd>
+</dl>
+<p>If <code>method = "ask"</code>, the user is prompted with the maximum
+cardinality of the model space and can then decide whether to use
+posterior sampling or the exhaustive model space evaluation.
+</p>
+<p>Note that if you specify only one FP term, the exhaustive model search
+must be done, due to the structure of the model sampling algorithm.
+However, in reality this will not be a problem as the model space will
+typically be very small.
+</p>
+
+
+<h3>Value</h3>
+
+<p>Returns an object of class <code>BayesMfp</code> that inherits from list. It
+is essentially a list of models. Each model is a list and has the
+following components: 
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>powers</code></td>
+<td>
+<p>a list of numeric vectors, where each vector contains
+the powers of the covariate that its name denotes.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ucTerms</code></td>
+<td>
+<p>an integer vector of the indices of uncertain fixed
+form covariates that are present in the model.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>logM</code></td>
+<td>
+<p>log marginal likelihood</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>logP</code></td>
+<td>
+<p>log prior probability</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>posterior</code></td>
+<td>
+<p>normalized posterior probability, and if model
+sampling was done, the frequency of the model in the sampling
+algorithm</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>postExpectedg</code></td>
+<td>
+<p>posterior expected covariance factor g</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>postExpectedShrinkage</code></td>
+<td>
+<p>posterior expected shrinkage factor
+t=g/(g + 1)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>R2</code></td>
+<td>
+<p>usual coefficient of determination for the linear model</p>
+</td>
+</tr>
+</table>
+<p>Subsetting the object
+with <code>[.BayesMfp</code> returns again a <code>BayesMfp</code> object
+with the same attributes, which are
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>numVisited</code></td>
+<td>
+<p>the number of models that have been visited
+(exhaustive search) or cached (model sampling)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>inclusionProbs</code></td>
+<td>
+<p>BMA inclusion probabilities for all uncertain
+covariates</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>linearInclusionProbs</code></td>
+<td>
+<p>BMA probabilities for exactly linear
+inclusion of FP covariates</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>logNormConst</code></td>
+<td>
+<p>the (estimated) log normalizing constant <code class="reqn">f
+      (D)</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>chainlength</code></td>
+<td>
+<p>length of the Markov chain, only present if <code>method = "sampling"</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>call</code></td>
+<td>
+<p>the original call</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>formula</code></td>
+<td>
+<p>the formula by which the appropriate untransformed
+design matrix can be extracted</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>the shifted and scaled design matrix for the data</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>xCentered</code></td>
+<td>
+<p>the column-wise centered x</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>y</code></td>
+<td>
+<p>the response vector</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>yMean</code></td>
+<td>
+<p>the mean of the response values</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>SST</code></td>
+<td>
+<p>sum of squares total</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>indices</code></td>
+<td>
+<p>a list with components that describe the positions of
+uncertain covariate groups, fractional polynomial terms and fixed
+variables in the design matrix</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>termNames</code></td>
+<td>
+<p>a list of character vectors containing the names of
+uncertain covariate groups, fractional polynomial terms and fixed
+variables</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>shiftScaleMax</code></td>
+<td>
+<p>matrix with 4 columns containing preliminary
+transformation parameters, maximum degrees and cardinalities of the
+powersets of the fractional polynomial terms</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>priorSpecs</code></td>
+<td>
+<p>the utilized prior specifications</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>randomSeed</code></td>
+<td>
+<p>if a seed existed at function call
+(<code>get(".Random.seed", .GlobalEnv)</code>), it is saved here</p>
+</td>
+</tr>
+</table>
+<h3>Note</h3>
+
+<p><code>logNormConst</code> may be unusable due to necessary conversion
+from long double to double!
+</p>
+<p>Various methods for posterior summaries are available.
+</p>
+
+
+<h3>See Also</h3>
+
+<p>BayesMfp Methods, <code>BmaSamples</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## generate some data
+set.seed(19)
+
+x1 &lt;- rnorm(n=15)
+x2 &lt;- rbinom(n=15, size=20, prob=0.5) 
+x3 &lt;- rexp(n=15)
+
+y &lt;- rt(n=15, df=2)
+
+## run an exhaustive model space evaluation with a flat model prior and
+## a uniform prior (a = 4) on the shrinkage factor t = g/(1 + g):
+test &lt;- BayesMfp(y ~ bfp (x2, max = 4) + uc (x1 + x3), nModels = 100,
+                 method="exhaustive")
+test
+
+## now the same with a *dependent* model prior:
+test2 &lt;- BayesMfp(y ~ bfp (x2, max = 4) + uc (x1 + x3), nModels = 100,
+		 priorSpecs = list(a = 4, modelPrior = "dependent"),
+                 method="exhaustive")
+test2
+</code></pre>
+
+
+</div>

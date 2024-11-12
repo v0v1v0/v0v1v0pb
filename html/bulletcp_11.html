@@ -1,0 +1,155 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>runmcmc_cp2</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Estimate a posterior distribution of data conditional that there are two grooves.</h2>
+
+<h3>Description</h3>
+
+<p>This function runs a random walk metropolis within Gibbs algorithm to estimate the posterior distribution
+of the value of the changepoints as well as the parameters fit in each multivariate normal distribution
+on either side of each changepoint. The covariance matrices are based on the exponential covariance function.
+This functions assumes equally spaced locations ("x" values in the "data" argument). The distribution
+to the right of the right most changepoint and to the left of the left most changepoint have
+means that are a linear function of the distance from the center of the data. The slope is
+constrained to be negative in the left case and positive in the right case. The models fit
+to the groove engraved areas are exactly the same as in the one changepoint case. Thus, this algorithm
+only differs in that there are three segments of data to deal with as opposed to two.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">runmcmc_cp2(data, iter, start.vals, prop_var, cp_prop_var, tol_edge = 50,
+  tol_cp = 1000, warmup = 500, verbose = FALSE)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+<p>Data frame with columns "x" and "y." "x" is a column of the locations of the
+observed residual values, y.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>iter</code></td>
+<td>
+<p>Number of interations after warmup.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>start.vals</code></td>
+<td>
+<p>Starting values for the changepoint algorithm.
+List with elements "sigma", "l", "cp", "beta", and "intercept." "sigma" and "l"
+are 3 element vectors where the first element is for the data on the left groove.
+The second element is for the land engraved area, and the third element is for the right groove.
+"cp" is the vector of changepoint starting values. "beta" and "intercept" are two element vectors
+of the slope and intercept for the left and right groove engraved area respectively.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>prop_var</code></td>
+<td>
+<p>A three element list of the proposal variance-covariance matrices for the random
+walk Metropolis algorithm(s). The first element is for the left groove engraved area.
+The second element is for the land engraved area, and the third element is for the right engraved area.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>cp_prop_var</code></td>
+<td>
+<p>The proposal variance-covariance matrix for the changepoints.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>tol_edge</code></td>
+<td>
+<p>This parameter controls how close changepoint proposals can be to the edge of the data
+before getting automatically rejected. For example, a value of 10 means that the changepoint will be
+automatically rejected if either of the proposal changepoints is within a distance of 10 x-values from either edge.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>tol_cp</code></td>
+<td>
+<p>This parameter controls how close changepoint proposals can be to each other
+before getting automatically rejected. For example, a value of 10 means that the changepoint will be
+automatically rejected if either of the proposal changepoints is within a distance of 10 x-values from either each other.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>warmup</code></td>
+<td>
+<p>The number of initial iterations which serves two purposes: the first is to allow the
+algorithm to wander to the area of most mass, and the second is to tune the proposal variance.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>verbose</code></td>
+<td>
+<p>Logical value indicating whether to print the iteration number and the parameter proposals.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>A named list containing the sampled parameters, acceptance rates for the Metropolis steps,
+log likelihood values, and proposal variance for the changepoints.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R"># Fake data
+sim_groove &lt;- function(beta = c(-0.28,0.28), a = 125)
+{
+    x &lt;- seq(from = 0, to = 2158, by = 20)
+    med &lt;- median(x)
+    y &lt;- 1*(x &lt;= a)*(beta[1]*(x - med) - beta[1]*(a - med)) +
+    1*(x &gt;= 2158 - a)*(beta[2]*(x - med) - beta[2]*(2158 - a - med))
+    return(data.frame("x" = x, "y" = y))
+}
+
+fake_groove &lt;- sim_groove()
+
+# define starting values for the changepoints
+cp_start_left &lt;- min(fake_groove$x) + 60
+cp_start_right &lt;- max(fake_groove$x) - 60
+
+# define starting values
+start.vals &lt;- list("sigma" = c(1,1,1),
+                "l" = c(10,10,10),
+                "cp" = c(cp_start_left, cp_start_right),
+                "beta" = c(-2,2),
+                "intercept" = c(0,0))
+
+# define proposal variances (not for changepoints)
+prop_var &lt;- list(diag(c(1/2,1/2,1/2,1/2)),
+              diag(c(1/2,1/2)),
+              diag(c(1/2,1/2,1/2,1/2)))
+
+# define proposal variance for changepoints
+cp_prop_var &lt;- diag(c(10^2, 10^2))
+
+
+# run Gibbs MCMC for both the right only and left only GEA models
+set.seed(1111)
+m2cp &lt;- runmcmc_cp2(data = fake_groove,
+                 iter = 500,
+                 start.vals = start.vals,
+                 prop_var = prop_var,
+                 cp_prop_var = cp_prop_var,
+                 tol_edge = 50, tol_cp = 1000,
+                 warmup = 100,
+                 verbose = FALSE)
+</code></pre>
+
+
+</div>

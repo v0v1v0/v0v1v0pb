@@ -1,0 +1,140 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>getCladeRates</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Compute clade-specific mean rates</h2>
+
+<h3>Description</h3>
+
+<p>Computes marginal clade-specific rates of speciation,
+extinction, or (if relevant) trait evolution from <code>BAMM</code> output.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">getCladeRates(ephy, node = NULL, nodetype = "include", verbose = FALSE)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>ephy</code></td>
+<td>
+<p>An object of class <code>bammdata</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>node</code></td>
+<td>
+<p>If computing rates for a specific portion of tree, the node
+subtending the relevant subtree. If multiple nodes are supplied, then
+the equivalent number of <code>nodetype</code> must be supplied.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nodetype</code></td>
+<td>
+<p>Either "include" or "exclude". If <code>nodetype = 
+"include"</code>, the rates returned by the function will be for the subtree
+defined by <code>node</code>. If <code>nodetype = "exclude"</code>, will compute
+mean rates for the tree after excluding the subtree defined by
+<code>node</code>. If multiple nodes are specified, there must be a
+<code>nodetype</code> for each node.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>verbose</code></td>
+<td>
+<p>Logical. If <code>TRUE</code>, will print the sample index as
+mean rates are computed for each sample from posterior. Potentially
+useful for extremely large trees.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>Computes the time-weighted mean evolutionary rate for a given
+clade. Conversely, one can compute the rate for a given phylogeny
+while excluding a clade; this operation will give the "background"
+rate. It is important to understand several aspects of these mean
+rates. First, rates in the <code>BAMM</code> framework are not constant
+through time. Hence, the function computes the mean time-integrated
+rates across the subtree. Operationally, this is done by integrating
+the speciation rate with respect to time along each branch in the
+subtree. These time-integrated rates are then summed, and the sum
+is divided by the total sum of branch lengths for the subtree. 
+</p>
+<p>The function computes a rate for each sample in the posterior, and
+returns a list of rate vectors. Each rate in the corresponding vector
+is a mean rate for a particular sample from the posterior. Hence, you
+can think of the return value for this function as an estimate of the
+marginal distribution of rates for the focal clade. You can compute
+means, medians, quantiles, etc from these vectors.
+</p>
+
+
+<h3>Value</h3>
+
+<p>A list with the following components:
+</p>
+
+<ul>
+<li>
+<p> lambda: A vector of speciation rates (if applicable), with
+the i'th rate corresponding to the mean rate from the i'th
+sample in the posterior.
+</p>
+</li>
+<li>
+<p> mu: A vector of extinction rates (if applicable), with the
+i'th rate corresponding to the mean rate from the i'th sample
+in the posterior.
+</p>
+</li>
+<li>
+<p> beta: A vector of phenotypic rates (if applicable), with
+the i'th rate corresponding to the mean rate from the i'th 
+sample in the posterior.
+</p>
+</li>
+</ul>
+<h3>Author(s)</h3>
+
+<p>Dan Rabosky
+</p>
+
+
+<h3>References</h3>
+
+<p><a href="http://bamm-project.org/">http://bamm-project.org/</a>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">data(events.whales, whales)
+ed &lt;- getEventData(whales, events.whales, nsamples=500)
+all_rates &lt;- getCladeRates(ed)
+
+mean(all_rates$lambda)
+mean(all_rates$mu)
+# joint density of mean speciation and extinction rates:
+plot(all_rates$mu ~ all_rates$lambda)
+
+# clade specific rates: here for Dolphin subtree:
+dol_rates &lt;- getCladeRates(ed, node=140)
+mean(dol_rates$lambda)
+mean(dol_rates$mu)
+
+# defining multiple nodes
+mean(getCladeRates(ed, node=c(132, 140),
+     nodetype=c('include','exclude'))$lambda)
+</code></pre>
+
+
+</div>

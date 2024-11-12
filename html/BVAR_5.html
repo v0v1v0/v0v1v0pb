@@ -1,0 +1,261 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>bvar</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Hierarchical Bayesian vector autoregression</h2>
+
+<h3>Description</h3>
+
+<p>Used to estimate hierarchical Bayesian Vector Autoregression (VAR) models in
+the fashion of Giannone, Lenza and Primiceri (2015).
+Priors are adjusted and added via <code>bv_priors</code>.
+The Metropolis-Hastings step can be modified with <code>bv_mh</code>.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">bvar(
+  data,
+  lags,
+  n_draw = 10000L,
+  n_burn = 5000L,
+  n_thin = 1L,
+  priors = bv_priors(),
+  mh = bv_mh(),
+  fcast = NULL,
+  irf = NULL,
+  verbose = TRUE,
+  ...
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+<p>Numeric matrix or dataframe. Note that observations are expected
+to be ordered from earliest to latest, and variables in the columns.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>lags</code></td>
+<td>
+<p>Integer scalar. Lag order of the model.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>n_draw, n_burn</code></td>
+<td>
+<p>Integer scalar. The number of iterations to (a) cycle
+through and (b) burn at the start.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>n_thin</code></td>
+<td>
+<p>Integer scalar. Every <em>n_thin</em>'th iteration is stored.
+For a given memory requirement thinning reduces autocorrelation, while
+increasing effective sample size.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>priors</code></td>
+<td>
+<p>Object from <code>bv_priors</code> with prior settings.
+Used to adjust the Minnesota prior, add custom dummy priors, and choose
+hyperparameters for hierarchical estimation.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>mh</code></td>
+<td>
+<p>Object from <code>bv_mh</code> with settings for the
+Metropolis-Hastings step. Used to tune automatic adjustment of the
+acceptance rate within the burn-in period, or manually adjust the proposal
+variance.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>fcast</code></td>
+<td>
+<p>Object from <code>bv_fcast</code> with forecast settings.
+Options include the horizon and settings for conditional forecasts i.e.
+scenario analysis.
+May also be calculated ex-post using <code>predict.bvar</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>irf</code></td>
+<td>
+<p>Object from <code>bv_irf</code> with settings for the calculation
+of impulse responses and forecast error variance decompositions. Options
+include the horizon and different identification schemes.
+May also be calculated ex-post using <code>irf.bvar</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>verbose</code></td>
+<td>
+<p>Logical scalar. Whether to print intermediate results and
+progress.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Not used.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The model can be expressed as:
+</p>
+<p style="text-align: center;"><code class="reqn">y_t = a_0 + A_1 y_{t-1} + ... + A_p y_{t-p} + \epsilon_t</code>
+</p>
+
+<p>See Kuschnig and Vashold (2021) and Giannone, Lenza and Primiceri (2015)
+for further information.
+Methods for a <code>bvar</code> object and its derivatives can be used to:
+</p>
+
+<ul>
+<li>
+<p> predict and analyse scenarios;
+</p>
+</li>
+<li>
+<p> evaluate shocks and the variance of forecast errors;
+</p>
+</li>
+<li>
+<p> visualise forecasts and impulse responses, parameters and residuals;
+</p>
+</li>
+<li>
+<p> retrieve coefficents and the variance-covariance matrix;
+</p>
+</li>
+<li>
+<p> calculate fitted and residual values;
+</p>
+</li>
+</ul>
+<p>Note that these methods generally work by calculating quantiles from the
+posterior draws. The full posterior may be retrieved directly from the
+objects. The function <code>str</code> can be very helpful for this.
+</p>
+
+
+<h3>Value</h3>
+
+<p>Returns a list of class <code>bvar</code> with the following elements:
+</p>
+
+<ul>
+<li> <p><code>beta</code> - Numeric array with draws from the posterior of the VAR
+coefficients. Also see <code>coef.bvar</code>.
+</p>
+</li>
+<li> <p><code>sigma</code> - Numeric array with draws from the posterior of the
+variance-covariance matrix. Also see <code>vcov.bvar</code>.
+</p>
+</li>
+<li> <p><code>hyper</code> - Numeric matrix with draws from the posterior of the
+hierarchically treated hyperparameters.
+</p>
+</li>
+<li> <p><code>ml</code> - Numeric vector with the marginal likelihood (with respect
+to the hyperparameters), that determines acceptance probability.
+</p>
+</li>
+<li> <p><code>optim</code> - List with outputs of <code>optim</code>,
+which is used to find starting values for the hyperparameters.
+</p>
+</li>
+<li> <p><code>prior</code> - Prior settings from <code>bv_priors</code>.
+</p>
+</li>
+<li> <p><code>call</code> - Call to the function. See <code>match.call</code>.
+</p>
+</li>
+<li> <p><code>meta</code> - List with meta information. Includes the number of
+variables, accepted draws, number of iterations, and data.
+</p>
+</li>
+<li> <p><code>variables</code> - Character vector with the column names of
+<em>data</em>. If missing, variables are named iteratively.
+</p>
+</li>
+<li> <p><code>explanatories</code> - Character vector with names of explanatory
+variables. Formatting is akin to: <code>"FEDFUNDS-lag1"</code>.
+</p>
+</li>
+<li> <p><code>fcast</code> - Forecasts from <code>predict.bvar</code>.
+</p>
+</li>
+<li> <p><code>irf</code> - Impulse responses from <code>irf.bvar</code>.
+</p>
+</li>
+</ul>
+<h3>Author(s)</h3>
+
+<p>Nikolas Kuschnig, Lukas Vashold
+</p>
+
+
+<h3>References</h3>
+
+<p>Giannone, D. and Lenza, M. and Primiceri, G. E. (2015) Prior Selection for
+Vector Autoregressions. <em>The Review of Economics and Statistics</em>,
+<b>97:2</b>, 436-451, <a href="https://doi.org/10.1162/REST_a_00483">doi:10.1162/REST_a_00483</a>.
+</p>
+<p>Kuschnig, N. and Vashold, L. (2021) BVAR: Bayesian Vector Autoregressions
+with Hierarchical Prior Selection in R.
+<em>Journal of Statistical Software</em>, <b>14</b>, 1-27,
+<a href="https://doi.org/10.18637/jss.v100.i14">doi:10.18637/jss.v100.i14</a>.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>bv_priors</code>; <code>bv_mh</code>;
+<code>bv_fcast</code>; <code>bv_irf</code>;
+<code>predict.bvar</code>; <code>irf.bvar</code>; <code>plot.bvar</code>;
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R"># Access a subset of the fred_qd dataset
+data &lt;- fred_qd[, c("CPIAUCSL", "UNRATE", "FEDFUNDS")]
+# Transform it to be stationary
+data &lt;- fred_transform(data, codes = c(5, 5, 1), lag = 4)
+
+# Estimate a BVAR using one lag, default settings and very few draws
+x &lt;- bvar(data, lags = 1, n_draw = 1000L, n_burn = 200L, verbose = FALSE)
+
+# Calculate and store forecasts and impulse responses
+predict(x) &lt;- predict(x, horizon = 8)
+irf(x) &lt;- irf(x, horizon = 8, fevd = FALSE)
+
+## Not run: 
+# Check convergence of the hyperparameters with a trace and density plot
+plot(x)
+# Plot forecasts and impulse responses
+plot(predict(x))
+plot(irf(x))
+# Check coefficient values and variance-covariance matrix
+summary(x)
+
+## End(Not run)
+</code></pre>
+
+
+</div>

@@ -1,0 +1,150 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>cox_predict</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>
+Cox Model Prediction
+</h2>
+
+<h3>Description</h3>
+
+<p>This function takes a fitted Cox model, i.e., a model estimated by <code>opt_Cox</code>
+or <code>sam_Cox</code> and computes predictions given a new data set or the
+original values. Survival probabilities are computed using numerical integration, therefore,
+computation may take some time. To avoid problems with computer memory, the prediction
+of survival probabilities can be split into chunks and computed parallel on different cores.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">cox_predict(object, newdata,
+  type = c("link", "parameter", "probabilities"),
+  FUN = function(x) { mean(x, na.rm = TRUE) },
+  time = NULL, subdivisions = 100, cores = NULL,
+  chunks = 1, verbose = FALSE, ...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>object</code></td>
+<td>
+<p>A <code>"bamlss"</code> object as returned from function <code>bamlss</code>
+using the optimizer <code>opt_Cox</code> or sampler function <code>sam_Cox</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>newdata</code></td>
+<td>
+<p>A data frame or list containing the values of the model
+covariates at which predictions are required. If missing <code>newdata</code> is the
+<code>model.frame</code> of the provided model.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>type</code></td>
+<td>
+<p>Specifies the type of predictions that should be computed.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>FUN</code></td>
+<td>
+<p>A function that should be applied on each row of the samples
+of the additive predictor, parameter or probabilities. Per default
+the function computes means of samples, however, other functions like <code>quantile</code>
+can be supplied.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>time</code></td>
+<td>
+<p><code>numeric</code>, specifies the time for which survival probabilities should
+be computed if <code>type = "probabilities"</code>. Note that this overwrites survival times
+that are supplied in argument <code>newdata</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>subdivisions</code></td>
+<td>
+<p>How many time points should be created for each individual.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>cores</code></td>
+<td>
+<p>Specifies the number of cores that should be used for prediction. The problem is
+split into <code>core</code> chunks, each chunk is then processed by one core.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>chunks</code></td>
+<td>
+<p>The number of chunks that should be processed sequentially on one core.
+This way memory problems can be avoided when computing survival times for large problems.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>verbose</code></td>
+<td>
+<p>Print progress information.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Arguments passed to <code>predict.bamlss</code>.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>Depending on the type of function provided in argument <code>FUN</code>, a <code>numeric</code> vector
+or <code>matrix</code>.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>sam_Cox</code>, <code>cox_bamlss</code>, <code>surv_transform</code>,
+<code>simSurv</code>, <code>bamlss</code>, <code>predict.bamlss</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## Not run: library("survival")
+set.seed(123)
+
+## Simulate survival data.
+d &lt;- simSurv(n = 500)
+
+## Formula of the survival model, note
+## that the baseline is given in the first formula by s(time).
+f &lt;- list(
+  Surv(time, event) ~ s(time) + s(time, by = x3),
+  gamma ~ s(x1) + s(x2)
+)
+
+## Cox model with continuous time.
+## Note the the family object cox_bamlss() sets
+## the default optimizer and sampler function!
+## First, posterior mode estimates are computed
+## using function opt_Cox(), afterwards the
+## sampler sam_Cox() is started.
+b &lt;- bamlss(f, family = "cox", data = d)
+
+## Predict survival probabilities P(T &gt; t).
+p &lt;- predict(b, type = "probabilities",
+  time = 3, subdivisions = 100, FUN = c95)
+
+## End(Not run)
+</code></pre>
+
+
+</div>

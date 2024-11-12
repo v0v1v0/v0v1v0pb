@@ -1,0 +1,376 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>cbvn</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Fitting boundary line using censored bivariate normal model</h2>
+
+<h3>Description</h3>
+
+<p>This function fits a response model to the upper limits  of a scatter plot of
+of <code>x</code> and <code>y</code> to determine the most efficient response of <code>y</code>
+as a function of <code>x</code> (given a measurement error of <code>y</code>) based on a
+censored distribution (Milne et al., 2016). The location of censor in the data
+cloud is determined based on the maximum likelihood approach. This is done using
+optimization procedure and hence requires some starting guess parameters for the
+proposed model. It then compares the results with an uncensored normal bivariate
+distribution to access the appropriateness of the censored model.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">cbvn(data,model="lp", equation=NULL, start, sigh, UpLo="U", optim.method="BFGS",
+      Hessian=FALSE, plot=TRUE, line_smooth=1000, lwd=2, l_col="red",...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+<p>A dataframe with two numeric columns, independent (<code>x</code>) and
+dependent (<code>y</code>) variables respectively.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>model</code></td>
+<td>
+<p>Selects the functional form of the boundary line. It includes
+<code>"blm"</code> for linear model, <code>"lp"</code> for linear plateau model, <code>"mit"</code>
+for the Mitscherlich model, <code>"schmidt"</code> for the Schmidt model,
+<code>"logistic"</code> for logistic model, <code>"logisticND"</code> for logistic model
+proposed by Nelder (1961), <code>"inv-logistic"</code> for the inverse logistic model,
+<code>"double-logistic"</code> for the double logistic model, <code>"qd"</code> for
+quadratic model and the <code>"trapezium"</code> for the trapezium model. For custom
+models, set <code>model = "other"</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>equation</code></td>
+<td>
+<p>A custom model function writen in the form of an R function. Applies
+only when argument <code>model="other"</code>, else it is <code>NULL</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>start</code></td>
+<td>
+<p>A numeric vector of initial starting values for optimization
+in fitting the boundary model. Its length and arrangement depend on the
+suggested model: </p>
+
+<ul>
+<li>
+<p> For the <code>"blm"</code> model, it is a vector of length 7 arranged as the
+intercept, the slope, mean of <code>x</code>, mean of <code>y</code>, standard deviation
+of <code>x</code>, standard deviation of <code>y</code> and the correlation of <code>x</code>
+and <code>y</code>.
+</p>
+</li>
+<li>
+<p> For the <code>"lp"</code> model, it is a vector of length 8 arranged as the
+intercept, the slope, the maximum or plateau response, mean of <code>x</code>,
+mean of <code>y</code>, standard deviation of <code>x</code>, standard deviation of <code>y</code>
+and the correlation of <code>x</code> and <code>y</code>.
+</p>
+</li>
+<li>
+<p> For the <code>"mit"</code> model, it is a vector of length 8 arranged as the
+intercept, shape parameter, the maximum or plateau response, mean of <code>x</code>,
+mean of <code>y</code>, standard deviation of <code>x</code>, standard deviation of <code>y</code>
+and the correlation of <code>x</code> and <code>y</code>.
+</p>
+</li>
+<li>
+<p> For the <code>"logistic"</code>, <code>"inv-logistic"</code> and <code>"logisticND"</code>
+models, it is a vector of length 8 arranged as scaling parameter, shape parameter,
+the maximum or plateau value, mean of <code>x</code>, mean of <code>y</code>,
+standard deviation of <code>x</code>, standard deviation of <code>y</code> and the
+correlation of <code>x</code> and <code>y</code>.
+</p>
+</li>
+<li>
+<p> For the <code>"double-logistic"</code> model, it is a vector of length 11
+arranged as scaling parameter, shape parameter, maximum response, maximum response,
+scaling parameter two, shape parameter two, mean of <code>x</code>, mean of <code>y</code>,
+standard deviation of <code>x</code>, standard deviation of <code>y</code> and the correlation
+of <code>x</code> and <code>y</code>.
+</p>
+</li>
+<li>
+<p> For the <code>"trapezium"</code> model, it is a vector of length 10 arranged
+as intercept one, slope one, maximum response, intercept two, slope two,
+mean of <code>x</code>, mean of <code>y</code>, standard deviation of <code>x</code>,
+standard deviation of <code>y</code> and the correlation of <code>x</code> and <code>y</code>.
+</p>
+</li>
+<li>
+<p> For the <code>"qd"</code> model, it is a vector of length 8 arranged as a
+constant, linear coefficient, quadratic coefficient,mean of <code>x</code>,
+mean of <code>y</code>, standard deviation of <code>x</code>, standard deviation of <code>y</code>
+and the correlation of <code>x</code> and <code>y</code>.
+</p>
+</li>
+<li>
+<p> For the <code>"schmidt"</code> model, it is a vector of length 8 arranged the
+scaling parameter, shape parameter (x-value at maximum response ),
+maximum response, mean of <code>x</code>, mean of <code>y</code>, standard deviation of
+<code>x</code>, standard deviation of <code>y</code> and the correlation of <code>x</code>
+and <code>y</code>.
+</p>
+</li>
+</ul>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>sigh</code></td>
+<td>
+<p>Standard deviation of the measurement error.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>UpLo</code></td>
+<td>
+<p>Selects the type of boundary. <code>"U"</code> fits the upper boundary and
+"L" fits the lower boundary.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>optim.method</code></td>
+<td>
+<p>Describes the method used to optimize the model as in the
+<code>optim()</code> function. The methods include <code>"Nelder-Mead"</code>, <code>"BFGS"</code>,
+<code>"CG"</code>, <code>"L-BFGS-B"</code>, <code>"SANN"</code> and <code>"Brent"</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Hessian</code></td>
+<td>
+<p>If <code>True</code>, the hessian matrix is part of the output
+(default is <code>FALSE</code>').</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>plot</code></td>
+<td>
+<p>If <code>TRUE</code>, a plot is part of the output. If <code>FALSE</code>, plot
+is not part of output (default is <code>TRUE</code>).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>line_smooth</code></td>
+<td>
+<p>Parameter that describes the smoothness of the boundary line.
+(default is 1000). The higher the value, the smoother the line.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>lwd</code></td>
+<td>
+<p>Determines the thickness of the boundary line on the plot (default is 1).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>l_col</code></td>
+<td>
+<p>Selects the color of the boundary line.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Additional graphical parameters as in the <code>par()</code> function.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>Some inbuilt models are available for the <code>cbvn()</code> function. The suggest model
+forms are as follows: </p>
+
+<ol>
+<li>
+<p> Linear model (<code>"blm"</code>)
+</p>
+<p style="text-align: center;"><code class="reqn">y=\beta_1 + \beta_2x</code>
+</p>
+
+<p>where <code class="reqn">\beta_1</code> is the intercept and <code class="reqn">\beta_2</code> is the slope.
+</p>
+</li>
+<li>
+<p> Linear plateau model (<code>"lp"</code>)
+</p>
+<p style="text-align: center;"><code class="reqn">y= {\rm min}(\beta_1+\beta_2x, \beta_0)</code>
+</p>
+
+<p>where <code class="reqn">\beta_1</code> is the intercept , <code class="reqn">\beta_2</code> is the slope  and <code class="reqn">\beta_0</code>
+is the maximum response.
+</p>
+</li>
+<li>
+<p> The logistic (<code>"logistic"</code>) and inverse logistic (<code>"inv-logistic"</code>)
+models
+</p>
+<p style="text-align: center;"><code class="reqn"> y= \frac{\beta_0}{1+e^{\beta_2(\beta_1-x)}}</code>
+</p>
+
+<p style="text-align: center;"><code class="reqn"> y= \beta_0 - \frac{\beta_0}{1+e^{\beta_2(\beta_1-x)}}</code>
+</p>
+
+<p>where <code class="reqn">\beta_1</code> is a scaling parameter , <code class="reqn">\beta_2</code> is a shape parameter
+and <code class="reqn">\beta_0</code> is the maximum response.
+</p>
+</li>
+<li>
+<p> Logistic model (<code>"logisticND"</code>)  (Nelder (1961))
+</p>
+<p style="text-align: center;"><code class="reqn"> y= \frac{\beta_0}{1+(\beta_1 \times e^{-\beta_2x})}</code>
+</p>
+
+<p>where <code class="reqn">\beta_1</code> is a scaling parameter, <code class="reqn">\beta_2</code> is a shape
+parameter and <code class="reqn">\beta_0</code> is the maximum response.
+</p>
+</li>
+<li>
+<p> Double logistic model (<code>"double-logistic"</code>)
+</p>
+<p style="text-align: center;"><code class="reqn"> y= \frac{\beta_{0,1}}{1+e^{\beta_2(\beta_1-x)}} -
+ \frac{\beta_{0,2}}{1+e^{\beta_4(\beta_3-x)}}</code>
+</p>
+
+<p>where <code class="reqn">\beta_1</code> is a scaling parameter one, <code class="reqn">\beta_2</code> is shape parameter one,
+<code class="reqn">\beta_{0,1}</code> and <code class="reqn">\beta_{0,2}</code> are the maximum response ,
+<code class="reqn">\beta_3</code> is a scaling parameter two and  <code class="reqn">\beta_4</code> is a shape parameter two.
+</p>
+</li>
+<li>
+<p> Quadratic model (<code>"qd"</code>)
+</p>
+<p style="text-align: center;"><code class="reqn">y=\beta_1 + \beta_2x + \beta_3x^2</code>
+</p>
+
+<p>where <code class="reqn">\beta_1</code> is a constant, <code class="reqn">\beta_2</code> is a linear coefficient
+and  <code class="reqn">\beta_3</code> is the quadratic coefficient.
+</p>
+</li>
+<li>
+<p> Trapezium model (<code>"trapezium"</code>)
+</p>
+<p style="text-align: center;"><code class="reqn">y={\rm min}(\beta_1+\beta_2x, \beta_0, \beta_3 + \beta_4x)</code>
+</p>
+
+<p>where  <code class="reqn">\beta_1</code> is the intercept one, <code class="reqn">\beta_2</code> is the slope one,
+<code class="reqn">\beta_0</code> is the maximum response, <code class="reqn">\beta_3</code> is the intercept two
+and <code class="reqn">\beta_3</code> is the slope two.
+</p>
+</li>
+<li>
+<p> Mitscherlich model (<code>"mit"</code>)
+</p>
+<p style="text-align: center;"><code class="reqn">y= \beta_0 - \beta_1*\beta_2^x</code>
+</p>
+
+<p>where <code class="reqn">\beta_1</code> is the intercept, <code class="reqn">\beta_2</code> is a shape parameter
+and <code class="reqn">\beta_0</code> is the maximum response.
+</p>
+</li>
+<li>
+<p> Schmidt model (<code>"schmidt"</code>)
+</p>
+<p style="text-align: center;"><code class="reqn">y= \beta_0 + \beta_1(x-\beta_2)^2</code>
+</p>
+
+<p>where <code class="reqn">\beta_1</code> is a scaling parameter, <code class="reqn">\beta_2</code> is a
+shape parameter (x-value at maximum response ) and <code class="reqn">\beta_0</code> is the
+maximum response .
+</p>
+</li>
+</ol>
+<p>The function <code>cbvn()</code> utilities the optimization procedure of the
+<code>optim()</code> function to determine the model parameters. There is a tendency
+for optimization algorithms to settle at a local optimum. To remove the risk of
+settling for local optimum parameters, it is advised that the function is run using
+several starting values and the results with the smallest likelihood (or AIC)
+can be taken as a representation of the global optimum.
+</p>
+<p>The common errors encountered due to poor start values </p>
+
+<ol>
+<li>
+<p> function cannot be evaluated at initial parameters
+</p>
+</li>
+<li>
+<p> initial value in 'vmmin' is not finite</p>
+</li>
+</ol>
+<h3>Value</h3>
+
+<p>A list of length 5 consisting of the fitted model, equation form,
+parameters of the boundary line, AIC (for boundary line model and a null model)
+and a hessian matrix.  Additionally, a graphical representation of the boundary
+line on the scatter plot is produced.
+</p>
+
+
+<h3>Author(s)</h3>
+
+
+<ol>
+<li>
+<p> Chawezi Miti <a href="mailto:chawezi.miti@nottingham.ac.uk">chawezi.miti@nottingham.ac.uk</a>
+</p>
+</li>
+<li>
+<p> Richard Murray Lark <a href="mailto:murray.lark@nottingham.ac.uk">murray.lark@nottingham.ac.uk</a>
+</p>
+</li>
+</ol>
+<h3>References</h3>
+
+<p>Nelder, J.A. 1961. The fitting of a generalization of the logistic curve.
+Biometrics 17: 89–110.
+</p>
+<p>Lark, R. M., &amp; Milne, A. E. (2016). Boundary line analysis of the effect of water
+filled pore space on nitrous oxide emission from cores of arable soil. European
+Journal of Soil Science, 67 , 148-159.
+</p>
+<p>Lark, R. M., Gillingham, V., Langton, D., &amp; Marchant, B. P. (2020). Boundary line
+models for soil nutrient concentrations and wheat yield in national-scale datasets.
+European Journal of Soil Science, 71 , 334-351.
+</p>
+<p>Milne, A. E., Ferguson, R. B., &amp; Lark, R. M. (2006). Estimating a boundary line
+model for a biological response by maximum likelihood.Annals of Applied Biology,
+149, 223–234.
+</p>
+<p>Phillips, B.F. &amp; Campbell, N.A. 1968. A new method of fitting the von Bertelanffy
+growth curve using data on the whelk. Dicathais, Growth 32: 317–329.
+</p>
+<p>Schmidt, U., Thöni, H., &amp; Kaupenjohann, M. (2000). Using a boundary line approach
+to analyze N2O flux data from agricultural soils. Nutrient Cycling in Agroecosystems,
+57, 119-129.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+x&lt;-evapotranspiration$`ET(mm)`
+y&lt;-evapotranspiration$`yield(t/ha)`
+data&lt;-data.frame(x,y)
+start&lt;-c(0.5,0.02,289.6,2.4,83.7,1.07,0.287)
+
+cbvn(data, start=start, model = "blm", sigh=0.51,
+        xlab=expression("ET/ mm ha"^-1),
+        ylab=expression("Yield/ ton ha"^-1),
+        pch=16, col="grey", line_smooth = 100)
+
+</code></pre>
+
+
+</div>

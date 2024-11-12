@@ -1,0 +1,166 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>complete_log_likelihood_general</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>
+Logarithm of the complete log-likelihood for the general cure rate model. 
+</h2>
+
+<h3>Description</h3>
+
+<p>Compute the logarithm of the complete likelihood, given a realization of the latent binary vector of cure indicators <code>I_sim</code> and current values of the model parameters <code>g</code>, <code>lambda</code>, <code>b</code> and promotion time parameters (<code class="reqn">\boldsymbol\alpha</code>) which yield log-density values (one per observation) stored to the vector <code>log_f</code> and log-cdf values stored to the vector <code>log_F</code>. 
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">complete_log_likelihood_general(y, X, Censoring_status, 
+	g, lambda, log_f, log_F, b, I_sim, alpha)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>y</code></td>
+<td>
+
+<p>observed data (time-to-event or censored time)
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>X</code></td>
+<td>
+
+<p>design matrix. Should contain a column of 1's if the model has a constant term. 
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Censoring_status</code></td>
+<td>
+
+<p>binary variables corresponding to time-to-event and censoring.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>g</code></td>
+<td>
+<p>The <code class="reqn">\gamma</code> parameter of the model (real). </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>lambda</code></td>
+<td>
+<p>The <code class="reqn">\lambda</code> parameter of the model (positive). </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>log_f</code></td>
+<td>
+<p>A vector containing the natural logarithm of the density function of the promotion time distribution per observation, for the current set of parameters. Its length should be equal to the sample size.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>log_F</code></td>
+<td>
+<p>A vector containing the natural logarithm of the cumulative density function of the promotion time distribution per observation, for the current set of parameters. Its length should be equal to the sample size.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>b</code></td>
+<td>
+<p>Vector of regression coefficients. Its length should be equal to the number of columns of the design matrix.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>I_sim</code></td>
+<td>
+<p>Binary vector of the current value of the latent cured status per observation. Its length should be equal to the sample size. A time-to-event cannot be cured.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>alpha</code></td>
+<td>
+<p>A parameter between 0 and 1, corresponding to the temperature of the complete posterior distribution.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The complete likelihood of the model is 
+</p>
+<p style="text-align: center;"><code class="reqn">L_c(\boldsymbol{\theta};\boldsymbol{y}, \boldsymbol{I}) = \prod_{i\in\Delta_1}(1-p_0(\boldsymbol{x}_i,\boldsymbol\theta))f_U(y_i;\boldsymbol\theta,\boldsymbol{x}_i)\\
+\prod_{i\in\Delta_0}p_0(\boldsymbol{x}_i,\boldsymbol\theta)^{1-I_i}\{(1-p_0(\boldsymbol{x}_i,\boldsymbol\theta))S_U(y_i;\boldsymbol\theta,\boldsymbol{x}_i)\}^{I_i}.</code>
+</p>
+
+<p><code class="reqn">f_U</code> and <code class="reqn">S_U</code> denote the probability density and survival function of the susceptibles, respectively, that is
+</p>
+<p style="text-align: center;"><code class="reqn">
+S_U(y_i;\boldsymbol\theta,{\boldsymbol x}_i)=\frac{S_P(y_i;\boldsymbol{\theta},{\boldsymbol x}_i)-p_0({\boldsymbol x}_i;\boldsymbol\theta)}{1-p_0({\boldsymbol x}_i;\boldsymbol\theta)}, f_U(y_i;\boldsymbol\theta,{\boldsymbol x}_i)=\frac{f_P(y_i;\boldsymbol\theta,{\boldsymbol x}_i)}{1-p_0({\boldsymbol x}_i;\boldsymbol\theta)}.</code>
+</p>
+
+
+
+<h3>Value</h3>
+
+<p>A list with the following entries
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>cll </code></td>
+<td>
+<p>the complete log-likelihood for the current parameter values.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>logS </code></td>
+<td>
+<p>Vector of logS values (one for each observation).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>logP0 </code></td>
+<td>
+<p>Vector of logP0 values (one for each observation).</p>
+</td>
+</tr>
+</table>
+<h3>Author(s)</h3>
+
+<p>Panagiotis Papastamoulis
+</p>
+
+
+<h3>References</h3>
+
+<p>Papastamoulis and Milienos (2023). Bayesian inference and cure rate modeling for event history data. arXiv:2310.06926.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R"># simulate toy data 
+	set.seed(1)
+	n = 4
+	stat = rbinom(n, size = 1, prob = 0.5)
+	x &lt;- cbind(1, matrix(rnorm(n), n, 1))
+	y &lt;- rexp(n)
+	lw &lt;- log_weibull(y, a1 = 1, a2 = 1, c_under = 1e-9)
+# compute complete log-likelihood
+complete_log_likelihood_general(y = y, X = x, 
+	Censoring_status = stat, 
+	g = 1, lambda = 1, 
+	log_f = lw$log_f, log_F = lw$log_F, 
+	b = c(-0.5,0.5), 
+	I_sim = stat, alpha = 1)
+
+</code></pre>
+
+
+</div>

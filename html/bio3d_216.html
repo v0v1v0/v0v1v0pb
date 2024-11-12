@@ -1,0 +1,233 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>read.mol2</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2> Read MOL2 File </h2>
+
+<h3>Description</h3>
+
+<p>Read a Tripos MOL2 file
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">read.mol2(file, maxlines = -1L)
+
+## S3 method for class 'mol2'
+print(x, ...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>file</code></td>
+<td>
+<p> a single element character vector containing the name of
+the MOL2 file to be read. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>maxlines</code></td>
+<td>
+<p> the maximum number of lines to read before giving up
+with large files. Default is all lines. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p> an object as obtained from <code>read.mol2</code>. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p> additional arguments to ‘print’. </p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>Basic functionality to parse a MOL2 file. The current version reads
+and stores ‘@&lt;TRIPOS&gt;MOLECULE’, ‘@&lt;TRIPOS&gt;ATOM’,
+‘@&lt;TRIPOS&gt;BOND’ and ‘@&lt;TRIPOS&gt;SUBSTRUCTURE’ records. 
+</p>
+<p>In the case of a multi-molecule MOL2 file, each molecule will be stored
+as an individual ‘mol2’ object in a list. Conversely, if the multi-molecule
+MOL2 file contains identical molecules in different conformations
+(typically from a docking run), then the output will be one object
+with an <code>atom</code> and <code>xyz</code> component (xyz in
+matrix representation; row-wise coordinates).
+</p>
+<p>See examples for further details.
+</p>
+
+
+<h3>Value</h3>
+
+<p>Returns a list of molecules containing the following components:
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>atom</code></td>
+<td>
+<p> a data frame containing all atomic coordinate ATOM data, 
+with a row per ATOM and a column per record type.  See below for details
+of the record type naming convention (useful for accessing
+columns). </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>bond</code></td>
+<td>
+<p> a data frame containing all atomic bond information. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>substructure</code></td>
+<td>
+<p> a data frame containing all substructure information. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>xyz</code></td>
+<td>
+<p> a numeric matrix of ATOM coordinate data. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>info</code></td>
+<td>
+<p> a numeric vector of MOL2 info data. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>name</code></td>
+<td>
+<p> a single element character vector containing the molecule name. </p>
+</td>
+</tr>
+</table>
+<h3>Note</h3>
+
+ 
+<p>For <code>atom</code> list components the column names can be
+used as a convenient means of data access, namely:
+Atom serial number “eleno”,
+Atom name “elena”,
+Orthogonal coordinates “x”,
+Orthogonal coordinates “y”,
+Orthogonal coordinates “z”,
+Reisude number “resno”,
+Atom type “elety”,
+Residue name “resid”,
+Atom charge “charge”,
+Status bit “statbit”,
+</p>
+<p>For <code>bond</code> list components the column names are:
+Bond identifier “id”,
+number of the atom at one end of the bond“origin”,
+number of the atom at the other end of the bond “target”,
+the SYBYL bond type “type”.
+</p>
+<p>For <code>substructure</code> list components the column names are:
+substructure identifier “id”,
+substructure name “name”,
+the ID number of the substructure's root atom “root_atom”,
+the substructure type “subst_type”,
+the type of dictionary associated with the substructure “dict_type”,
+the chain to which the substructre belongs “chain”,
+the subtype of the chain “sub_type”,
+the number of inter bonds “inter_bonds”,
+status bit “status”. 
+</p>
+<p>See examples for further details.
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p> Lars Skjaerven </p>
+
+
+<h3>References</h3>
+
+<p>Grant, B.J. et al. (2006) <em>Bioinformatics</em> <b>22</b>, 2695–2696.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>write.mol2</code>, <code>atom.select.mol2</code>, 
+<code>trim.mol2</code>, <code>as.pdb.mol2</code>
+<code>read.pdb</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">cat("\n")
+## Not run: 
+## Read a single entry MOL2 file
+## (returns a single object)
+mol &lt;- read.mol2( system.file("examples/aspirin.mol2", package="bio3d") )
+
+## Short summary of the molecule
+print(mol)
+
+## ATOM records
+mol$atom
+
+## BOND records
+mol$bond
+
+## Print some coordinate data
+head(mol$atom[, c("x","y","z")])
+
+## Or coordinates as a numeric vector
+#head(mol$xyz)
+
+## Print atom charges
+head(mol$atom[, "charge"])
+
+## Convert to PDB
+pdb &lt;- as.pdb(mol)
+
+
+## Read a multi-molecule MOL2 file
+## (returns a list of objects)
+#multi.mol &lt;- read.mol2("zinc.mol2")
+
+## Number of molecules described in file
+#length(multi.mol)
+
+## Access ATOM records for the first molecule
+#multi.mol[[1]]$atom
+
+## Or coordinates for the second molecule
+#multi.mol[[2]]$xyz
+
+
+
+## Process output from docking (e.g. DOCK)
+## (typically one molecule with many conformations)
+## (returns one object, but xyz in matrix format)
+#dock &lt;- read.mol2("dock.mol2")
+
+## Reference PDB file (e.g. X-ray structure)
+#pdb &lt;- read.pdb("dock_ref.pdb")
+
+## Calculate RMSD of docking modes
+#sele &lt;- atom.select(dock, "noh")
+#rmsd(pdb$xyz, dock$xyz, b.inds=sele$xyz)
+
+## End(Not run)
+</code></pre>
+
+
+</div>

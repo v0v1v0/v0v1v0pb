@@ -1,0 +1,404 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>bamlss</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>
+Fit Bayesian Additive Models for Location Scale and Shape (and Beyond)
+</h2>
+
+<h3>Description</h3>
+
+<p>This is the main model fitting function of the package. Function <code>bamlss()</code>
+is a wrapper function that parses the <code>data</code> and the model <code>formula</code>, or
+extended <code>bamlss.formula</code>, as well as the <code>bamlss.family</code>
+into a <code>bamlss.frame</code>. The <code>bamlss.frame</code> then holds all model
+matrices and information that is needed for setting up estimation engines.
+The model matrices are based on <span class="pkg">mgcv</span> infrastructures, i.e.,
+smooth terms are constructed using <code>smooth.construct</code> and
+<code>smoothCon</code>. Therefore, all <span class="pkg">mgcv</span> model term constructors like
+<code>s</code>, <code>te</code>, <code>t2</code> and <code>ti</code>
+can be used. Identifiability conditions are imposed using function <code>gam.side</code>.
+</p>
+<p>After the <code>bamlss.frame</code> is set up function <code>bamlss()</code> applies optimizer
+and/or sampling functions. These functions can also be provided by the user. See the details
+below on how to create new engines to be used with function <code>bamlss()</code>.
+</p>
+<p>Finally, the estimated parameters and/or samples are used to create model output results like
+summary statistics or effect plots. The computation of results may also be controlled by the user.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">bamlss(formula, family = "gaussian", data = NULL,
+  start = NULL, knots = NULL, weights = NULL,
+  subset = NULL, offset = NULL, na.action = na.omit,
+  contrasts = NULL, reference = NULL, transform = NULL,
+  optimizer = NULL, sampler = NULL, samplestats = NULL,
+  results = NULL, cores = NULL, sleep = NULL,
+  combine = TRUE, model = TRUE, x = TRUE,
+  light = FALSE, ...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>formula</code></td>
+<td>
+<p>A formula or extended formula, i.e., the <code>formula</code> can be a
+<code>list</code> of formulas where each list entry specifies the details of one parameter
+of the modeled response distribution, see <code>bamlss.formula</code>. For incorporating
+smooth terms, all model term constructors implemented in <span class="pkg">mgcv</span> such as
+<code>s</code>, <code>te</code> and <code>ti</code> can be used, amongst others.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>family</code></td>
+<td>
+<p>A <code>bamlss.family</code> object, specifying the details of the modeled
+distribution such as the parameter names, the density function, link functions, etc.
+Can be a character without the <code>"_bamlss"</code> extension of the
+<code>bamlss.family</code> name.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+<p>A <code>data.frame</code> or <code>list</code> containing the model
+response variable(s) and covariates specified in the <code>formula</code>.
+By default the variables are taken from <code>environment(formula)</code>:
+typically the environment from which <code>bamlss</code> is called.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>start</code></td>
+<td>
+<p>A named numeric vector containing starting values to be send to the <code>optimizer</code>
+and/or <code>sampler</code> function. For a possible naming convention for the parameters see
+function <code>parameters</code>, but this is not restrictive and engine specific.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>knots</code></td>
+<td>
+<p>An optional list containing user specified knots, see the documentation of
+function <code>gam</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>weights</code></td>
+<td>
+<p>Prior weights on the data.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>subset</code></td>
+<td>
+<p>An optional vector specifying a subset of observations to be
+used in the fitting process.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>offset</code></td>
+<td>
+<p>Can be used to supply model offsets for use in fitting.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>na.action</code></td>
+<td>
+<p>A function which indicates what should happen when the data
+contain <code>NA</code>'s. The default is set by the <code>na.action</code>
+setting of <code>options</code>, and is <code>na.omit</code> if set to <code>NULL</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>contrasts</code></td>
+<td>
+<p>An optional list. See the <code>contrasts.arg</code> of 
+<code>model.matrix.default</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>reference</code></td>
+<td>
+<p>A <code>character</code> specifying a reference category, e.g., when
+fitting a multinomial model.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>transform</code></td>
+<td>
+<p>A transformer function that is applied on the <code>bamlss.frame</code>.
+See, e.g., function <code>randomize</code> and <code>bamlss.engine.setup</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>optimizer</code></td>
+<td>
+<p>An optimizer function that returns, e.g., posterior mode estimates
+of the parameters as a named numeric vector. The default optimizer function is
+<code>opt_bfit</code>. If set to <code>FALSE</code>, no optimizer function will be used.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>sampler</code></td>
+<td>
+<p>A sampler function that returns a matrix of samples, the columns represent the
+parameters, the rows the iterations. The returned matrix must be coerced to an object of
+class <code>"mcmc"</code>, see <code>as.mcmc</code>. The default sampler function is
+<code>sam_GMCMC</code>. If set to <code>FALSE</code>, no sampler function will be used.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>samplestats</code></td>
+<td>
+<p>A function computing statistics from samples, per default function
+<code>samplestats</code> is used. If set to <code>FALSE</code>, no <code>samplestats</code> function
+will be used. Note that this option is crucial for very large datasets, as computing
+statistics from samples this way may be very time consuming!</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>results</code></td>
+<td>
+<p>A function computing results from the parameters and/or samples, e.g., for
+creating effect plots, see function <code>link{results.bamlss.default}</code>. If set <code>FALSE</code>
+no <code>results</code> function will be used.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>cores</code></td>
+<td>
+<p>An integer specifying the number of cores that should be used for the sampler
+function. This is based on function <code>mclapply</code> of the <span class="pkg">parallel</span>
+package.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>sleep</code></td>
+<td>
+<p>Time the system should sleep before the next core is started.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>combine</code></td>
+<td>
+<p>If samples are computed on multiple cores, should the samples be combined into
+one <code>mcmc</code> matrix?</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>model</code></td>
+<td>
+<p>If set to <code>FALSE</code> the model frame used for modeling is not part of the
+return value.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>If set to <code>FALSE</code> the model matrices are not part of the return value.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>light</code></td>
+<td>
+<p>Should the returned object be lighter, i.e., if <code>light = TRUE</code> the returned
+object will not contain the model.frame and design and penalty matrices are deleted.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Arguments passed to the <code>transformer</code>, <code>optimizer</code>, <code>sampler</code>,
+<code>results</code> and <code>samplestats</code> function.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The main idea of this function is to provide infrastructures that make it relatively easy
+to create estimation engines for new problems, or write interfaces to existing software
+packages.
+</p>
+<p>The steps that are performed within the function are:
+</p>
+
+<ul>
+<li>
+<p> First, the function parses the <code>data</code>, the <code>formula</code> or the extended
+<code>bamlss.formula</code> as well as the <code>bamlss.family</code> into a model frame
+like object, the <code>bamlss.frame</code>. This object holds all necessary model matrices
+and information that is needed for subsequent model fitting engines. Per default,
+all package <span class="pkg">mgcv</span> smooth term constructor functions like
+<code>s</code>, <code>te</code>, <code>t2</code> and
+<code>ti</code> can be used (see also function <code>smooth.construct</code>),
+however, even special user defined constructors can be included, see the manual of
+<code>bamlss.frame</code>.
+</p>
+</li>
+<li>
+<p> In a second step, the <code>bamlss.frame</code> can be transformed, e.g., if a mixed
+model representation of smooth terms is needed, see function <code>randomize</code>.
+</p>
+</li>
+<li>
+<p> Then an optimizer function is started, e.g., a function that finds posterior mode estimates
+of the parameters. A convention for model fitting engines is that such functions should have
+the following arguments:
+</p>
+<p><code>optimizer(x, y, family, start, weights, offset, ...)</code>
+</p>
+<p>Internally, function <code>bamlss()</code> will send the <code>x</code> object that holds all
+model matrices, the response <code>y</code> object, the <code>family</code> object, <code>start</code>ing
+values for the parameters, possible <code>weights</code> and <code>offset</code>s of the created
+<code>bamlss.frame</code> to the
+optimizer function (see the manual of <code>bamlss.frame</code> for more details on the
+<code>x</code>, <code>y</code> and other objects). The job of the optimizer is to return a named numeric
+vector of optimum parameters. The names of the parameters should be such that they can be
+uniquely mapped to the corresponding model matrices in <code>x</code>. See function
+<code>parameters</code> for more details on parameter names. The default optimizer function
+is <code>opt_bfit</code>. The optimizer can return more information than only the optimum
+parameters. It is possible to return a list, the convention here is that an element named
+<code>"parameters"</code> then holds the named vector of estimated parameters. Possible other return
+values could be fitted values, the Hessian matrix, information criteria or information
+about convergence of the algorithm, etc. Note that the parameters are simply added to the
+<code>bamlss.frame</code> in an (list) entry named <code>parameters</code>.
+</p>
+</li>
+<li>
+<p> After the optimization step, a <code>sampler</code> function is started. The arguments of such
+sampler functions are the same as for the <code>optimizer</code> functions
+</p>
+<p><code>sampler(x, y, family, start, weights, offset, ...)</code>
+</p>
+<p>Sampler functions must return a matrix of samples, each row represents one iteration and the matrix
+can be coerced to <code>mcmc</code> objects. The function may return a list of samples,
+e.g., if multiple chains are returned each list entry then holds one sample matrix of
+one chain. The column names of the sample matrix should be the same as the names of estimated
+parameters. For a possible naming convention see function <code>parameters</code>, which
+ensures unique mapping of samples with the model matrices in the <code>x</code> object of the
+<code>bamlss.frame</code>. The samples are added to the <code>bamlss.frame</code>
+in an (list) entry named <code>samples</code>.
+</p>
+</li>
+<li>
+<p> Next, the <code>samplestats</code> function is applied. This function can compute any quantity
+from the samples and the <code>x</code> object, the arguments of such functions are
+</p>
+<p><code>samplestats(samples, x, y, family, ...)</code>
+</p>
+<p>where argument <code>samples</code> are the samples returned from the <code>sampler</code> function,
+and <code>x</code>, <code>y</code> and <code>family</code> are the same objects as passed to the optimizer
+and or sampler functions. For example, the default function in <code>bamlss()</code> for this task
+is also called <code>samplestats</code> and returns the mean of the log-likelihood and the
+log-posterior computed of all samples, as well as the DIC.
+</p>
+</li>
+<li>
+<p> The last step is to compute more complex information about the model using the
+<code>results</code> function. The arguments of such <code>results</code> functions are
+</p>
+<p><code>results(bamlss.frame, ...)</code>
+</p>
+<p>here, the full <code>bamlss.frame</code> including possible <code>parameters</code> and
+<code>samples</code> is passed to the function within <code>bamlss()</code>. The default function
+for this task is <code>results.bamlss.default</code> which returns an object of class
+<code>"bamlss.results"</code> for which generic plotting functions are and a <code>summary</code>
+function is provided. Hence, the user can control the output of the model, the plotting
+and summary statistics, too.
+</p>
+</li>
+</ul>
+<p>Note that function <code>transform()</code>, <code>optimizer()</code>, <code>sampler()</code>, <code>samplestats()</code>
+and <code>results()</code> can be provided from the <code>bamlss.family</code> object, e.g.,
+if a <code>bamlss.family</code> object has an element named <code>"optimizer"</code>, which
+represents a valid optimizer function such as <code>opt_bfit</code>, exactly this optimizer
+function will be used as a default when using the family.
+</p>
+
+
+<h3>Value</h3>
+
+<p>An object of class <code>"bamlss"</code>. The object is in principle only a slight extension
+of a <code>bamlss.frame</code>, i.e., if an <code>optimizer</code> is applied it will hold the
+estimated parameters in an additional element named <code>"parameters"</code>. If a sampler function
+is applied it will additionally hold the samples in an element named <code>"samples"</code>.
+The same mechanism is used for <code>results</code> function.
+</p>
+<p>If the <code>optimizer</code> function computes additional output next to the parameters, this will
+be saved in an element named <code>"model.stats"</code>. If a <code>samplestats</code> function is applied,
+the output will also be saved in the <code>"model.stats"</code> element.
+</p>
+<p>Additionally, all functions that are called are saved as attribute <code>"functions"</code> in the
+returned object.
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Nikolaus Umlauf, Nadja Klein, Achim Zeileis.
+</p>
+
+
+<h3>References</h3>
+
+<p>Umlauf N, Klein N, Zeileis A (2019). BAMLSS: Bayesian Additive Models for Location,
+Scale and Shape (and Beyond). <em>Journal of Computational and Graphical Statistics</em>, <b>27</b>(3), 612–627.
+<a href="https://doi.org/10.1080/10618600.2017.1407325">doi:10.1080/10618600.2017.1407325</a>
+</p>
+<p>Umlauf N, Klein N, Simon T, Zeileis A (2021).
+bamlss: A Lego Toolbox for Flexible Bayesian Regression (and Beyond).
+<em>Journal of Statistical Software</em>,
+<b>100</b>(4), 1–53. <a href="https://doi.org/10.18637/jss.v100.i04">doi:10.18637/jss.v100.i04</a>
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>bamlss.frame</code>, <code>family.bamlss</code>, <code>bamlss.formula</code>,
+<code>randomize</code>, <code>bamlss.engine.setup</code>,
+<code>opt_bfit</code>, <code>sam_GMCMC</code>, <code>continue</code>,
+<code>coef.bamlss</code>, <code>parameters</code>, <code>predict.bamlss</code>,
+<code>plot.bamlss</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## Not run: ## Simulated data example.
+d &lt;- GAMart()
+f &lt;- num ~ s(x1) + s(x2) + s(x3) + te(lon, lat)
+b &lt;- bamlss(f, data = d)
+summary(b)
+plot(b)
+plot(b, which = 3:4)
+plot(b, which = "samples")
+
+## Use of optimizer and sampler functions:
+## * first run optimizer,
+b1 &lt;- bamlss(f, data = d, optimizer = opt_bfit, sampler = FALSE)
+print(b1)
+summary(b1)
+
+## * afterwards, start sampler with staring values,
+b2 &lt;- bamlss(f, data = d, start = coef(b1), optimizer = FALSE, sampler = sam_GMCMC)
+print(b2)
+summary(b2)
+
+## Continue sampling.
+b3 &lt;- continue(b2, n.iter = 12000, burnin = 0, thin = 10)
+plot(b3, which = "samples")
+plot(b3, which = "max-acf")
+plot(b3, which = "max-acf", burnin = 500, thin = 4)
+
+## End(Not run)
+</code></pre>
+
+
+</div>

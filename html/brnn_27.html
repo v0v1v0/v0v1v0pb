@@ -1,0 +1,333 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>brnn_ordinal</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>brnn_ordinal</h2>
+
+<h3>Description</h3>
+
+<p>The brnn_ordinal function fits a Bayesian Regularized Neural Network for Ordinal data.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">
+  brnn_ordinal(x, ...)
+  
+  ## S3 method for class 'formula'
+brnn_ordinal(formula, data, contrasts=NULL,...)
+  
+  ## Default S3 method:
+brnn_ordinal(x,
+               y,
+               neurons=2,
+               normalize=TRUE,
+               epochs=1000,
+               mu=0.005,
+               mu_dec=0.1,
+               mu_inc=10,
+               mu_max=1e10,
+               min_grad=1e-10,
+               change_F=0.01,
+               change_par=0.01,
+               iter_EM=1000,
+               verbose=FALSE,
+               ...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>formula</code></td>
+<td>
+<p>A formula of the form <code>y ~ x1 + x2 + ...</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+<p>Data frame from which variables specified in  <code>formula</code> are preferentially to be taken.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>(numeric, <code class="reqn">n \times p</code>) incidence matrix.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>y</code></td>
+<td>
+<p>(numeric, <code class="reqn">n</code>) the response data-vector (NAs not  allowed).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>neurons</code></td>
+<td>
+<p>positive integer that indicates the number of neurons.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>normalize</code></td>
+<td>
+<p>logical, if TRUE will normalize inputs and output, the default value is TRUE.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>epochs</code></td>
+<td>
+<p>positive integer, maximum number of epochs(iterations) to train, default 1000.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>mu</code></td>
+<td>
+<p>positive number that controls the behaviour of the Gauss-Newton optimization algorithm, default value 0.005.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>mu_dec</code></td>
+<td>
+<p>positive number, is the mu decrease ratio, default value 0.1.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>mu_inc</code></td>
+<td>
+<p>positive number, is the mu increase ratio, default value 10.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>mu_max</code></td>
+<td>
+<p>maximum mu before training is stopped, strict positive number, default value <code class="reqn">1\times 10^{10}</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>min_grad</code></td>
+<td>
+<p>minimum gradient.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>change_F</code></td>
+<td>
+<p>the program  will stop if the maximum (in absolute value) of the differences of the F function in 3 consecutive iterations is less than this quantity.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>change_par</code></td>
+<td>
+<p>the program will stop iterations of the EM algorithm when the maximum of absolute values of differences between parameters in two consecutive iterations ins less than this quantity.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>iter_EM</code></td>
+<td>
+<p>positive integer, maximum number of iteration for the EM algorithm.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>verbose</code></td>
+<td>
+<p>logical, if TRUE will print iteration history.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>contrasts</code></td>
+<td>
+<p>an optional list of contrasts to be used for some or all of the factors appearing as variables in the model formula.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>arguments passed to or from other methods.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The software fits a Bayesian Regularized Neural Network for Ordinal data. The model is an 
+extension of the two layer network as described in MacKay (1992); Foresee and Hagan (1997), and
+Gianola et al. (2011). We use the latent variable approach described in Albert and Chib (1993)
+to model ordinal data, the Expectation maximization (EM) and Levenberg-Marquardt 
+algorithm (Levenberg, 1944; Marquardt, 1963) to fit the model. 
+</p>
+<p>Following Albert and Chib (1993), suppose that <code class="reqn">Y_1,...,Y_n</code> are
+observed and <code class="reqn">Y_i</code> can take values on <code class="reqn">L</code> ordered values. We are interested
+in modelling the probability <code class="reqn">p_{ij}=P(Y_i=j)</code> using the covariates 
+<code class="reqn">x_{i1},...,x_{ip}</code>. Let 
+</p>
+<p><code class="reqn">g(\boldsymbol{x}_i)= \sum_{k=1}^s w_k g_k (b_k + \sum_{j=1}^p x_{ij} \beta_j^{[k]})</code>, 
+</p>
+<p>where: 
+</p>
+
+<ul>
+<li>
+<p><code class="reqn">s</code> is the number of neurons.
+</p>
+</li>
+<li>
+<p><code class="reqn">w_k</code> is the weight of the <code class="reqn">k</code>-th neuron, <code class="reqn">k=1,...,s</code>.
+</p>
+</li>
+<li>
+<p><code class="reqn">b_k</code> is a bias for the <code class="reqn">k</code>-th neuron, <code class="reqn">k=1,...,s</code>.
+</p>
+</li>
+<li>
+<p><code class="reqn">\beta_j^{[k]}</code> is the weight of the <code class="reqn">j</code>-th input to the net, <code class="reqn">j=1,...,p</code>.
+</p>
+</li>
+<li>
+<p><code class="reqn">g_k(\cdot)</code> is the activation function, in this implementation <code class="reqn">g_k(x)=\frac{\exp(2x)-1}{\exp(2x)+1}</code>.
+</p>
+</li>
+</ul>
+<p>Let 
+</p>
+<p><code class="reqn">Z_i=g(\boldsymbol{x}_i)+e_i</code>,
+</p>
+<p>where:  
+</p>
+
+<ul>
+<li> <p><code class="reqn">e_i \sim N(0,1)</code>.
+</p>
+</li>
+<li> <p><code class="reqn">Z_i</code> is an unobserved (latent variable).
+</p>
+</li>
+</ul>
+<p>The output from the model for latent variable is related to 
+observed data using the approach employed in the probit 
+and logit ordered models, that is <code class="reqn">Y_i=j</code> if 
+<code class="reqn">\lambda_{j-1}&lt;Z_i&lt;\lambda_{j}</code>, where <code class="reqn">\lambda_j</code>
+are a set of unknown thresholds. We assign prior distributions 
+to all unknown quantities (see Albert and Chib, 1993; Gianola et al., 2011) 
+for further details. The Expectation maximization (EM) and Levenberg-Marquardt 
+algorithm (Levenberg, 1944; Marquardt, 1963) to fit the model.
+</p>
+
+
+<h3>Value</h3>
+
+<p>object of class <code>"brnn_ordinal"</code>. Mostly internal structure, but it is a list containing:
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>$theta</code></td>
+<td>
+<p>A list containing weights and biases. The first <code class="reqn">s</code> components of the list contains vectors with the estimated parameters for
+the <code class="reqn">k</code>-th neuron, i.e. <code class="reqn">(w_k, b_k, \beta_1^{[k]},...,\beta_p^{[k]})'</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>$threshold</code></td>
+<td>
+<p>A vector with estimates of thresholds.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>$alpha</code></td>
+<td>
+<p><code class="reqn">\alpha</code> parameter.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>$gamma</code></td>
+<td>
+<p>effective number of parameters.</p>
+</td>
+</tr>
+</table>
+<h3>References</h3>
+
+<p>Albert J, and S. Chib. 1993. Bayesian Analysis of Binary and Polychotomus Response Data. <em>JASA</em>, <b>88</b>, 669-679.
+</p>
+<p>Foresee, F. D., and M. T. Hagan. 1997. "Gauss-Newton approximation to Bayesian regularization", 
+<em>Proceedings of the 1997 International Joint Conference on Neural Networks</em>.
+</p>
+<p>Gianola, D. Okut, H., Weigel, K. and Rosa, G. 2011. "Predicting complex quantitative traits with Bayesian neural networks: a case study with Jersey cows and wheat". <em>BMC Genetics</em>, 
+<b>12</b>,87.
+</p>
+<p>Levenberg, K. 1944. "A method for the solution of certain problems in least squares", <em>Quart. Applied Math.</em>, <b>2</b>, 164-168. 
+</p>
+<p>MacKay, D. J. C. 1992. "Bayesian interpolation", <em>Neural Computation</em>, <b>4(3)</b>, 415-447.
+</p>
+<p>Marquardt, D. W. 1963. "An algorithm for least-squares estimation of non-linear parameters". <em>SIAM Journal on Applied Mathematics</em>, <b>11(2)</b>, 431-441. 
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>predict.brnn_ordinal</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+## Not run: 
+#Load the library
+library(brnn)
+
+#Load the dataset
+data(GLS)
+
+#Subset of data for location Harare
+HarareOrd=subset(phenoOrd,Loc=="Harare")
+
+#Eigen value decomposition for GOrdm keep those 
+#eigen vectors whose corresponding eigen-vectors are bigger than 1e-10
+#and then compute principal components
+
+evd=eigen(GOrd)
+evd$vectors=evd$vectors[,evd$value&gt;1e-10]
+evd$values=evd$values[evd$values&gt;1e-10]
+PC=evd$vectors
+rownames(PC)=rownames(GOrd)
+
+#Response variable
+y=phenoOrd$rating
+gid=as.character(phenoOrd$Stock)
+
+Z=model.matrix(~gid-1)
+colnames(Z)=gsub("gid","",colnames(Z))
+
+if(any(colnames(Z)!=rownames(PC))) stop("Ordering problem\n")
+
+#Matrix of predictors for Neural net
+X=Z%*%PC
+
+#Cross-validation
+set.seed(1)
+testing=sample(1:length(y),size=as.integer(0.10*length(y)),replace=FALSE)
+isNa=(1:length(y)%in%testing)
+yTrain=y[!isNa]
+XTrain=X[!isNa,]
+nTest=sum(isNa)
+
+neurons=2
+	
+fmOrd=brnn_ordinal(XTrain,yTrain,neurons=neurons,verbose=FALSE)
+
+#Predictions for testing set
+XTest=X[isNa,]
+predictions=predict(fmOrd,XTest)
+predictions
+
+
+
+## End(Not run)
+</code></pre>
+
+
+</div>

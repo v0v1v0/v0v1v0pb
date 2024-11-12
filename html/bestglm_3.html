@@ -1,0 +1,364 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>bestglm</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Best Subset GLM using Information Criterion or Cross-Validation </h2>
+
+<h3>Description</h3>
+
+<p>Best subset selection using 'leaps' algorithm  (Furnival and Wilson, 1974)
+or complete enumeration (Morgan and Tatar, 1972).
+Complete enumeration is used for the non-Gaussian and for the
+case where the input matrix contains factor variables with more than 2 levels.
+The best fit may be found using
+the information criterion IC: AIC, BIC, EBIC, or BICq.
+Alternatively, with IC=‘CV’ various types of cross-validation may be used.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">bestglm(Xy, family = gaussian, IC = "BIC", t = "default", 
+ CVArgs = "default", qLevel = 0.99, TopModels = 5, 
+ method = "exhaustive", intercept = TRUE, weights = NULL, 
+ nvmax = "default", RequireFullEnumerationQ = FALSE, ...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>Xy</code></td>
+<td>
+<p> Dataframe containing the design matrix X and the output variable y. All columns must be named.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>family</code></td>
+<td>
+<p>One of the glm distribution functions. The glm function is not used
+in the Gaussian case. Instead for efficiency either 'leaps' is used or when factor
+variables are present with more than 2 levels, 'lm' may be used. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>IC</code></td>
+<td>
+<p> Information criteria to use: "AIC", "BIC", "BICg", "BICq", "LOOCV", "CV".</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>t</code></td>
+<td>
+<p> adjustable parameter for BICg, BICq or CV. For BICg, default is g=t=1. 
+For BICq, default is q=t=0.25.  For CV, default the delete-d method with d=ceil(n(1-1/(log n - 1)))
+and REP=t=1000. The default value of the parameter may be changed by changing t.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>CVArgs</code></td>
+<td>
+<p> Used when IC is set to 'CV'.  The default is use the delete-d algorithm
+with d=ceil(n(1-1/(log n - 1))) and t=100 repetitions. Note that the number of repetitions
+can be changed using t. 
+More generally, CVArgs is a list with
+3 named components: Method, K, REP, where Method is one of \"HTF\", \"DH\", \"d\" 
+corresponding to using the functions CVHTM (Hastie et al., 2009, K-fold CV), CVDH (adjusted K-fold
+CV, Davison and Hartigan, 1997) and CVd (delete-d CV with random subsamples, Shao, 1997).
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>qLevel</code></td>
+<td>
+<p> the alpha level for determining interval for best q. Larger alpha's result in larger intervals. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>TopModels</code></td>
+<td>
+<p>Finds the best <code>TopModels</code> models.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>method</code></td>
+<td>
+<p> Method used in leaps algorithm for searching for the best subset.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>intercept</code></td>
+<td>
+<p>Default TRUE means the intercept term is always included. 
+If set to FALSE, no intercept term is included.
+If you want only include the intercept term when it is signficant then set IncludeInterceptQ=FALSE and include
+a column of 1's in the design matrix.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>weights</code></td>
+<td>
+<p>weights </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nvmax</code></td>
+<td>
+<p> maximum number of independent variables allowed. By default, all variables</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>RequireFullEnumerationQ</code></td>
+<td>
+<p>Use exhaustive search algorithm instead of 'leaps'</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Optional arguments which are passed to <code>lm</code> or <code>glm</code></p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>In the Gaussian case, 
+the loglikelihood may be written <code class="reqn">logL = -(n/2) log (RSS/n)</code>,
+where RSS is the residual sum-of-squares and n is the number of observations.
+When the function 'glm' is used, the log-likelihood, logL, is obtained using 'logLik'.
+The penalty for EBIC and BICq depends on the tuning parameter argument, <code>t</code>.
+The argument <code>t</code> also controls the number of replications used when
+the delete-d CV is used as default. In this case, the parameter d is chosen
+using the formula recommended by Shao (1997).
+See   <code>CVd</code> for more details.
+</p>
+<p>In the binomial GLM, nonlogistic, case the last two columns of Xy
+are the counts of 'success' and 'failures'.
+</p>
+<p>Cross-validation may also be used to select the best subset.
+When cross-validation is used, the best models of size k according to the
+log-likelihood	are compared for k=0,1,...,p, where p is the number of inputs.
+Cross-validation is not available when there are categorical variables since
+in this case it is likely that the training sample may not contain all levels
+and in this case we can't predict the response in the validation sample.
+In the case of GLM, the \"DH\" method for CV is not available. 
+</p>
+<p>Usually it is a good idea to keep the intercept term even if it is not
+significant. See discussion in vignette.
+</p>
+<p>Cross-validation is not available for models with no intercept term or
+when <code>force.in</code> is non-null or when <code>nvmax</code> is set
+to less than the full number of independent variables.
+</p>
+<p>Please see the package vignette for more details and examples.
+</p>
+
+
+<h3>Value</h3>
+
+<p>A list with class attribute 'bestglm' and named components:
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>BestModel </code></td>
+<td>
+<p>An lm-object representing the best fitted regression.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Title</code></td>
+<td>
+<p>A brief title describing the algorithm used: CV(K=K), CVadj(K=K), CVd(d=K).
+The range of q for an equivalent BICq model is given.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Subsets </code></td>
+<td>
+<p>The best subsets of size, k=0,1,...,p are indicated as well the value of the
+log-likelihood and information criterion for each best subset. 
+In the case of categorical variables with more than 2 levels, the degrees of freedom
+are also shown.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>qTable</code></td>
+<td>
+<p>Table showing range of q for choosing each possible subset size. Assuming
+intercept=TRUE, k=1 corresponds to model with only an intercept term and k=p+1,
+where p is the number of input variables, corresponds to including all variables.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Bestq</code></td>
+<td>
+<p>Optimal q</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ModelReport</code></td>
+<td>
+<p>A list with components: NullModel, LEAPSQ, glmQ, gaussianQ, NumDF, CategoricalQ, Bestk. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>BestModels</code></td>
+<td>
+<p>Variables in the <code>TopModels</code> best list</p>
+</td>
+</tr>
+</table>
+<p>Methods function 'print.bestglm' and 'summary.bestglm' are provided.
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p> C. Xu and A.I. McLeod</p>
+
+
+<h3>References</h3>
+
+ 
+<p>Xu, C. and McLeod, A.I. (2009).
+Bayesian Information Criterion with Bernouilli Prior.
+</p>
+<p>Chen, J. and Chen, Z. (2008). Extended Bayesian 
+Information Criteria for Model Selection with Large Model Space. Biometrika 2008 95: 759-771.
+</p>
+<p>Furnival, G.M. and Wilson, R. W. (1974).  
+Regressions by Leaps and Bounds.  Technometrics, 16, 499–511.
+</p>
+<p>Morgan, J. A.  and  Tatar, J. F. (1972). 
+Calculation of the Residual Sum of Squares for All Possible Regressions. 
+Technometrics 14, 317-325.
+</p>
+<p>Miller, A. J. (2002), 
+Subset Selection in Regression, 2nd Ed. London, Chapman and Hall.
+</p>
+<p>Shao, Jun (1997). An Asymptotic Theory for Linear Model Selection.  Statistica Sinica 7, 221-264.
+</p>
+
+
+<h3>See Also</h3>
+
+ 
+<p><code>glm</code>,
+<code>lm</code>,
+<code>leaps</code>
+<code>CVHTF</code>,
+<code>CVDH</code>,
+<code>CVd</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">#Example 1. 
+#White noise test.
+set.seed(123321123)
+p&lt;-25   #number of inputs
+n&lt;-100  #number of observations
+X&lt;-matrix(rnorm(n*p), ncol=p)
+y&lt;-rnorm(n)
+Xy&lt;-as.data.frame(cbind(X,y))
+names(Xy)&lt;-c(paste("X",1:p,sep=""),"y")
+bestAIC &lt;- bestglm(Xy, IC="AIC")
+bestBIC &lt;- bestglm(Xy, IC="BIC")
+bestEBIC &lt;- bestglm(Xy, IC="BICg")
+bestBICq &lt;- bestglm(Xy, IC="BICq")
+NAIC &lt;- length(coef(bestAIC$BestModel))-1
+NBIC &lt;- length(coef(bestBIC$BestModel))-1
+NEBIC &lt;- length(coef(bestEBIC$BestModel))-1
+NBICq &lt;- length(coef(bestBICq$BestModel))-1
+ans&lt;-c(NAIC, NBIC, NEBIC, NBICq)
+names(ans)&lt;-c("AIC", "BIC", "BICg", "BICq")
+ans
+# AIC  BIC EBIC BICq 
+#   3    1    0    0 
+
+#Example 2. bestglm with BICq
+#Find best model. Default is BICq with q=0.25
+data(znuclear) #standardized data. 
+#Rest of examples assume this dataset is loaded.
+out&lt;-bestglm(znuclear, IC="BICq")
+out
+#The optimal range for q
+out$Bestq
+#The possible models that can be chosen
+out$qTable
+#The best models for each subset size
+out$Subsets
+#The overall best models
+out$BestModels
+#
+#Example 3. Normal probability plot, residuals, best model
+ans&lt;-bestglm(znuclear, IC="BICq")
+e&lt;-resid(ans$BestModel)
+qqnorm(e, ylab="residuals, best model")
+#
+#To save time, none of the remaining examples are run
+## Not run: 
+#Example 4. bestglm, using EBIC, g=1
+bestglm(znuclear, IC="BICg")
+#EBIC with g=0.5
+bestglm(znuclear, IC="BICg", t=0.5)
+#
+#Example 5. bestglm, CV
+data(zprostate)
+train&lt;-(zprostate[zprostate[,10],])[,-10]
+#the default CV method takes too long, set t=10 to do only
+# 10 replications instead of the recommended 1000
+bestglm(train, IC="CV", t=10)
+bestglm(train, IC="CV", CVArgs=list(Method="HTF", K=10, REP=1))
+#Compare with DH Algorithm. Normally set REP=100 is recommended.
+bestglm(train, IC="CV", CVArgs=list(Method="DH", K=10, REP=1))
+#Compare LOOCV
+bestglm(train, IC="LOOCV")
+#
+#Example 6. Optimal q for manpower dataset
+data(manpower)
+out&lt;-bestglm(manpower)
+out$Bestq
+#
+#Example 7. Factors with more than 2 levels
+data(AirQuality)
+bestglm(AirQuality)
+#
+#Example 8. Logistic regression
+data(SAheart)
+bestglm(SAheart, IC="BIC", family=binomial)
+#BIC agrees with backward stepwise approach
+out&lt;-glm(chd~., data=SAheart, family=binomial)
+step(out, k=log(nrow(SAheart)))
+#but BICq with q=0.25
+bestglm(SAheart, IC="BICq", t=0.25, family=binomial)
+#
+#Cross-validation with glm
+#make reproducible results
+set.seed(33997711)
+#takes about 15 seconds and selects 5 variables
+bestglm(SAheart, IC="CV", family=binomial)
+#about 6 seconds and selects 2 variables
+bestglm(SAheart, IC="CV", CVArgs=list(Method="HTF", K=10, REP=1), family=binomial)
+#Will produce an error -- NA
+\dontrun{bestglm(SAheart, IC="CV", CVArgs=list(Method="DH", K=10, REP=1), family=binomial)}
+\dontrun{bestglm(SAheart, IC="LOOCV", family=binomial)}
+#
+#Example 9. Model with no intercept term
+X&lt;-matrix(rnorm(200*3), ncol=3)
+b&lt;-c(0, 1.5, 0)
+y&lt;-X%*%b + rnorm(40)
+Xy&lt;-data.frame(as.matrix.data.frame(X), y=y)
+bestglm(Xy, intercept=FALSE) 
+
+## End(Not run)
+
+</code></pre>
+
+
+</div>

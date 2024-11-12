@@ -1,0 +1,84 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>as.mcmc.list.bkmrfit.list</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Convert multi-chain bkmrfit to mcmc.list for coda MCMC diagnostics</h2>
+
+<h3>Description</h3>
+
+<p>Converts a <code>kmrfit.list</code> (from the bkmrhat package) into
+an <code>mcmc.list</code> object from the <code>coda</code> package.The
+<code>coda</code> package enables many different types of MCMC diagnostics,
+including <code>geweke.diag</code>, <code>traceplot</code> and
+<code>effectiveSize</code>. Posterior summarization is also available,
+such as <code>HPDinterval</code> and <code>summary.mcmc</code>.
+Using multiple chains is necessary for certain MCMC diagnostics, such as
+<code>gelman.diag</code>, and <code>gelman.plot</code>.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">## S3 method for class 'list.bkmrfit.list'
+as.mcmc(x, ...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>object of type kmrfit.list (from bkmrhat package)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>arguments to <code>as.mcmc.bkmrfit</code></p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>An <code>mcmc.list</code> object
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R"># following example from https://jenfb.github.io/bkmr/overview.html
+ 
+set.seed(111)
+library(coda)
+dat &lt;- bkmr::SimData(n = 50, M = 4)
+y &lt;- dat$y
+Z &lt;- dat$Z
+X &lt;- dat$X
+set.seed(111)
+
+future::plan(strategy = future::multisession, workers=2)
+# run 2 parallel Markov chains (more usually better)
+fitkm.list &lt;- kmbayes_parallel(nchains=2, y = y, Z = Z, X = X, iter = 1000,
+  verbose = FALSE, varsel = FALSE)
+mcmcobj = as.mcmc.list(fitkm.list)
+summary(mcmcobj)
+# Gelman/Rubin diagnostics won't work on certain objects,
+# like delta parameters (when using variable selection),
+# so the rstan version of this will work better (does not give errors)
+ try(gelman.diag(mcmcobj))
+# lots of functions in the coda package to use
+plot(mcmcobj)
+# both of these will also fail with delta functions (when using variable selection)
+try(gelman.plot(mcmcobj))
+try(geweke.plot(mcmcobj))
+
+closeAllConnections()
+
+</code></pre>
+
+
+</div>

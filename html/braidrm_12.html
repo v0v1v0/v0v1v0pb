@@ -1,0 +1,224 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>estimateCombinationIndices</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Combination Index</h2>
+
+<h3>Description</h3>
+
+<p>Estimates the combination index using the median effet method of Chou and
+Talalay (1984) or the more robust method of non-linear optimization.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">estimateCombinationIndices(
+  concs,
+  act,
+  level,
+  weights = NULL,
+  limits = c(NA, NA)
+)
+
+estimateCombinationIndex(dr1, dr2, drc, ratio, level, limits = c(NA, NA))
+
+estimateChouIndices(concs, act, level, range, excess = "clip")
+
+estimateChouIndex(dr1, dr2, drc, ratio, level, range, excess = "clip")
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>concs</code></td>
+<td>
+<p>A width-two array of concentrations representing all measured
+dose pairs</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>act</code></td>
+<td>
+<p>A vector of measured activity or effect values</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>level</code></td>
+<td>
+<p>A numeric vector of one or more effect levels at which to
+estimate the combination index</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>weights</code></td>
+<td>
+<p>A vector of weights (between 0 and 1) the same length as
+the data which determines the weight with which each measurement
+will impact the the sum of squared errors.  Weights will be multiplied by
+errors <em>before</em> squaring.  If <code>NULL</code> (the default) all weights will be set
+to 1. Can be a numeric vector, or the name of a column in <code>data</code> if <code>formula</code>
+is a symbolic formula</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>limits</code></td>
+<td>
+<p>The fixed values of the minimal and maximal effects of the
+drugs and the combination. By default, both values are set to <code>NA</code>; any
+value set to <code>NA</code> will fit from the data.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>dr1</code></td>
+<td>
+<p>A data frame with two columns, <code>conc</code> and <code>act</code> reflecting the
+dose response behavior of the first drug alone</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>dr2</code></td>
+<td>
+<p>A data frame with two columns, <code>conc</code> and <code>act</code> reflecting the
+dose response behavior of the second drug alone</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>drc</code></td>
+<td>
+<p>A data frame with two columns, <code>conc</code> and <code>act</code> reflecting the
+dose response behavior of a constant ratio combination; <code>conc</code> should be the
+combined concentrations of the two drugs</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ratio</code></td>
+<td>
+<p>The ratio of the two drugs in the constant ratio combination
+(dose A to dose B)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>range</code></td>
+<td>
+<p>The range of effects assumed by the median effect model; a
+two-element numeric vector containing the minimal effect and the maximal
+effect, in that order.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>excess</code></td>
+<td>
+<p>For <code>estimateChouIndices</code> and <code>estimateChouIndex</code>, what should
+be done with values outside the expected range.  If "clip" (the default),
+values will be clipped to 0.1% and 99.9% of the expected range; if "drop",
+values outside the range will be dropped</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The combination index is a peculiar method, as it does not produce values
+corresponding to each measurement (as the deviation methods do), nor does it
+produce a value shared by the entire surface (as response surface methods
+do).  It instead, produces a value associated with a particular effect level
+and a particular <em>dose ratio</em>.  This makes implementing the method
+consistently for a wide range of possible data sources quite tricky;
+nevertheless, we have attempted to do so here.  In brief, the combination
+index method involves fitting the dose response of both individual drugs and
+and a constant ratio combination of the drugs (treated as a virtual third
+drug).  It the compares the potency of the constant-ratio combination
+(estimated a particular effect level) with the expected potency according to
+Loewe additivity, and returns the degree to which the combination is <em>more</em>
+potent (with a combination index less than 1) or <em>less</em> potent (with a
+combination greater than one) than expected by additivity.  This method is
+also in turns known as the sum of fractional inhibitory coefficients (FICs),
+observed-over-expected, or originally as Berenbaum's interaction index.
+</p>
+<p>Because the method was originally built for three distinct sets of dose
+response measurements, we have included the <code>estimateCombinationIndex</code> and
+<code>estimateChouIndex</code> functions which operate on three separate data frames.
+However, in most cases, it will be easier to use the
+<code>estimateCombinationIndices</code> and <code>estimateChouIndices</code> functions, which
+operate on an array of concentrations and a vector of responses, just like
+the numerous other functions in this package, and generate a set of
+combination index values with level and ratio information  included.
+</p>
+<p>The only difference between the <code style="white-space: pre;">⁠estimateCombination*⁠</code> and <code style="white-space: pre;">⁠estimateChou*⁠</code>
+functions is the way in which they perform dose response fitting.
+The <code style="white-space: pre;">⁠estimateCombination*⁠</code> functions use non-linear least squares
+optimization (based on the package <code>basicdrm</code>) to estimate dose-response
+parameters.  The <code style="white-space: pre;">⁠estimateChou*⁠</code> functions use the median-effect method
+described by Chou and Talalay in their 1984 paper, which linearized all
+measurements and performs linear regression.  We <em>do not</em> recommend using
+these methods, as they are much less reliable than the non-linear
+optimization approach and extremely susceptible to noise at extreme values.
+</p>
+
+
+<h3>Value</h3>
+
+<p>For <code>estimateCombinationIndices</code> and <code>estimateChouIndices</code>, a data
+frame with the following columns:
+</p>
+
+<ul>
+<li> <p><code>ratio</code>: The ratio of doses (dose A to dose B) along which the index
+was estimated
+</p>
+</li>
+<li> <p><code>level</code>: The effect level at which the index was estimated
+</p>
+</li>
+<li> <p><code>ci</code>: The estimated combination index at that dose ratio and effect level
+</p>
+</li>
+</ul>
+<p>Combination index estimates will be included for all provided effect levels
+and all dose ratios present. For <code>estimateCombinationIndex</code> and
+<code>estimateChouIndex</code>, a vector of estimated combinatoin indices the same
+length as <code>level</code>.
+</p>
+
+
+<h3>References</h3>
+
+<p>Berenbaum, MC. 1978. “A Method for Testing for Synergy with Any Number of
+Agents.” <em>Journal of Infectious Diseases</em> <strong>137</strong> (2): 122–30.
+</p>
+<p>Berenbaum, MC. 1989. “What Is Synergy.” <em>Pharmacol Rev</em> <strong>41</strong>: 93–141.
+</p>
+<p>Chou, Ting-Chao, and Paul Talalay. 1984. “Quantitative Analysis of
+Dose-Effect Relationships: The Combined Effects of Multiple Drugs or Enzyme
+Inhibitors.” <em>Advances in Enzyme Regulation</em> <strong>22</strong>: 27–55.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">surface &lt;- synergisticExample
+concs1 &lt;- cbind(surface$concA, surface$concB)
+act1 &lt;- surface$measure
+
+estimateCombinationIndices(concs1,act1,c(0.5))
+
+dr1 &lt;- surface[surface$concB==0, c("concA","measure")]
+names(dr1) &lt;- c("conc","act")
+dr2 &lt;- surface[surface$concA==0, c("concB","measure")]
+names(dr2) &lt;- c("conc","act")
+drc &lt;- surface[surface$concA==surface$concB,]
+drc$conc &lt;- drc$concA+drc$concB
+drc &lt;- drc[,c("conc","measure")]
+names(drc) &lt;- c("conc","act")
+
+estimateChouIndex(dr1,dr2,drc,ratio=1,
+                  level=c(0.5,0.9,0.99),
+                  range=c(0,1))
+</code></pre>
+
+
+</div>

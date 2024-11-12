@@ -1,0 +1,216 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>DREAM</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>DREAM</h2>
+
+<h3>Description</h3>
+
+<p>DREAM
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">DREAM(
+  bayesianSetup,
+  settings = list(iterations = 10000, nCR = 3, gamma = NULL, eps = 0, e = 0.05, pCRupdate
+    = TRUE, updateInterval = 10, burnin = 0, thin = 1, adaptation = 0.2, parallel = NULL,
+    DEpairs = 2, consoleUpdates = 10, startValue = NULL, currentChain = 1, message =
+    TRUE)
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>bayesianSetup</code></td>
+<td>
+<p>Object of class 'bayesianSetup' or 'bayesianOuput'.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>settings</code></td>
+<td>
+<p>list with parameter values</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>iterations</code></td>
+<td>
+<p>Number of model evaluations</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nCR</code></td>
+<td>
+<p>parameter determining the number of cross-over proposals. If nCR = 1 all parameters are updated jointly.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>updateInterval</code></td>
+<td>
+<p>determining the intervall for the pCR update</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>gamma</code></td>
+<td>
+<p>Kurtosis parameter Bayesian Inference Scheme</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>eps</code></td>
+<td>
+<p>Ergodicity term</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>e</code></td>
+<td>
+<p>Ergodicity term</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>pCRupdate</code></td>
+<td>
+<p>If T, crossover probabilities will be updated</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>burnin</code></td>
+<td>
+<p>number of iterations treated as burn-in. These iterations are not recorded in the chain.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>thin</code></td>
+<td>
+<p>thin thinning parameter. Determines the interval in which values are recorded.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>adaptation</code></td>
+<td>
+<p>Number or percentage of samples that are used for the adaptation in DREAM (see Details).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>DEpairs</code></td>
+<td>
+<p>Number of pairs used to generate proposal</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>startValue</code></td>
+<td>
+<p>eiter a matrix containing the start values (see details), an integer to define the number of chains that are run, a function to sample the start values or NUll, in which case the values are sampled from the prior.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>consoleUpdates</code></td>
+<td>
+<p>Intervall in which the sampling progress is printed to the console</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>message</code></td>
+<td>
+<p>logical determines whether the sampler's progress should be printed</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>Insted of a bayesianSetup, the function can take the output of a previous run to restart the sampler
+from the last iteration. Due to the sampler's internal structure you can only use the output
+of DREAM.
+If you provide a matrix with start values the number of rows determines the number of chains that are run.
+The number of coloumns must be equivalent to the number of parameters in your bayesianSetup. <br><br>
+There are several small differences in the algorithm presented here compared to the original paper by Vrugt et al. (2009). Mainly
+the algorithm implemented here does not have an automatic stopping criterion. Hence, it will
+always run the number of iterations specified by the user. Also, convergence is not
+monitored and left to the user. This can easily be done with coda::gelman.diag(chain).
+Further the proposed delayed rejectio step in Vrugt et al. (2009) is not implemented here.<br><br></p>
+<p>During the adaptation phase DREAM is running two mechanisms to enhance the sampler's efficiency.
+First the disribution of crossover values is tuned to favor large jumps in the parameter space.
+The crossover probabilities determine how many parameters are updated simultaneously.
+Second outlier chains are replanced as they can largely deteriorate the sampler's performance.
+However, these steps destroy the detailed balance of the chain. Consequently these parts of the chain
+should be discarded when summarizing posterior moments. This can be done automatically during the
+sampling process (i.e. burnin &gt; adaptation) or subsequently by the user. We chose to distinguish between
+the burnin and adaptation phase to allow the user more flexibility in the sampler's settings.
+</p>
+
+
+<h3>Value</h3>
+
+<p>mcmc.object containing the following elements: chains, X, pCR
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Stefan Paul
+</p>
+
+
+<h3>References</h3>
+
+<p>Vrugt, Jasper A., et al. "Accelerating Markov chain Monte Carlo simulation by differential evolution with self-adaptive randomized subspace sampling." International Journal of Nonlinear Sciences and Numerical Simulation 10.3 (2009): 273-290.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>DREAMzs</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">library(BayesianTools)
+
+ll &lt;- generateTestDensityMultiNormal(sigma = "no correlation")
+bayesianSetup &lt;- createBayesianSetup(likelihood = ll, 
+                                     lower = rep(-10, 3), 
+                                     upper = rep(10, 3))
+
+settings = list(iterations = 200)
+out &lt;- runMCMC(bayesianSetup = bayesianSetup, sampler = "DEzs", settings = settings)
+summary(out)
+
+# DE family samplers are population MCMCs that run a number of internal chains
+# in parallel. Here examples how to change the internal chains
+# note that internal chains can be executedi n parallel
+settings = list(startValue = 4, iterations = 200)
+out &lt;- runMCMC(bayesianSetup = bayesianSetup, sampler = "DEzs", settings = settings)
+summary(out)
+
+# Modify the start values of the internal chains (note that this is a matrix
+# of dim nChain * nPar)
+settings = list(startValue = matrix(rnorm(12), nrow = 4, ncol = 3), 
+                iterations = 200)
+out &lt;- runMCMC(bayesianSetup = bayesianSetup, sampler = "DEzs", settings = settings)
+summary(out)
+
+# In the DE sampler family with Z matrix, the previous chains are written in 
+# a common matrix, from which proposals are generated. Per default this matrix
+# is started with samples from the prior, but we can change this. Often useful
+# to improve sampler convergence, 
+# see  https://github.com/florianhartig/BayesianTools/issues/79
+settings = list(startValue = matrix(rnorm(12), nrow = 4, ncol = 3),
+                Z = matrix(rnorm(300), nrow = 100, ncol = 3),
+                iterations = 200)
+out &lt;- runMCMC(bayesianSetup = bayesianSetup, sampler = "DEzs", settings = settings)
+summary(out)
+
+
+</code></pre>
+
+
+</div>

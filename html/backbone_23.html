@@ -1,0 +1,195 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>sparsify</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Extract the backbone from a network using a sparsification model</h2>
+
+<h3>Description</h3>
+
+<p>A generic function to extract the backbone of an undirected, unipartite
+network using a sparsification model described by a combination of an edge scoring metric, a
+edge score normalization, and an edge score filter.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">sparsify(
+  U,
+  s,
+  escore,
+  normalize,
+  filter,
+  symmetrize = TRUE,
+  umst = FALSE,
+  class = "original",
+  narrative = FALSE
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>U</code></td>
+<td>
+<p>An unweighted unipartite graph, as: (1) an adjacency matrix in the form of a matrix or sparse <code>Matrix</code>; (2) an edgelist in the form of a two-column dataframe; (3) an <code>igraph</code> object.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>s</code></td>
+<td>
+<p>numeric: Sparsification parameter</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>escore</code></td>
+<td>
+<p>string: Method for scoring edges' importance</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>normalize</code></td>
+<td>
+<p>string: Method for normalizing edge scores</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>filter</code></td>
+<td>
+<p>string: Type of filter to apply</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>symmetrize</code></td>
+<td>
+<p>boolean: TRUE if the result should be symmetrized</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>umst</code></td>
+<td>
+<p>boolean: TRUE if the backbone should include the union of minimum spanning trees, to ensure connectivity</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>class</code></td>
+<td>
+<p>string: the class of the returned backbone graph, one of c("original", "matrix", "Matrix", "igraph", "edgelist").
+If "original", the backbone graph returned is of the same class as <code>U</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>narrative</code></td>
+<td>
+<p>boolean: TRUE if suggested text &amp; citations should be displayed.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The <code>escore</code> parameter determines how an unweighted edge's importance is calculated.
+Unless noted below, scores are symmetric and larger values represent more important edges.
+</p>
+
+<ul>
+<li> <p><code>random</code>: a random number drawn from a uniform distribution
+</p>
+</li>
+<li> <p><code>betweenness</code>: edge betweenness
+</p>
+</li>
+<li> <p><code>triangles</code>: number of triangles that include the edge
+</p>
+</li>
+<li> <p><code>jaccard</code>: jaccard similarity coefficient of the neighborhoods of an edge's endpoints, or alternatively, triangles normalized by the size of the union of the endpoints neighborhoods
+</p>
+</li>
+<li> <p><code>dice</code>: dice similarity coefficient of the neighborhoods of an edge's endpoints
+</p>
+</li>
+<li> <p><code>quadrangles</code>: number of quadrangles that include the edge
+</p>
+</li>
+<li> <p><code style="white-space: pre;">⁠quadrilateral embeddedness⁠</code>: geometric mean normalization of quadrangles
+</p>
+</li>
+<li> <p><code>degree</code>: degree of neighbor to which an edge is adjacent (asymmetric)
+</p>
+</li>
+<li> <p><code>meetmin</code>: triangles normalized by the smaller of the endpoints' neighborhoods' sizes
+</p>
+</li>
+<li> <p><code>geometric</code>: triangles normalized by the product of the endpoints' neighborhoods' sizes
+</p>
+</li>
+<li> <p><code>hypergeometric</code>: probability of the edge being included at least as many triangles if edges were random, given the size of the endpoints' neighborhoods (smaller is more important)
+</p>
+</li>
+</ul>
+<p>The <code>normalize</code> parameter determines whether edge scores are normalized.
+</p>
+
+<ul>
+<li> <p><code>none</code>: no normalization is performed
+</p>
+</li>
+<li> <p><code>rank</code>: scores are normalized by neighborhood rank, such that the strongest edge in a node's neighborhood is ranked 1 (asymmetric)
+</p>
+</li>
+<li> <p><code>embeddedness</code>: scores are normalized using the maximum Jaccard coefficient of the top k-ranked neighbors of each endpoint, for all k
+</p>
+</li>
+</ul>
+<p>The <code>filter</code> parameter determines how edges are filtered based on their (normalized) edge scores.
+</p>
+
+<ul>
+<li> <p><code>threshold</code>: Edges with scores &gt;= <code>s</code> are retained in the backbone
+</p>
+</li>
+<li> <p><code>proportion</code>: Specifies the approximate proportion of edges to retain in the backbone
+</p>
+</li>
+<li> <p><code>degree</code>: Retains each node's d^<code>s</code> most important edges, where d is the node's degree (requires that <code>normalize = "rank"</code>)
+</p>
+</li>
+<li> <p><code>disparity</code>: Applies the disparity filter using <code>disparity()</code>
+</p>
+</li>
+</ul>
+<p>Using <code>escore == "degree"</code> or <code>normalize == "rank"</code> can yield an assymmetric network. When <code>symmetrize == TRUE</code> (default),
+after applying a filter, the network is symmetrized by such that i-j if i-&gt;j or i&lt;-j.
+</p>
+<p>Specific combinations of <code>escore</code>, <code>normalize</code>, <code>filter</code>, and <code>umst</code> correspond to specific sparsification models in the literature, and are available via the following wrapper functions:
+<code>sparsify.with.skeleton()</code>, <code>sparsify.with.gspar()</code>, <code>sparsify.with.lspar()</code>, <code>sparsify.with.simmelian()</code>, <code>sparsify.with.jaccard()</code>, <code>sparsify.with.meetmin()</code>, <code>sparsify.with.geometric()</code>, <code>sparsify.with.hypergeometric()</code>, <code>sparsify.with.localdegree()</code>, <code>sparsify.with.quadrilateral()</code>.
+See the documentation for these wrapper functions for more details and the associated citation.
+</p>
+
+
+<h3>Value</h3>
+
+<p>An unweighted, undirected, unipartite graph of class <code>class</code>.
+</p>
+
+
+<h3>References</h3>
+
+<p>Neal, Z. P. (2022). backbone: An R Package to Extract Network Backbones. <em>PLOS ONE, 17</em>, e0269137. <a href="https://doi.org/10.1371/journal.pone.0269137">doi:10.1371/journal.pone.0269137</a>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">U &lt;- igraph::sample_sbm(60, matrix(c(.75,.25,.25,.25,.75,.25,.25,.25,.75),3,3), c(20,20,20))
+plot(U) #A hairball
+sparse &lt;- sparsify(U, s = 0.6, escore = "jaccard", normalize = "rank",
+filter = "degree", narrative = TRUE)
+plot(sparse) #Clearly visible communities
+</code></pre>
+
+
+</div>

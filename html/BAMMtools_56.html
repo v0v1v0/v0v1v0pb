@@ -1,0 +1,255 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>traitDependentBAMM</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>STRAPP: STructured Rate Permutations on Phylogenies</h2>
+
+<h3>Description</h3>
+
+<p>Given a <code>bammdata</code> object and a vector of (continuous)
+trait data, assess whether the correlation between the trait and bamm
+estimated speciation, extinction or net diversification rate is
+significant using permutation. A set of posterior samples is randomly
+drawn from the <code>bammdata</code> object. If the trait is continuous,
+this function calculates the correlation coefficients between the
+trait and tip rates (observed correlation), as well as that with
+permuted rates for each posterior sample. In a one-tailed test for
+positive correlations, the reported p-value is the proportion of the
+posterior samples in which the observed correlation is larger than the
+correlations calculated with permuted rates. In a two-tailed test, the
+reported p-value is the proportion of the posterior samples in which
+the null correlation is as extreme as the correlation observed. If the
+trait is binary, the U statistic of the Mann-Whitney test is
+calculated instead of correlation coefficients to assess whether there
+is a significant difference in rate between the two trait states. For
+categorical traits with more than two states, the Kruskal-Wallis rank
+sum statistic is used.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">traitDependentBAMM(
+  ephy,
+  traits,
+  reps,
+  rate = "speciation",
+  return.full = FALSE,
+  method = "spearman",
+  logrates = TRUE,
+  two.tailed = TRUE,
+  traitorder = NA,
+  nthreads = 1
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>ephy</code></td>
+<td>
+<p>An object of class <code>bammdata</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>traits</code></td>
+<td>
+<p>A vector of trait data, with names corresponding to tips in
+the <code>bammdata</code> object. It can be numeric or categorical.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>reps</code></td>
+<td>
+<p>An integer specifying the number of permutations (i.e., the
+number of posterior samples to randomly draw with replacement from the
+<code>bammdata</code> object).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>rate</code></td>
+<td>
+<p>A character string specifying which estimated rate from the
+<code>bammdata</code> object to use for testing correlation, must be one of
+'speciation', 'extinction', 'net diversification' or 'trait'. Defaults to
+'speciation'. You can specify just the initial letter. Ignored for 
+trait event data.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>return.full</code></td>
+<td>
+<p>A logical. If <code>TRUE</code>, the list of posterior
+samples, the observed correlation for each posterior sample, and the
+null distribution will be included in the returned object. Defaults to
+<code>FALSE</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>method</code></td>
+<td>
+<p>A character string, must be one of 'spearman', 'pearson',
+'mann-whitney', or 'kruskal'. Defaults to 'spearman'. You can specify
+just the initial letter.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>logrates</code></td>
+<td>
+<p>A logical. If <code>TRUE</code> log-transform the rates before
+analysis. Defaults to <code>TRUE</code>. This can only matter for the
+pearson correlation.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>two.tailed</code></td>
+<td>
+<p>A logical, used for continuous trait data. If
+<code>TRUE</code>, perform a two-tailed statistical test (i.e., if the null
+distribution is symmetric, it is equivalent to doubling the p-value).
+Defaults to <code>TRUE</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>traitorder</code></td>
+<td>
+<p>A character string specifying the direction of
+correlation for the alternative hypothesis. For continuous traits, it
+must be either "positive" or "negative"; only the initial letter is
+needed. For binary traits, it must be a string indicating states with
+increasing rate under the alternative hypothesis, separated by comma
+(e.g., 'A, B'). One-tailed test for categorical data with more than
+two states is not supported.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nthreads</code></td>
+<td>
+<p>Number of threads to use for parallelization of the
+function. The R package <code>parallel</code> must be loaded for
+<code>nthreads &gt; 1</code>.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>Tip rates –trait, speciation, extinction, or net diversification
+rates– are permuted in a way such that pairwise covariances in rates
+between species are maintained. That is, tips with the same
+<code>tipStates</code> still have the same rate after permutation. Posterior
+samples are randomly selected with replacement from the
+<code>bammdata</code> object, so <code>reps</code> could be smaller or larger than
+the total number of samples in the object.
+</p>
+<p>This function expects that the bamm-data object and the trait data
+have the same taxon set. It may be necessary to subset the trait data
+and/or run <code>subtreeBAMM</code> on the <code>bamm-data</code> object in
+order to meet this requirement.
+</p>
+
+
+<h3>Value</h3>
+
+<p>A list with the following components:
+</p>
+
+<ul>
+<li>
+<p> estimate: A numeric value for continous trait data: the
+average observed correlation between tip rates and the trait
+across the posterior samples. For categorical traits, it is
+a list showing the median species-specific rates for each
+trait state.
+</p>
+</li>
+<li>
+<p> p.value: A numeric value. The probability that the observed
+correlation is less than or equal to a sample from the null
+distribution.
+</p>
+</li>
+<li>
+<p> method: A character string, as input.
+</p>
+</li>
+<li>
+<p> rate: A character string, as input.
+</p>
+</li>
+<li>
+<p> two.tailed: A logical, as input.
+</p>
+</li>
+<li>
+<p> gen: An integer vector, recording which posterior samples
+were selected. Only present when <code>return.full</code> is
+<code>TRUE</code>.
+</p>
+</li>
+<li>
+<p> obs.corr: A numeric vector, the observed correlation
+coefficents for each posterior sample. Only present when
+<code>return.full</code> is <code>TRUE</code>. For binary traits, centered
+U statistics (U - n1* n2/2; where n1 and n2 are the number of
+species in each state of the binary trait) is reported.
+</p>
+</li>
+<li>
+<p> null: A numeric vector. The null distribution of
+correlation coefficients (or centered U statistics for binary
+traits) from permutation. Only present when <code>return.full</code>
+is <code>TRUE</code>.
+</p>
+</li>
+</ul>
+<h3>Author(s)</h3>
+
+<p>Dan Rabosky, Huateng Huang
+</p>
+
+
+<h3>References</h3>
+
+<p><a href="http://bamm-project.org/">http://bamm-project.org/</a>
+</p>
+<p>Rabosky, D. L. and Huang, H., 2015. A Robust Semi-Parametric Test for
+Detecting Trait-Dependent Diversification. Systematic Biology 65:
+181-193.
+</p>
+<p>Rabosky, D. L. 2014. Automatic detection of key innovations, rate
+shifts, and diversity-dependence on phylogenetic trees. PLoS ONE
+9:e89543.
+</p>
+<p>Rabosky, D. L., F. Santini, J. T. Eastman, S. A. Smith, B. L.
+Sidlauskas, J. Chang, and M. E. Alfaro. 2013. Rates of speciation and
+morphological evolution are correlated across the largest vertebrate
+radiation. Nature Communications DOI: 10.1038/ncomms2958.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>subtreeBAMM</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R"># using a small subset of the fish data set (300 taxa) in Rabosky et al.
+# 2013. Nat. Com. paper
+data(fishes, events.fishes)
+xx &lt;- getEventData(phy = fishes, eventdata = events.fishes, 
+      nsamples = 500, type = "diversification")
+# traits.fishes is the trait -- body size
+data(traits.fishes)
+x &lt;- traitDependentBAMM(ephy = xx, traits = traits.fishes, reps = 1000,
+                        return.full = TRUE, method = 's', logrates = TRUE,
+                        two.tailed = TRUE)
+</code></pre>
+
+
+</div>

@@ -1,0 +1,217 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>BHMSMA</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Bayesian hierarchical multi-subject multiscale analysis (BHMSMA) of functional MRI data or other multiscale data</h2>
+
+<h3>Description</h3>
+
+<p><code>BHMSMA</code> is the main function that performs BHMSMA (Sanyal &amp; Ferreira, 2012) of fMRI data, or other multiscale data, using wavelet-based prior that borrows strength across subjects and provides posterior smooth estimates of the effect sizes. Specifically, <code>BHMSMA</code> constructs a 2D regression coefficient map (e.g., corresponding to a single brain slice) of a given regressor and returns its posterior smoothed version based on multi-subject or single subject analyses.</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">BHMSMA(n, grid, data, designmat, k, analysis="multi", 
+  truecoef=NULL, wave.family="DaubLeAsymm", filter.number=6, 
+  bc="periodic")
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>n</code></td>
+<td>
+<p>Number of subjects.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>grid</code></td>
+<td>
+<p>The number of voxels in one row (or column) of the brain slice of interest. Must be a power of 2. The total number of voxels is <code>grid^2</code>. The maximum value of <code>grid</code> for this package is 512.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+<p>The data in the form of an array with dimension <code>(n,grid,grid,ntime)</code>, where ntime is the size of the time series for each voxel. The rows (first dimension) must correspond to <code>n</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>designmat</code></td>
+<td>
+<p>The design matrix used to generate the data. The rows must correspond to <code>n</code>. It should include an intercept column if desired. No intercept column will be added by the function. The GLM fit will include all the columns of <code>designmat</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>k </code></td>
+<td>
+<p>Index of the regressor chosen for analysis, consistently with <code>designmat</code>. After fitting GLM, the regression coefficients of this regressor will be considered for the rest of the analysis.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>analysis</code></td>
+<td>
+<p>"MSA" or "SSA", depending on whether performing multi-subject analysis or single subject analysis.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>truecoef</code></td>
+<td>
+<p>If available, the true GLM coefficients in the form of an array with dimension <code>(n,grid,grid)</code>. NULL by default.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>wave.family</code></td>
+<td>
+<p>The family of wavelets to use - "DaubExPhase" or "DaubLeAsymm". Default is "DaubLeAsymm".</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>filter.number</code></td>
+<td>
+<p>The number of vanishing moments of the wavelet. Default is 6.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>bc</code></td>
+<td>
+<p>The boundary condition to use - "periodic" or "symmetric". Default is "periodic".</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The wavelet computations are performed by using the R package <span class="pkg">wavethresh</span>.</p>
+
+
+<h3>Value</h3>
+
+<p>A list containing the following.
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>GLMCoefStandardized </code></td>
+<td>
+<p>An array of dimension <code>(n,grid,grid)</code>, containing for each subject the standardized GLM coefficients obtained by fitting GLM to the time-series corresponding to the voxels.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>GLMCoefSE </code></td>
+<td>
+<p>An array of dimension <code>(n,grid,grid)</code>, containing for each subject the estimated standard errors of the GLM coefficients.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>WaveletCoefficientMatrix </code></td>
+<td>
+<p>A matrix of dimension <code>(n,grid^2-1)</code>, containing for each subject the wavelet coefficients of all levels stacked together (by the increasing order of resolution level). </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>hyperparam </code></td>
+<td>
+<p>A vector containing the estimates of the six hyperparameters.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>hyperparamVar </code></td>
+<td>
+<p>Estimated covariance matrix of the hyperparameters.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>posteriorMixProb </code></td>
+<td>
+<p>A matrix of dimension <code>(n,grid^2-1)</code>, containing the piklj.bar values (see Reference for details).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>PostMeanWaveletCoef </code></td>
+<td>
+<p>A matrix of size <code>(n,grid^2-1)</code>, containing for each subject the posterior mean of the wavelet coefficients of all levels stacked together (by the increasing order of resolution level). </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>GLMcoefposterior </code></td>
+<td>
+<p>An array of dimension <code>(n,grid,grid)</code>, containing for each subject the posterior means of the standardized GLM coefficients.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>MSE </code></td>
+<td>
+<p>MSE of the posterior estimates of the GLM coefficients, if the true values of the GLM coefficients are available.</p>
+</td>
+</tr>
+</table>
+<h3>Author(s)</h3>
+
+<p>Nilotpal Sanyal, Marco Ferreira
+</p>
+<p>Maintainer: Nilotpal Sanyal &lt;nilotpal.sanyal@gmail.com&gt;
+</p>
+
+
+<h3>References</h3>
+
+<p>Sanyal, Nilotpal, and Ferreira, Marco A.R. (2012). Bayesian hierarchical multi-subject multiscale analysis of functional MRI data. Neuroimage, 63, 3, 1519-1531.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>readfmridata</code>, <code>glmcoef</code>, <code>waveletcoef</code>, <code>hyperparamest</code>, <code>postmixprob</code>, <code>postwaveletcoef</code>, <code>substituteWaveletCoef</code>, <code>postglmcoef</code>, <code>imwd</code>, <code>imwr</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R"># BHMSMA multi-subject analysis for simulated (fMRI) 
+# data at 4 timepoints over an 8x8 grid (of a brain 
+# slice) for 3 subjects
+set.seed(1)
+n &lt;- 3
+grid &lt;- 8
+ntime &lt;- 4
+data &lt;- array(rnorm(n*grid*grid*ntime),
+  dim=c(n,grid,grid,ntime))
+designmat &lt;- cbind(c(1,1,1,1),c(1,0,1,0))
+k &lt;- 2
+analysis &lt;- "multi"
+BHMSMAmulti &lt;- BHMSMA(n, grid, data, designmat, 
+  k, analysis)
+
+zlim = c(0,max(abs(BHMSMAmulti$GLMCoefStandardized)))
+par(mfrow=c(1,2))
+image( abs(BHMSMAmulti$GLMCoefStandardized[1,,,k]),
+  col=heat.colors(12),zlim=zlim,main="GLM coef map")
+image( abs(BHMSMAmulti$GLMcoefposterior[1,,]),
+  col=heat.colors(12),zlim=zlim,main="GLM coef posterior map")
+
+
+## Not run: 
+# BHMSMA multi-subject analysis for simulated (fMRI) 
+# data at 100 timepoints over an 64x64 grid (of a 
+# brain slice) for 15 subjects
+# (takes ~12s in a 2.8 GHz Quad-Core Intel Core i7 processor)
+set.seed(1)
+n &lt;- 15
+grid &lt;- 64
+ntime &lt;- 100
+data &lt;- array(rnorm(n*grid*grid*ntime),
+          dim=c(n,grid,grid,ntime))
+designmat &lt;- cbind(rep(1,ntime),runif(ntime))
+k &lt;- 2
+analysis &lt;- "multi"
+system.time({BHMSMAmulti &lt;- BHMSMA(n,grid,data, 
+  designmat,k,analysis)})
+
+## End(Not run)
+</code></pre>
+
+
+</div>

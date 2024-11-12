@@ -1,0 +1,135 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>mtergm</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Estimate a TERGM by MCMC-MLE</h2>
+
+<h3>Description</h3>
+
+<p>Estimate a TERGM by Markov Chain Monte Carlo Maximum Likelihood Estimation
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">mtergm(formula, constraints = ~., returndata = FALSE, verbose = TRUE, ...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>formula</code></td>
+<td>
+<p>Formula for the TERGM. Model construction works like in the
+<span class="pkg">ergm</span> package with the same model terms etc. (for a list of terms, see
+<code>help("ergm-terms")</code>). The networks to be modeled on the
+left-hand side of the equation must be given either as a list of network
+objects with more recent networks last (i.e., chronological order) or as a
+list of matrices with more recent matrices at the end. <code>dyadcov</code> and
+<code>edgecov</code> terms accept time-independent covariates (as <code>network</code>
+or <code>matrix</code> objects) or time-varying covariates (as a list of networks
+or matrices with the same length as the list of networks to be modeled).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>constraints</code></td>
+<td>
+<p>Constraints of the ERGM. See <code>ergm</code> for
+details.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>returndata</code></td>
+<td>
+<p>Return the processed input data instead of estimating and
+returning the model? In the <code>btergm</code> case, this will return a data
+frame with the dyads of the dependent variable/network and the change
+statistics for all covariates. In the <code>mtergm</code> case, this will return
+a list object with the blockdiagonal network object for the dependent
+variable and blockdiagonal matrices for all dyadic covariates and the
+offset matrix for the structural zeros.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>verbose</code></td>
+<td>
+<p>Print details about data preprocessing and estimation
+settings.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Further arguments to be handed over to the
+<code>ergm</code> function.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The <code>mtergm</code> function computes TERGMs by MCMC MLE (or MPLE with
+uncorrected standard errors) via blockdiagonal matrices and structural zeros.
+It acts as a wrapper for the <span class="pkg">ergm</span> package. The <code>btergm</code> function
+is faster than the <code>mtergm</code> function but is only asymptotically unbiased
+the longer the time series. The <code>mtergm</code> function yields unbiased
+estimates and standard errors but may suffer from degeneracy if the model is
+not specified in good keeping with the true data-generating process.
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Philip Leifeld, Skyler J. Cranmer, Bruce A. Desmarais
+</p>
+
+
+<h3>References</h3>
+
+<p>Leifeld, Philip, Skyler J. Cranmer and Bruce A. Desmarais (2017):
+Temporal Exponential Random Graph Models with btergm: Estimation and
+Bootstrap Confidence Intervals. <em>Journal of Statistical Software</em>
+83(6): 1-36. <a href="https://doi.org/10.18637/jss.v083.i06">doi:10.18637/jss.v083.i06</a>.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>btergm</code> <code>tbergm</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">library("network")
+set.seed(5)
+
+networks &lt;- list()
+for (i in 1:10) {              # create 10 random networks with 10 actors
+  mat &lt;- matrix(rbinom(100, 1, .25), nrow = 10, ncol = 10)
+  diag(mat) &lt;- 0               # loops are excluded
+  nw &lt;- network::network(mat)  # create network object
+  networks[[i]] &lt;- nw          # add network to the list
+}
+
+covariates &lt;- list()
+for (i in 1:10) {              # create 10 matrices as covariate
+  mat &lt;- matrix(rnorm(100), nrow = 10, ncol = 10)
+  covariates[[i]] &lt;- mat       # add matrix to the list
+}
+
+## Not run: 
+fit2 &lt;- mtergm(networks ~ edges + istar(2) + edgecov(covariates))
+summary(fit2)
+
+## End(Not run)
+
+# For examples with real data, see help("knecht") or help("alliances").
+
+</code></pre>
+
+
+</div>

@@ -1,0 +1,188 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>extractSamples</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Extract MCMC samples from a BayesX results directory</h2>
+
+<h3>Description</h3>
+
+<p>This is a convenience function to extract samples from a BayesX
+results directory, which processes the log file to e.g. convert the
+spline coefficients samples to function values samples.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">extractSamples(directoryWithBasename, 
+               logfile = file.path(dirname(directoryWithBasename), "log.txt"))
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>directoryWithBasename</code></td>
+<td>
+<p>The BayesX results directory with
+basename for the files (e.g. "results/test", if this was specified as
+outfile in BayesX for the bayesreg object)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>logfile</code></td>
+<td>
+<p>The log file of the MCMC run, defaults to log.txt in
+the results directory.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>Returns a list with the extracted samples of effects and deviances as
+well as the prediction data.frame:
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>&lt;function name&gt;</code></td>
+<td>
+<p>for P-Splines, Random Walks and spatial
+effects: a list with mcmc objects 'functionSamples' and
+'varianceSamples' containing the respective effects/function and
+variance parameter samples.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>FixedEffects</code></td>
+<td>
+<p>an mcmc object of all fixed simple parametric
+effects</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>RandomEffects</code></td>
+<td>
+<p>if there is at least one random effect in the
+model, this is a list, with elements in the first hierarchy being
+the group ID names, and elements in the second hierarchy being the
+names of the covariates. The leafs are the mcmc objects
+'functionSamples' and 'varianceSamples', as for the other
+non-fixed terms</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Deviance</code></td>
+<td>
+<p>an mcmc object with the (unstandardized and saturated)
+deviance</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>means</code></td>
+<td>
+<p>if the option <code>predictmu</code> was used, this mcmc object
+contains the mean samples</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>scale</code></td>
+<td>
+<p>an mcmc object with the possible scale parameter samples</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>lassoCoefficients</code></td>
+<td>
+<p>an mcmc object with the possible lasso regression parameter samples</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ridgeCoefficients</code></td>
+<td>
+<p>an mcmc object with the possible ridge regression parameter samples</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>PredictMeans</code></td>
+<td>
+<p>data.frame corresponding to the possible
+predictmean file in the BayesX directory</p>
+</td>
+</tr>
+</table>
+<p>Additionally, entries for possibly remaining lasso or ridge variance
+parameters etc. are included in the return list.
+</p>
+
+
+<h3>Warning</h3>
+
+<p>You should be sure that only one MCMC run is saved in the given results
+directory in order to get sensible results out of this function.
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Daniel Sabanes Bove, with contributions by Fabian Scheipl</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## get the samples
+samples &lt;- extractSamples(file.path(system.file("examples/samples", package="BayesX"),
+                                     "res"))
+str(samples)
+
+## check deviance convergence
+plot(samples$Deviance)
+
+## fixed parametric effects
+plot(samples$FixedEffects)
+
+## nonparametric effects:
+
+## handy plot function to get means and pointwise credible intervals
+nonpPlot &lt;- function(samplesMatrix,
+                     ...)
+{
+    x &lt;- as.numeric(colnames(samplesMatrix))
+
+    yMeans &lt;- colMeans(samplesMatrix)
+    yCredible &lt;- t(apply(samplesMatrix,
+                         MARGIN=2,
+                         FUN=quantile,
+                         prob=c(0.025, 0.975),
+                         na.rm=TRUE))
+    
+    matplot(x, cbind(yMeans, yCredible),
+            type="l",
+            lty=c(1, 2, 2),
+            lwd=c(2, 1, 1),
+            col=c(1, 2, 2),
+            ...)
+}
+
+nonpPlot(samples$f_x1$functionSamples,
+         xlab=expression(x[1]),
+         ylab=expression(hat(f)(x[1])))
+nonpPlot(samples$f_x2$functionSamples,
+         xlab=expression(x[2]),
+         ylab=expression(hat(f)(x[2])))
+
+## spatial effect
+tanzania &lt;- read.bnd(file=system.file("examples/tanzania.bnd", package="BayesX"))
+drawmap(map=tanzania,
+        data=
+        with(samples$f_district,
+             data.frame(name=colnames(functionSamples),
+                        estimate=colMeans(functionSamples))),
+        regionvar="name",
+        plotvar="estimate")
+</code></pre>
+
+
+</div>

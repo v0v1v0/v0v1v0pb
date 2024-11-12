@@ -1,0 +1,228 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>cox_bvs</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Non-parallel version of Bayesian variable selector for survival data using
+nonlocal priors</h2>
+
+<h3>Description</h3>
+
+<p>This function performs Bayesian variable selection for
+survival data in a non-parallel fashion. It runs modified S5 algorithm to
+search the model space but since this is only on one CPU, the number of
+visited models will not be large and therefore is NOT recommended for
+high dimensional datasets. This function is called by <code>bvs</code>
+function in a parllel fashion and therefore that function is recommended
+to be used.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">cox_bvs(exmat, cur_cols, nf, tau, r, nlptype, a, b, d, L, J, temps)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>exmat</code></td>
+<td>
+<p>An extended matrix where the first two columns are survival
+times and status, respectively and the rest is the design matrix which is
+produced by <code>PreProcess</code> function.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>cur_cols</code></td>
+<td>
+<p>A vector containing indices of the initial model for
+variable selector to start the S5 algorithm from. Note that the first
+<code>nf</code> indices are <code>1</code> to <code>nf</code> where <code>nf</code> is the number
+of fixed covariates that do not enter the selection procedure.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nf</code></td>
+<td>
+<p>The number of fixed covariates that do not enter the selection
+procedure.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>tau</code></td>
+<td>
+<p>The paramter <code>tau</code> of the iMOM prior.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>r</code></td>
+<td>
+<p>The paramter <code>r</code> of the iMOM prior.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nlptype</code></td>
+<td>
+<p>Determines the type of nonlocal prior that is used in the
+analyses. <code>0</code> is for piMOM and <code>1</code> is for pMOM.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>a</code></td>
+<td>
+<p>The first parameter in beta distribution used as prior on model
+size. This parameter is equal to 1 when uinform-binomial prior is used.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>b</code></td>
+<td>
+<p>The second paramter in beta distribution used as prior on model
+size. This parameter is equal to 1 when uinform-binomial prior is used.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>d</code></td>
+<td>
+<p>This is the number of candidate covariates picked from top
+variables with highest utility function value and used in S5 algorithm.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>L</code></td>
+<td>
+<p>Number of temperatures in S5 algorithm.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>J</code></td>
+<td>
+<p>Number of iterations at each temperature in S5 algorithm.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>temps</code></td>
+<td>
+<p>Vector of temperatuers used in S5 algorithm.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>It returns a list containing following objects:
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>max_model</code></td>
+<td>
+<p>A <code>1</code> by <code>p</code> binary vector showing the selected
+model with maximum probability. <code>1</code> means a specific variable is
+selected.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>hash_key</code></td>
+<td>
+<p>A column vector indicating the generated key for each model
+that is used to track visited models and growing dictionary.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>max_prob</code></td>
+<td>
+<p>The unnormalized probability of the model with highest
+posterior probability.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>all_probs</code></td>
+<td>
+<p>A vector containing unnormalized probabilities of all
+visited models.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>vis_covs_list</code></td>
+<td>
+<p>A list containing the covariates in each visited model
+in the stochastic search process.</p>
+</td>
+</tr>
+</table>
+<h3>Author(s)</h3>
+
+<p>Amir Nikooienejad
+</p>
+
+
+<h3>References</h3>
+
+<p>Nikooienejad, A., Wang, W., and Johnson, V. E. (2017). Bayesian
+Variable Selection in High Dimensional Survival Time Cancer Genomic
+Datasets using Nonlocal Priors. arXiv preprint, arXiv:1712.02964.<br><br>
+Shin, M., Bhattacharya, A., and Johnson, V. E. (2017). Scalable
+Bayesian variable selection using nonlocal prior densities in ultrahigh
+dimensional settings. Statistica Sinica.<br><br>
+Johnson, V. E., and Rossell, D. (2010). On the use of non-local prior
+densities in Bayesian hypothesis tests. Journal of the Royal Statistical
+Society: Series B (Statistical Methodology), 72(2), 143-170.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>bvs</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">### Initializing the parameters
+n &lt;- 100
+p &lt;- 40
+set.seed(123)
+Sigma &lt;- diag(p)
+full &lt;- matrix(c(rep(0.5, p*p)), ncol=p)
+Sigma &lt;- full + 0.5*Sigma
+cholS &lt;- chol(Sigma)
+Beta &lt;- c(-1.8, 1.2, -1.7, 1.4, -1.4, 1.3)
+X = matrix(rnorm(n*p), ncol=p)
+X = X%*%cholS
+X &lt;- scale(X)
+beta &lt;- numeric(p)
+beta[c(1:length(Beta))] &lt;- Beta
+XB &lt;- X%*%beta
+sur_times &lt;- rexp(n,exp(XB))
+cens_times &lt;- rexp(n,0.2)
+times &lt;- pmin(sur_times,cens_times)
+status &lt;- as.numeric(sur_times &lt;= cens_times)
+exmat &lt;- cbind(times,status,X)
+L &lt;- 10; J &lt;- 10
+d &lt;- 2 * ceiling(log(p))
+temps &lt;- seq(3, 1, length.out = L)
+tau &lt;- 0.5; r &lt;- 1; a &lt;- 6; b &lt;- p-a
+nlptype &lt;- 0 ### PiMOM nonlocal prior
+cur_cols &lt;- c(1,2,3) ### Starting model for the search algorithm
+nf &lt;- 0 ### No fixed columns
+
+### Running the Function
+coxout &lt;- cox_bvs(exmat,cur_cols,nf,tau,r,nlptype,a,b,d,L,J,temps)
+
+### The number of visited model for this specific run:
+length(coxout$hash_key)
+
+
+### The selected model:
+which(coxout$max_model&gt;0)
+
+### The unnormalized probability of the selected model:
+coxout$max_prob
+
+</code></pre>
+
+
+</div>

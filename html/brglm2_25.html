@@ -1,0 +1,208 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>expo.brglmFit</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Estimate the exponential of parameters of generalized linear models
+using various methods</h2>
+
+<h3>Description</h3>
+
+<p>The <code>expo()</code> method uses the supplied <code>"brglmFit"</code> or
+<code>"glm"</code> object to estimate the exponential of parameters of
+generalized linear models with maximum likelihood or various mean
+and median bias reduction methods. <code>expo()</code> is useful for computing
+(corrected) estimates of the multiplicative impact of a unit
+increase on a covariate on the mean of a Poisson log-linear model
+(<code>family = poisson("log")</code> in <code>glm()</code>) while adjusting for other
+covariates, the odds ratio associated with a unit increase on a
+covariate in a logistic regression model (<code>family = binomial("logit")</code> in <code>glm()</code>) while adjusting for other
+covariates, the relative risk associated with a unit increase on a
+covariate in a relative risk regression model (<code>family = binomial("log")</code> in <code>glm()</code>) while adjusting for other covariates,
+among others.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">## S3 method for class 'brglmFit'
+expo(
+  object,
+  type = c("correction*", "correction+", "Lylesetal2012", "AS_median", "ML"),
+  level = 0.95
+)
+
+## S3 method for class 'glm'
+expo(
+  object,
+  type = c("correction*", "correction+", "Lylesetal2012", "AS_median", "ML"),
+  level = 0.95
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>object</code></td>
+<td>
+<p>an object of class <code>"brglmFit"</code> or
+<code>"glm"</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>type</code></td>
+<td>
+<p>the type of correction to be used. The available
+options are <code>"correction*"</code> (explicit mean bias correction with
+a multiplicative adjustment), <code>"correction*"</code> (explicit mean
+bias correction with an additive adjustment), <code>"Lylesetal2012"</code>
+(explicit median bias correction using the multiplicative
+adjustment in Lyles et al., 2012), <code>"AS_median"</code> (median bias
+reduction), and <code>"ML"</code> (maximum likelihood). See Details.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>level</code></td>
+<td>
+<p>the confidence level required. Default is <code>0.95</code>.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The supported methods through the <code>type</code> argument are:
+</p>
+
+<ul>
+<li> <p><code>"ML"</code>: the estimates of the exponentiated parameters are
+<code class="reqn">\exp(\hat\theta_j)</code>, where <code class="reqn">\theta_j</code> is the maximum
+likelihood estimates for the <code class="reqn">j</code>th regression parameter.
+</p>
+</li>
+<li> <p><code>"correction*"</code>: the estimates of the exponentiated parameters
+are <code class="reqn">\exp(\hat\theta_j) / (1 + \hat{v}_j / 2)</code>, where
+<code class="reqn">\hat\theta_j</code> is the estimate of the <code class="reqn">j</code>th regression
+parameter using <code>type = "AS_mixed"</code> in <code>brglmFit()</code>.
+</p>
+</li>
+<li> <p><code>"correction+"</code>: the estimates of the exponentiated parameters
+are <code class="reqn">\exp(\hat\theta_j) (1 - \hat{v}_j / 2)</code>, where
+<code class="reqn">\hat\theta_j</code> is the estimate of the <code class="reqn">j</code>th regression
+parameter using <code>type = "AS_mixed"</code> in <code>brglmFit()</code>.
+</p>
+</li>
+<li> <p><code>"Lylesetal2012"</code>: the estimates of the exponentiated parameters
+are <code class="reqn">\exp(\hat\theta_j) exp(- \hat{v}_j / 2)</code>, where
+<code class="reqn">\hat\theta_j</code> is the estimate of the <code class="reqn">j</code>th regression
+parameter using <code>type = "AS_mixed"</code> in <code>brglmFit()</code>. This estimator
+has been proposed in Lyles et al. (2012).
+</p>
+</li>
+<li> <p><code>"AS_median"</code>: the estimates of the exponentiated parameters are
+<code class="reqn">\exp(\hat\theta_j)</code>, where <code class="reqn">\hat\theta_j</code> is the estimate
+of the <code class="reqn">j</code>th regression parameter using <code>type = "AS_median"</code> in
+<code>brglmFit()</code>.
+</p>
+</li>
+</ul>
+<p><code>"correction*"</code> and <code>"correction+"</code> are based on multiplicative and
+additive adjustments, respectively, of the exponential of a
+reduced-bias estimator (like the ones coming from <code>brglmFit()</code> with
+<code>type = "AS_mixed"</code>, <code>type = "AS_mean"</code>, and <code>type = "correction"</code>). The form of those adjustments results from the
+expression of the first-term in the mean bias expansion of the
+exponential of a reduced-bias estimator. See, for example, Di
+Caterina &amp; Kosmidis (2019, expression 12) for the general form of
+the first-term of the mean bias of a smooth transformation of a
+reduced-bias estimator.
+</p>
+<p>The estimators from <code>"correction+"</code>, <code>"correction*"</code>,
+<code>"Lylesetal2012"</code> have asymptotic mean bias of order smaller than
+than of the maximum likelihood estimator. The estimators from
+<code>"AS_median"</code> are asymptotically closed to being median unbiased
+than the maximum likelihood estimator is.
+</p>
+<p>Estimated standard errors are computed using the delta method,
+where both the Jacobin and the information matrix are evaluated at
+the logarithm of the estimates of the exponentiated parameters.
+</p>
+<p>Confidence intervals results by taking the exponential of the
+limits of standard Wald-type intervals computed at the logarithm of
+the estimates of the exponentiated parameters.
+</p>
+
+
+<h3>Value</h3>
+
+<p>a list inheriting from class <code>"brglmFit_expo"</code> with
+components <code>coef</code> (the estimates of the exponentiated
+regression parameters), <code>se</code> (the corresponding estimated
+standard errors for the exponentiated parameters), <code>ci</code>
+(confidence intervals of level <code>level</code> for the exponentiated
+parameters), and <code>type</code> for the <code>type</code> of correction that has
+been requested.
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Ioannis Kosmidis <code style="white-space: pre;">⁠[aut, cre]⁠</code> <a href="mailto:ioannis.kosmidis@warwick.ac.uk">ioannis.kosmidis@warwick.ac.uk</a>
+</p>
+
+
+<h3>References</h3>
+
+<p>Di Caterina C, Kosmidis I (2019). Location-Adjusted Wald Statistics for Scalar
+Parameters. <em>Computational Statistics &amp; Data Analysis</em>, <strong>138</strong>,
+126-142. <a href="https://doi.org/10.1016/j.csda.2019.04.004">doi:10.1016/j.csda.2019.04.004</a>.
+</p>
+<p>Kosmidis I, Kenne Pagui E C, Sartori N (2020). Mean and median bias
+reduction in generalized linear models. <em>Statistics and Computing</em>,
+<strong>30</strong>, 43-59. <a href="https://doi.org/10.1007/s11222-019-09860-6">doi:10.1007/s11222-019-09860-6</a>.
+</p>
+<p>Cordeiro G M, McCullagh P (1991). Bias correction in generalized
+linear models. <em>Journal of the Royal Statistical Society. Series B
+(Methodological)</em>, <strong>53</strong>, 629-643. <a href="https://doi.org/10.1111/j.2517-6161.1991.tb01852.x">doi:10.1111/j.2517-6161.1991.tb01852.x</a>.
+</p>
+<p>Lyles R H, Guo Y, Greenland S (2012). Reducing bias and mean
+squared error associated with regression-based odds ratio
+estimators. <em>Journal of Statistical Planning and Inference</em>,
+<strong>142</strong> 3235–3241. <a href="https://doi.org/10.1016/j.jspi.2012.05.005">doi:10.1016/j.jspi.2012.05.005</a>.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>brglm_fit()</code> and and <code>brglm_control()</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+## The lizards example from ?brglm::brglm
+lizardsML &lt;- glm(cbind(grahami, opalinus) ~ height + diameter +
+                 light + time, family = binomial(logit), data = lizards,
+                 method = "glm.fit")
+# Get estimates, standard errors, and confidence intervals of odds
+# ratios with various methods
+expo(lizardsML, type = "ML")
+expo(lizardsML, type = "correction*")
+expo(lizardsML, type = "Lylesetal2012")
+expo(lizardsML, type = "correction+")
+expo(lizardsML, type = "AS_median")
+
+## Example from ?glm
+## Dobson (1990) Page 93: Randomized Controlled Trial :
+counts &lt;- c(18,17,15,20,10,20,25,13,12)
+outcome &lt;- gl(3,1,9)
+treatment &lt;- gl(3,3)
+glm.D93 &lt;- glm(counts ~ outcome + treatment, family = poisson())
+expo(glm.D93, type = "correction*")
+
+</code></pre>
+
+
+</div>

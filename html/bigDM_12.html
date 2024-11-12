@@ -1,0 +1,256 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>mergeINLA</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Merge <code>inla</code> objects for partition models</h2>
+
+<h3>Description</h3>
+
+<p>The function takes local models fitted for each subregion of the whole spatial domain and unifies them into a single <code>inla</code> object.
+This function is valid for both disjoint and <em>k</em>-order neighbourhood models.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">mergeINLA(
+  inla.models = list(),
+  k = NULL,
+  ID.area = "Area",
+  ID.year = NULL,
+  ID.disease = NULL,
+  O = "O",
+  E = "E",
+  merge.strategy = "original",
+  compute.DIC = TRUE,
+  n.sample = 1000,
+  compute.fitted.values = FALSE
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>inla.models</code></td>
+<td>
+<p>list of multiple objects of class <code>inla</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>k</code></td>
+<td>
+<p>numeric value with the neighbourhood order used for the partition model. If k=0 the <em>Disjoint model</em> is considered.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ID.area</code></td>
+<td>
+<p>character; name of the variable that contains the IDs of spatial areal units. Default to <code>"Area"</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ID.year</code></td>
+<td>
+<p>character; name of the variable that contains the IDs of time points. Default to <code>"NULL"</code> (for spatial models).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ID.disease</code></td>
+<td>
+<p>character; name of the variable that contains the IDs of the diseases. Default to <code>"NULL"</code> (only required for multivariate models).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>O</code></td>
+<td>
+<p>character; name of the variable that contains the observed number of disease cases for each areal units. Default to <code>"O"</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>E</code></td>
+<td>
+<p>character; name of the variable that contains either the expected number of disease cases or the population at risk for each areal unit. Default to <code>"E"</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>merge.strategy</code></td>
+<td>
+<p>one of either <code>"mixture"</code> or <code>"original"</code> (default), which specifies the merging strategy to compute posterior marginal estimates of the linear predictor (log-risks or log-rates).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>compute.DIC</code></td>
+<td>
+<p>logical value; if <code>TRUE</code> (default) then approximate values of the Deviance Information Criterion (DIC) and Watanabe-Akaike Information Criterion (WAIC) are computed.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>n.sample</code></td>
+<td>
+<p>numeric; number of samples to generate from the posterior marginal distribution of the linear predictor when computing approximate DIC/WAIC values. Default to 1000.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>compute.fitted.values</code></td>
+<td>
+<p>logical value (default <code>FALSE</code>); if <code>TRUE</code> transforms the posterior marginal distribution of the linear predictor to the exponential scale (risks or rates). CAUTION: This method might be time consuming.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>If the disjoint model is fitted (<code>k=0</code> argument), the log-risk surface is just the union of the posterior estimates of each submodel.
+<br><br>
+If the <em>k</em>-order neighbourhood model is fitted (<code>k&gt;0</code> argument), note that the final log-risk surface <code class="reqn">\log{\bf r}=(\log{r_1},\ldots,\log{r_{nT}})^{'}</code> is no longer the union of the posterior estimates obtained from each submodel.
+Since multiple log-risk estimates can be obtained for some areal-time units from the different local submodel, their posterior estimates must be properly combined to obtain a single posterior distribution for each <code class="reqn">\log{r_{it}}</code>.
+Two different merging strategies could be considered. If the <code>merge.strategy="mixture"</code> argument is specified, mixture distributions of the estimated posterior probability density functions with weights proportional to the conditional predictive ordinates (CPO) are computed.
+If the <code>merge.strategy="original"</code> argument is specified (default option), the posterior marginal estimate ot the areal-unit corresponding to the original submodel is selected.
+<br><br>
+See Orozco-Acosta et al. (2021) and Orozco-Acosta et al. (2023) for more details.
+</p>
+
+
+<h3>Value</h3>
+
+<p>This function returns an object of class <code>inla</code> containing the following elements:
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>summary.fixed</code></td>
+<td>
+<p>A data.frame containing the mean, standard deviation and quantiles of the model's fixed effects. This feature is EXPERIMENTAL for the moment.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>marginals.fixed</code></td>
+<td>
+<p>A list containing the posterior marginal density of the model's fixed effects. This feature is EXPERIMENTAL for the moment.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>summary.fixed.partition</code></td>
+<td>
+<p>A data.frame containing the mean, standard deviation and quantiles of the model's fixed effects in each partition.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>marginals.fixed.partition</code></td>
+<td>
+<p>A list containing the posterior marginal density of the model's fixed effects in each partition.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>summary.random</code></td>
+<td>
+<p>If <code>k=0</code> a list with a data.frame containing the mean, standard deviation and quantiles of the model's random effects.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>marginals.random</code></td>
+<td>
+<p>If <code>k=0</code> a list containing the posterior marginal densities of the model's random effects.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>summary.linear.predictor</code></td>
+<td>
+<p>If <code>k=0</code> a data.frame containing the mean, standard deviation and quantiles of the log-risks (or log-rates) in the model.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>marginals.linear.predictor</code></td>
+<td>
+<p>If <code>k=0</code> a list containing the posterior marginal densities of the log-risks (or log-rates) in the model.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>summary.fitted.values</code></td>
+<td>
+<p>A data.frame containing the mean, standard deviation, quantiles, mode and cdf of the risks (or rates) in the model. Available only if <code>compute.fitted.values=TRUE</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>marginals.fitted.values</code></td>
+<td>
+<p>A list containing the posterior marginal densities of the risks (or rates) in the model. Available only if <code>compute.fitted.values=TRUE</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>summary.cor</code></td>
+<td>
+<p>A data.frame containing the mean, standard deviation, quantiles and mode of the between-disease correlation coefficients. Only for the multivariate spatial models fitted using the <code>MCAR_INLA</code> function.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>marginals.cor</code></td>
+<td>
+<p>A list containing the posterior marginal densities of the between-disease correlation coefficients. Only for the multivariate spatial models fitted using the <code>MCAR_INLA</code> function.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>summary.cor.partition</code></td>
+<td>
+<p>A data.frame containing the mean, standard deviation, quantiles and mode of the between-disease correlation coefficients in each partition. Only for the multivariate spatial models fitted using the <code>MCAR_INLA</code> function.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>marginals.cor.partition</code></td>
+<td>
+<p>A list containing the posterior marginal densities of the between-disease correlation coefficients in each partition. Only for the multivariate spatial models fitted using the <code>MCAR_INLA</code> function.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>summary.var</code></td>
+<td>
+<p>A data.frame containing the mean, standard deviation, quantiles and mode of the within-disease variances for each disease. Only for the multivariate spatial models fitted using the <code>MCAR_INLA</code> function.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>marginals.var</code></td>
+<td>
+<p>A list containing the posterior marginal densities of the within-disease variances for each disease. Only for the multivariate spatial models fitted using the <code>MCAR_INLA</code> function.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>summary.var.partition</code></td>
+<td>
+<p>A data.frame containing the mean, standard deviation, quantiles and mode of the within-disease variances in each partition. Only for the multivariate spatial models fitted using the <code>MCAR_INLA</code> function.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>marginals.var.partition</code></td>
+<td>
+<p>A list containing the posterior marginal densities of the within-disease variances in each partition. Only for the multivariate spatial models fitted using the <code>MCAR_INLA</code> function.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>logfile</code></td>
+<td>
+<p>A list of the log files of each submodel.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>version</code></td>
+<td>
+<p>A list containing information about the R-INLA version.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>cpu.used</code></td>
+<td>
+<p>The sum of cpu times used by the <code>inla</code> function for each submodel (<code>Pre</code>, <code>Running</code> and <code>Post</code>), and the cpu time of the merging process <code>Merging</code>.</p>
+</td>
+</tr>
+</table>
+<h3>Examples</h3>
+
+<pre><code class="language-R">## See the vignettes accompanying this package ##
+
+</code></pre>
+
+
+</div>

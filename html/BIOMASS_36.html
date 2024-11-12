@@ -1,0 +1,123 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>summaryByPlot</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Summarize by plot (or subplot) the posterior distribution of AGB values</h2>
+
+<h3>Description</h3>
+
+<p>This function summarizes the matrix <code>AGB_val</code> given by the function <code>AGBmonteCarlo()</code> by plot. Or just do the sums
+for each plot of the AGB if the argument <code>AGB_val</code> is the resulting vector from the function <code>computeAGB()</code>.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">summaryByPlot(AGB_val, plot, drawPlot = FALSE, subplot = NULL)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>AGB_val</code></td>
+<td>
+<p>Matrix resulting from the function <code>AGBmonteCarlo()</code> (AGB_val element of the list),
+or just the output of the function <code>AGBmonteCarlo()</code>. Or the output of the function <code>computeAGB()</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>plot</code></td>
+<td>
+<p>Vector with the code of plot</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>drawPlot</code></td>
+<td>
+<p>a logical to draw the plot (see Details)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>subplot</code></td>
+<td>
+<p>Data frame, output of the function <code>cutPlot()</code></p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>If some trees belong to an unknown plot (i.e. NA value in the plot arguments), their AGB values are randomly assigned
+to a plot at each iteration of the AGB monte Carlo approach. Or discarded when using output from <code>computeAGB()</code>.
+</p>
+<p>The <code>drawPlot</code> argument is a logical that if it is set <code>TRUE</code>, a graph will appear with the plot given on absciss and the value
+of AGB on ordinate, the red segments are the quantile, if <code>AGB_val</code> is the result of the function <code>AGBmonteCarlo()</code>.
+If the <code>subplot</code> arguments is set and the <code>drawPlot</code> is set <code>TRUE</code>, a graph is drawn with the spatialisation of the plots.
+</p>
+
+
+<h3>Value</h3>
+
+<p>a data frame where:
+</p>
+
+<ul>
+<li> <p><code>plot</code>: the code of the plot
+</p>
+</li>
+<li> <p><code>AGB</code>: AGB value at the plot level
+</p>
+</li>
+<li> <p><code>Cred_2.5</code>: the quantile 2.5\
+</p>
+</li>
+<li> <p><code>Cred_97.5</code>: the quantile 97.5\
+</p>
+</li>
+</ul>
+<p>If the <code>subplot</code> is set, the output is a list with the previous data frame and a simple features (sf) geometry object.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+# Load a database
+data(NouraguesHD)
+data(KarnatakaForest)
+
+# Modelling height-diameter relationship
+HDmodel &lt;- modelHD(D = NouraguesHD$D, H = NouraguesHD$H, method = "log2")
+
+# Retrieving wood density values
+
+KarnatakaWD &lt;- getWoodDensity(KarnatakaForest$genus, KarnatakaForest$species,
+  stand = KarnatakaForest$plotId
+)
+
+
+# Propagating errors
+
+filt &lt;- KarnatakaForest$plotId %in% c("BSP20", "BSP14")
+resultMC &lt;- AGBmonteCarlo(
+  D = KarnatakaForest$D[filt], WD = KarnatakaWD$meanWD[filt],
+  errWD = KarnatakaWD$sdWD[filt], HDmodel = HDmodel
+)
+
+plot &lt;- KarnatakaForest$plotId[ filt ]
+
+# The summary by plot
+summaryByPlot(AGB_val = resultMC$AGB_simu, plot)
+
+# The summary by plot for computeAGB
+H &lt;- retrieveH(KarnatakaForest$D[filt], model = HDmodel)$H
+AGB &lt;- computeAGB(KarnatakaForest$D[filt], WD = KarnatakaWD$meanWD[filt], H = H)
+summaryByPlot(AGB, plot)
+
+</code></pre>
+
+
+</div>

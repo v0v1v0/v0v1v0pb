@@ -1,0 +1,257 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>BNDataset-class</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>BNDataset class.</h2>
+
+<h3>Description</h3>
+
+<p>Contains the all of the data that can be extracted from a given dataset:
+raw data, imputed data, raw and imputed data with bootstrap.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">BNDataset(data, discreteness, variables = NULL, node.sizes = NULL, ...)
+
+## S4 method for signature 'BNDataset'
+initialize(.Object)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>.Object</code></td>
+<td>
+<p>an empty BNDataset.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+<p>raw data.frame or path/name of the file containing the raw dataset (see 'Details').</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>discreteness</code></td>
+<td>
+<p>a vector of booleans indicating if the variables are discrete or continuous
+(<code>TRUE</code> and <code>FALSE</code>, respectively),
+or path/name of the file containing header information for the dataset (discreteness, variable names, cardinality - see 'Details').</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>variables</code></td>
+<td>
+<p>vector of variable names.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>node.sizes</code></td>
+<td>
+<p>vector of variable cardinalities (for discrete variables) or quantization ranges (for continuous variables).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>further arguments for reading a dataset from files (see documentation for <code>read.dataset</code>).</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>There are two ways to build a BNDataset: using two files containing respectively header informations
+and data, and manually providing the data table and the related header informations
+(variable names, cardinality and discreteness).
+</p>
+<p>The key informations needed are:
+1. the data;
+2. the state of variables (discrete or continuous);
+3. the names of the variables;
+4. the cardinalities of the variables (if discrete), or the number of levels they have to be quantized into
+(if continuous). 
+Names and cardinalities/leves can be guessed by looking at the data, but it is strongly advised to provide
+_all_ of the informations, in order to avoid problems later on during the execution.
+</p>
+<p>Data can be provided in form of data.frame or matrix. It can contain NAs. By default, NAs are indicated with '?';
+to specify a different character for NAs, it is possible to provide also the <code>na.string.symbol</code> parameter.
+The values contained in the data have to be numeric (real for continuous variables, integer for discrete ones).
+The default range of values for a discrete variable <code>X</code> is <code>[1,|X|]</code>, with <code>|X|</code> being
+the cardinality of <code>X</code>. The same applies for the levels of quantization for continuous variables.
+If the value ranges for the data are different from the expected ones, it is possible to specify a different
+starting value (for the whole dataset) with the <code>starts.from</code> parameter. E.g. by <code>starts.from=0</code>
+we assume that the values of the variables in the dataset have range <code>[0,|X|-1]</code>.
+Please keep in mind that the internal representation of bnstruct starts from 1,
+and the original starting values are then lost. 
+</p>
+<p>It is possible to use two files, one for the data and one for the metadata,
+instead of providing manually all of the info. 
+bnstruct requires the data files to be in a format subsequently described.
+The actual data has to be in (a text file containing data in) tabular format, one tuple per row,
+with the values for each variable separated by a space or a tab. Values for each variable have to be
+numbers, starting from <code>1</code> in case of discrete variables.
+Data files can have a first row containing the names of the corresponding variables.
+</p>
+<p>In addition to the data file, a header file containing additional informations can also be provided.
+An header file has to be composed by three rows of tab-delimited values:
+1. list of names of the variables, in the same order of the data file;
+2. a list of integers representing the cardinality of the variables, in case of discrete variables,
+or the number of levels each variable has to be quantized in, in case of continuous variables;
+3. a list that indicates, for each variable, if the variable is continuous
+(<code>c</code> or <code>C</code>), and thus has to be quantized before learning,
+or discrete (<code>d</code> or <code>D</code>).
+In case of need of more advanced options when reading a dataset from files, please refer to the
+documentation of the <code>read.dataset</code> method. Imputation and bootstrap are also available
+as separate routines (<code>impute</code> and <code>bootstrap</code>, respectively).
+</p>
+<p>In case of an evolving system to be modeled as a Dynamic Bayesian Network, it is possible to specify 
+only the description of the variables of a single instant; the information will be replicated for all
+the <code>num.time.steps</code> instants that compose the dataset, where <code>num.time.steps</code> needs to be
+set as parameter. In this case, it is assumed that the N variables v1, v2, ..., vN of a single instant 
+appear in the dataset as v1_t1, v2_t1, ..., vN_t1, v1_t2, v2_t2, ..., in this exact order.
+The user can however provide information for all the variables in all the instants; if it is not the case,
+the name of the variables will be edited to include the instant. In case of an evolving system, the
+<code>num.variables</code> slots refers anyway to the total number of variables observed in all the instants
+(the number of columns in the dataset), and not to a single instant.
+</p>
+
+
+<h3>Value</h3>
+
+<p>BNDataset object.
+</p>
+<p>a BNDataset object.
+</p>
+
+
+<h3>Slots</h3>
+
+
+<dl>
+<dt>
+<code>name</code>:</dt>
+<dd>
+<p>name of the dataset</p>
+</dd>
+<dt>
+<code>header.file</code>:</dt>
+<dd>
+<p>name and location of the header file</p>
+</dd>
+<dt>
+<code>data.file</code>:</dt>
+<dd>
+<p>name and location of the data file</p>
+</dd>
+<dt>
+<code>variables</code>:</dt>
+<dd>
+<p>names of the variables in the network</p>
+</dd>
+<dt>
+<code>node.sizes</code>:</dt>
+<dd>
+<p>cardinality of each variable of the network</p>
+</dd>
+<dt>
+<code>num.variables</code>:</dt>
+<dd>
+<p>number of variables (columns) in the dataset</p>
+</dd>
+<dt>
+<code>discreteness</code>:</dt>
+<dd>
+<p><code>TRUE</code> if variable is discrete, <code>FALSE</code> if variable is continue</p>
+</dd>
+<dt>
+<code>quantiles</code>:</dt>
+<dd>
+<p>list of vectors containing the quantiles, one vector per variable. Each vector is <code>NULL</code> if the variable is discrete, and contains the quantiles if it is continuous</p>
+</dd>
+<dt>
+<code>num.items</code>:</dt>
+<dd>
+<p>number of observations (rows) in the dataset</p>
+</dd>
+<dt>
+<code>has.raw.data</code>:</dt>
+<dd>
+<p>TRUE if the dataset contains data read from a file</p>
+</dd>
+<dt>
+<code>has.imputed.data</code>:</dt>
+<dd>
+<p>TRUE if the dataset contains imputed data (computed from raw data)</p>
+</dd>
+<dt>
+<code>raw.data</code>:</dt>
+<dd>
+<p>matrix containing raw data</p>
+</dd>
+<dt>
+<code>imputed.data</code>:</dt>
+<dd>
+<p>matrix containing imputed data</p>
+</dd>
+<dt>
+<code>has.boots</code>:</dt>
+<dd>
+<p>dataset has bootstrap samples</p>
+</dd>
+<dt>
+<code>boots</code>:</dt>
+<dd>
+<p>list of bootstrap samples</p>
+</dd>
+<dt>
+<code>has.imputed.boots</code>:</dt>
+<dd>
+<p>dataset has imputed bootstrap samples</p>
+</dd>
+<dt>
+<code>imp.boots</code>:</dt>
+<dd>
+<p>list of imputed bootstrap samples</p>
+</dd>
+<dt>
+<code>num.boots</code>:</dt>
+<dd>
+<p>number of bootstrap samples</p>
+</dd>
+<dt>
+<code>num.time.steps</code>:</dt>
+<dd>
+<p>number of instants in which the network is observed (1, unless it is a dynamic system)</p>
+</dd>
+</dl>
+<h3>See Also</h3>
+
+<p>read.dataset, impute, bootstrap
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## Not run: 
+# create from files
+dataset &lt;- BNDataset("file.data", "file.header")
+
+# other way: create from raw dataset and metadata
+data &lt;- matrix(c(1:16), nrow = 4, ncol = 4)
+dataset &lt;- BNDataset(data = data,
+                     discreteness = rep('d',4),
+                     variables = c("a", "b", "c", "d"),
+                     node.sizes = c(4,8,12,16))
+
+## End(Not run)
+
+</code></pre>
+
+
+</div>

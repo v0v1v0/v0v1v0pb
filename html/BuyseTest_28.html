@@ -1,0 +1,120 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>BuyseTTEM</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Time to Event Model</h2>
+
+<h3>Description</h3>
+
+<p>Pre-compute quantities of a time to event model useful for predictions.
+Only does something for prodlim objects.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">BuyseTTEM(object, ...)
+
+## S3 method for class 'formula'
+BuyseTTEM(object, treatment, iid, iid.surv = "exp", ...)
+
+## S3 method for class 'prodlim'
+BuyseTTEM(object, treatment, iid, iid.surv = "exp", ...)
+
+## S3 method for class 'survreg'
+BuyseTTEM(object, treatment, n.grid = 1000, iid, ...)
+
+## S3 method for class 'BuyseTTEM'
+BuyseTTEM(object, ...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>object</code></td>
+<td>
+<p>time to event model.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>additional arguments passed to lower lever methods.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>treatment</code></td>
+<td>
+<p>[character] Name of the treatment variable.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>iid</code></td>
+<td>
+<p>[logical] Should the iid decomposition of the predictions be output.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>iid.surv</code></td>
+<td>
+<p>[character] Estimator of the survival used when computing the influence function.
+Can be the product limit estimator (<code>"prodlim"</code>) or an exponential approximation (<code>"exp"</code>, same as in <code>riskRegression::predictCoxPL</code>).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>n.grid</code></td>
+<td>
+<p>[integer, &gt;0] Number of timepoints used to discretize the time scale. Not relevant for prodlim objects.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>An S3 object of class <code>BuyseTTEM</code>.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">library(prodlim)
+library(data.table)
+
+tau &lt;- seq(0,3,length.out=10)
+
+#### survival case ####
+set.seed(10)
+df.data &lt;- simBuyseTest(1e2, n.strata = 2)
+
+e.prodlim &lt;- prodlim(Hist(eventtime,status)~treatment+strata, data = df.data)
+## plot(e.prodlim)
+
+e.prodlim2 &lt;- BuyseTTEM(e.prodlim, treatment = "treatment", iid = TRUE)
+
+predict(e.prodlim2, time = tau, treatment = "T", strata = "a")
+predict(e.prodlim, times = tau, newdata = data.frame(treatment = "T", strata = "a"))
+
+predict(e.prodlim2, time = tau, treatment = "C", strata = "a")
+predict(e.prodlim, times = tau, newdata = data.frame(treatment = "C", strata = "a"))
+
+#### competing risk case ####
+df.dataCR &lt;- copy(df.data)
+df.dataCR$status &lt;- rbinom(NROW(df.dataCR), prob = 0.5, size = 2)
+
+e.prodlimCR &lt;- prodlim(Hist(eventtime,status)~treatment+strata, data = df.dataCR)
+## plot(e.prodlimCR)
+
+e.prodlimCR2 &lt;- BuyseTTEM(e.prodlimCR, treatment = "treatment", iid = TRUE)
+
+predict(e.prodlimCR2, time = tau, treatment = "T", strata = "a")
+predict(e.prodlimCR, times = tau, newdata = data.frame(treatment = "T", strata = "a"), cause = 1)
+
+predict(e.prodlimCR2, time = tau, treatment = "C", strata = "a")
+predict(e.prodlimCR, times = tau, newdata = data.frame(treatment = "C", strata = "a"), cause = 1)
+</code></pre>
+
+
+</div>

@@ -1,0 +1,160 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>LN_hierarchical</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Bayesian estimation of a log - normal hierarchical model</h2>
+
+<h3>Description</h3>
+
+<p>Function that estimates a log-normal linear mixed model with GIG priors on the variance components,
+in order to assure the existence of the posterior moments of key functionals in the original data scale like conditioned means
+or the posterior predictive distribution.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">LN_hierarchical(
+  formula_lme,
+  data_lme,
+  y_transf = TRUE,
+  functional = c("Subject", "Marginal", "PostPredictive"),
+  data_pred = NULL,
+  order_moment = 2,
+  nsamp = 10000,
+  par_tau = NULL,
+  par_sigma = NULL,
+  var_pri_beta = 10000,
+  inits = list(NULL),
+  verbose = TRUE,
+  burnin = 0.1 * nsamp,
+  n_thin = 1
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>formula_lme</code></td>
+<td>
+<p>A two-sided linear formula object describing
+both the fixed-effects and random-effects part of the model is required. For details see <code>lmer</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>data_lme</code></td>
+<td>
+<p>Optional data frame containing the variables named in <code>formula_lme</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>y_transf</code></td>
+<td>
+<p>Logical. If <code>TRUE</code>, the response variable is assumed already as log-transformed.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>functional</code></td>
+<td>
+<p>Functionals of interest: <code>"Subject"</code> for subject-specific conditional mean,
+<code>"Marginal"</code> for the overall expectation and <code>"PostPredictive"</code> for the posterior predictive distribution.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>data_pred</code></td>
+<td>
+<p>Data frame with the covariate patterns of interest for prediction. All the covariates present in the <code>data_lme</code> object must be included. If <code>NULL</code> the design matrix of the model is used.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>order_moment</code></td>
+<td>
+<p>Order of the posterior moments that are required to be finite.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nsamp</code></td>
+<td>
+<p>Number of Monte Carlo iterations.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>par_tau</code></td>
+<td>
+<p>List of vectors defining the triplets of hyperparaemters for each random effect variance (as many vectors as the number of specified random effects variances).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>par_sigma</code></td>
+<td>
+<p>Vector containing the tiplet of hyperparameters for the prior of the data variance.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>var_pri_beta</code></td>
+<td>
+<p>Prior variance for the model coefficients.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>inits</code></td>
+<td>
+<p>List of object for initializing the chains. Objects with compatible dimensions must be named with <code>beta</code>, <code>sigma2</code> and <code>tau2</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>verbose</code></td>
+<td>
+<p>Logical. If <code>FALSE</code>, the messages from the Gibbs sampler are not shown.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>burnin</code></td>
+<td>
+<p>Number of iterations to consider as burn-in.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>n_thin</code></td>
+<td>
+<p>Number of thinning observations.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The function allows to estimate a log-normal linear mixed model through a Gibbs sampler. The model equation is specified as in <code>lmer</code> model and the target functionals to estimate need to be declared.
+A weakly informative prior setting is automatically assumed, always keeping the finiteness of the posterior moments of the target functionals.
+</p>
+
+
+<h3>Value</h3>
+
+<p>The output list provided is composed of three parts. The object <code>$par_prior</code> contains the parameters fixed for the variance components priors. The object <code>$samples</code> contains the posterior samples for all the paramters.
+They are returned as a <code>mcmc</code> object and they can be analysed trough the functions contained in the
+<code>coda</code> package in order to check for the convergence of the algorithm. Finally, in <code>$summaries</code> an overview of the posteriors of the model parameters and of the target functionals is provided.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+library(BayesLN)
+# Load the dataset included in the package
+data("laminators")
+data_pred_new &lt;- data.frame(Worker = unique(laminators$Worker))
+Mod_est&lt;-LN_hierarchical(formula_lme = log_Y~(1|Worker),
+                         data_lme = laminators,
+                         data_pred = data_pred_new,
+                         functional = c("Subject","Marginal"),
+                         order_moment = 2, nsamp = 50000, burnin = 10000)
+
+
+</code></pre>
+
+
+</div>

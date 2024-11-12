@@ -1,0 +1,282 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>randomise</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>GLM non-parametric permutation testing</h2>
+
+<h3>Description</h3>
+
+<p><code>randomise</code> and <code>randomise_3d</code> perform non-parametric permutation
+testing for analyses in which there is a single or multiple design matrix per
+region, respectively. In the latter case, <code>X</code> should be a 3D array.
+</p>
+<p><code>partition</code> partitions a full design matrix into separate matrices of
+covariates of interest and nuisance covariates based on a given contrast and
+partition method.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">partition(M, contrast, part.method = c("beckmann", "guttman", "ridgway"))
+
+randomise(perm.method, part.method, N, perms, X, y, contrasts, ctype, nC,
+  skip = NULL, n = dim(X)[1L], p = qr.default(X)$rank,
+  ny = dim(y)[2L], dfR = n - p)
+
+randomise_3d(perm.method, part.method, N, perms, X, y, contrasts, ctype,
+  nC, runX = dimnames(X)[[3L]], n = dim(X)[1L], p = qr.default(X[, ,
+  1L])$rank, ny = length(runX), dfR = n - p)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>M</code></td>
+<td>
+<p>Numeric matrix or array of the full design matrix(es)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>contrast</code></td>
+<td>
+<p>For <code>partition</code>, a numeric matrix with 1 or more rows
+(for T and F contrasts, respectively) representing a <em>single
+contrast</em>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>part.method</code></td>
+<td>
+<p>Character string; the method of partitioning the design
+matrix into covariates of interest and nuisance. Default: <code>'beckmann'</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>perm.method</code></td>
+<td>
+<p>Character string indicating the permutation method.
+Default: <code>'freedmanLane'</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>N</code></td>
+<td>
+<p>Integer; number of permutations to create. Default: <code>5e3</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>perms</code></td>
+<td>
+<p>Matrix of permutations, if you would like to provide your own.
+Default: <code>NULL</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>X</code></td>
+<td>
+<p>Numeric matrix or 3D array of the design matrix(es)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>y</code></td>
+<td>
+<p>Numeric matrix of outcome variables, with 1 column per region, or a
+single column if there is a different design matrix per region</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>contrasts</code></td>
+<td>
+<p>Numeric matrix (for T statistics) or list of matrices (for F
+statistics) specifying the contrast(s) of interest; if only one contrast is
+desired, you can supply a vector (for T statistics)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ctype</code></td>
+<td>
+<p>The contrast type</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nC</code></td>
+<td>
+<p>Integer; the number of contrasts</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>skip</code></td>
+<td>
+<p>Integer vector indicating which (if any) contrasts to skip. Only
+used by <code>NBS</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>n, p, ny, dfR</code></td>
+<td>
+<p>Integers for the number of observations, design matrix
+columns (its rank), number of regions/outcome variables, and residual
+degrees of freedom, respectively</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>runX</code></td>
+<td>
+<p>Character vector of regions with non-singular designs</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p><code>partition</code> returns a list containing:
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>Mp</code></td>
+<td>
+<p>Numeric array; the combined partitioned arrays</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>X</code></td>
+<td>
+<p>Numeric array for the covariates of interest</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Z</code></td>
+<td>
+<p>Numeric array for the nuisance covariates</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>eCm</code></td>
+<td>
+<p>The <em>effective contrast</em>, equivalent to the original, for
+the partitioned model <code>[X, Z]</code> and considering all covariates</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>eCx</code></td>
+<td>
+<p>Same as <code>eCm</code>, but considering only <code>X</code></p>
+</td>
+</tr>
+</table>
+<p>A numeric array with dimensions <code class="reqn">n_y \times N \times n_c</code>;
+the number of rows equals number of regions/outcome variables, number of
+columns equals <code>N</code>, and the 3rd dimension is the number of contrasts
+</p>
+
+
+<h3>Model partitioning</h3>
+
+<p>Consider the matrix formulation of the <em>general linear model</em>:
+</p>
+<p style="text-align: center;"><code class="reqn">\mathbf{Y} = \mathbf{M} \psi + \in</code>
+</p>
+
+<p>where <code class="reqn">Y</code> is the vector of outcomes, <code class="reqn">M</code> is the full design matrix
+(including nuisance covariates), <code class="reqn">\psi</code> is the vector of parameter
+estimates, and <code class="reqn">\in</code> is the vector of error terms. In a permutation
+framework, algorithms are applied differently depending on the
+presence/absence of nuisance covariates; thus the model is separated
+depending on the contrast of interest:
+</p>
+<p style="text-align: center;"><code class="reqn">\mathbf{Y} = \mathbf{X}\beta + \mathbf{Z}\gamma + \in</code>
+</p>
+
+<p>where <code class="reqn">\mathbf{X}</code> contains covariates of interest, <code class="reqn">\mathbf{Z}</code>
+contains nuisance covariates, and <code class="reqn">\beta</code> and <code class="reqn">\gamma</code> are the
+associated parameter estimates.
+</p>
+<p>The manner of partitioning depends on the method. For example, for the
+<code>guttman</code> method, <code>X</code> is formed from the columns of <code>contrast</code>
+that have non-zero entries.
+</p>
+
+
+<h3>Permutation methods</h3>
+
+<p>The permutation methods can be split into 2 groups, depending on which part
+of the model they permute. For full details, see <em>Winkler et al., 2014</em>.
+</p>
+
+<dl>
+<dt>Permute Y</dt>
+<dd>
+<p>Freedman-Lane, Manly, and ter Braak</p>
+</dd>
+<dt>Permute X</dt>
+<dd>
+<p>Smith, Draper-Stoneman, and Still-White</p>
+</dd>
+</dl>
+<p>Depending on the size of the data, it may be faster to use a method that
+permutes <code>Y</code> instead of <code>X</code>. For example, in <code>NBS</code> with
+dense matrices (more than 400-500 edges), it will be somewhat faster to use
+the “Smith” method compared to “Freedman-Lane”. If using
+<code>brainGraph_GLM</code>, the number of vertices follows the same
+relationship.
+</p>
+<p>Furthermore, all methods except Still-White include the <code>Z</code> (nuisance
+covariate) matrix when calculating the permuted statistics.
+</p>
+
+
+<h3>References</h3>
+
+<p>Beckmann, C.F. and Jenkinson, M. and Smith, S.M. (2001) General
+multi-level linear modelling for group analysis in FMRI. Tech Rep.
+University of Oxford, Oxford.
+</p>
+<p>Guttman, I. (1982) <em>Linear Models: An Introduction</em>. Wiley,
+New York.
+</p>
+<p>Ridgway, G.R. (2009) Statistical analysis for longitudinal MR
+imaging of dementia. PhD thesis.
+</p>
+<p>Draper, N.R. and Stoneman, D.M. (1966) Testing for the inclusion
+of variables in linear regression by a randomisation technique.
+<em>Technometrics</em>. <b>8(4)</b>, 695–699.
+</p>
+<p>Freedman, D. and Lane, D. (1983) A nonstochastic interpretation
+of reported significance levels. <em>J Bus Econ Stat</em>, <b>1(4)</b>,
+292–298. doi: <a href="https://doi.org/10.1080/07350015.1983.10509354">10.1080/07350015.1983.10509354</a>
+</p>
+<p>Manly B.F.J. (1986) Randomization and regression methods for
+testing for associations with geographical, environmental, and biological
+distances between populations. <em>Res Popul Ecol</em>. <b>28(2)</b>,
+201–218.
+</p>
+<p>Nichols, T.E. and Holmes, A.P. (2001) Nonparametric permutation
+tests for functional neuroimaging: A primer with examples. <em>Human
+Brain Mapping</em>. <b>15(1)</b>, 1–25.
+doi: <a href="https://doi.org/10.1002/hbm.1058">10.1002/hbm.1058</a>
+</p>
+<p>Smith, S.M. and Jenkinson, M. and Beckmann, C. and Miller, K. and
+Woolrich, M. (2007) Meaningful design and contrast estimability in fMRI.
+<em>NeuroImage</em>. <b>34(1)</b>, 127–36.
+doi: <a href="https://doi.org/10.1016/j.neuroimage.2006.09.019">10.1016/j.neuroimage.2006.09.019</a>
+</p>
+<p>Still, A.W. and White, A.P. (1981) The approximate randomization
+test as an alternative to the F test in analysis of variance. <em>Br J
+Math Stat Psychol</em>. <b>34(2)</b>, 243–252.
+</p>
+<p>ter Braak, C.J.F. 1992. Permutation versus bootstrap significance
+tests in multiple regression and ANOVA. <em>Bootstrapping and related
+techniques</em>. Springer, Berlin, Heidelberg. 79–85.
+</p>
+<p>Winkler, A.M. and Ridgway, G.R. and Webster, M.A. and Smith, S.M.
+and Nichols, T.E. (2014) Permutation inference for the general linear
+model. <em>NeuroImage</em>. <b>92</b>, 381–397.
+doi: <a href="https://doi.org/10.1016/j.neuroimage.2014.01.060">10.1016/j.neuroimage.2014.01.060</a>
+</p>
+
+
+</div>

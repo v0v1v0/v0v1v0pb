@@ -1,0 +1,341 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>gtreg</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>
+Fitting Group Testing Models
+</h2>
+
+<h3>Description</h3>
+
+<p><kbd>gtreg</kbd> is a function to fit the group testing regression model specified through a symbolic description of the linear predictor and descriptions of the group testing setting.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">gtreg(formula, data, groupn, retest = NULL, sens = 1,
+ spec = 1, linkf = c("logit", "probit", "cloglog"),
+ method = c("Vansteelandt", "Xie"), sens.ind = NULL,
+ spec.ind = NULL, start = NULL, control = gt.control(...), ...)
+
+gtreg.fit(Y, X, groupn, sens, spec, linkf, start=NULL)
+
+EM(Y, X, groupn, sens, spec, linkf, start = NULL,
+ control = gt.control())
+
+EM.ret(Y, X, groupn, ret, sens, spec, linkf, sens.ind,
+ spec.ind, start = NULL, control = gt.control())
+
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>formula</code></td>
+<td>
+
+<p>an object of class <kbd>"formula"</kbd> (or one that can be coerced to that class): a symbolic description of 
+the model to be fitted. The details of model specification are given under 'Details'.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+
+<p>an optional data frame, list or environment (or object coercible by <kbd>as.data.frame</kbd> to a data 
+frame) containing the variables in the model. If not found in data, the variables are taken from 
+<kbd>environment(formula)</kbd>, typically the environment from which <kbd>gtreg</kbd> is called.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>groupn</code></td>
+<td>
+
+<p>a vector, list or data frame of the group numbers that designates individuals to groups.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>retest</code></td>
+<td>
+
+<p>a vector, list or data frame of individual retest results for Dorfman's retesting procedure. Default value is <kbd>NULL</kbd> for no retests. See 'Details' for how to code it.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>sens</code></td>
+<td>
+
+<p>sensitivity of the test, set to be 1 by default.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>spec</code></td>
+<td>
+
+<p>specificity of the test, set to be 1 by default.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>sens.ind</code></td>
+<td>
+
+<p>sensitivity of the individual retests, set to be equal to <kbd>sens</kbd> if not specified otherwise.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>spec.ind</code></td>
+<td>
+
+<p>specificity of the individual retests, set to be equal to <kbd>spec</kbd> if not specified otherwise.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>linkf</code></td>
+<td>
+
+<p>a character string specifying one of the three link functions for a binomial model: <kbd>"logit"</kbd> 
+(default) or <kbd>"probit"</kbd> or <kbd>"cloglog"</kbd>.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>method</code></td>
+<td>
+
+<p>The method to fit the model, must be one of <kbd>"Vansteelandt"</kbd> (default) or <kbd>"Xie"</kbd>. The option 
+<kbd>"Vansteelandt"</kbd> finds estimates by directly maximizing the likelihood function based on the group responses while the option <kbd>"Xie"</kbd> uses the EM algorithm to maximize the likelihood function in terms of the unobserved individual responses.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>start</code></td>
+<td>
+
+<p>starting values for the parameters in the linear predictor.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>control</code></td>
+<td>
+
+<p>a list of parameters for controlling the fitting process in method <kbd>"Xie"</kbd>. See the documentation for <code>gt.control</code> for details.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Y</code></td>
+<td>
+
+<p>For <kbd>gtreg.fit</kbd>, <kbd>EM</kbd> and <kbd>EM.ret</kbd>: the vector of the group responses.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>X</code></td>
+<td>
+
+<p>For <kbd>gtreg.fit</kbd>, <kbd>EM</kbd> and <kbd>EM.ret</kbd>: the design matrix of the covariates.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ret</code></td>
+<td>
+
+<p>For <kbd>EM.ret</kbd>: a vector containing individual retest results.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>arguments to be passed by default to <code>gt.control</code>: see argument <kbd>control</kbd> </p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>A typical predictor has the form <kbd>groupresp ~ covariates</kbd> where response is the (numeric) group response vector and <kbd>covariates</kbd> is a series of terms which specifies a linear predictor for individual responses. Note that it is actually the unobserved individual responses, not the observed group responses, which are modeled by the covariates here. In <kbd>groupresp</kbd>, a 0 denotes a negative response and a 1 denotes a positive response, where the probability of an individual positive response is being modeled directly.  A terms specification of the form <kbd>first + second</kbd> indicates all the terms in <kbd>first</kbd> together with all the terms in <kbd>second</kbd> with duplicates removed. The <kbd>terms</kbd> in the formula will be re-ordered so that main effects come first, followed by the interactions, all second-order, all third-order and so on; to avoid this pass a terms object as the formula.
+</p>
+<p>A specification of the form <kbd>first:second</kbd> indicates the set of terms obtained by taking the interactions of all terms in <kbd>first</kbd> with all terms in <kbd>second</kbd>. The specification <kbd>first*second</kbd> indicates the cross of <kbd>first</kbd> and <kbd>second</kbd>. This is the same as <kbd>first + second + first:second</kbd>. 
+</p>
+<p>Three workhorse functions <kbd>gtreg.fit</kbd>, <kbd>EM</kbd> and <kbd>EM.ret</kbd>, where the first corresponds to Vansteelandt's method and the last two corresponds to Xie's method, are called by <kbd>gtreg</kbd> to carry out the model fitting. The <kbd>gtreg.fit</kbd> function uses the <kbd>optim</kbd> function with default method <kbd>"Nelder-Mead"</kbd> to maximize the likelihood function of the observed group responses. If this optimization method produces a Hessian matrix of all zero elements, the <kbd>"SANN"</kbd> method in <kbd>optim</kbd> is employed to find the coefficients and Hessian matrix. For <kbd>"SANN"</kbd> method, the number of iterations in <kbd>optim</kbd> is set to be 10000.
+</p>
+<p>The <kbd>EM</kbd> and <kbd>EM.ret</kbd> function apply Xie's EM algorithm to the likelihood function written in terms of the unobserved individual responses; the functions use <kbd>glm.fit</kbd> to update the parameter estimates within each M step. The <kbd>EM</kbd> function is used when there are no retests and <kbd>EM.ret</kbd> is used when individual retests are available. Thus, within <kbd>retest</kbd>, individual observations in observed positive groups are 0 (negative) or 1 (positive); the remaining individual observations are <kbd>NA</kbd>s meaning that no retest is performed for them. Retests cannot be used with Vansteelandt's method; a warning message will be given in this case, and the individual retests will be ignored in the model fitting. There could be slight differences in the estimates between the Vansteelandt's and Xie's methods (when retests are not available) due to different convergence criteria. 
+</p>
+<p>The data used here should be in the form of simple pooling - meaning that each individual appears in exactly one pool. When only the group responses are observed, the null degrees of freedom are the number of groups minus 1 and the residual degrees of freedom are the number of groups minus the number of parameters. When individual retests are observed too, it is an open research question for what the degrees of freedom and the deviance for the null model should
+be; therefore the degrees of freedom and <kbd>null.deviance</kbd> will not be displayed.
+</p>
+<p>For the background on the use of <kbd>optim</kbd>, see <kbd>help(optim)</kbd>.
+</p>
+
+
+<h3>Value</h3>
+
+<p><kbd>gtreg</kbd> returns an object of class <kbd>"gt"</kbd>. See later in this section. 
+The function <kbd>summary</kbd> (i.e., <code>summary.gt</code>) can be used to obtain or print a summary of the results. 
+The group testing functions <kbd>predict</kbd> (i.e., <code>predict.gt</code>) and <kbd>residuals</kbd> (i.e., <code>residuals.gt</code>) can be used to extract various useful features of the value returned by <kbd>gtreg</kbd>. 
+An object of class <kbd>"gt"</kbd> is a list containing at least the following components: 
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code> coefficients </code></td>
+<td>
+<p> a named vector of coefficients </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code> hessian </code></td>
+<td>
+<p> estimated Hessian matrix of the negative log likelihood function, serves as an estimate of the information matrix </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code> residuals </code></td>
+<td>
+<p> the response residuals, difference of the observed group responses and the fitted group responses. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code> fitted.values </code></td>
+<td>
+<p> the fitted mean values of group responses. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code> deviance </code></td>
+<td>
+<p> the deviance between the fitted model and the saturated model. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code> aic </code></td>
+<td>
+<p> Akaike's An Information Criterion, minus twice the maximized log-likelihood plus twice the number of coefficients </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code> null.deviance </code></td>
+<td>
+<p> The deviance for the null model, comparable with <kbd>deviance</kbd>. The null model will include only the intercept if there is one in the model. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code> counts </code></td>
+<td>
+<p> For Vansteelandt's method: the number of iterations in <kbd>optim</kbd>; For Xie's method: the number of iterations in the EM algorithm.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code> df.residual </code></td>
+<td>
+<p> the residual degrees of freedom. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code> df.null </code></td>
+<td>
+<p> the residual degrees of freedom for the null model. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code> z </code></td>
+<td>
+<p> the vector of group responses. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code> call </code></td>
+<td>
+<p> the matched call. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code> formula </code></td>
+<td>
+<p> the formula supplied. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code> terms </code></td>
+<td>
+<p> the terms object used. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code> method </code></td>
+<td>
+<p> the method (<kbd>"Vansteelandt"</kbd> or <kbd>"Xie"</kbd>) used to fit the model. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code> link </code></td>
+<td>
+<p> the link function used in the model. </p>
+</td>
+</tr>
+</table>
+<h3>Author(s)</h3>
+
+<p>Boan Zhang
+</p>
+
+
+<h3>References</h3>
+
+<p><em>Xie, M. (2001)</em>, Regression analysis of group testing samples, <em>Statistics in Medicine, 20, 1957-1969.</em>
+</p>
+<p><em>Vansteelandt, S., Goetghebeur, E., and Verstraeten, T. (2000)</em>, Regression models for disease prevalence with diagnostic tests on pools of serum samples, <em>Biometrics, 56, 1126-1133.</em>
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>summary.gt</code>, <code>predict.gt</code> and <code>residuals.gt</code> for <kbd>gt</kbd> methods.
+<code>gtreg.mp</code> for the group testing regression model in the matrix pooling setting.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+data(hivsurv)
+
+fit1 &lt;- gtreg(formula = groupres ~ AGE + EDUC., data = hivsurv,
+           groupn = gnum, sens = 0.9, spec = 0.9, method = "Xie")
+fit1
+
+## --- Continuing the Example from  '?sim.gt':
+
+set.seed(46)
+gt.data &lt;- sim.gt(par = c(-12, 0.2), sample.size = 700, group.size = 5)
+fit2 &lt;- gtreg(formula = gres ~ x, data = gt.data, groupn = groupn)
+fit2
+
+set.seed(21)
+gt.data &lt;- sim.gt(par = c(-12, 0.2), sample.size = 700, group.size = 6,
+               sens = 0.95, spec = 0.95, sens.ind = 0.98, spec.ind = 0.98)
+fit1 &lt;- gtreg(formula = gres ~ x, data = gt.data, groupn = groupn, 
+        retest = retest, method = "X", sens = 0.95, spec = 0.95, sens.ind = 0.98,
+        spec.ind = 0.98, trace = TRUE)
+summary(fit1)
+
+
+</code></pre>
+
+
+</div>

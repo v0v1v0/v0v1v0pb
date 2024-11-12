@@ -1,0 +1,170 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>LL.ROC</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>ROC curves for the Livingston and Lewis approach.</h2>
+
+<h3>Description</h3>
+
+<p>Generate a ROC curve plotting the false-positive rate against the true-positive rate at different cut-off values across the observed-score scale.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">LL.ROC(
+  x = NULL,
+  reliability,
+  min = 0,
+  max = 1,
+  truecut,
+  true.model = "4P",
+  failsafe = TRUE,
+  l = 0,
+  u = 1,
+  AUC = FALSE,
+  maxJ = FALSE,
+  maxAcc = FALSE,
+  locate = NULL,
+  raw.out = FALSE,
+  grainsize = 100
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>A vector of observed results.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>reliability</code></td>
+<td>
+<p>The reliability coefficient of the test.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>min</code></td>
+<td>
+<p>The minimum possible value to attain on the observed-score scale.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>max</code></td>
+<td>
+<p>The maximum value possible to attain on the test. Default is 1 (assumes that the values contained in <code>x</code> represents proportions of maximum credit).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>truecut</code></td>
+<td>
+<p>The true point along the x-scale that marks the categorization-threshold.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>true.model</code></td>
+<td>
+<p>The probability distribution to be fitted to the moments of the true-score distribution. Options are <code>"4P"</code> (default) and <code>"2P"</code>, referring to four- and two-parameter Beta distributions. The <code>"4P"</code> method produces a four-parameter Beta distribution with the same first four moments (mean, variance, skewness, and kurtosis) as the estimated true-score distribution, while the <code>"2P"</code> method produces a two-parameter Beta distribution with the first two moments (mean and variance) as the estimated true-score distribution.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>failsafe</code></td>
+<td>
+<p>If true-model == "4P": Whether to engage a fail-safe reverting to a two-parameter true-score distribution solution should the four-parameter fitting procedure produce impermissible results. Default is TRUE (engage fail-safe in the event of impermissible estimates).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>l</code></td>
+<td>
+<p>If <code>true.model == "2P"</code> or <code>failsafe == TRUE</code>: The lower-bound location parameter of the two-parameter true-score distribution solution.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>u</code></td>
+<td>
+<p>If <code>true.model == "2P"</code> or <code>failsafe == TRUE</code>: The upper-bound location parameter of the two-parameter true-score distribution solution.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>AUC</code></td>
+<td>
+<p>Logical. Calculate and include the area under the curve? Default is <code>FALSE</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>maxJ</code></td>
+<td>
+<p>Logical. Mark the point along the curve where Youden's J statistic is maximized? Default is <code>FALSE</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>maxAcc</code></td>
+<td>
+<p>Logical. Mark the point along the curve where the Accuracy statistic is maximized? Default is <code>FALSE</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>locate</code></td>
+<td>
+<p>Ask the function to locate the cut-point at which sensitivity or NPV is greater than or equal to some value, or specificity or PPV is lesser than or equal to some value. Take as input a character-vector of length 2, with the first argument being which index is to be found (e.g., "sensitivity"), and the second argument the value to locate (e.g., "0.75"). For example: c("sensitivity", "0.75").</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>raw.out</code></td>
+<td>
+<p>Give raw coordinates as output rather than plot? Default is <code>FALSE</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>grainsize</code></td>
+<td>
+<p>Specify the number of cutoff-points for which the ROC curve is to be calculated. The greater this number the greater the accuracy. Default is 100 points.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>A plot tracing the ROC curve for the test, or matrix of coordinates if raw.out is <code>TRUE</code>.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R"># Generate some fictional data. Say, 1000 individuals take a test with a
+# maximum score of 100 and a minimum score of 0.
+set.seed(1234)
+testdata &lt;- rbinom(1000, 100, rBeta.4P(1000, 0.25, 0.75, 5, 3))
+hist(testdata / 100, xlim = c(0, 1), freq = FALSE)
+
+# Suppose the cutoff value for attaining a pass is 50 items correct.
+# Suppose further that the reliability of the test-scores were estimated to
+# 0.75. To produce a plot with an ROC curve using LL.ROC(), along with the
+# AUC statistics and the points at which Youden's J. is maximized:
+LL.ROC(x = testdata, reliability = 0.7, truecut = 50, min = 0, max = 100,
+AUC = TRUE, maxJ = TRUE)
+# Or to locate the point at which accuracy is maximized:
+LL.ROC(x = testdata, reliability = 0.7, truecut = 50, min = 0, max = 100,
+maxAcc = TRUE)
+
+# Using the example data above, the function can be instructed to locate an
+# operational cut-point at which sensitivity or specificity is equal to or
+# greater than some specified value by specifying the "locate" argument with
+# c("statistic", value). For example, to locate the operational cut-point at
+# which sensitivity is first equal to or greater than 0.9:
+LL.ROC(testdata, reliability = 0.7, min = 0, max = 100, truecut = 50,
+locate = c("sensitivity", 0.9))
+# For Negative Predictive value, the point at which it is equal or greater:
+LL.ROC(testdata, reliability = 0.7, min = 0, max = 100, truecut = 50,
+locate = c("NPV", 0.9))
+# And so on for other statistics such as Specificity and Positive Predictive
+# Value.
+</code></pre>
+
+
+</div>

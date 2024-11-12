@@ -1,0 +1,130 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>behavr</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>An S3 class, based on data.table, to store ethomics data</h2>
+
+<h3>Description</h3>
+
+<p>In modern behavioural biology,
+it is common to record long time series of several <em>variables</em> (such as position, angle,
+fluorescence and many others) on multiple individuals.
+In addition to large multivariate time series, each individual is associated with a set of
+<em>metavariables</em> (i.e. sex, genotype, treatment and lifespan ), which, together, form the <em>metadata</em>.
+Metavariables are crucial in so far as they generally "contain" the biological question.
+During analysis, it is therefore important to be able to access, alter and compute interactions
+between both variables and metavariables.
+<code>behavr</code> is a class that facilitates manipulation and storage of metadata and data in the same object.
+It is designed to be both memory-efficient and user-friendly.
+For instance, it abstracts joins between data and metavariables.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">behavr(x, metadata)
+
+setbehavr(x, metadata)
+
+is.behavr(x)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>data.table containing all measurements</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>metadata</code></td>
+<td>
+<p>data.table containing the metadata</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>A <code>behavr</code> table is a data.table.
+Therefore, it can be used by any function that would work on a data.frame or a data.table.
+Most of the operation such as variable creation, subsetting and joins are inherited from the data.table
+<code>[]</code> operator, following the convention <code>DT[i,j,by]</code> (see data table package for detail).
+These operations are applied on the data.
+Metadata can be accessed using <code>meta=TRUE</code>: <code>DT[i,j,by, meta=TRUE]</code>,
+which allows extraction of subsets, creation of metavariables, etc.
+</p>
+<p>Both <code>x</code> and <code>metadata</code> should have a <strong>column set as key</strong> with <strong>the same name</strong> (typically named <code>id</code>).
+<code>behavr()</code> copies <code>x</code>, whilst <code>setbehavr()</code> uses reference. <code>metadata</code> is always copied.
+</p>
+
+
+<h3>References</h3>
+
+
+<ul><li>
+<p> The relevant <a href="https://rethomics.github.io/behavr.html#variables-and-metavariables">rethomic tutorial section</a> – about metavariables and variables in this context
+</p>
+</li></ul>
+<h3>See Also</h3>
+
+
+<ul>
+<li> <p>data.table – on which <code>behavr</code> is based
+</p>
+</li>
+<li> <p>xmv – to join metavariables
+</p>
+</li>
+<li> <p>rejoin – to join all metadata
+</p>
+</li>
+<li> <p>bind_behavr_list – to merge several <code>behavr</code> tables
+</p>
+</li>
+</ul>
+<h3>Examples</h3>
+
+<pre><code class="language-R"># We generate some metadata and data
+set.seed(1)
+met &lt;- data.table::data.table(id = 1:5,
+                              condition = letters[1:5],
+                              sex = c("M", "M", "M", "F", "F"),
+                              key = "id")
+data &lt;- met[  ,
+              list(t = 1L:100L,
+                  x = rnorm(100),
+                  y = rnorm(100),
+                  eating = runif(100) &gt; .5 ),
+              by = "id"]
+# we store them together in a behavr object d
+# d is a copy of the data
+d &lt;- behavr(data, met)
+print(d)
+summary(d)
+
+# we can also convert data to a behavr table without copy:
+setbehavr(data, met)
+print(data)
+summary(data)
+
+### Operations are just like in data.table
+# row subsetting:
+d[t &lt; 10]
+# column subsetting:
+d[, .(id, t, x)]
+# making new columns inline:
+d[, x2 := 1 - x]
+### Using `meta = TRUE` applies the operation on the metadata
+# making new metavariables:
+d[, treatment := interaction(condition,sex), meta = TRUE]
+d[meta = TRUE]
+
+</code></pre>
+
+
+</div>

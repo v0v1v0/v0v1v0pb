@@ -1,0 +1,131 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>forecast.PosteriorBSVART</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Forecasting using Structural Vector Autoregression</h2>
+
+<h3>Description</h3>
+
+<p>Samples from the joint predictive density of all of the dependent 
+variables for models from packages <span class="pkg">bsvars</span>, <span class="pkg">bsvarSIGNs</span> or 
+<span class="pkg">bvarPANELs</span> at forecast horizons from 1 to <code>horizon</code> specified as 
+an argument of the function.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">## S3 method for class 'PosteriorBSVART'
+forecast(
+  posterior,
+  horizon = 1,
+  exogenous_forecast = NULL,
+  conditional_forecast = NULL
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>posterior</code></td>
+<td>
+<p>posterior estimation outcome - an object of class 
+<code>PosteriorBSVART</code> obtained by running the <code>estimate</code> function.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>horizon</code></td>
+<td>
+<p>a positive integer, specifying the forecasting horizon.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>exogenous_forecast</code></td>
+<td>
+<p>a matrix of dimension <code>horizon x d</code> containing 
+forecasted values of the exogenous variables.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>conditional_forecast</code></td>
+<td>
+<p>a <code>horizon x N</code> matrix with forecasted values 
+for selected variables. It should only contain <code>numeric</code> or <code>NA</code> 
+values. The entries with <code>NA</code> values correspond to the values that are 
+forecasted conditionally on the realisations provided as <code>numeric</code> values.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>A list of class <code>Forecasts</code> containing the
+draws from the predictive density and data. The output list includes element:
+</p>
+
+<dl>
+<dt>forecasts</dt>
+<dd>
+<p>an <code>NxTxS</code> array with the draws from predictive density</p>
+</dd>
+<dt>Y</dt>
+<dd>
+<p>an <code class="reqn">NxT</code> matrix with the data on dependent variables</p>
+</dd>
+</dl>
+<h3>Author(s)</h3>
+
+<p>Tomasz Woźniak <a href="mailto:wozniak.tom@pm.me">wozniak.tom@pm.me</a>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R"># upload data
+data(us_fiscal_lsuw)
+
+# specify the model and set seed
+set.seed(123)
+specification  = specify_bsvar_t$new(us_fiscal_lsuw, p = 1)
+
+# run the burn-in
+burn_in        = estimate(specification, 10)
+
+# estimate the model
+posterior      = estimate(burn_in, 20)
+
+# sample from predictive density 1 year ahead
+predictive     = forecast(posterior, 4)
+
+# workflow with the pipe |&gt;
+############################################################
+set.seed(123)
+us_fiscal_lsuw |&gt;
+  specify_bsvar_t$new(p = 1) |&gt;
+  estimate(S = 10) |&gt; 
+  estimate(S = 20) |&gt; 
+  forecast(horizon = 4) -&gt; predictive
+
+# conditional forecasting 2 quarters ahead conditioning on 
+#  provided future values for the Gross Domestic Product 
+############################################################
+cf        = matrix(NA , 2, 3)
+cf[,3]    = tail(us_fiscal_lsuw, 1)[3]   # conditional forecasts equal to the last gdp observation
+predictive    = forecast(posterior, 2, conditional_forecast = cf)
+
+# workflow with the pipe |&gt;
+############################################################
+set.seed(123)
+us_fiscal_lsuw |&gt;
+  specify_bsvar_t$new(p = 1) |&gt;
+  estimate(S = 10) |&gt; 
+  estimate(S = 20) |&gt; 
+  forecast(horizon = 2, conditional_forecast = cf) -&gt; predictive
+
+</code></pre>
+
+
+</div>

@@ -1,0 +1,72 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>gs4cens2</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Resampling Ystar function in the case of censoring</h2>
+
+<h3>Description</h3>
+
+<p>This function resamples the distinct Ystar in the semiparametric model.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">gs4cens2(
+  ystar,
+  xleft,
+  xright,
+  censor_code,
+  idx,
+  distr.k,
+  sigma.k,
+  distr.p0,
+  mu.p0,
+  sigma.p0
+)
+</code></pre>
+
+
+<h3>Details</h3>
+
+<p>For internal use
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+## The function is currently defined as
+function(ystar, xleft, xright, censor_code, idx, distr.k, sigma.k,
+         distr.p0, mu.p0, sigma.p0) {
+  r &lt;- length(ystar)
+  nstar &lt;- as.numeric(table(idx))
+  for (j in seq(r)) {
+    id &lt;- which(!is.na(match(idx, j)))
+    xjleft &lt;- xleft[id]
+    xjright &lt;- xright[id]
+    xbar &lt;- 0.5 * sum(xjleft + xjright, na.rm = T) / nstar[j]
+    y2star &lt;- rk(1, distr = distr.k, mu = xbar, sigma = sigma.k / sqrt(nstar[j]))
+    f.ratio &lt;- rfystarcens2(
+      v = y2star, v2 = ystar[j], xleft = xjleft,
+      xright = xjright, censor_code = censor_code[id],
+      distr.k = distr.k, sigma.k = sigma.k, distr.p0 = distr.p0,
+      mu.p0 = mu.p0, sigma.p0 = sigma.p0
+    )
+    k.ratio &lt;- dk(ystar[j], distr = distr.k, mu = xbar, sigma = sigma.k / sqrt(nstar[j])) /
+      dk(y2star,
+        distr = distr.k, mu = xbar, sigma = sigma.k / sqrt(nstar[j])
+      )
+    if (!is.nan(f.ratio * k.ratio)) {
+      q2 &lt;- min(1, f.ratio * k.ratio)
+      ystar[j] &lt;- ifelse(runif(1) &lt;= q2, y2star, ystar[j])
+    }
+  }
+  return(ystar)
+}
+</code></pre>
+
+
+</div>

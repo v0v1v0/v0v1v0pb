@@ -1,0 +1,166 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>c) Model Definition</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Helper functions for model definition</h2>
+
+<h3>Description</h3>
+
+<p>These functions are used to define models. They become more useful as
+the model has more places and transitions, as pre and post are sparse
+matrices so their direct manipulation may be error prone. See example
+of use below.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">init(place)
+atr(trans.name=NULL)
+load.cfn(place, code)
+unload.cfns()
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>place</code></td>
+<td>
+<p>Places</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>trans.name</code></td>
+<td>
+<p>Name of the transition (reaction)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>code</code></td>
+<td>
+<p>C code that returns the propensity</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>Function <code>init</code> accesses the frame of the calling function,
+creating variables with the names "model", "L", "R", and "h", that are
+considered reserved to bioPN. It also creates a variable for each
+element in the place vector submitted to the function
+<code>init</code>. Function <code>atr</code> creates a variable for each
+transition name sent.
+<code>load.cfn</code> and <code>unload.cfns</code> are used on cases where the
+transitions are of a special form, and a C function wants to be used
+to compute it for increase performance.
+</p>
+
+
+<h3>Value</h3>
+
+<p>The functions do not return values.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>GillespieOptimDirect</code>, <code>HaseltineRawlings</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## bioPN has been tested only on 64 bits machines.
+## It may fail in 32 bits architecture.
+if (.Machine$sizeof.pointer == 8) {
+
+####### Constants definition (convenient but not required)
+H &lt;- 10
+K &lt;- 6
+r &lt;- 0.25
+c &lt;- 3
+b &lt;- 2
+#######
+
+place &lt;- c( "Gi", "Ga", "mRNA", "Protein")
+
+## WARNING: function init() accesses the frame
+##          of the calling function, creating variables
+##          with the names "model", "L", "R", and "h",
+##          that are considered reserved to bioPN.
+##          It also creates a variable for each element
+##          in the place vector submitted to the function
+##          init(). Function atr() creates a variable
+##          for each transition name sent.
+
+####### Initialization
+init(place)
+
+####### Start of model definition
+
+## Gi -&gt; Ga
+h &lt;- c
+L[Gi] &lt;- 1
+R[Ga] &lt;- 1
+atr("gene_activation") ## Add this reaction
+
+## Ga -&gt; Gi
+h &lt;- b
+L[Ga] &lt;- 1
+R[Gi] &lt;- 1
+atr("gene_inactivation")
+
+## Ga -&gt; Ga + mRNA
+h &lt;- H
+L[Ga] &lt;- 1
+R[Ga] &lt;- 1; R[mRNA] &lt;- 1
+atr("transcription")
+  
+## mRNA -&gt; mRNA + Protein
+h &lt;- K
+L[mRNA] &lt;- 1
+R[mRNA] &lt;- 1; R[Protein] &lt;- 1
+atr("mRNA_degradation")
+
+## mRNA -&gt; 0
+h &lt;- 1
+L[mRNA] &lt;- 1
+atr("translation")
+
+## Protein -&gt; 0
+h &lt;- r
+L[Protein] &lt;- 1
+atr("protein_degradation")
+
+####### End of model definition
+
+model$M=rep(0, model$places)
+model$M[Gi] &lt;- 1
+
+timep &lt;- 200
+delta &lt;- 1
+
+## Completely Deterministic
+Sim &lt;- RungeKuttaDormandPrince45(model, timep, delta)
+
+runs &lt;- 100
+
+## Completely Stochastic
+set.seed(19761111)  ## Set a seed (for reproducible results)
+Sim &lt;- GillespieOptimDirect(model, timep, delta, runs)
+
+## Hybrid run
+model$slow &lt;- rep(0, model$transitions)
+model$slow[c(gene_activation, gene_inactivation)] &lt;- 1
+
+set.seed(19761111)  ## Set a seed (for reproducible results)
+Sim &lt;- HaseltineRawlings(model, timep, delta, runs)
+}
+</code></pre>
+
+
+</div>

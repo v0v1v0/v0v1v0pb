@@ -1,0 +1,276 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>blca.boot</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>
+Bayesian Latent Class Analysis via an EM Algorithm and Using Empirical Bootstrapping
+</h2>
+
+<h3>Description</h3>
+
+<p>Latent class analysis (LCA) attempts to find G hidden classes in binary data X.  blca.boot repeatedly samples from X with replacement then utilises an EM algorithm to find maximum posterior (MAP) and standard error estimates of the parameters.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">blca.boot(X, G, alpha = 1, beta = 1, delta = rep(1, G), 
+	  start.vals = c("single", "across"), counts.n = NULL, 
+	  fit = NULL, iter = 50, B = 100, relabel = FALSE, 
+          verbose = TRUE, verbose.update = 10, small = 1e-100)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>X</code></td>
+<td>
+
+<p>The data matrix. This may take one of several forms, see <code>data.blca</code>.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>G</code></td>
+<td>
+
+<p>The number of classes to run lca for.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>alpha, beta</code></td>
+<td>
+
+<p>The prior values for the data conditional on group membership. These may take several forms: a single value, recycled across all groups and columns, a vector of length G or M (the number of columns in the data), or finally, a <code class="reqn">G \times M</code> matrix specifying each prior value separately. Defaults to 1, i.e, a uniform prior, for each value.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>delta</code></td>
+<td>
+
+<p>Prior values for the mixture components in model.  Defaults to 1, i.e., a uniform prior.  May be single or vector valued (of length G).
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>start.vals</code></td>
+<td>
+
+<p>Denotes how class membership is to be assigned during the initial step of the algorithm. Two character values may be chosen, "single", which randomly assigns data points exclusively to one class, or "across", which assigns class membership via  <code>runif</code>. Alternatively, class membership may be pre-specified, either as a vector of class membership, or as a matrix of probabilities. Defaults to "single".
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>counts.n</code></td>
+<td>
+
+<p>If data patterns have already been counted, a data matrix consisting of each unique data pattern can be supplied to the function, in addition to a vector counts.n, which supplies the corresponding number of times each pattern occurs in the data. 
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>fit</code></td>
+<td>
+
+<p>Previously fitted models may be supplied in order to approximate standard error and unbiased point estimates. fit should be an object of class "blca.em". Defaults to NULL if no object is supplied.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>iter</code></td>
+<td>
+
+<p>The maximum number of iterations that the algorithm runs over, for each bootstrapped sample.  Will stop earlier if the algorithm converges.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>B</code></td>
+<td>
+
+<p>The number of bootstrap samples to run. Defaults to 100.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>relabel</code></td>
+<td>
+
+<p>Logical valued. As the data is recursively sampled, it is possible that label-switching may occur with respect to parameter estimates.  If TRUE, parameter estimates are checked at each iteration, and relabeled if necessary.  Defaults to FALSE.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>verbose</code></td>
+<td>
+
+<p>Logical valued. If TRUE, the current number of completed bootstrap samples is printed at regular intervals.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>verbose.update</code></td>
+<td>
+
+<p>If <code>verbose=TRUE</code>, <code>verbose.update</code> determines the periodicity with which updates are printed.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>small</code></td>
+<td>
+
+<p>To ensure numerical stability a small constant is added to certain parameter estimates. Defaults to 1e-100.
+</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>Bootstrapping methods can be used to estimate properties of a distribution's parameters, such as the standard error estimates, by constructing multiple resamples of an observed dataset, obtained by sampling with replacement from said dataset.  The multiple parameter estimates obtained from these resamples may then be analysed.  This method is implemented in blca.boot by first running blca.em over the full data set and then using the returned values of the item and class probabilities as the initial values when running the algorithm for each bootstrapped sample.  Alternatively, initial parameter estimates may be specified using the fit argument.
+</p>
+<p>Note that if a previously fitted model is supplied, then the prior values with which the model was fitted will be used for the sampling run, regardless of the values supplied to the prior arguments.
+</p>
+
+
+<h3>Value</h3>
+
+
+
+
+
+
+<p>A list of class "blca.boot" is returned, containing:
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>call</code></td>
+<td>
+<p>The initial call passed to the function.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>itemprob</code></td>
+<td>
+<p>The item probabilities, conditional on class membership.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>classprob</code></td>
+<td>
+<p>The class probabilities.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Z</code></td>
+<td>
+<p>Estimate of class membership for each unique datapoint.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>itemprob.sd</code></td>
+<td>
+<p>Posterior standard deviation estimates of the item probabilities.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>classprob.sd</code></td>
+<td>
+<p>Posterior standard deviation estimates of the class probabilities.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>classprob.initial, itemprob.initial</code></td>
+<td>
+<p>Initial parameter values for classprob and itemprob, used to run over each bootstrapped sample.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>samples</code></td>
+<td>
+<p>A list containing the parameter estimates for each bootstrapped sample.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>logpost</code></td>
+<td>
+<p>The log-posterior of the estimated model.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>BIC</code></td>
+<td>
+<p>The Bayesian Information Criterion for the estimated model.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>AIC</code></td>
+<td>
+<p>Akaike's Information Criterion for the estimated model.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>label</code></td>
+<td>
+<p>Logical value, indicating whether label switching has been checked for.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>counts</code></td>
+<td>
+<p> The number of times each unique datapoint point occured.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>prior</code></td>
+<td>
+<p>A list containing the prior values specified for the model.</p>
+</td>
+</tr>
+</table>
+<h3>Note</h3>
+
+<p>Earlier versions of this function erroneously referred to posterior standard deviations as standard errors. This also extended to arguments supplied to and returned by the function, some of which are now returned with the corrected corrected suffix <code>blca.em.sd</code> (for standard deviation). For backwards compatability reasons, the earlier suffix <code>.se</code> has been retained as a returned argument.
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Arthur White
+</p>
+
+
+<h3>References</h3>
+
+<p>Wasserman, L, 22nd May 2007, <em>All of Nonparametric Statistics</em>, Springer-Verlag.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>blca.em</code>, <code>blca</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">type1 &lt;- c(0.8, 0.8, 0.2, 0.2)
+type2 &lt;- c(0.2, 0.2, 0.8, 0.8)
+x &lt;- rlca(1000, rbind(type1,type2), c(0.6,0.4))
+fit.boot &lt;- blca.boot(x, 2)
+summary(fit.boot)
+
+## Not run: fit &lt;- blca.em(x, 2, se=FALSE)
+## Not run: fit.boot &lt;- blca.boot(x, 2, fit=fit)
+## Not run: fit.boot
+## Not run: plot(fit.boot, which=1:4)
+</code></pre>
+
+
+</div>

@@ -1,0 +1,143 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>famSKAT</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>
+Implicit matrix for family-based SKAT test
+</h2>
+
+<h3>Description</h3>
+
+<p>Like <code>link{SKAT.matrixfree}</code> but for the family-based test of Chen and colleagues
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">famSKAT(G, model,...)
+## S3 method for class 'lmekin'
+famSKAT(G, model, kinship,  weights = function(maf) dbeta(maf, 1, 25),...)
+## S3 method for class 'GENESIS.nullMixedModel'
+famSKAT(G, model, threshold=1e-10,  weights = function(maf) dbeta(maf, 1, 25),...)
+## S3 method for class 'famSKAT_lmekin'
+update(object,G,...)
+## S3 method for class 'famSKAT_genesis'
+update(object,G,...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>G</code></td>
+<td>
+
+<p>A 0/1/2 matrix whose columns are markers and whose rows are samples. Should be mostly zero.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>model</code></td>
+<td>
+
+<p>Object representing a linear mixed model for covariate adjustment. Current methods are for class <code>lmekin</code> which must have been fitted with <code>x=TRUE</code>, and for the output of <code>fitNullMM</code> from the <code>GENESIS</code> package.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>kinship</code></td>
+<td>
+
+<p>The sparse kinship matrix: the <code>model</code> will have used <code>2*kinship</code> in its <code>varlist</code> argument.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>threshold</code></td>
+<td>
+
+<p>A threshold for setting elements of the phenotype precision matrix to exact zeros.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>weights</code></td>
+<td>
+
+<p>A weight function used in SKAT: the default is the standard one.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>object</code></td>
+<td>
+<p>An existing <code>famSKAT</code> object to be updated with a new set of genotypes (eg for a new gene or genomic window), keeping the same phenotype and kinship structure.  Avoids recomputing the Cholesky square root of the phenotype variance matrix, which will often be a computational bottleneck.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>for future expansion</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>An object of class <code>c("famSKAT","matrixfree")</code>
+</p>
+
+
+<h3>Note</h3>
+
+<p>The matrix and test statistic both differ by a factor of <code>var(y)/2</code> from <code>SKAT.matrixfree</code> when used with unrelated individuals (because the Chen et al reference differs from the original SKAT paper by the same factor)
+</p>
+
+
+<h3>References</h3>
+
+<p>Chen H, Meigs JM, Dupuis J (2013) Sequence Kernel Association Test for Quantitative Traits in Family Samples. Genet Epidemiol. 37(2): 196-204.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>SKAT.matrixfree</code>, <code>pQF</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">data(seqMetaExample)
+
+m&lt;-coxme::lmekin(y~sex+bmi+(1|id),data=pheno2,varlist=2*kins,
+	x=TRUE,y=TRUE,method="REML")
+
+#first gene
+g1snps&lt;-c("1000001", "1000002", "1000003", "1000004", "1000005", "1000006", 
+"1000007", "1000008", "1000009", "1000010", "1000012", "1000013", 
+"1000014", "1000015")
+Z2gene1&lt;-Z2[,g1snps]
+
+f&lt;-famSKAT(Z2gene1, m, kins)
+Q&lt;-f$Q()
+all.equal(Q, 56681.209)
+## correct p is 0.742756401
+pQF(Q,f,neig=4)
+
+## gene10
+g10snps&lt;-as.character(1000017:1000036)
+Z2gene10&lt;-Z2[,g10snps]
+f10&lt;-update(f, Z2gene10)
+Q10&lt;-f10$Q()
+all.equal(Q10,164656.19)
+pQF(Q10,f10,neig=4)
+
+
+</code></pre>
+
+
+</div>

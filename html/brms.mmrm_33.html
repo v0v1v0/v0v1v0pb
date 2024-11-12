@@ -1,0 +1,141 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>brm_simulate_prior</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Prior predictive draws.</h2>
+
+<h3>Description</h3>
+
+<p>Simulate the outcome variable from the prior
+predictive distribution of an MMRM using <code>brms</code>.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">brm_simulate_prior(
+  data,
+  formula,
+  prior = brms.mmrm::brm_prior_simple(data = data, formula = formula),
+  ...
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+<p>A classed data frame from <code>brm_data()</code>, or an informative
+prior archetype from a function like <code>brm_archetype_successive_cells()</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>formula</code></td>
+<td>
+<p>An object of class <code>"brmsformula"</code> from <code>brm_formula()</code>
+or <code>brms::brmsformula()</code>. Should include the full mapping
+of the model, including fixed effects, residual correlation,
+and heterogeneity in the discrete-time-specific residual variance
+components.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>prior</code></td>
+<td>
+<p>A valid <code>brms</code> prior object with proper priors for parameters
+<code>b</code> (model coefficients), <code>b_sigma</code> (log residual standard deviations
+for each time point), and <code>cortime</code> (residual correlations among
+time points within patients). See the
+<code>brm_prior_simple()</code> function for an example.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Named arguments to specific <code>brm_formula()</code> methods.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p><code>brm_simulate_prior()</code> calls <code>brms::brm()</code> with
+<code>sample_prior = "only"</code>, which sets the default intercept prior
+using the outcome variable and requires at least some elements of the
+outcome variable to be non-missing in advance. So to provide feasible and
+consistent output, <code>brm_simulate_prior()</code> temporarily sets the
+outcome variable to all zeros before invoking <code>brms::brm()</code>.
+</p>
+
+
+<h3>Value</h3>
+
+<p>A list with the following elements:
+</p>
+
+<ul>
+<li> <p><code>data</code>: a classed <code>tibble</code> with the outcome variable simulated as a draw
+from the prior predictive distribution (the final row of <code>outcome</code> in
+the output). If you simulated a missingness pattern
+with <code>brm_simulate_outline()</code>, then that missingness pattern is applied
+so that the appropriate values of the outcome variable are set to <code>NA</code>.
+</p>
+</li>
+<li> <p><code>model</code>: the <code>brms</code> model fit object.
+</p>
+</li>
+<li> <p><code>model_matrix</code>: the model matrix of the fixed effects, obtained from
+<code>brms::make_standata()</code>.
+</p>
+</li>
+<li> <p><code>outcome</code>: a numeric matrix with one column per row of <code>data</code> and one
+row per saved prior predictive draw.
+</p>
+</li>
+<li> <p><code>parameters</code>: a <code>tibble</code> of saved parameter draws from the prior
+predictive distribution.
+</p>
+</li>
+</ul>
+<h3>See Also</h3>
+
+<p>Other simulation: 
+<code>brm_simulate_categorical()</code>,
+<code>brm_simulate_continuous()</code>,
+<code>brm_simulate_outline()</code>,
+<code>brm_simulate_simple()</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">if (identical(Sys.getenv("BRM_EXAMPLES", unset = ""), "true")) {
+set.seed(0L)
+data &lt;- brm_simulate_outline()
+data &lt;- brm_simulate_continuous(data, names = c("age", "biomarker"))
+data$response &lt;- rnorm(nrow(data))
+formula &lt;- brm_formula(
+  data = data,
+  baseline = FALSE,
+  baseline_time = FALSE
+)
+tmp &lt;- utils::capture.output(
+  suppressMessages(
+    suppressWarnings(
+      out &lt;- brm_simulate_prior(
+        data = data,
+        formula = formula
+      )
+    )
+  )
+)
+out$data
+}
+</code></pre>
+
+
+</div>

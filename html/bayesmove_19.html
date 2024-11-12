@@ -1,0 +1,87 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>get_breakpts</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Extract breakpoints for each animal ID</h2>
+
+<h3>Description</h3>
+
+<p>Extract breakpoints for each animal ID
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">get_breakpts(dat, MAP.est)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>dat</code></td>
+<td>
+<p>A list of lists where animal IDs are separated as well as the
+breakpoints estimated for each iteration of the MCMC chain. This is stored
+within <code>breakpts</code> of model results returned after running
+<code>segment_behavior</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>MAP.est</code></td>
+<td>
+<p>numeric. A vector of values at which the maximum a posteriori
+(MAP) estimate was identified for each of the animal IDs as returned by
+<code>get_MAP</code>. These must be in the same order as the data for the
+IDs supplied to <code>segment_behavior()</code>.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>A data frame where breakpoints are returned per animal ID within each
+row. For animal IDs that have fewer breakpoints than the maximum number
+that were estimated, <code>NA</code> values are used as place holders for these
+breakpoints that do not exist.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+#load data
+data(tracks.list)
+
+#subset only first track
+tracks.list&lt;- tracks.list[1]
+
+#only retain id and discretized step length (SL) and turning angle (TA) columns
+tracks.list2&lt;- purrr::map(tracks.list,
+                   subset,
+                  select = c(id, SL, TA))
+
+
+set.seed(1)
+
+# Define model params
+alpha&lt;- 1
+ngibbs&lt;- 1000
+nbins&lt;- c(5,8)
+
+#future::plan(future::multisession)  #run all MCMC chains in parallel
+dat.res&lt;- segment_behavior(data = tracks.list2, ngibbs = ngibbs, nbins = nbins,
+                           alpha = alpha)
+
+
+# Determine MAP iteration for selecting breakpoints and store breakpoints
+MAP.est&lt;- get_MAP(dat = dat.res$LML, nburn = ngibbs/2)
+brkpts&lt;- get_breakpts(dat = dat.res$brkpts, MAP.est = MAP.est)
+
+
+</code></pre>
+
+
+</div>

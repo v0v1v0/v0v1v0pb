@@ -1,0 +1,320 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>BMRMM</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Bayesian Markov Renewal Mixed Models (BMRMMs)</h2>
+
+<h3>Description</h3>
+
+<p>Provides inference results of both transition probabilities and duration times using BMRMMs.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">BMRMM(
+  data,
+  num.cov,
+  cov.labels = NULL,
+  state.labels = NULL,
+  random.effect = TRUE,
+  fixed.effect = TRUE,
+  trans.cov.index = 1:num.cov,
+  duration.cov.index = 1:num.cov,
+  duration.distr = NULL,
+  duration.incl.prev.state = TRUE,
+  simsize = 10000,
+  burnin = simsize/2
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+<p>a data frame containing – individual ID, covariate values, previous state, current state, duration times (if applicable), in that order.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>num.cov</code></td>
+<td>
+<p>total number of covariates provided in <code>data</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>cov.labels</code></td>
+<td>
+<p>a list of vectors giving names of the covariate levels. Default is a list of numerical vectors.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>state.labels</code></td>
+<td>
+<p>a vector giving names of the states. Default is a numerical vector.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>random.effect</code></td>
+<td>
+<p><code>TRUE</code> if population-level effects are considered. Default is <code>TRUE</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>fixed.effect</code></td>
+<td>
+<p><code>TRUE</code> if individual-level effects are considered. Default is <code>TRUE</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>trans.cov.index</code></td>
+<td>
+<p>a numeric vector indicating the indices of covariates that are used for transition probabilities. Default is all of the covariates.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>duration.cov.index</code></td>
+<td>
+<p>a numeric vector indicating the indices of covariates that are used for duration times. Default is all of the covariates.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>duration.distr</code></td>
+<td>
+<p>a list of arguments indicating the distribution of duration times. Default is <code>NULL</code>, which is ignoring duration times.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>duration.incl.prev.state</code></td>
+<td>
+<p><code>TRUE</code> if the previous state is included in the inference of duration times. Default is <code>TRUE</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>simsize</code></td>
+<td>
+<p>total number of MCMC iterations. Default is 10000.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>burnin</code></td>
+<td>
+<p>number of burn-ins for the MCMC iterations. Default is <code>simsize</code>/2.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>Users have the option to ignore duration times or model duration times as
+a discrete or continuous variable via defining <code>duration.distr</code>.
+</p>
+<p><code>duration.distr</code> can be one of the following: <br></p>
+
+<ul>
+<li> <p><code>NULL</code>: duration times are ignored. This is the default setting.
+</p>
+</li>
+<li> <p><code>list('mixgamma', shape, rate)</code>: duration times are modeled as a mixture gamma variable. <code>shape</code> and <code>rate</code>
+must be numeric vectors of the same length. The length indicates the number of mixture components.
+</p>
+</li>
+<li> <p><code>list('mixDirichlet', unit)</code>: duration times are modeled as a new state with discretization <code>unit</code>. The duration
+state is then analyzed along with the original states. For example, if an duration time entry is 20 and <code>unit</code> is 5,
+then the model will add 4 consecutive new states. If an duration time entry is 23.33 and <code>unit</code> is 5, then the model
+will still add 4 consecutive new states as the blocks are calculated with the floor operation.
+</p>
+</li>
+</ul>
+<h3>Value</h3>
+
+<p>An object of class <code>BMRMM</code> consisting of <code>results.trans</code> and <code>results.duration</code> if duration times are analyzed as a continuous variable. <br></p>
+<p>The field <code>results.trans</code> is a data frame giving the inference results of transition probabilities.
+</p>
+
+<table>
+<tr>
+<td style="text-align: left;">
+<code>covs</code> </td>
+<td style="text-align: left;"> covariates levels for each row of the data. </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+<code>dpreds</code> </td>
+<td style="text-align: left;"> maximum level for each related covariate. </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+<code>MCMCparams</code> </td>
+<td style="text-align: left;"> MCMC parameters including simsize, burnin and thinning factor. </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+<code>tp.exgns.post.mean</code>
+</td>
+<td style="text-align: left;"> posterior mean of transition probabilities for different combinations of covariates. </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+<code>tp.exgns.post.std</code> </td>
+<td style="text-align: left;"> posterior standard deviation of transition probabilities for different combinations of covariates.  </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+<code>tp.anmls.post.mean</code> </td>
+<td style="text-align: left;">  posterior mean of transition probabilities for different individuals. </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+<code>tp.anmls.post.std</code> </td>
+<td style="text-align: left;">  posterior standard deviation of transition probabilities for different individuals. </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+<code>tp.all.post.mean</code> </td>
+<td style="text-align: left;">  posterior mean of transition probabilities for different combinations of covariates AND different individuals. </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+<code>tp.exgns.diffs.store</code> </td>
+<td style="text-align: left;">  difference in posterior mean of transition probabilities for every pair of covariate levels given levels of the other covariates. </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+<code>tp.exgns.all.itns</code> </td>
+<td style="text-align: left;"> population-level transition probabilities for every MCMC iteration. </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+<code>clusters</code> </td>
+<td style="text-align: left;"> number of clusters for each covariate for each MCMC iteration. </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+<code>cluster_labels</code> </td>
+<td style="text-align: left;"> the labels of the clusters for each covariate for each MCMC iteration. </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+<code>type</code> </td>
+<td style="text-align: left;"> a string identifier for results, which is "Transition Probabilities". </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+<code>cov.labels</code> </td>
+<td style="text-align: left;"> a list of string vectors giving labels of covariate levels. </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+<code>state.labels</code> </td>
+<td style="text-align: left;"> a list of strings giving labels of states. </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+</td>
+</tr>
+</table>
+<p>The field <code>results.duration</code> is a data frame giving the inference results of duration times.
+</p>
+
+<table>
+<tr>
+<td style="text-align: left;">
+<code>covs</code> </td>
+<td style="text-align: left;"> covariates related to duration times.</td>
+</tr>
+<tr>
+<td style="text-align: left;">
+<code>dpreds</code> </td>
+<td style="text-align: left;"> maximum level for each related covariate.</td>
+</tr>
+<tr>
+<td style="text-align: left;">
+<code>MCMCparams</code> </td>
+<td style="text-align: left;"> MCMC parameters: simsize, burnin and thinning factor.</td>
+</tr>
+<tr>
+<td style="text-align: left;">
+<code>duration.times</code> </td>
+<td style="text-align: left;">  duration times from the data set.</td>
+</tr>
+<tr>
+<td style="text-align: left;">
+<code>comp.assignment</code> </td>
+<td style="text-align: left;"> mixture component assignment for each data point in the last MCMC iteration.</td>
+</tr>
+<tr>
+<td style="text-align: left;">
+<code>duration.exgns.store</code> </td>
+<td style="text-align: left;"> posterior mean of mixture probabilities for different combinations of covariates of each MCMC iteration.</td>
+</tr>
+<tr>
+<td style="text-align: left;">
+<code>marginal.prob</code> </td>
+<td style="text-align: left;"> estimated marginal mixture probabilities for each MCMC iteration.</td>
+</tr>
+<tr>
+<td style="text-align: left;">
+<code>shape.samples</code> </td>
+<td style="text-align: left;"> estimated shape parameters for gamma mixtures for each MCMC iteration.</td>
+</tr>
+<tr>
+<td style="text-align: left;">
+<code>rate.samples</code> </td>
+<td style="text-align: left;"> estimated rate parameters for gamma mixtures for each MCMC iteration.</td>
+</tr>
+<tr>
+<td style="text-align: left;">
+<code>clusters</code> </td>
+<td style="text-align: left;"> number of clusters for each covariate for each MCMC iteration.</td>
+</tr>
+<tr>
+<td style="text-align: left;">
+<code>cluster_labels</code> </td>
+<td style="text-align: left;"> the labels of the clusters for each covariate for each MCMC iteration.</td>
+</tr>
+<tr>
+<td style="text-align: left;">
+<code>type</code> </td>
+<td style="text-align: left;"> a string identifier for results, which is "Duration Times".</td>
+</tr>
+<tr>
+<td style="text-align: left;">
+<code>cov.labels</code> </td>
+<td style="text-align: left;"> a list of string vectors giving labels of covariate levels. </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+</td>
+</tr>
+</table>
+<h3>Author(s)</h3>
+
+<p>Yutong Wu, <a href="mailto:yutong.wu@utexas.edu">yutong.wu@utexas.edu</a>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+# In the examples, we use a shorted version of the foxp2 dataset, foxp2sm
+
+# ignores duration times and only models transition probabilities using all three covariates
+results &lt;- BMRMM(foxp2sm, num.cov = 2, simsize = 50)
+
+# models duration times as a continuous variable with 3 gamma mixture components,
+results &lt;- BMRMM(foxp2sm, num.cov = 2, simsize = 50,
+                 duration.distr = list('mixgamma', shape = rep(1,3), rate = rep(1,3)))
+
+# models duration times as a discrete state with discretization 0.025 and
+results &lt;- BMRMM(foxp2sm, num.cov = 2, simsize = 50, 
+                 duration.distr = list('mixDirichlet', unit = 0.025))
+
+
+</code></pre>
+
+
+</div>

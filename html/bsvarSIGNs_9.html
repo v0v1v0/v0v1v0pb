@@ -1,0 +1,168 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>estimate.BSVARSIGN</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Bayesian estimation of a Structural Vector Autoregression
+with traditional and narrative sign restrictions via Gibbs sampler</h2>
+
+<h3>Description</h3>
+
+<p>Estimates Bayesian Structural Vector Autoregression model
+using the Gibbs sampler proposed by Waggoner &amp; Zha (2003) with traditional sign restrictions 
+following Rubio-Ramírez, Waggoner &amp; Zha (2010) and narrative sign restrictions 
+following Antolín-Díaz &amp; Rubio-Ramírez (2018). Additionally, the parameter matrices <code class="reqn">A</code> and <code class="reqn">B</code>
+follow a Minnesota prior and generalised-normal prior distributions respectively with the matrix-specific
+overall shrinkage parameters estimated using a hierarchical prior distribution. 
+</p>
+<p>Given sign restrictions, in each Gibbs sampler iteration, the sampler draws rotation matrix 
+<code class="reqn">Q</code> uniformly from the space of <code>NxN</code> orthogonal matrices and checks if the sign restrictions
+are satisfied. If a valid <code class="reqn">Q</code> is found within <code>max_tries</code> (defined in <code>specify_bsvarSIGN</code>),
+the sampler saves the current <code class="reqn">A</code> and <code class="reqn">B</code> draw and proceeds to the next iteration.
+Otherwise, the sampler then proceeds to next iteration without saving the current <code class="reqn">A</code> and <code class="reqn">B</code> draw.
+If a narrative sign restriction is given, the posterior
+draws are resampled with <code>algorithm 1</code> in Antolín-Díaz &amp; Rubio-Ramírez (2018).
+</p>
+<p>See section <b>Details</b> for the model equations.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">## S3 method for class 'BSVARSIGN'
+estimate(specification, S, thin = 1, show_progress = TRUE)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>specification</code></td>
+<td>
+<p>an object of class BSVARSIGN generated using the <code>specify_bsvarSIGN$new()</code> function.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>S</code></td>
+<td>
+<p>a positive integer, the number of posterior draws to be generated</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>thin</code></td>
+<td>
+<p>a positive integer, specifying the frequency of MCMC output thinning</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>show_progress</code></td>
+<td>
+<p>a logical value, if <code>TRUE</code> the estimation progress bar is visible</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The Structural VAR model is given by the reduced form equation:
+</p>
+<p style="text-align: center;"><code class="reqn">Y = AX + E</code>
+</p>
+
+<p>where <code class="reqn">Y</code> is an <code>NxT</code> matrix of dependent variables, <code class="reqn">X</code> is a <code>KxT</code> matrix of explanatory variables, 
+<code class="reqn">E</code> is an <code>NxT</code> matrix of reduced form error terms, and <code class="reqn">A</code> is an <code>NxK</code> matrix of
+autoregressive slope coefficients and parameters on deterministic terms in <code class="reqn">X</code>.
+</p>
+<p>The structural equation is given by
+</p>
+<p style="text-align: center;"><code class="reqn">BE = U</code>
+</p>
+
+<p>where <code class="reqn">U</code> is an <code>NxT</code> matrix of structural form error terms, and
+<code class="reqn">B</code> is an <code>NxN</code> matrix of contemporaneous relationships. More specifically,
+</p>
+<p style="text-align: center;"><code class="reqn">B = Q'P</code>
+</p>
+
+<p>where <code class="reqn">Q</code> is an <code>NxN</code> rotation matrix and <code class="reqn">P</code> is an <code>NxN</code> lower triangular matrix.
+</p>
+<p>Finally, the structural shocks, <code>U</code>, are temporally and contemporaneously independent and jointly normally distributed with zero mean and unit variances.
+</p>
+
+
+<h3>Value</h3>
+
+<p>An object of class <code>PosteriorBSVARSIGN</code> containing the Bayesian estimation output and containing two elements:
+</p>
+<p><code>posterior</code> a list with a collection of <code>S</code> draws from the posterior distribution generated via Gibbs sampler containing:
+</p>
+
+<dl>
+<dt>A</dt>
+<dd>
+<p>an <code>NxKxS</code> array with the posterior draws for matrix <code class="reqn">A</code></p>
+</dd>
+<dt>B</dt>
+<dd>
+<p>an <code>NxNxS</code> array with the posterior draws for matrix <code class="reqn">B</code></p>
+</dd>
+<dt>hyper</dt>
+<dd>
+<p>a <code>5xS</code> matrix with the posterior draws for the hyper-parameters of the hierarchical prior distribution</p>
+</dd>
+<dt>skipped</dt>
+<dd>
+<p>an integer of the total skipped iterations,
+the Gibbs sampler performs a total of S+skipped iterations,
+when the sampler does not find a valid rotation matrix <code>Q</code> within <code>max_tries</code>,
+the current iteration is skipped (i.e. the current draw of <code>A,B</code> is not saved).
+A message is shown when skipped/(skipped+S/thin) &gt; 0.05, where S/thin is the total number of draws returned.
+</p>
+</dd>
+</dl>
+<p><code>last_draw</code> an object of class BSVARSIGN with the last draw of the current MCMC run as the starting value to be passed to the continuation of the MCMC estimation using <code>estimate()</code>.
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Tomasz Woźniak <a href="mailto:wozniak.tom@pm.me">wozniak.tom@pm.me</a>, Xiaolei Wang <a href="mailto:adamwang15@gmail.com">adamwang15@gmail.com</a>
+</p>
+
+
+<h3>References</h3>
+
+<p>Antolín-Díaz &amp; Rubio-Ramírez (2018) Narrative Sign Restrictions for SVARs, American Economic Review, 108(10), 2802-29, &lt;doi:10.1257/aer.20161852&gt;.
+</p>
+<p>Arias, Rubio-Ramírez, &amp; Waggoner (2018), Inference Based on Structural Vector Autoregressions Identified With Sign and Zero Restrictions: Theory and Applications, Econometrica, 86(2), 685-720, &lt;doi:10.3982/ECTA14468&gt;.
+</p>
+<p>Giannone, Lenza, Primiceri (2015) Prior Selection for Vector Autoregressions, Review of Economics and Statistics, 97(2), 436-451 &lt;doi:10.1162/REST_a_00483&gt;.
+</p>
+<p>Rubio-Ramírez, Waggoner &amp; Zha (2010) Structural Vector Autoregressions: Theory of Identification and Algorithms for Inference, The Review of Economic Studies, 77(2), 665-696, &lt;doi:10.1111/j.1467-937X.2009.00578.x&gt;.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R"># investigate the effects of the optimism shock
+data(optimism)
+
+# specify identifying restrictions:
+# + no effect on productivity (zero restriction)
+# + positive effect on stock prices (positive sign restriction) 
+sign_irf       = matrix(c(0, 1, rep(NA, 23)), 5, 5)
+
+# specify the model and set seed
+set.seed(123)
+specification  = specify_bsvarSIGN$new(optimism * 100,
+                                       p        = 12,
+                                       sign_irf = sign_irf)
+                                       
+# estimate the model
+posterior      = estimate(specification, S = 10)
+
+</code></pre>
+
+
+</div>

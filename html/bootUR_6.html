@@ -1,0 +1,268 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>boot_union</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Bootstrap Union Test for Unit Roots</h2>
+
+<h3>Description</h3>
+
+<p>Performs bootstrap unit root test based on the union of rejections of 4 tests with different number of deterministic components and different type of detrending (Harvey, Leybourne and Taylor, 2012; Smeekes and Taylor, 2012).
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">boot_union(data, data_name = NULL, bootstrap = "AWB", B = 1999,
+  block_length = NULL, ar_AWB = NULL, min_lag = 0, max_lag = NULL,
+  criterion = "MAIC", criterion_scale = TRUE, union_quantile = 0.05,
+  show_progress = TRUE, do_parallel = TRUE, cores = NULL)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+<p>A <code class="reqn">T</code>-dimensional vector to be tested for unit roots. Data may also be in a time series format (e.g. <code>ts</code>, <code>zoo</code> or <code>xts</code>), or a data frame.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>data_name</code></td>
+<td>
+<p>Optional name for the data, to be used in the output. The default uses the name of the 'data' argument.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>bootstrap</code></td>
+<td>
+<p>String for bootstrap method to be used. Options are
+</p>
+
+<dl>
+<dt><code>"MBB"</code></dt>
+<dd>
+<p>Moving blocks bootstrap (Paparoditis and Politis, 2003);</p>
+</dd>
+<dt><code>"BWB"</code></dt>
+<dd>
+<p>Block wild bootstrap (Shao, 2011);</p>
+</dd>
+<dt><code>"DWB"</code></dt>
+<dd>
+<p>Dependent wild bootstrap (Shao, 2010; Rho and Shao, 2019);</p>
+</dd>
+<dt><code>"AWB"</code></dt>
+<dd>
+<p>Autoregressive wild bootstrap (Smeekes and Urbain, 2014a; Friedrich, Smeekes and Urbain, 2020), this is the default;</p>
+</dd>
+<dt><code>"SB" </code></dt>
+<dd>
+<p>Sieve bootstrap (Palm, Smeekes and Urbain, 2008);</p>
+</dd>
+<dt><code>"SWB"</code></dt>
+<dd>
+<p>Sieve wild bootstrap (Cavaliere and Taylor, 2009; Smeekes and Taylor, 2012).</p>
+</dd>
+</dl>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>B</code></td>
+<td>
+<p>Number of bootstrap replications. Default is 1999.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>block_length</code></td>
+<td>
+<p>Desired 'block length' in the bootstrap. For the MBB, BWB and DWB bootstrap, this is a genuine block length. For the AWB bootstrap, the block length is transformed into an autoregressive parameter via the formula <code class="reqn">0.01^(1/block_length)</code> as in Smeekes and Urbain (2014a); this can be overwritten by setting <code>ar_AWB</code> directly. Default sets the block length as a function of the time series length T, via the rule <code class="reqn">block_length = 1.75 T^(1/3)</code> of Palm, Smeekes and Urbain (2011).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ar_AWB</code></td>
+<td>
+<p>Autoregressive parameter used in the AWB bootstrap method (<code>bootstrap = "AWB"</code>). Can be used to set the parameter directly rather than via the default link to the block length.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>min_lag</code></td>
+<td>
+<p>Minimum lag length in the augmented Dickey-Fuller regression. Default is 0.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>max_lag</code></td>
+<td>
+<p>Maximum lag length in the augmented Dickey-Fuller regression. Default uses the sample size-based rule <code class="reqn">12(T/100)^{1/4}</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>criterion</code></td>
+<td>
+<p>String for information criterion used to select the lag length in the augmented Dickey-Fuller regression. Options are: <code>"AIC"</code>, <code>"BIC"</code>, <code>"MAIC"</code>, <code>"MBIC"</code>. Default is <code>"MAIC"</code> (Ng and Perron, 2001).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>criterion_scale</code></td>
+<td>
+<p>Logical indicator whether or not to use the rescaled information criteria of Cavaliere et al. (2015) (<code>TRUE</code>) or not (<code>FALSE</code>). Default is <code>TRUE</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>union_quantile</code></td>
+<td>
+<p>The quantile of the bootstrap distribution used for scaling the individual statistics in the union. Ideally this should equal the desired significance level of the test. Default is 0.05. This parameter is overwritten when a significance level is provided in the argument <code>level</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>show_progress</code></td>
+<td>
+<p>Logical indicator whether a bootstrap progress update should be printed to the console. Default is FALSE.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>do_parallel</code></td>
+<td>
+<p>Logical indicator whether bootstrap loop should be executed in parallel. Default is TRUE.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>cores</code></td>
+<td>
+<p>The number of cores to be used in the parallel loops. Default is to use all but one.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The union is taken over the combination of tests with intercept only and intercept plus trend, coupled with OLS detrending and QD detrending, as in Harvey, Leybourne and Taylor (2012) and Smeekes an Taylor (2012). The bootstrap algorithm is always based on a residual bootstrap (under the alternative) to obtain residuals rather than a difference-based bootstrap (under the null), see e.g. Palm, Smeekes and Urbain (2008).
+</p>
+<p>Lag length selection is done automatically in the ADF regressions with the specified information criterion. If one of the modified criteria of Ng and Perron (2001) is used, the correction of Perron and Qu (2008) is applied. To overwrite data-driven lag length selection with a pre-specified lag length, simply set both the minimum 'min_lag' and maximum lag length 'max_lag' for the selection algorithm equal to the desired lag length.
+</p>
+
+
+<h3>Value</h3>
+
+<p>An object of class <code>"bootUR"</code>, <code>"htest"</code> with the following components:
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>method</code></td>
+<td>
+<p>The name of the hypothesis test method;</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>data.name</code></td>
+<td>
+<p>The name of the variable on which the method is performed;</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>null.value</code></td>
+<td>
+<p>The value of the (gamma) parameter of the lagged dependent variable in the ADF regression under the null hypothesis. Under the null, the series has a unit root. Testing the null of a unit root then boils down to testing the significance of the gamma parameter;</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>alternative</code></td>
+<td>
+<p>A character string specifying the direction of the alternative hypothesis relative to the null value. The alternative postulates that the series is stationary;</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>estimate</code></td>
+<td>
+<p>For the union test, the estimated value of the (gamma) parameter of the lagged dependent variable in the ADF regression is not defined, hence NA is given;</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>statistic</code></td>
+<td>
+<p>The value of the test statistic of the unit root test;</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>p.value</code></td>
+<td>
+<p>The p-value of the unit root test;</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>details</code></td>
+<td>
+<p>A list containing the detailed outcomes of the performed tests, such as selected lags, individual estimates and p-values.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>specifications</code></td>
+<td>
+<p>The specifications used in the test.</p>
+</td>
+</tr>
+</table>
+<h3>Errors and warnings</h3>
+
+
+<dl>
+<dt><code>Error: Multiple time series not allowed. Switch to a multivariate method such as boot_ur, or change argument data to a univariate time series.</code></dt>
+<dd>
+<p>The function is a simple wrapper around <code>boot_ur</code> to facilitate use for single time series. It does not support multiple time series, as <code>boot_ur</code> is specifically suited for that.</p>
+</dd>
+</dl>
+<h3>References</h3>
+
+<p>Smeekes, S. and Wilms, I. (2023). bootUR: An R Package for Bootstrap Unit Root Tests. <em>Journal of Statistical Software</em>, 106(12), 1-39.
+</p>
+<p>Chang, Y. and Park, J. (2003). A sieve bootstrap for the test of a unit root. <em>Journal of Time Series Analysis</em>, 24(4), 379-400.
+</p>
+<p>Cavaliere, G. and Taylor, A.M.R (2009). Heteroskedastic time series with a unit root. <em>Econometric Theory</em>, 25, 1228–1276.
+</p>
+<p>Cavaliere, G., Phillips, P.C.B., Smeekes, S., and Taylor, A.M.R.
+(2015). Lag length selection for unit root tests in the presence of nonstationary volatility. <em>Econometric Reviews</em>, 34(4), 512-536.
+</p>
+<p>Friedrich, M., Smeekes, S. and Urbain, J.-P. (2020). Autoregressive wild bootstrap inference for nonparametric trends. <em>Journal of Econometrics</em>, 214(1), 81-109.
+</p>
+<p>Harvey, D.I., Leybourne, S.J., and Taylor, A.M.R. (2012). Testing for unit roots in the presence of uncertainty over both the trend and initial condition. <em>Journal of Econometrics</em>, 169(2), 188-195.
+</p>
+<p>Ng, S. and Perron, P. (2001). Lag Length Selection and the Construction of Unit Root Tests with Good Size and Power. <em>Econometrica</em>, 69(6), 1519-1554,
+</p>
+<p>Palm, F.C., Smeekes, S. and Urbain, J.-P. (2008). Bootstrap unit root tests: Comparison and extensions. <em>Journal of Time Series Analysis</em>, 29(1), 371-401.
+</p>
+<p>Paparoditis, E. and Politis, D.N. (2003). Residual-based block bootstrap for unit root testing. <em>Econometrica</em>, 71(3), 813-855.
+</p>
+<p>Perron, P. and Qu, Z. (2008). A simple modification to improve the finite sample properties of Ng and Perron's unit root tests. <em>Economic Letters</em>, 94(1), 12-19.
+</p>
+<p>Rho, Y. and Shao, X. (2019). Bootstrap-assisted unit root testing with piecewise locally stationary errors. <em>Econometric Theory</em>, 35(1), 142-166.
+</p>
+<p>Shao, X. (2010). The dependent wild bootstrap. <em>Journal of the American Statistical Association</em>, 105(489), 218-235.
+</p>
+<p>Shao, X. (2011). A bootstrap-assisted spectral test of white noise under unknown dependence. <em>Journal of Econometrics</em>, 162, 213-224.
+</p>
+<p>Smeekes, S. (2013). Detrending bootstrap unit root tests. <em>Econometric Reviews</em>, 32(8), 869-891.
+</p>
+<p>Smeekes, S. and Taylor, A.M.R. (2012). Bootstrap union tests for unit roots in the presence of nonstationary volatility. <em>Econometric Theory</em>, 28(2), 422-456.
+</p>
+<p>Smeekes, S. and Urbain, J.-P. (2014a). A multivariate invariance principle for modified wild bootstrap methods with an application to unit root testing. GSBE Research Memorandum No. RM/14/008, Maastricht University
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>boot_ur</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R"># boot_union on GDP_BE
+GDP_BE_df &lt;- boot_union(MacroTS[, 1], B = 199, do_parallel = FALSE, show_progress = FALSE)
+print(GDP_BE_df)
+</code></pre>
+
+
+</div>

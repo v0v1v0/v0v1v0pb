@@ -1,0 +1,271 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>brglmControl</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Auxiliary function for <code>glm()</code> fitting using the <code>brglmFit()</code>
+method.</h2>
+
+<h3>Description</h3>
+
+<p>Typically only used internally by <code>brglmFit()</code>, but may be used to
+construct a <code>control</code> argument.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">brglmControl(
+  epsilon = 1e-06,
+  maxit = 100,
+  check_aliasing = TRUE,
+  trace = FALSE,
+  type = c("AS_mixed", "AS_mean", "AS_median", "correction", "MPL_Jeffreys", "ML"),
+  transformation = "identity",
+  slowit = 1,
+  response_adjustment = NULL,
+  max_step_factor = 12,
+  a = 1/2,
+  ...
+)
+
+brglm_control(
+  epsilon = 1e-06,
+  maxit = 100,
+  check_aliasing = TRUE,
+  trace = FALSE,
+  type = c("AS_mixed", "AS_mean", "AS_median", "correction", "MPL_Jeffreys", "ML"),
+  transformation = "identity",
+  slowit = 1,
+  response_adjustment = NULL,
+  max_step_factor = 12,
+  a = 1/2,
+  ...
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>epsilon</code></td>
+<td>
+<p>positive convergence tolerance epsilon. Default is
+<code>1e-06</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>maxit</code></td>
+<td>
+<p>integer giving the maximal number of iterations
+allowed. Default is <code>100</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>check_aliasing</code></td>
+<td>
+<p>logical indicating where a QR decomposition
+of the model matrix should be used to check for
+aliasing. Default is <code>TRUE</code>. See Details.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>trace</code></td>
+<td>
+<p>logical indicating if output should be produced for
+each iteration. Default is <code>FALSE</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>type</code></td>
+<td>
+<p>the type of fitting method to be used. The options are
+<code>"AS_mean"</code> (mean-bias reducing adjusted scores), <code>"AS_median"</code>
+(median-bias reducing adjusted scores), <code>"AS_mixed"</code> (bias
+reduction using mixed score adjustments; default),
+<code>"correction"</code> (asymptotic bias correction), <code>"MPL_Jeffreys"</code>
+(maximum penalized likelihood with powers of the Jeffreys prior
+as penalty) and <code>"ML"</code> (maximum likelihood).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>transformation</code></td>
+<td>
+<p>the transformation of the dispersion to be
+estimated. Default is <code>"identity"</code>. See Details.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>slowit</code></td>
+<td>
+<p>a positive real used as a multiplier for the
+stepsize. The smaller it is the smaller the steps are. Default
+is <code>1</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>response_adjustment</code></td>
+<td>
+<p>a (small) positive constant or a vector
+of such. Default is <code>NULL</code>. See Details.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>max_step_factor</code></td>
+<td>
+<p>the maximum number of step halving steps to
+consider. Default is <code>12</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>a</code></td>
+<td>
+<p>power of the Jeffreys prior penalty. See Details.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>further arguments passed to <code>brglmControl()</code>. Currently
+ignored in the output.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p><code>brglmControl()</code> provides default values and sanity checking for
+the various constants that control the iteration and generally the
+behaviour of <code>brglmFit()</code>.
+</p>
+<p>When <code>trace = TRUE</code>, calls to <code>cat()</code> produce the output for each
+iteration.  Hence, <code style="white-space: pre;">⁠options(digits = *)⁠</code> can be used to increase
+the precision.
+</p>
+<p>When <code>check_aliasing = TRUE</code> (default), a QR decomposition of the
+model matrix is computed to check for aliasing. If the model matrix
+is known to be of full rank, then <code>check_aliasing = FALSE</code> avoids
+the extra computational overhead of an additional QR decomposition,
+which can be substantial for large model matrices. However, setting
+<code>check_aliasing = FALSE</code> tells <code>brglmFit()</code> that the model matrix
+is full rank, and hard to trace back errors will result if it is
+rank deficient.
+</p>
+<p><code>transformation</code> sets the transformation of the dispersion
+parameter for which the bias reduced estimates are computed. Can be
+one of <code>"identity"</code>, <code>"sqrt"</code>, <code>"inverse"</code>, <code>"log"</code> and
+<code>"inverseSqrt"</code>. Custom transformations are accommodated by
+supplying a list of two expressions (transformation and inverse
+transformation). See the examples for more details.
+</p>
+<p>The value of <code>response_adjustment</code> is only relevant if <code>brglmFit()</code>
+is called with <code>start = NULL</code>, and <code>family</code> is <code>binomial()</code> or
+<code>poisson()</code>. For those models, an initial maximum likelihood fit is
+obtained on adjusted data to provide starting values for the
+iteration in <code>brglmFit()</code>. The value of <code>response_adjustment</code>
+governs how the data is adjusted. Specifically, if <code>family</code> is
+<code>binomial()</code>, then the responses and totals are adjusted by
+<code>response_adjustment</code> and <code>2 * response_adjustment</code>, respectively;
+if <code>family</code> is <code>poisson()</code>, then the responses are adjusted by and
+<code>response_adjustment</code>. <code>response_adjustment = NULL</code> (default)
+is equivalent to setting it to
+<code>"number of parameters" / "number of observations"</code>.
+</p>
+<p>When <code>type = "AS_mixed"</code> (default), mean bias reduction is used for
+the regression parameters, and median bias reduction for the
+dispersion parameter, if that is not fixed. This adjustment has
+been developed based on equivariance arguments (see, Kosmidis et
+al, 2020, Section 4) in order to produce regression parameter
+estimates that are invariant to arbitrary contrasts, and estimates
+for the dispersion parameter that are invariant to arbitrary
+non-linear transformations. <code>type = "AS_mixed"</code> and <code>type = "AS_mean"</code> return the same results if <code>brglmFit()</code> is called with
+<code>family</code> <code>binomial()</code> or <code>poisson()</code> (i.e. families with fixed
+dispersion).
+</p>
+<p>When <code>type = "MPL_Jeffreys"</code>, <code>brglmFit()</code> will maximize the
+penalized log-likelihood </p>
+<p style="text-align: center;"><code class="reqn">l(\beta, \phi) + a\log \det i(\beta,
+\phi)</code>
+</p>
+<p> where <code class="reqn">i(\beta,
+\phi)</code> is the expected information matrix about the
+regression parameters <code class="reqn">\beta</code> and the dispersion parameter
+<code class="reqn">\phi</code>. See, <code>vignette("iteration", "brglm2")</code> for more
+information. The argument <code>a</code> controls the amount of penalization
+and its default value is <code>a = 1/2</code>, corresponding to maximum
+penalized likelihood using a Jeffreys-prior penalty. See, Kosmidis
+&amp; Firth (2021) for proofs and discussion about the finiteness and
+shrinkage properties of the maximum penalized likelihood estimators
+for binomial-response generalized linear models.
+</p>
+<p>The estimates from <code>type = "AS_mean"</code> and <code>type = "MPL_Jeffreys"</code> with <code>a = 1/2</code> (default) are identical for
+Poisson log-linear models and logistic regression models, i.e. for
+binomial and Poisson regression models with canonical links. See,
+Firth (1993) for details.
+</p>
+<p><code>brglm_control()</code> is an alias to <code>brglmControl()</code>.
+</p>
+
+
+<h3>Value</h3>
+
+<p>a list with components named as the arguments, including
+symbolic expressions for the dispersion transformation
+(<code>Trans</code>) and its inverse (<code>inverseTrans</code>)
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Ioannis Kosmidis <code style="white-space: pre;">⁠[aut, cre]⁠</code> <a href="mailto:ioannis.kosmidis@warwick.ac.uk">ioannis.kosmidis@warwick.ac.uk</a>
+</p>
+
+
+<h3>References</h3>
+
+<p>Kosmidis I, Firth D (2021). Jeffreys-prior penalty, finiteness
+and shrinkage in binomial-response generalized linear
+models. <em>Biometrika</em>, <strong>108</strong>, 71-82. <a href="https://doi.org/10.1093/biomet/asaa052">doi:10.1093/biomet/asaa052</a>.
+</p>
+<p>Kosmidis I, Kenne Pagui E C, Sartori N (2020). Mean and median bias
+reduction in generalized linear models. <em>Statistics and Computing</em>,
+<strong>30</strong>, 43-59. <a href="https://doi.org/10.1007/s11222-019-09860-6">doi:10.1007/s11222-019-09860-6</a>.
+</p>
+<p>Firth D (1993). Bias reduction of maximum likelihood estimates.
+Biometrika, <strong>80</strong>, 27-38. <a href="https://doi.org/10.2307/2336755">doi:10.2307/2336755</a>.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>brglm_fit()</code> and <code>glm.fit()</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+data("coalition", package = "brglm2")
+## The maximum likelihood fit with log link
+coalitionML &lt;- glm(duration ~ fract + numst2, family = Gamma, data = coalition)
+
+## Bias reduced estimation of the dispersion parameter
+coalitionBRi &lt;- glm(duration ~ fract + numst2, family = Gamma, data = coalition,
+                    method = "brglmFit")
+coef(coalitionBRi, model = "dispersion")
+
+## Bias reduced estimation of log(dispersion)
+coalitionBRl &lt;- glm(duration ~ fract + numst2, family = Gamma, data = coalition,
+                    method = "brglmFit", transformation = "log")
+coef(coalitionBRl, model = "dispersion")
+
+## Just for illustration: Bias reduced estimation of dispersion^0.25
+my_transformation &lt;- list(expression(dispersion^0.25), expression(transformed_dispersion^4))
+coalitionBRc &lt;- update(coalitionBRi, transformation = my_transformation)
+coef(coalitionBRc, model = "dispersion")
+
+</code></pre>
+
+
+</div>

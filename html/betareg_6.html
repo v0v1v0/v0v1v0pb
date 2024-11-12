@@ -1,0 +1,170 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>betareg.control</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Control Parameters for Beta Regression</h2>
+
+<h3>Description</h3>
+
+<p>Various parameters that control fitting of beta regression models
+using <code>betareg</code>.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">betareg.control(phi = TRUE, method = "BFGS", maxit = 5000,
+  gradient = NULL, hessian = FALSE, trace = FALSE, start = NULL,
+  fsmaxit = 200, fstol = 1e-8, quad = 20, ...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>phi</code></td>
+<td>
+<p>logical indicating whether the precision parameter
+phi should be treated as a full model parameter (<code>TRUE</code>, default)
+or as a nuisance parameter.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>method</code></td>
+<td>
+<p>characters string specifying the <code>method</code> argument
+passed to <code>optim</code>. Additionally, <code>method = "nlminb"</code>
+can be used to employ <code>nlminb</code>, instead.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>maxit</code></td>
+<td>
+<p>integer specifying the <code>maxit</code> argument (maximal number
+of iterations) passed to <code>optim</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>trace</code></td>
+<td>
+<p>logical or integer controlling whether tracing information on  
+the progress of the optimization should be produced (passed to <code>optim</code>).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>gradient</code></td>
+<td>
+<p>logical. Should the analytical gradient be used for optimizing
+the log-likelihood? If set to <code>FALSE</code> a finite-difference approximation
+is used instead. The default of <code>NULL</code> signals that analytical gradients
+are only used for the classical <code>"beta"</code> distribution but not for
+<code>"xbetax"</code> or <code>"xbeta"</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>hessian</code></td>
+<td>
+<p>logical. Should the numerical Hessian matrix from the <code>optim</code> output
+be used for estimation of the covariance matrix? By default the analytical solution is employed.
+For details see below.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>start</code></td>
+<td>
+<p>an optional vector with starting values for all parameters (including phi).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>fsmaxit</code></td>
+<td>
+<p>integer specifying maximal number of additional (quasi) Fisher scoring
+iterations. For details see below.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>fstol</code></td>
+<td>
+<p>numeric tolerance for convergence in (quasi) Fisher scoring.
+For details see below.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>quad</code></td>
+<td>
+<p>numeric. The number of quadrature points for numeric
+integration in case of <code>dist = "xbetax"</code> is used in the beta regression.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>arguments passed to <code>optim</code>.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>All parameters in <code>betareg</code> are estimated by maximum likelihood
+using <code>optim</code> with control options set in <code>betareg.control</code>.
+Most arguments are passed on directly to <code>optim</code>, and <code>start</code> controls
+how <code>optim</code> is called.
+</p>
+<p>After the <code>optim</code> maximization, an additional (quasi) Fisher scoring
+can be perfomed to further enhance the result or to perform additional bias reduction.
+If <code>fsmaxit</code> is greater than zero, this additional optimization is
+performed and it converges if the threshold <code>fstol</code> is attained
+for the cross-product of the step size.
+</p>
+<p>Starting values can be supplied via <code>start</code> or estimated by
+<code>lm.wfit</code>, using the link-transformed response.
+Covariances are in general derived analytically. Only if <code>type = "ML"</code> and
+<code>hessian = TRUE</code>, they are determined numerically using the Hessian matrix
+returned by <code>optim</code>. In the latter case no Fisher scoring iterations are
+performed.
+</p>
+<p>The main parameters of interest are the coefficients in the linear predictor of the
+model and the additional precision parameter phi which can either
+be treated as a full model parameter (default) or as a nuisance parameter. In the latter case
+the estimation does not change, only the reported information in output from <code>print</code>,
+<code>summary</code>, or <code>coef</code> (among others) will be different. See also examples.
+</p>
+
+
+<h3>Value</h3>
+
+<p>A list with the arguments specified.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>betareg</code></p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">options(digits = 4)
+
+data("GasolineYield", package = "betareg")
+
+## regression with phi as full model parameter
+gy1 &lt;- betareg(yield ~ batch + temp, data = GasolineYield)
+gy1
+
+## regression with phi as nuisance parameter
+gy2 &lt;- betareg(yield ~ batch + temp, data = GasolineYield, phi = FALSE)
+gy2
+
+## compare reported output
+coef(gy1)
+coef(gy2)
+summary(gy1)
+summary(gy2)
+</code></pre>
+
+
+</div>

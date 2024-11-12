@@ -1,0 +1,484 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>BayesSUR</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Fitting BayesSUR models</h2>
+
+<h3>Description</h3>
+
+<p>Main function of the package. Fits a range of models introduced in the 
+package vignette <code>BayesSUR.pdf</code>. Returns an object of S3 class 
+<code>BayesSUR</code>. There are three options for the prior on the residual 
+covariance matrix (i.e., independent inverse-Gamma, inverse-Wishart and 
+hyper-inverse Wishart) and three options for the prior on the latent 
+indicator variable (i.e., independent Bernoulli, hotspot and Markov random 
+field). So there are nine models in total. See details for their combinations.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">BayesSUR(
+  data = NULL,
+  Y,
+  X,
+  X_0 = NULL,
+  covariancePrior = "HIW",
+  gammaPrior = "hotspot",
+  betaPrior = "independent",
+  nIter = 10000,
+  burnin = 5000,
+  nChains = 2,
+  outFilePath = "",
+  gammaSampler = "bandit",
+  gammaInit = "R",
+  mrfG = NULL,
+  standardize = TRUE,
+  standardize.response = TRUE,
+  maxThreads = 1,
+  tick = 1000,
+  output_gamma = TRUE,
+  output_beta = TRUE,
+  output_Gy = TRUE,
+  output_sigmaRho = TRUE,
+  output_pi = TRUE,
+  output_tail = TRUE,
+  output_model_size = TRUE,
+  output_model_visit = FALSE,
+  output_CPO = FALSE,
+  output_Y = TRUE,
+  output_X = TRUE,
+  hyperpar = list(),
+  tmpFolder = "tmp/"
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+<p>a numeric matrix with variables on the columns and observations 
+on the rows, if arguments <code>Y</code> and <code>X</code> (and possibly <code>X_0</code>) 
+are vectors. Can be <code>NULL</code> if arguments <code>Y</code> and <code>X</code> (and 
+possibly <code>X_0</code>) are numeric matrices</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Y, X</code></td>
+<td>
+<p>vectors of indices (with respect to the data matrix) for the 
+outcomes (<code>Y</code>) and the predictors to select (<code>X</code>) respectively; 
+if the <code>data</code> argument is <code>NULL</code>, these needs to be numeric 
+matrices containing the data instead, with variables on the columns and 
+observations on the rows</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>X_0</code></td>
+<td>
+<p>vectors of indices (with respect to the data matrix) for the 
+fixed predictors that are not selected, i.e. always included in the model; 
+if the data argument is not provided, this needs to be a numeric matrix 
+containing the data instead, with variables on the columns and observations 
+on the rows</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>covariancePrior</code></td>
+<td>
+<p>string indicating the prior for the covariance $C$; 
+it has to be either <code>HIW</code> for the hyper-inverse-Wishar (which will 
+result in a sparse covariance matrix), <code>IW</code> for the inverse-Wishart 
+prior (dense covariance) or <code>IG</code> for independent inverse-Gamma on all 
+the diagonal elements and 0 otherwise. See the details for the model 
+specification</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>gammaPrior</code></td>
+<td>
+<p>string indicating the gamma prior to use, either 
+<code>hotspot</code> (default) for the Hotspot prior of Bottolo (2011), <code>MRF</code> 
+for the Markov Random Field prior or <code>hierarchical</code> for a simpler 
+hierarchical prior. See the details for the model specification</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>betaPrior</code></td>
+<td>
+<p>string indicating the prior for regression coefficients; it 
+has to be either <code>independent</code> for independent spike-and-slab priors 
+(only slab part for <code>X_0</code> if specified), or <code>reGroup</code> for weakly 
+normal priors for mandatory variables (random effects) and spike-and-slab 
+priors for other variables of Zhao (2023)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nIter</code></td>
+<td>
+<p>number of iterations for the MCMC procedure. Default 10000</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>burnin</code></td>
+<td>
+<p>number of iterations to discard at the start of the chain. 
+Default is 5000</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nChains</code></td>
+<td>
+<p>number of parallel tempered chains to run (default 2). The 
+temperature is adapted during the burnin phase</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>outFilePath</code></td>
+<td>
+<p>path to where the output files are to be written</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>gammaSampler</code></td>
+<td>
+<p>string indicating the type of sampler for gamma, either 
+<code>bandit</code> for the Thompson sampling inspired samper or <code>MC3</code> for 
+the usual MC^3 sampler.  See Russo et al.(2018) or Madigan and York (1995) 
+for details</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>gammaInit</code></td>
+<td>
+<p>gamma initialisation to either all-zeros (<code>0</code>), all 
+ones (<code>1</code>), MLE-informed (<code>MLE</code>) or (default) randomly (<code>R</code>)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>mrfG</code></td>
+<td>
+<p>either a matrix or a path to the file containing (the edge list 
+of) the G matrix for the MRF prior on gamma (if necessary)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>standardize</code></td>
+<td>
+<p>logical flag for X variable standardization. Default is 
+<code>standardize=TRUE</code>. Coefficients are returned on the standardized scale</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>standardize.response</code></td>
+<td>
+<p>logical flag for Y standardization. Default is 
+<code>standardize.response=TRUE</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>maxThreads</code></td>
+<td>
+<p>maximum threads used for parallelization. Default is 1. 
+Reproducibility of results with <code>set.seed()</code> is only guaranteed if 
+<code>maxThreads=1</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>tick</code></td>
+<td>
+<p>an integer used for printing the iteration index and some updated 
+parameters every tick-th iteration. Default is 1000</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>output_gamma</code></td>
+<td>
+<p>allow (<code>TRUE</code>) or suppress (<code>FALSE</code>) the 
+output for  gamma. See the return value below for more information</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>output_beta</code></td>
+<td>
+<p>allow (<code>TRUE</code>) or suppress (<code>FALSE</code>) the output 
+for beta. See the return value below for more information</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>output_Gy</code></td>
+<td>
+<p>allow (<code>TRUE</code>) or suppress (<code>FALSE</code>) the output 
+for Gy. See the return value below for more information</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>output_sigmaRho</code></td>
+<td>
+<p>allow (<code>TRUE</code>) or suppress (<code>FALSE</code>) the 
+output for sigmaRho. See the return value below for more information</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>output_pi</code></td>
+<td>
+<p>allow (<code>TRUE</code>) or suppress (<code>FALSE</code>) the output 
+for pi. See the return value below for more information</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>output_tail</code></td>
+<td>
+<p>allow (<code>TRUE</code>) or suppress (<code>FALSE</code>) the output 
+for tail (hotspot tail probability). See the return value below for more 
+information</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>output_model_size</code></td>
+<td>
+<p>allow (<code>TRUE</code>) or suppress (<code>FALSE</code>) the 
+output for model_size. See the return value below for more information</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>output_model_visit</code></td>
+<td>
+<p>allow (<code>TRUE</code>) or suppress (<code>FALSE</code>) the 
+output for all visited models over the MCMC iterations. Default is 
+<code>FALSE</code>. See the return value below for more information</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>output_CPO</code></td>
+<td>
+<p>allow (<code>TRUE</code>) or suppress (<code>FALSE</code>) the output 
+for (scaled) conditional predictive ordinates (<code>*_CPO_out.txt</code>),
+CPO with joint posterior predictive of the response variables 
+(<code>*_CPOsumy_out.txt</code>) and widely applicable information criterion 
+(<code>*_WAIC_out.txt</code>). See the return value below for more information</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>output_Y</code></td>
+<td>
+<p>allow (<code>TRUE</code>) or suppress (<code>FALSE</code>) the output 
+for responses dataset Y</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>output_X</code></td>
+<td>
+<p>allow (<code>TRUE</code>) or suppress (<code>FALSE</code>) the output 
+for predictors dataset X</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>hyperpar</code></td>
+<td>
+<p>a list of named hypeparameters to use instead of the default 
+values. Valid names are mrf_d, mrf_e, a_sigma, b_sigma, a_tau, b_tau, nu, 
+a_eta, b_eta, a_o, b_o, a_pi, b_pi, a_w and b_w. Their default values are 
+a_w=2, b_w=5, a_omega=2, b_omega=1, a_o=2, b_o=p-2, a_pi=2, b_pi=1, nu=s+2, 
+a_tau=0.1, b_tau=10, a_eta=0.1, b_eta=1, a_sigma=1, b_sigma=1, mrf_d=-3 and 
+mrf_e=0.03. See the vignette for more information</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>tmpFolder</code></td>
+<td>
+<p>the path to a temporary folder where intermediate data 
+files are stored (will be erased at the end of the chain). It is specified 
+relative to <code>outFilePath</code></p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The arguments <code>covariancePrior</code> and <code>gammaPrior</code> specify 
+the model HRR, dSUR or SSUR with different gamma prior. Let 
+<code class="reqn">\gamma_{jk}</code> be latent indicator variable of each coefficient and 
+<code class="reqn">C</code> be covariance matrix of response variables. The nine models 
+specified through the arguments <code>covariancePrior</code> and 
+<code>gammaPrior</code> are as follows.
+</p>
+
+<table>
+<tr>
+<td style="text-align: center;">
+                </td>
+<td style="text-align: center;"> <code class="reqn">\gamma_{jk}</code>~Bernoulli </td>
+<td style="text-align: center;"> <code class="reqn">\gamma_{jk}</code>~hotspot </td>
+<td style="text-align: center;"> <code class="reqn">\gamma</code>~MRF </td>
+</tr>
+<tr>
+<td style="text-align: center;">
+  <code class="reqn">C</code>~indep </td>
+<td style="text-align: center;"> HRR-B                       </td>
+<td style="text-align: center;"> HRR-H                     </td>
+<td style="text-align: center;"> HRR-M           </td>
+</tr>
+<tr>
+<td style="text-align: center;">
+  <code class="reqn">C</code>~IW   </td>
+<td style="text-align: center;"> dSUR-B                      </td>
+<td style="text-align: center;"> dSUR-H                    </td>
+<td style="text-align: center;"> dSUR-M          </td>
+</tr>
+<tr>
+<td style="text-align: center;">
+  <code class="reqn">C</code>~HIW   </td>
+<td style="text-align: center;"> SSUR-B                      </td>
+<td style="text-align: center;"> SSUR-H                    </td>
+<td style="text-align: center;"> SSUR-M
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>An object of class <code>BayesSUR</code> is saved as 
+<code>obj_BayesSUR.RData</code> in the output file, including the following 
+components:
+</p>
+
+<ul>
+<li>
+<p> status - the running status
+</p>
+</li>
+<li>
+<p> input - a list of all input parameters by the user
+</p>
+</li>
+<li>
+<p> output - a list of the all output filenames:
+</p>
+
+<ul>
+<li>
+<p> "<code>*_logP_out.txt</code>" - contains each row for the <code class="reqn">1000t</code>-th iteration's log-likelihoods of parameters, i.e., Tau, Eta, JunctionTree, SigmaRho, O, Pi, Gamma, W, Beta and data conditional log-likelihood depending on the models.
+</p>
+</li>
+<li>
+<p> "<code>*_gamma_out.txt</code>" - posterior mean of the latent indicator matrix.
+</p>
+</li>
+<li>
+<p> "<code>*_pi_out.txt</code>" - posterior mean of the predictor effects (prospensity) by decomposing the probability of the latent indicator.
+</p>
+</li>
+<li>
+<p> "<code>*_hotspot_tail_p_out.txt</code>" - posterior mean of the hotspot tail probability. Only available for the hotspot prior on the gamma.
+</p>
+</li>
+<li>
+<p> "<code>*_beta_out.txt</code>" - posterior mean of the coefficients matrix.
+</p>
+</li>
+<li>
+<p> "<code>*_Gy_out.txt</code>" - posterior mean of the response graph. Only available for the HIW prior on the covariance.
+</p>
+</li>
+<li>
+<p> "<code>*_sigmaRho_out.txt</code>" - posterior mean of the transformed parameters. Not available for the IG prior on the covariance.
+</p>
+</li>
+<li>
+<p> "<code>*_model_size_out.txt</code>" - contains each row for the<code class="reqn">1000t</code>-th iteration's model sizes of the multiple response variables.
+</p>
+</li>
+<li>
+<p> "<code>*_model_visit_gy_out.txt</code>" - contains each row for the nonzero indices of the vectorized estimated graph matrix for each iteration.
+</p>
+</li>
+<li>
+<p> "<code>*_model_visit_gamma_out.txt</code>" - contains each row for the nonzero indices of the vectorized estimated gamma matrix for each iteration.
+</p>
+</li>
+<li>
+<p> "<code>*_CPO_out.txt</code>" - the (scaled) conditional predictive ordinates (CPO).
+</p>
+</li>
+<li>
+<p> "<code>*_CPOsumy_out.txt</code>" - the (scaled) conditional predictive ordinates (CPO) with joint posterior predictive of the response variables.
+</p>
+</li>
+<li>
+<p> "<code>*_WAIC_out.txt</code>" - the widely applicable information criterion (WAIC).
+</p>
+</li>
+<li>
+<p> "<code>*_Y.txt</code>" - responses dataset.
+</p>
+</li>
+<li>
+<p> "<code>*_X.txt</code>" - predictors dataset.
+</p>
+</li>
+<li>
+<p> "<code>*_X0.txt</code>" - fixed predictors dataset.
+</p>
+</li>
+</ul>
+</li>
+<li>
+<p> call - the matched call.
+</p>
+</li>
+</ul>
+<h3>References</h3>
+
+<p>Russo D, Van Roy B, Kazerouni A, Osband I, Wen Z (2018). <em>A tutorial on Thompson sampling.</em> Foundations and Trends in Machine Learning, 11: 1-96.
+</p>
+<p>Madigan D, York J (1995). <em>Bayesian graphical models for discrete data.</em> International Statistical Review, 63: 215–232.
+</p>
+<p>Bottolo L, Banterle M, Richardson S, Ala-Korpela M, Jarvelin MR, Lewin A (2020). <em>A computationally efficient Bayesian seemingly unrelated regressions model for high-dimensional quantitative trait loci discovery.</em> Journal of Royal Statistical Society: Series C, 70: 886-908.
+</p>
+<p>Zhao Z, Banterle M, Bottolo L, Richardson S, Lewin A, Zucknick M (2021). <em>BayesSUR: An R package for high-dimensional multivariate Bayesian variable and covariance selection in linear regression.</em> Journal of Statistical Software, 100: 1–32.
+</p>
+<p>Zhao Z, Banterle M, Lewin A, Zucknick M (2023). <em>Multivariate Bayesian structured variable selection for pharmacogenomic studies.</em> Journal of the Royal Statistical Society: Series C (Applied Statistics), qlad102.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">data("exampleEQTL", package = "BayesSUR")
+hyperpar &lt;- list(a_w = 2, b_w = 5)
+set.seed(9173)
+fit &lt;- BayesSUR(
+  Y = exampleEQTL[["blockList"]][[1]],
+  X = exampleEQTL[["blockList"]][[2]],
+  data = exampleEQTL[["data"]], outFilePath = tempdir(),
+  nIter = 5, burnin = 0, nChains = 1, gammaPrior = "hotspot",
+  hyperpar = hyperpar, tmpFolder = "tmp/", output_CPO = TRUE
+)
+
+## check output
+# show the summary information
+summary(fit)
+
+# show the estimated beta, gamma and graph of responses Gy
+plot(fit, estimator = c("beta", "gamma", "Gy"), type = "heatmap")
+
+## Not run: 
+## Set up temporary work directory for saving a pdf figure
+# td &lt;- tempdir()
+# oldwd &lt;- getwd()
+# setwd(td)
+
+## Produce authentic math formulas in the graph
+# plot(fit, estimator = c("beta", "gamma", "Gy"), type = "heatmap", fig.tex = TRUE)
+# system(paste(getOption("pdfviewer"), "ParamEstimator.pdf"))
+# setwd(oldwd)
+
+## End(Not run)
+
+</code></pre>
+
+
+</div>

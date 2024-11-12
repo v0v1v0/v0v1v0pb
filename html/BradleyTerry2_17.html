@@ -1,0 +1,170 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>icehockey</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>College Hockey Men's Division I 2009-10 results</h2>
+
+<h3>Description</h3>
+
+<p>Game results from American College Hockey Men's Division I composite
+schedule 2009-2010.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">icehockey
+</code></pre>
+
+
+<h3>Format</h3>
+
+<p>A data frame with 1083 observations on the following 6 variables.
+</p>
+
+<dl>
+<dt>date</dt>
+<dd>
+<p>a numeric vector</p>
+</dd>
+<dt>visitor</dt>
+<dd>
+<p>a
+factor with 58 levels <code style="white-space: pre;">⁠Alaska Anchorage⁠</code> ... <code>Yale</code></p>
+</dd>
+<dt>v_goals</dt>
+<dd>
+<p>a numeric vector</p>
+</dd>
+<dt>opponent</dt>
+<dd>
+<p>a factor
+with 58 levels <code style="white-space: pre;">⁠Alaska Anchorage⁠</code> ... <code>Yale</code></p>
+</dd>
+<dt>o_goals</dt>
+<dd>
+<p>a numeric vector</p>
+</dd>
+<dt>conference</dt>
+<dd>
+<p>a factor
+with levels <code>AH</code>, <code>CC</code>, <code>CH</code>, <code>EC</code>, <code>HE</code>,
+<code>NC</code>, <code>WC</code></p>
+</dd>
+<dt>result</dt>
+<dd>
+<p>a numeric vector: 1 if visitor
+won, 0.5 for a draw and 0 if visitor lost</p>
+</dd>
+<dt>home.ice</dt>
+<dd>
+<p>a logical
+vector: 1 if opponent on home ice, 0 if game on neutral ground</p>
+</dd> </dl>
+<h3>Details</h3>
+
+<p>The Division I ice hockey teams are arranged in six conferences: Atlantic
+Hockey, Central Collegiate Hockey Association, College Hockey America, ECAC
+Hockey, Hockey East and the Western Collegiate Hockey Association, all part
+of the National Collegiate Athletic Association. The composite schedule
+includes within conference games and between conference games.
+</p>
+<p>The data set here contains only games from the regular season, the results
+of which determine the teams that play in the NCAA national tournament.
+There are six automatic bids that go to the conference tournament champions,
+the remaining 10 teams are selected based upon ranking under the NCAA's
+system of pairwise comparisons
+(<a href="https://www.collegehockeynews.com/info/?d=pwcrpi">https://www.collegehockeynews.com/info/?d=pwcrpi</a>). Some have argued
+that Bradley-Terry rankings would be fairer
+(<a href="https://www.collegehockeynews.com/info/?d=krach">https://www.collegehockeynews.com/info/?d=krach</a>).
+</p>
+
+
+<h3>Source</h3>
+
+<p><a href="http://www.collegehockeystats.net/0910/schedules/men">http://www.collegehockeystats.net/0910/schedules/men</a>.
+</p>
+
+
+<h3>References</h3>
+
+<p>Schlobotnik, J. Build your own rankings:
+<a href="http://www.elynah.com/tbrw/2010/rankings.diy.shtml">http://www.elynah.com/tbrw/2010/rankings.diy.shtml</a>.
+</p>
+<p>College Hockey News <a href="https://www.collegehockeynews.com/">https://www.collegehockeynews.com/</a>.
+</p>
+<p>Selections for 2010 NCAA tournament:
+<a href="https://www.espn.com/college-sports/news/story?id=5012918">https://www.espn.com/college-sports/news/story?id=5012918</a>.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+### Fit the standard Bradley-Terry model
+standardBT &lt;- BTm(outcome = result,
+    player1 = visitor, player2 = opponent,
+    id = "team", data = icehockey)
+
+## Bradley-Terry abilities
+abilities &lt;- exp(BTabilities(standardBT)[,1])
+
+## Compute round-robin winning probability and KRACH ratings
+## (scaled abilities such that KRACH = 100 for a team with
+## round-robin winning probability of 0.5)
+rankings &lt;- function(abilities){
+    probwin &lt;- abilities/outer(abilities, abilities, "+")
+    diag(probwin) &lt;- 0
+    nteams &lt;- ncol(probwin)
+    RRWP &lt;- rowSums(probwin)/(nteams - 1)
+    low &lt;- quantile(abilities, 0.45)
+    high &lt;- quantile(abilities, 0.55)
+    middling &lt;- uniroot(function(x) {sum(x/(x+abilities)) - 0.5*nteams},
+                        lower = low, upper = high)$root
+    KRACH &lt;- abilities/middling*100
+    cbind(KRACH, RRWP) 
+}
+
+ranks &lt;- rankings(abilities)
+## matches those produced by Joe Schlobotnik's Build Your Own Rankings 
+head(signif(ranks, 4)[order(ranks[,1], decreasing = TRUE),])
+
+## At one point the NCAA rankings gave more credit for wins on
+## neutral/opponent's ground. Home ice effects are easily
+## incorporated into the Bradley-Terry model, comparing teams
+## on a "level playing field"
+levelBT &lt;- BTm(result,
+               data.frame(team = visitor, home.ice = 0),
+               data.frame(team = opponent, home.ice = home.ice),
+               ~ team + home.ice,
+               id = "team", data = icehockey)
+
+abilities &lt;- exp(BTabilities(levelBT)[,1])
+ranks2 &lt;- rankings(abilities)
+
+## Look at movement between the two rankings
+change &lt;- factor(rank(ranks2[,1]) - rank(ranks[,1]))
+barplot(xtabs(~change), xlab = "Change in Rank", ylab = "No. Teams")
+
+## Take out regional winners and look at top 10
+regional &lt;- c("RIT", "Alabama-Huntsville", "Michigan", "Cornell", "Boston College",
+              "North Dakota")
+
+ranks &lt;- ranks[!rownames(ranks) %in% regional]
+ranks2 &lt;- ranks2[!rownames(ranks2) %in% regional]
+
+## compare the 10 at-large selections under both rankings
+## with those selected under NCAA rankings
+cbind(names(sort(ranks, decr = TRUE)[1:10]),
+      names(sort(ranks2, decr = TRUE)[1:10]),
+      c("Miami", "Denver", "Wisconsin", "St. Cloud State",
+        "Bemidji State", "Yale", "Northern Michigan", "New Hampshire",
+        "Alsaka", "Vermont"))
+
+
+</code></pre>
+
+
+</div>

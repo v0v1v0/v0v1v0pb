@@ -1,0 +1,232 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>BMSC</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Fit Bayesian Multilevel Single Case models</h2>
+
+<h3>Description</h3>
+
+<p><code>BMSC</code> fits the Bayesian Multilevel Single Case models.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">BMSC(
+  formula,
+  data_ctrl,
+  data_sc,
+  cores = 1,
+  chains = 4,
+  iter = 4000,
+  warmup,
+  seed = NA,
+  typeprior = "normal",
+  s,
+  family = "gaussian",
+  ...
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>formula</code></td>
+<td>
+<p>An object of class <code>formula</code>: a symbolic description of the model to be fitted.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>data_ctrl</code></td>
+<td>
+<p>An object of class <code>data.frame</code> (or one that can be coerced to that class)
+containing data of all variables used in the model for the control group.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>data_sc</code></td>
+<td>
+<p>An object of class <code>data.frame</code> (or one that can be coerced to that class)
+containing data of all variables used in the model for the Single Case</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>cores</code></td>
+<td>
+<p>The number of cores to use when executing the Markov chains in parallel. The default is 1.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>chains</code></td>
+<td>
+<p>Number of Markov chains (defaults to 4).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>iter</code></td>
+<td>
+<p>Number of total iterations per chain (including warmup; defaults to 4000).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>warmup</code></td>
+<td>
+<p>A positive integer specifying number of warmup (aka burnin) iterations.
+This also specifies the number of iterations used for stepsize adaptation,
+so warmup samples should not be used for inference. The number of warmup should
+not be larger than iter and the default is 2000.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>seed</code></td>
+<td>
+<p>The seed for random number generation to make results reproducible.
+If NA (the default), Stan will set the seed randomly.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>typeprior</code></td>
+<td>
+<p>Set the desired prior distribution for the fixed effects.
+</p>
+
+<dl>
+<dt>normal</dt>
+<dd>
+<p>a normal distribution with <code class="reqn">\mu = 0</code> and <code class="reqn">\sigma = 10</code></p>
+</dd>
+<dt>cauchy</dt>
+<dd>
+<p>a cauchy distribution with <code class="reqn">\mu = 0</code> and scale
+<code class="reqn">\sqrt{2}/2</code></p>
+</dd>
+<dt>student</dt>
+<dd>
+<p>a Student's T distribution, with <code class="reqn">\mu = 0</code>, <code class="reqn">\nu = 3</code>
+and <code class="reqn">\sigma = 10</code></p>
+</dd>
+</dl>
+<p>The normal distribution is the default.
+</p>
+<p>The <code class="reqn">\sigma</code> or scale parameters of the prior distributions can be
+modified by setting the dispersion parameter <code>s</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>s</code></td>
+<td>
+<p>is the dispersion parameter (standard deviation or scale) for the
+prior distribution.
+</p>
+<p>If NULL (the default) and <code>typeprior = "normal"</code> or
+<code>typeprior = "student"</code> <code>s = 10</code>, otherwise, if
+<code>typeprior = "cauchy"</code> <code>s = sqrt(2)/2</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>family</code></td>
+<td>
+<p>a description of the response distribution to be used in
+this model.
+This is a character string naming the family.
+By default, a linear gaussian model is applied.
+</p>
+
+<dl>
+<dt>gaussian</dt>
+<dd>
+<p>the dependent variable is distributed along a Gaussian distribution,
+with <code>identity</code> link function</p>
+</dd>
+<dt>binomial</dt>
+<dd>
+<p>the dependent variable is distributed along a Binomial distribution,
+with <code>logit</code> link function</p>
+</dd>
+</dl>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>further arguments to be passed to <strong>stan</strong> function.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>a <code>BMSC</code> object
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R"> 
+
+# simulation of healthy controls data
+
+Sigma.ctrl &lt;- matrix(cbind(1, .7,  .7, 1) ,nrow=2)
+
+U &lt;- t(chol(Sigma.ctrl))
+
+numobs &lt;- 100
+
+set.seed(123)
+
+random.normal &lt;- matrix( rnorm( n = ncol(U) * numobs, mean = 3, sd = 1),
+                         nrow = ncol(U), ncol = numobs)
+
+X = U %*% random.normal
+
+dat.ctrl &lt;- as.data.frame(t(X))
+
+names(dat.ctrl) &lt;- c("y","x")
+
+cor(dat.ctrl)
+
+# simulation of patient data
+
+Sigma.pt &lt;- matrix(cbind(1, 0,  0, 1) ,nrow=2)
+
+U &lt;- t(chol(Sigma.pt))
+
+numobs &lt;- 20
+
+set.seed(0)
+
+random.normal &lt;- matrix( rnorm( n = ncol(U) * numobs, mean = 3, sd = 1),
+                 nrow = ncol(U), ncol = numobs)
+
+X = U %*% random.normal
+
+dat.pt &lt;- as.data.frame(t(X))
+
+names(dat.pt) &lt;- c("y","x")
+
+cor(dat.pt)
+
+# fit the single case model
+
+mdl.reg &lt;- BMSC(y ~ x, data_ctrl = dat.ctrl, data_sc = dat.pt, seed = 10)
+
+# posterior-predictive check of the model
+
+pp_check(mdl.reg)
+
+# summarize the results
+
+summary(mdl.reg)
+
+# plot the results
+
+plot(mdl.reg)
+
+
+</code></pre>
+
+
+</div>

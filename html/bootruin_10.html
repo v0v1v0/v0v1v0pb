@@ -1,0 +1,193 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>ruinprob</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>The Probability of Ruin in the Classical Risk Process</h2>
+
+<h3>Description</h3>
+
+<p>This function calculates or estimates the probability of ruin in the
+classical (compund Poisson) risk process using several different methods.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">ruinprob(x, param.list, compmethod = c("dg", "exp"),
+    flmethod = c("nonp", "exp", "lnorm", "custom"),
+    reserve, loading, fl = NA, interval = 0.5,
+    implementation = c("R", "C"), ...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>a numeric vector, matrix or array of individual claims.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>param.list</code></td>
+<td>
+<p>a named list of parameters. It might contain any of the
+arguments except <code>x</code> and <code>...</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>compmethod</code></td>
+<td>
+<p>a character string determining the algorithm for the
+computation.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>flmethod</code></td>
+<td>
+<p>a character string indicating what cumulative probability
+distribution function is used for the increments of the running
+maximum of the aggregate loss process if <code>compmethod = "dg"</code>, see
+also Details and References.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>reserve</code></td>
+<td>
+<p>a number indicating the initial surplus.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>loading</code></td>
+<td>
+<p>a number determining the relative security loading.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>fl</code></td>
+<td>
+<p>a function that is used as custom cumulative probability
+distribution to be used for the discretization if
+<code>flmethod = "custom"</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>interval</code></td>
+<td>
+<p>a number determining the approximation precision, viz. the
+mesh width of the discretization if <code>compmethod = "dg"</code>, see
+Details and References.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>implementation</code></td>
+<td>
+<p>a character string determining whether to use the
+native implementation in R or the one in C.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>further arguments are passed to <code>fl</code>.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The classical risk process, also called Cramér-Lundberg risk process, is
+a stochastic model for an insurer's surplus over time and, for any
+<code class="reqn">t\ge0</code>, it is given by
+</p>
+<p style="text-align: center;"><code class="reqn">Y_{t} = r_{0} + ct - Z_{t},</code>
+</p>
+
+<p>where <code class="reqn">Z_{t}</code> is a compund Poisson process,
+<code class="reqn">r_{0} \ge 0</code> is the initial surplus and <code class="reqn">c &gt; 0</code> is the
+constant premium rate.
+</p>
+<p>This function calculates, approximates or estimates (depending on what
+options are given) the probability of ruin in the infinite time horizon,
+i.e. the probability that <code class="reqn">Y_{t}</code> ever falls below 0.
+</p>
+<p>Currently there are two options for the <code>compmethod</code> argument. If
+<code>compmethod = "exp"</code>, the claims are assumed to be from an
+exponential distribution. In that case, the probability of ruin is given
+by
+</p>
+<p style="text-align: center;"><code class="reqn">\frac{1}{1 + \beta} \exp\left\{-\frac{\beta}{1+\beta} \frac{r_{0}}{\mu}\right\},</code>
+</p>
+
+<p>where <code class="reqn">\mu</code> is the mean claim size (estimated from <code>x</code>) and
+<code class="reqn">\beta</code> is the relative security loading.
+</p>
+<p>For <code>compmethod = "dg"</code>, the recursive algorithm due to Dufresne and
+Gerber (1989) is used.  In this case, the parameter <code>flmethod</code>
+determines what cumulative distribution function is used for the
+discretization. The possible choices are either a non-parametric
+estimator, parametric estimators for exponential or log-normal claims, or
+a user-supplied function (in which the argument <code>fl</code> must be
+specified).  See the reference for more details on how this algorithm
+works.
+</p>
+
+
+<h3>Value</h3>
+
+<p>The estimated or calculated probability of ruin. The shape and dimension
+of the output depends on the specifics of the claim data <code>x</code>. If
+<code>x</code> is a vector, the output is a single numeric value. In general,
+the dimension of the output is one less than that of <code>x</code>. More
+precisely, if <code>x</code> is an array, then the output value is an array of
+dimension <code>dim(x)[-1]</code>, see the note below.
+</p>
+
+
+<h3>Note</h3>
+
+<p>If <code>x</code> is an array rather than a vector, the function acts as if it
+was called through <code>apply</code> with
+<code>MARGIN = 2:length(dim(x))</code>
+</p>
+<p>If an option is given both explicitly and as part of the <code>param.list</code>
+argument, then the value given explicitly takes precedence. This way the
+parameter list, saved as a variable, can be reused, but modifications of
+one or more parameter values are still possible.
+</p>
+
+
+<h3>References</h3>
+
+<p>Dufresne, F. and Gerber, H.-U. (1989)
+<em>Three Methods to Calculate the Probability of Ruin</em>.
+ASTIN Bulletin, <b>19</b>(1), pp. 71–90.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>ruinprob.test</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R"># Claims have an exponential distribution with mean 10
+x &lt;- rexp(10, 0.1)
+print(x)
+
+# The estimated probability of ruin
+ruinprob(x, reserve = 100, loading = 0.2, interval = 0.25)
+
+# The true probability of ruin of the risk process
+ruinprob(
+    10, reserve = 100, loading = 0.2,
+    flmethod = "exp", compmethod = "exp"
+)
+</code></pre>
+
+
+</div>

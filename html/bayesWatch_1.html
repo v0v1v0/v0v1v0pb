@@ -1,0 +1,318 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>bayeswatch</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Fit a bayesWatch object.</h2>
+
+<h3>Description</h3>
+
+<p>Main method of package.  MCMC sampling for change-point probabilities with fault detection
+according to the model by Murph et al. 2023.  Creates a bayesWatch object for analysis of change-points.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">bayeswatch(
+  data_woTimeValues,
+  time_of_observations,
+  time_points,
+  variable_names = 1:ncol(data_woTimeValues),
+  not.cont = NULL,
+  iterations = 100,
+  burnin = floor(iterations/2),
+  lower_bounds = NULL,
+  upper_bounds = NULL,
+  ordinal_indicators = NULL,
+  list_of_ordinal_levels = NULL,
+  categorical_indicators = NULL,
+  previous_states = NULL,
+  previous_model_fits = NULL,
+  linger_parameter = 500,
+  move_parameter = 100,
+  g.prior = 0.2,
+  set_G = NULL,
+  wishart_df_initial = 1500,
+  lambda = 1500,
+  g_sampling_distribution = NULL,
+  n.cores = 1,
+  scaleMatrix = NULL,
+  allow_for_mixture_models = FALSE,
+  dirichlet_prior = 0.001,
+  component_truncation = 7,
+  regime_truncation = 15,
+  hyperprior_b = 20,
+  model_params_save_every = 5,
+  simulation_iter = NULL,
+  T2_window_size = 3,
+  determining_p_cutoff = FALSE,
+  prob_cutoff = 0.5,
+  model_log_type = "NoModelSpecified",
+  regime_selection_multiplicative_prior = 2,
+  split_selection_multiplicative_prior = 2,
+  is_initial_fit = TRUE,
+  verbose = FALSE
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>data_woTimeValues</code></td>
+<td>
+<p>matrix. Raw data matrix without datetime stamps.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>time_of_observations</code></td>
+<td>
+<p>vector. Datetime stamps for every data instance in data_woTimeValues.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>time_points</code></td>
+<td>
+<p>vector. Time points that mark each 'day' of time. Range should include every datetime in time_of_observations.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>variable_names</code></td>
+<td>
+<p>vector. Vector of names of columnsof data_woTimeValues.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>not.cont</code></td>
+<td>
+<p>vector. Indicator variable as to which columns are discrete.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>iterations</code></td>
+<td>
+<p>integer. Number of MCMC samples to take (including burn-in).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>burnin</code></td>
+<td>
+<p>integer. Number of burn-in samples. iterations &gt; burnin necessarily.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>lower_bounds</code></td>
+<td>
+<p>vector. Lower bounds for each data column.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>upper_bounds</code></td>
+<td>
+<p>vector. Upper bounds for each data column.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ordinal_indicators</code></td>
+<td>
+<p>vector. Discrete values, one for each column, indicating which variables are ordinal.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>list_of_ordinal_levels</code></td>
+<td>
+<p>vector. Discrete values, one for each column, indicating which variables are part of the same ordinal group.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>categorical_indicators</code></td>
+<td>
+<p>vector.  Each nominal d categorical variable must be broken down into d different indicator variables.  This vector marks which variables are such indicators.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>previous_states</code></td>
+<td>
+<p>vector. Starting regime vector, if known, of the same length as the number of 'days' in time_points.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>previous_model_fits</code></td>
+<td>
+<p>rlist. Starting parameter fits corresponding to regime vector previous_states.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>linger_parameter</code></td>
+<td>
+<p>float. Prior parameter for Markov chain probability matrix.  Larger = less likely to change states.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>move_parameter</code></td>
+<td>
+<p>float. Prior parameter for Markov chain probability matrix.  Larger = more likely to change states.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>g.prior</code></td>
+<td>
+<p>float in (0,1). Prior probability on edge inclusion for graph structure G.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>set_G</code></td>
+<td>
+<p>matrix. Starting graph structure, if known.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>wishart_df_initial</code></td>
+<td>
+<p>integer (&gt;= 3).  Starting DF for G-Wishart prior.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>lambda</code></td>
+<td>
+<p>float. Parameter for NI-G-W prior, controls affect of precision sample on the center sample.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>g_sampling_distribution</code></td>
+<td>
+<p>matrix. Prior probability on edge inclusion if not uniform across G.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>n.cores</code></td>
+<td>
+<p>integer. Number of cores available for parallelization.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>scaleMatrix</code></td>
+<td>
+<p>matrix. Parameter for NI-G-W prior.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>allow_for_mixture_models</code></td>
+<td>
+<p>logical. Whether or not method should fix mixture distributions to regimes.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>dirichlet_prior</code></td>
+<td>
+<p>float. Parameter for the dirichlet process for fitting components in the mixture model.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>component_truncation</code></td>
+<td>
+<p>integer. Maximum component allowed.  Should be sufficiently large.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>regime_truncation</code></td>
+<td>
+<p>integer. Maximum regime allowed. Should be sufficiently large.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>hyperprior_b</code></td>
+<td>
+<p>integer. Hyperprior on Wishart distribution fit to the scaleMatrix.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>model_params_save_every</code></td>
+<td>
+<p>integer. How frequently to save model fits for the fault detection method.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>simulation_iter</code></td>
+<td>
+<p>integer. Used for simulation studies.  Deprecated value at package launch.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>T2_window_size</code></td>
+<td>
+<p>integer. Length of sliding window for Hotelling T2 pre-step.  Used when an initial value for previous_states is not provided.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>determining_p_cutoff</code></td>
+<td>
+<p>logical. Method for estimating the probability cutoff on the posterior distribution for determining change-points.  Deprecated at package launch date.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>prob_cutoff</code></td>
+<td>
+<p>float. Changepoints are determined (for fault detection process) if posterior probability exceeds this value.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>model_log_type</code></td>
+<td>
+<p>character vector. The type of log (used to distinguish logfiles).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>regime_selection_multiplicative_prior</code></td>
+<td>
+<p>float. Must be &gt;=1.  Gives additional probability to the most recent day for the selection of a new split point.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>split_selection_multiplicative_prior</code></td>
+<td>
+<p>float.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>is_initial_fit</code></td>
+<td>
+<p>logical. True when there is no previously fit bayesWatch object fed through the algorithm..</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>verbose</code></td>
+<td>
+<p>logical. Prints verbose model output for debugging when TRUE.  It is highly recommended that you pipe this to a text file.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>bayesWatch object. A model fit for the analysis of posterior change-points and fault detection.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+library(bayesWatch)
+data("full_data")
+data("day_of_observations")
+data("day_dts")
+
+x       = bayeswatch(full_data, day_of_observations, day_dts,
+                   iterations = 500, g.prior = 1, linger_parameter = 20, n.cores=3,
+                   wishart_df_initial = 3, hyperprior_b = 3, lambda = 5)
+
+print(x)
+plot(x)
+detect_faults(x)
+
+</code></pre>
+
+
+</div>

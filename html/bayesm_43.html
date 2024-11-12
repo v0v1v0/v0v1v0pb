@@ -1,0 +1,293 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>rhierNegbinRw</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>MCMC Algorithm for Hierarchical Negative Binomial Regression</h2>
+
+<h3>Description</h3>
+
+<p><code>rhierNegbinRw</code> implements an MCMC algorithm for the hierarchical Negative Binomial (NBD) regression model. Metropolis steps for each unit-level set of regression parameters are automatically tuned by optimization. Over-dispersion parameter (alpha) is common across units.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">rhierNegbinRw(Data, Prior, Mcmc)</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>Data </code></td>
+<td>
+<p>list(regdata, Z)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Prior</code></td>
+<td>
+<p>list(Deltabar, Adelta, nu, V, a, b)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Mcmc </code></td>
+<td>
+<p>list(R, keep, nprint, s_beta, s_alpha, alpha, c, Vbeta0, Delta0)</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+
+
+<h4>Model and Priors</h4>
+
+<p><code class="reqn">y_i</code> <code class="reqn">\sim</code> NBD(mean=<code class="reqn">\lambda</code>, over-dispersion=alpha) <br><code class="reqn">\lambda = exp(X_i\beta_i)</code>
+</p>
+<p><code class="reqn">\beta_i</code> <code class="reqn">\sim</code> <code class="reqn">N(\Delta'z_i,Vbeta)</code>
+</p>
+<p><code class="reqn">vec(\Delta|Vbeta)</code> <code class="reqn">\sim</code> <code class="reqn">N(vec(Deltabar), Vbeta (x) Adelta)</code> <br><code class="reqn">Vbeta</code>             <code class="reqn">\sim</code> <code class="reqn">IW(nu, V)</code> <br><code class="reqn">alpha</code>             <code class="reqn">\sim</code> <code class="reqn">Gamma(a, b)</code> (unless <code>Mcmc$alpha</code> specified) <br>
+Note: prior mean of <code class="reqn">alpha = a/b</code>, variance <code class="reqn">= a/(b^2)</code>
+</p>
+
+
+
+<h4>Argument Details</h4>
+
+<p><em><code>Data  = list(regdata, Z)</code> [<code>Z</code> optional]</em>
+</p>
+
+<table>
+<tr>
+<td style="text-align: left;">
+    <code>regdata:        </code> </td>
+<td style="text-align: left;"> list of lists with data on each of <code>nreg</code> units </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+    <code>regdata[[i]]$X: </code> </td>
+<td style="text-align: left;"> <code class="reqn">nobs_i x nvar</code> matrix of <code class="reqn">X</code> variables </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+    <code>regdata[[i]]$y: </code> </td>
+<td style="text-align: left;"> <code class="reqn">nobs_i x 1</code> vector of count responses </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+    <code>Z:              </code> </td>
+<td style="text-align: left;"> <code class="reqn">nreg x nz</code> matrix of unit characteristics (def: vector of ones)
+    </td>
+</tr>
+</table>
+<p><em><code>Prior = list(Deltabar, Adelta, nu, V, a, b)</code> [optional]</em>
+</p>
+
+<table>
+<tr>
+<td style="text-align: left;">
+    <code>Deltabar:       </code> </td>
+<td style="text-align: left;"> <code class="reqn">nz x nvar</code> prior mean matrix (def: 0) </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+    <code>Adelta:         </code> </td>
+<td style="text-align: left;"> <code class="reqn">nz x nz</code> PDS prior precision matrix (def: 0.01*I) </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+    <code>nu:             </code> </td>
+<td style="text-align: left;"> d.f. parameter for Inverted Wishart prior (def: nvar+3) </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+    <code>V:              </code> </td>
+<td style="text-align: left;"> location matrix of Inverted Wishart prior (def: nu*I) </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+    <code>a:              </code> </td>
+<td style="text-align: left;"> Gamma prior parameter (def: 0.5) </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+    <code>b:              </code> </td>
+<td style="text-align: left;"> Gamma prior parameter (def: 0.1)
+    </td>
+</tr>
+</table>
+<p><em><code>Mcmc  = list(R, keep, nprint, s_beta, s_alpha, alpha, c, Vbeta0, Delta0)</code> [only <code>R</code> required]</em>
+</p>
+
+<table>
+<tr>
+<td style="text-align: left;">
+    <code>R:              </code> </td>
+<td style="text-align: left;"> number of MCMC draws </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+    <code>keep:           </code> </td>
+<td style="text-align: left;"> MCMC thinning parameter -- keep every <code>keep</code>th draw (def: 1) </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+    <code>nprint:         </code> </td>
+<td style="text-align: left;"> print the estimated time remaining for every <code>nprint</code>'th draw (def: 100, set to 0 for no print) </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+    <code>s_beta:         </code> </td>
+<td style="text-align: left;"> scaling for beta | alpha RW inc cov (def: 2.93/<code>sqrt(nvar)</code>) </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+    <code>s_alpha:        </code> </td>
+<td style="text-align: left;"> scaling for alpha | beta RW inc cov (def: 2.93) </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+    <code>alpha:          </code> </td>
+<td style="text-align: left;"> over-dispersion parameter (def: alpha ~ Gamma(a,b)) </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+    <code>c:              </code> </td>
+<td style="text-align: left;"> fractional likelihood weighting parm (def: 2) </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+    <code>Vbeta0:         </code> </td>
+<td style="text-align: left;"> starting value for Vbeta (def: I) </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+    <code>Delta0:         </code> </td>
+<td style="text-align: left;"> starting value for Delta (def: 0)
+    </td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>A list containing: 
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>llike        </code></td>
+<td>
+ <p><code class="reqn">R/keep x 1</code> vector of values of log-likelihood</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>betadraw     </code></td>
+<td>
+ <p><code class="reqn">nreg x nvar x R/keep</code> array of beta draws</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>alphadraw    </code></td>
+<td>
+ <p><code class="reqn">R/keep x 1</code> vector of alpha draws</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>acceptrbeta  </code></td>
+<td>
+<p> acceptance rate of the beta draws</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>acceptralpha </code></td>
+<td>
+<p> acceptance rate of the alpha draws</p>
+</td>
+</tr>
+</table>
+<h3>Note</h3>
+
+<p>The NBD regression encompasses Poisson regression in the sense that as alpha goes to infinity the NBD distribution tends to the Poisson.
+</p>
+<p>For "small" values of alpha, the dependent variable can be extremely variable so that a large number of observations may be required to obtain precise inferences. 
+</p>
+<p>For ease of interpretation, we recommend demeaning <code class="reqn">Z</code> variables.
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Sridhar Narayanan (Stanford GSB) and Peter Rossi (Anderson School, UCLA), <a href="mailto:perossichi@gmail.com">perossichi@gmail.com</a>.</p>
+
+
+<h3>References</h3>
+
+<p>For further discussion, see Chapter 5, <em>Bayesian Statistics and Marketing</em> by Rossi, Allenby, and McCulloch.</p>
+
+
+<h3>See Also</h3>
+
+ <p><code>rnegbinRw</code> </p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">if(nchar(Sys.getenv("LONG_TEST")) != 0) {R=2000} else {R=10}
+set.seed(66)
+
+# Simulate from the Negative Binomial Regression
+simnegbin = function(X, beta, alpha) {
+  lambda = exp(X%*%beta)
+  y = NULL
+  for (j in 1:length(lambda)) {y = c(y, rnbinom(1, mu=lambda[j], size=alpha)) }
+  return(y)
+  }
+
+nreg = 100        # Number of cross sectional units
+T = 50            # Number of observations per unit
+nobs = nreg*T
+nvar = 2          # Number of X variables
+nz = 2            # Number of Z variables
+              
+## Construct the Z matrix
+Z = cbind(rep(1,nreg), rnorm(nreg,mean=1,sd=0.125))
+
+Delta = cbind(c(4,2), c(0.1,-1))
+alpha = 5
+Vbeta = rbind(c(2,1), c(1,2))
+
+## Construct the regdata (containing X)
+simnegbindata = NULL
+for (i in 1:nreg) {
+    betai = as.vector(Z[i,]%*%Delta) + chol(Vbeta)%*%rnorm(nvar)
+    X = cbind(rep(1,T),rnorm(T,mean=2,sd=0.25))
+    simnegbindata[[i]] = list(y=simnegbin(X,betai,alpha), X=X, beta=betai)
+}
+
+Beta = NULL
+for (i in 1:nreg) {Beta = rbind(Beta,matrix(simnegbindata[[i]]$beta,nrow=1))}
+Data1 = list(regdata=simnegbindata, Z=Z)
+Mcmc1 = list(R=R)
+
+out = rhierNegbinRw(Data=Data1, Mcmc=Mcmc1)
+
+cat("Summary of Delta draws", fill=TRUE)
+summary(out$Deltadraw, tvalues=as.vector(Delta))
+
+cat("Summary of Vbeta draws", fill=TRUE)
+summary(out$Vbetadraw, tvalues=as.vector(Vbeta[upper.tri(Vbeta,diag=TRUE)]))
+
+cat("Summary of alpha draws", fill=TRUE)
+summary(out$alpha, tvalues=alpha)
+
+## plotting examples
+if(0){
+  plot(out$betadraw)
+  plot(out$alpha,tvalues=alpha)
+  plot(out$Deltadraw,tvalues=as.vector(Delta))
+}
+</code></pre>
+
+
+</div>

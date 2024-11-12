@@ -1,0 +1,151 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>snp_plinkIBDQC</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Identity-by-descent</h2>
+
+<h3>Description</h3>
+
+<p>Quality Control based on Identity-by-descent (IBD) computed by
+<a href="https://www.cog-genomics.org/plink2"><strong>PLINK 1.9</strong></a>
+using its method-of-moments.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">snp_plinkIBDQC(
+  plink.path,
+  bedfile.in,
+  bedfile.out = NULL,
+  pi.hat = 0.08,
+  ncores = 1,
+  pruning.args = c(100, 0.2),
+  do.blind.QC = TRUE,
+  extra.options = "",
+  verbose = TRUE
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>plink.path</code></td>
+<td>
+<p>Path to the executable of PLINK 1.9.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>bedfile.in</code></td>
+<td>
+<p>Path to the input bedfile.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>bedfile.out</code></td>
+<td>
+<p>Path to the output bedfile. Default is created by
+appending <code>"_norel"</code> to <code>prefix.in</code> (<code>bedfile.in</code> without extension).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>pi.hat</code></td>
+<td>
+<p>PI_HAT value threshold for individuals (first by pairs)
+to be excluded. Default is <code>0.08</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ncores</code></td>
+<td>
+<p>Number of cores used. Default doesn't use parallelism.
+You may use <code>bigstatsr::nb_cores()</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>pruning.args</code></td>
+<td>
+<p>A vector of 2 pruning parameters, respectively
+the window size (in variant count) and the pairwise $r^2$ threshold
+(the step size is fixed to 1). Default is <code>c(100, 0.2)</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>do.blind.QC</code></td>
+<td>
+<p>Whether to do QC with <code>pi.hat</code> without visual inspection.
+Default is <code>TRUE</code>. If <code>FALSE</code>, return the <code>data.frame</code> of the corresponding
+".genome" file without doing QC. One could use
+<code>ggplot2::qplot(Z0, Z1, data = mydf, col = RT)</code> for visual inspection.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>extra.options</code></td>
+<td>
+<p>Other options to be passed to PLINK as a string
+(for the IBD part). More options can be found at
+<a href="https://www.cog-genomics.org/plink/1.9/ibd">https://www.cog-genomics.org/plink/1.9/ibd</a>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>verbose</code></td>
+<td>
+<p>Whether to show PLINK log? Default is <code>TRUE</code>.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>The path of the new bedfile.
+If no sample is filter, no new bed/bim/fam files are created and
+then the path of the input bedfile is returned.
+</p>
+
+
+<h3>References</h3>
+
+<p>Chang, Christopher C, Carson C Chow, Laurent CAM Tellier,
+Shashaank Vattikuti, Shaun M Purcell, and James J Lee. 2015.
+<em>Second-generation PLINK: rising to the challenge of larger and richer
+datasets.</em> GigaScience 4 (1): 7. <a href="https://doi.org/10.1186/s13742-015-0047-8">doi:10.1186/s13742-015-0047-8</a>.
+</p>
+
+
+<h3>See Also</h3>
+
+<p>download_plink snp_plinkQC snp_plinkKINGQC
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## Not run: 
+
+bedfile &lt;- system.file("extdata", "example.bed", package = "bigsnpr")
+plink &lt;- download_plink()
+
+bedfile &lt;- snp_plinkIBDQC(plink, bedfile,
+                          bedfile.out = tempfile(fileext = ".bed"),
+                          ncores = 2)
+
+df_rel &lt;- snp_plinkIBDQC(plink, bedfile, do.blind.QC = FALSE, ncores = 2)
+str(df_rel)
+
+library(ggplot2)
+qplot(Z0, Z1, data = df_rel, col = RT)
+qplot(y = PI_HAT, data = df_rel) +
+  geom_hline(yintercept = 0.2, color = "blue", linetype = 2)
+snp_plinkRmSamples(plink, bedfile,
+                   bedfile.out = tempfile(fileext = ".bed"),
+                   df.or.files = subset(df_rel, PI_HAT &gt; 0.2))
+
+## End(Not run)
+
+</code></pre>
+
+
+</div>

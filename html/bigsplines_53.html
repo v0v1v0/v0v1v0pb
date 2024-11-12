@@ -1,0 +1,230 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>predict.bigtps</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>
+Predicts for "bigtps" Objects
+</h2>
+
+<h3>Description</h3>
+
+<p>Get fitted values and standard error estimates for thin-plate splines.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">## S3 method for class 'bigtps'
+predict(object,newdata=NULL,se.fit=FALSE,
+        effect=c("all","0","lin","non"),
+        design=FALSE,smoothMatrix=FALSE,...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>object</code></td>
+<td>
+
+<p>Object of class "bigtps", which is output from <code>bigtps</code>.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>newdata</code></td>
+<td>
+
+<p>Vector or matrix containing new data points for prediction. See Details and Example. Default of <code>newdata=NULL</code> uses original data in <code>object</code> input.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>se.fit</code></td>
+<td>
+
+<p>Logical indicating whether the standard errors of the fitted values should be estimated. Default is <code>se.fit=FALSE</code>.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>effect</code></td>
+<td>
+
+<p>Which effect to estimate: <code>effect="all"</code> gives full <code class="reqn">\hat{y}</code>, <code>effect="0"</code> gives the intercept (constant) portion of <code class="reqn">\hat{y}</code>,  <code>effect="lin"</code> gives linear portion of <code class="reqn">\hat{y}</code>, and <code>effect="non"</code> gives nonlinear portion of <code class="reqn">\hat{y}</code>. 
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>design</code></td>
+<td>
+
+<p>Logical indicating whether the design matrix should be returned.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>smoothMatrix</code></td>
+<td>
+
+<p>Logical indicating whether the smoothing matrix should be returned.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+
+<p>Ignored.
+</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>Uses the coefficient and smoothing parameter estimates from a fit thin-plate spline (estimated by <code>bigtps</code>) to predict for new data.
+</p>
+
+
+<h3>Value</h3>
+
+<p>If <code>se.fit=FALSE</code>, <code>design=FALSE</code>, and <code>smoothMatrix=FALSE</code>, returns vector of fitted values.
+</p>
+<p>Otherwise returns list with elements:
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>fit</code></td>
+<td>
+<p>Vector of fitted values</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>se.fit</code></td>
+<td>
+<p>Vector of standard errors of fitted values (if <code>se.fit=TRUE</code>)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>X</code></td>
+<td>
+<p>Design matrix used to create fitted values (if <code>design=TRUE</code>)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ix</code></td>
+<td>
+<p>Index vector such that <code>fit=X%*%object$coef[ix]</code> (if <code>design=TRUE</code>)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>S</code></td>
+<td>
+<p>Smoothing matrix corresponding to fitted values (if <code>smoothMatrix=TRUE</code>)</p>
+</td>
+</tr>
+</table>
+<h3>Author(s)</h3>
+
+<p>Nathaniel E. Helwig &lt;helwig@umn.edu&gt;
+</p>
+
+
+<h3>References</h3>
+
+<p>Gu, C. (2013). <em>Smoothing spline ANOVA models, 2nd edition</em>. New York: Springer.
+</p>
+<p>Helwig, N. E. (2017). <a href="http://dx.doi.org/10.3389/fams.2017.00015">Regression with ordered predictors via ordinal smoothing splines</a>. Frontiers in Applied Mathematics and Statistics, 3(15), 1-13.
+</p>
+<p>Helwig, N. E. and Ma, P. (2015). Fast and stable multiple smoothing parameter selection in smoothing spline analysis of variance models with large samples. <em>Journal of Computational and Graphical Statistics, 24</em>, 715-732.
+</p>
+<p>Helwig, N. E. and Ma, P. (2016). Smoothing spline ANOVA for super-large samples: Scalable computation via rounding parameters. <em>Statistics and Its Interface, 9</em>, 433-444.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+##########   EXAMPLE 1   ##########
+
+# define univariate function and data
+set.seed(773)
+myfun &lt;- function(x){ 2 + x + sin(2*pi*x) }
+x &lt;- runif(10^4)
+y &lt;- myfun(x) + rnorm(10^4)
+
+# fit thin-plate spline (default 1 dim: 30 knots)
+tpsmod &lt;- bigtps(x,y)
+crossprod( predict(tpsmod) - myfun(x) )/10^4
+
+# define new data for prediction
+newdata &lt;- data.frame(x=seq(0,1,length.out=100))
+
+# get fitted values and standard errors for new data
+yc &lt;- predict(tpsmod,newdata,se.fit=TRUE)
+
+# plot results with 95% Bayesian confidence interval
+plot(newdata$x,yc$fit,type="l")
+lines(newdata$x,yc$fit+qnorm(.975)*yc$se.fit,lty=3)
+lines(newdata$x,yc$fit-qnorm(.975)*yc$se.fit,lty=3)
+
+# predict constant, linear, and nonlinear effects
+yc0 &lt;- predict(tpsmod,newdata,se.fit=TRUE,effect="0")
+ycl &lt;- predict(tpsmod,newdata,se.fit=TRUE,effect="lin")
+ycn &lt;- predict(tpsmod,newdata,se.fit=TRUE,effect="non")
+crossprod( yc$fit - (yc0$fit + ycl$fit + ycn$fit) )
+
+# plot results with 95% Bayesian confidence intervals
+par(mfrow=c(1,2))
+plot(newdata$x,ycl$fit,type="l",main="Linear effect")
+lines(newdata$x,ycl$fit+qnorm(.975)*ycl$se.fit,lty=3)
+lines(newdata$x,ycl$fit-qnorm(.975)*ycl$se.fit,lty=3)
+plot(newdata$x,ycn$fit,type="l",main="Nonlinear effect")
+lines(newdata$x,ycn$fit+qnorm(.975)*ycn$se.fit,lty=3)
+lines(newdata$x,ycn$fit-qnorm(.975)*ycn$se.fit,lty=3)
+
+
+##########   EXAMPLE 2   ##########
+
+# function with two continuous predictors
+set.seed(773)
+myfun &lt;- function(x1v,x2v){
+  sin(2*pi*x1v) + log(x2v+.1) + cos(pi*(x1v-x2v))
+}
+x &lt;- cbind(runif(10^4),runif(10^4))
+y &lt;- myfun(x[,1],x[,2]) + rnorm(10^4)
+
+# fit thin-plate spline (default 2 dim: 100 knots)
+tpsmod &lt;- bigtps(x,y)
+
+# define new data
+newdata &lt;- as.matrix(expand.grid(seq(0,1,length=50),seq(0,1,length=50)))
+
+# get fitted values for new data
+yp &lt;- predict(tpsmod,newdata)
+
+# plot results
+imagebar(seq(0,1,length=50),seq(0,1,length=50),matrix(yp,50,50),
+         xlab=expression(italic(x)[1]),ylab=expression(italic(x)[2]),
+         zlab=expression(hat(italic(y))))
+
+# predict linear and nonlinear effects
+yl &lt;- predict(tpsmod,newdata,effect="lin")
+yn &lt;- predict(tpsmod,newdata,effect="non")
+
+# plot results
+par(mfrow=c(1,2))
+imagebar(seq(0,1,length=50),seq(0,1,length=50),matrix(yl,50,50),
+         main="Linear effect",xlab=expression(italic(x)[1]),
+         ylab=expression(italic(x)[2]),zlab=expression(hat(italic(y))))
+imagebar(seq(0,1,length=50),seq(0,1,length=50),matrix(yn,50,50),
+         main="Nonlinear effect",xlab=expression(italic(x)[1]),
+         ylab=expression(italic(x)[2]),zlab=expression(hat(italic(y))))
+
+</code></pre>
+
+
+</div>

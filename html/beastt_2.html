@@ -1,0 +1,111 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>calc_post_norm</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Calculate Posterior Normal</h2>
+
+<h3>Description</h3>
+
+<p>Calculate a posterior distribution that is normal (or a mixture
+of normal components). Only the relevant treatment arms from the internal
+dataset should be read in (e.g., only the control arm if constructing a
+posterior distribution for the control mean).
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">calc_post_norm(internal_data, response, prior, internal_sd = NULL)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>internal_data</code></td>
+<td>
+<p>This can either be a propensity score object or a tibble
+of the internal data.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>response</code></td>
+<td>
+<p>Name of response variable</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>prior</code></td>
+<td>
+<p>A distributional object corresponding to a normal distribution,
+a t distribution, or a mixture distribution of normal and/or t components</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>internal_sd</code></td>
+<td>
+<p>Standard deviation of internal response data if
+assumed known. It can be left as <code>NULL</code> if assumed unknown</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>For a given arm of an internal trial (e.g., the control arm or an
+active treatment arm) of size <code class="reqn">N_I</code>, suppose the response data are normally
+distributed such that <code class="reqn">y_i \sim N(\theta, \sigma_I^2)</code>, <code class="reqn">i=1,\ldots,N_I</code>.
+If <code class="reqn">\sigma_I^2</code> is assumed known, the posterior distribution for <code class="reqn">\theta</code>
+is written as
+</p>
+<p style="text-align: center;"><code class="reqn">\pi( \theta \mid \boldsymbol{y}, \sigma_{I}^2 ) \propto \mathcal{L}(\theta \mid \boldsymbol{y}, \sigma_{I}^2) \; \pi(\theta),</code>
+</p>
+
+<p>where <code class="reqn">\mathcal{L}(\theta \mid \boldsymbol{y}, \sigma_{I}^2)</code> is the
+likelihood of the response data from the internal arm and <code class="reqn">\pi(\theta)</code>
+is a prior distribution on <code class="reqn">\theta</code> (either a normal distribution, a
+<code class="reqn">t</code> distribution, or a mixture distribution with an arbitrary number of
+normal and/or <code class="reqn">t</code> components). Any <code class="reqn">t</code> components of the prior for
+<code class="reqn">\theta</code> are approximated with a mixture of two normal distributions.
+</p>
+<p>If <code class="reqn">\sigma_I^2</code> is unknown, the marginal posterior distribution for
+<code class="reqn">\theta</code> is instead written as
+</p>
+<p style="text-align: center;"><code class="reqn">\pi( \theta \mid \boldsymbol{y} ) \propto \left\{ \int_0^\infty \mathcal{L}(\theta, \sigma_{I}^2 \mid \boldsymbol{y}) \; \pi(\sigma_{I}^2) \; d\sigma_{I}^2 \right\} \times \pi(\theta).</code>
+</p>
+
+<p>In this case, the prior for <code class="reqn">\sigma_I^2</code> is chosen to be
+<code class="reqn">\pi(\sigma_{I}^2) = (\sigma_I^2)^{-1}</code> such that
+<code class="reqn">\left\{ \int_0^\infty \mathcal{L}(\theta, \sigma_{I}^2 \mid \boldsymbol{y}) \; \pi(\sigma_{I}^2) \; d\sigma_{I}^2 \right\}</code>
+becomes a non-standardized <code class="reqn">t</code> distribution. This integrated likelihood
+is then approximated with a mixture of two normal distributions.
+</p>
+<p>If <code>internal_sd</code> is supplied a positive value and <code>prior</code> corresponds to a
+single normal distribution, then the posterior distribution for <code class="reqn">\theta</code>
+is a normal distribution. If <code>internal_sd = NULL</code> or if other types of prior
+distributions are specified (e.g., mixture or t distribution), then the
+posterior distribution is a mixture of normal distributions.
+</p>
+
+
+<h3>Value</h3>
+
+<p>distributional object
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">library(distributional)
+library(dplyr)
+post_treated &lt;- calc_post_norm(internal_data = filter(int_norm_df, trt == 1),
+                               response = y,
+                               prior = dist_normal(50, 10),
+                               internal_sd = 0.15)
+
+</code></pre>
+
+
+</div>

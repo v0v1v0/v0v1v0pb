@@ -1,0 +1,303 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>tfr.predict</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>
+Generating Posterior Trajectories of the Total Fertility Rate
+</h2>
+
+<h3>Description</h3>
+
+<p>Using the posterior parameter samples simulated by <code>run.tfr.mcmc</code> (and possibly <code>run.tfr3.mcmc</code>) the function  generates posterior trajectories for the total fertility rate for all countries of the world.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">tfr.predict(mcmc.set = NULL, end.year = 2100, 
+    sim.dir = file.path(getwd(), "bayesTFR.output"), 
+    replace.output = FALSE, start.year = NULL, 
+    nr.traj = NULL, thin = NULL, burnin = 2000,
+    use.diagnostics = FALSE, use.tfr3 = TRUE, burnin3 = 2000,
+    mu = 2.1, rho = 0.8859, sigmaAR1 = 0.1016, min.tfr = 0.5,
+    use.correlation = FALSE, save.as.ascii = 0, output.dir = NULL, 
+    low.memory = TRUE, seed = NULL, verbose = TRUE, uncertainty = FALSE, ...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>mcmc.set</code></td>
+<td>
+<p>Object of class <code>bayesTFR.mcmc.set</code> corresponding Phase II MCMCs. If it is <code>NULL</code>, the object is loaded from the directory given by <code>sim.dir</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>end.year</code></td>
+<td>
+<p>End year of the prediction.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>sim.dir</code></td>
+<td>
+<p>Directory with the MCMC simulation results. It should equal to the <code>output.dir</code> argument in <code>run.tfr.mcmc</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>replace.output</code></td>
+<td>
+<p>Logical. If <code>TRUE</code>, existing predictions in <code>output.dir</code> will be replaced by results of this run.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>start.year</code></td>
+<td>
+<p>Start year of the prediction. By default the prediction is started at the next time period after <code>present.year</code> set in the estimation step. If <code>start.year</code> is smaller than the default, projections for countries and time periods that have data available after <code>start.year</code> are set to those data.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nr.traj</code></td>
+<td>
+<p>Number of trajectories to be generated. If <code>NULL</code>, the argument <code>thin</code> is taken to determine the number of trajectories. If both are <code>NULL</code>, the number of trajectories corresponds to the size of the parameter sample.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>thin</code></td>
+<td>
+<p>Thinning interval used for determining the number of trajectories. Only relevant, if <code>nr.traj</code> is <code>NULL</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>burnin</code></td>
+<td>
+<p>Number of iterations to be discarded from the beginning of the parameter traces.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>use.diagnostics</code></td>
+<td>
+<p>Logical determining if an existing convergence diagnostics for phase II MCMCs should be used for choosing the values of <code>thin</code> and <code>burnin</code>. In such a case, arguments <code>nr.traj</code>, <code>thin</code> and <code>burnin</code> are ignored. The ‘best’ values are chosen from results of running the <code>tfr.diagnose</code> function. Only diagnostics can be used that suggest a convergence of the underlying MCMCs. If there are more than one such objects, the one is chosen whose recommendation for the number of trajectories is larger and closest to 2000.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>use.tfr3</code></td>
+<td>
+<p>Logical determining if phase III should be predicted via MCMCs (simulated via <code>run.tfr3.mcmc</code>) or a classic AR(1) process. If <code>TRUE</code> but no phase III MCMCs were simulated, a warning is given and the prediction switches automatically to a classic AR(1) process.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>burnin3</code></td>
+<td>
+<p>Burnin used for phase III MCMCs. Only relevant if <code>use.tfr3</code> is <code>TRUE</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>save.as.ascii</code></td>
+<td>
+<p>Either a number determining how many trajectories should be converted into an ASCII file, or “all” in which case all trajectories are converted. It should be set to 0, if no conversion is desired.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>output.dir</code></td>
+<td>
+<p>Directory into which the resulting prediction object and the trajectories are stored. If it is <code>NULL</code>, it is set to either <code>sim.dir</code>, or to <code>output.dir</code> of <code>mcmc.set$meta</code> if <code>mcmc.set</code> is given.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>low.memory</code></td>
+<td>
+<p>Logical indicating if the prediction should run in a low-memory mode. If it is <code>FALSE</code>, the whole traces of all parameters, including the burnin, are loaded into memory. Otherwise, burnins are discarded and parameters are loaded as they are needed and are not kept in the memory.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>mu</code></td>
+<td>
+<p>Long-term mean <code class="reqn">\mu</code> in the AR(1) projection model. Only used if <code>use.tfr3</code> is <code>FALSE</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>rho</code></td>
+<td>
+<p>Autoregressive parameter <code class="reqn">\rho</code> in AR(1) projection model. If it is <code>NULL</code> it is estimated from the data. Only used if <code>use.tfr3</code> is <code>FALSE</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>sigmaAR1</code></td>
+<td>
+<p>Standard deviation <code class="reqn">s</code> of AR(1) distortion terms in short-term projections. If it is <code>NULL</code> it is estimated from the data. It can be a single value or a vector giving the standard deviations for single projections. If the vector is shorter than the number of projections simulated via the AR(1) process, the last value is repeated for the remaining projections. In case of a single value (default), the standard deviation is kept constant over all AR(1) projections. Only used if <code>use.tfr3</code> is <code>FALSE</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>min.tfr</code></td>
+<td>
+<p>Smallest TFR value allowed.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>use.correlation</code></td>
+<td>
+<p>Logical. If <code>TRUE</code> the model errors are sampled jointly for all countries (Fosdick and Raftery, 2014).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>seed</code></td>
+<td>
+<p>Seed of the random number generator. If <code>NULL</code> no seed is set. It can be used to generate reproducible projections.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>verbose</code></td>
+<td>
+<p>Logical switching log messages on and off.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>uncertainty</code></td>
+<td>
+<p>Logical. If the MCMC steps has considered uncertainty of past TFR and <code>uncertainty=TRUE</code>, starting point of prediction trajectories will be the last estimated trajectories of TFR. Otherwise, it will use last observed TFR as starting point of prediction.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Further arguments passed to the underlying functions.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The trajectories are generated using a distribution of country-specific decline curves (Alkema et al 2011) and either a classic AR(1) process or a country-specific AR(1) process (Raftery et al 2013).  Phase II parameter samples  simulated using <code>run.tfr.mcmc</code> are used from all chains, from which the given burnin was discarded. They are evenly thinned to match <code>nr.traj</code> or using the <code>thin</code> argument. Such thinned parameter traces, collapsed into one chain, if they do not already exist, are stored on disk into the sub-directory ‘<span class="file">{thinned_mcmc_<em>t</em>_<em>b</em></span>’ where <em>t</em> is the value  of <code>thin</code> and <em>b</em> the value of <code>burnin</code> (see <code>create.thinned.tfr.mcmc</code>). 
+</p>
+<p>If Phase III is projected using a BHM (i.e. if <code>use.tfr3</code> is <code>TRUE</code>), parameter samples simulated via <code>run.tfr3.mcmc</code> are used from which burnin (given by <code>burnin3</code>) is discarded and the chains are evenly thinned in a way that the total size corresponds to the final size of the Phase II parameter samples. Countries for which there are no simulated country-specific Phase III parameters (e.g. because their TFR is still in Phase II or it is an aggregated region) use samples of the  “world” AR(1) parameters.
+</p>
+<p>The projection is run for all missing values before the present year, if any. Medians over the trajectories are used as  imputed values and the trajectories are discarded. The process then continues by projecting the future values where all generated trajectories are kept.
+</p>
+<p>The resulting prediction object is saved into ‘<span class="file">{output.dir}/predictions</span>’. Trajectories for all countries are saved into the same directory in a binary format, one file per country. At the end of the projection, if <code>save.as.ascii</code> is larger than 0, the function converts the given number of trajectories into a CSV file of a UN-specific format. They are selected by equal spacing (see function <code>convert.tfr.trajectories</code> for more details on the conversion). In addition, two summary files are created: one in a user-friendly format, the other using a UN-specific coding of the variants and time (see <code>write.projection.summary</code> for more details).
+</p>
+
+
+<h3>Value</h3>
+
+<p>Object of class <code>bayesTFR.prediction</code> which is a list containing components:
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>quantiles</code></td>
+<td>
+<p>A <code class="reqn">n \times q \times p</code> array of quantile values computed on all trajectories. <code class="reqn">n</code> is the number of countries,
+<code class="reqn">q</code> is the number of quantile bounds and <code class="reqn">p</code> is the number of projections.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>traj.mean.sd</code></td>
+<td>
+<p>A <code class="reqn">n \times 2 \times p</code> array holding the mean of all trajectories in the first column and the standard deviation in the second column.
+<code class="reqn">n</code> and <code class="reqn">p</code> are the number of countries and number of projections, respectively.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nr.traj</code></td>
+<td>
+<p>Number of trajectories.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>trf_matrix_reconstructed</code></td>
+<td>
+<p>Matrix containing imputed TFR values on spots where the original TFR matrix has missing values, i.e. between the last observed data point and the present year. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>output.directory</code></td>
+<td>
+<p>Directory where trajectories corresponding to this prediction are stored.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nr.projections</code></td>
+<td>
+<p>Number of projections.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>burnin, thin, burnin3, thin3</code></td>
+<td>
+<p>Burnin and thin used for this prediction for Phase II and Phase III, respectively.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>end.year</code></td>
+<td>
+<p>The end year of this prediction.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>mu, rho, sigma_t, sigmaAR1</code></td>
+<td>
+<p>Parameters of the AR(1) process. <code>sigma_t</code> is a vector of actual values of the standard deviation <code class="reqn">s</code> used for each projection.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>min.tfr</code></td>
+<td>
+<p>Input value of minimum threshold for TFR.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>na.index</code></td>
+<td>
+<p>Index of trajectories for which at least one country got <code>NA</code> values.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>mcmc.set</code></td>
+<td>
+<p>Object of class <code>bayesTFR.mcmc.set</code> used for this prediction, i.e. the burned, thinned, and collapsed MCMC chain.</p>
+</td>
+</tr>
+</table>
+<h3>Author(s)</h3>
+
+<p>Hana Sevcikova, Leontine Alkema, Peiran Liu, Bailey Fosdick
+</p>
+
+
+<h3>References</h3>
+
+<p>Peiran Liu, Hana Sevcikova, Adrian E. Raftery (2023): Probabilistic Estimation and Projection of the Annual Total Fertility Rate Accounting for Past Uncertainty: A Major Update of the bayesTFR R Package. Journal of Statistical Software, 106(8), 1-36. <a href="https://doi.org/10.18637/jss.v106.i08">doi:10.18637/jss.v106.i08</a>.
+</p>
+<p>L. Alkema, A. E. Raftery, P. Gerland, S. J. Clark, F. Pelletier, Buettner, T., Heilig, G.K. (2011). Probabilistic Projections of the Total Fertility Rate for All Countries. Demography, Vol. 48, 815-839. <a href="https://doi.org/10.1007/s13524-011-0040-5">doi:10.1007/s13524-011-0040-5</a>.
+</p>
+<p>Raftery, A.E., Alkema, L. and Gerland, P. (2014). Bayesian Population Projections for the United Nations. Statistical Science, Vol. 29, 58-68. <a href="https://doi.org/10.1214/13-STS419">doi:10.1214/13-STS419</a>. 
+</p>
+<p>Fosdick, B., Raftery, A.E. (2014). Regional Probabilistic Fertility Forecasting by Modeling Between-Country Correlations. Demographic Research, Vol. 30, 1011-1034. <a href="https://doi.org/10.4054/demres.2014.30.35">doi:10.4054/demres.2014.30.35</a>
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>run.tfr.mcmc</code>, <code>run.tfr3.mcmc</code>, <code>create.thinned.tfr.mcmc</code>, <code>convert.tfr.trajectories</code>, <code>write.projection.summary</code>,    
+<code>get.tfr.prediction</code>, <code>summary.bayesTFR.prediction</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## Not run: 
+sim.dir &lt;- tempfile()
+m &lt;- run.tfr.mcmc(nr.chains=1, iter=10, output.dir=sim.dir, verbose=TRUE)
+m3 &lt;- run.tfr3.mcmc(sim.dir=sim.dir, nr.chains=2, iter=40, thin=1, verbose=TRUE)
+pred &lt;- tfr.predict(m, burnin=0, burnin3=10, verbose=TRUE)
+summary(pred, country="Iceland")
+unlink(sim.dir, recursive=TRUE)
+
+## End(Not run)
+</code></pre>
+
+
+</div>

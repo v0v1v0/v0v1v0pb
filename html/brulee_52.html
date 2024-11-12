@@ -1,0 +1,159 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>schedule_decay_time</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Change the learning rate over time</h2>
+
+<h3>Description</h3>
+
+<p>Learning rate schedulers alter the learning rate to adjust as training
+proceeds. In most cases, the learning rate decreases as epochs increase.
+The <code style="white-space: pre;">⁠schedule_*()⁠</code> functions are individual schedulers and
+<code>set_learn_rate()</code> is a general interface.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">schedule_decay_time(epoch, initial = 0.1, decay = 1)
+
+schedule_decay_expo(epoch, initial = 0.1, decay = 1)
+
+schedule_step(epoch, initial = 0.1, reduction = 1/2, steps = 5)
+
+schedule_cyclic(epoch, initial = 0.001, largest = 0.1, step_size = 5)
+
+set_learn_rate(epoch, learn_rate, type = "none", ...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>epoch</code></td>
+<td>
+<p>An integer for the number of training epochs (zero being the
+initial value),</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>initial</code></td>
+<td>
+<p>A positive numeric value for the starting learning rate.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>decay</code></td>
+<td>
+<p>A positive numeric constant for decreasing the rate (see
+Details below).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>reduction</code></td>
+<td>
+<p>A positive numeric constant stating the proportional decrease
+in the learning rate occurring at every <code>steps</code> epochs.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>steps</code></td>
+<td>
+<p>The number of epochs before the learning rate changes.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>largest</code></td>
+<td>
+<p>The maximum learning rate in the cycle.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>step_size</code></td>
+<td>
+<p>The half-length of a cycle.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>learn_rate</code></td>
+<td>
+<p>A constant learning rate (when no scheduler is used),</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>type</code></td>
+<td>
+<p>A single character value for the type of scheduler. Possible
+values are: "decay_time", "decay_expo", "none", "cyclic", and "step".</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Arguments to pass to the individual scheduler functions (e.g.
+<code>reduction</code>).</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The details for how the schedulers change the rates:
+</p>
+
+<ul>
+<li> <p><code>schedule_decay_time()</code>: <code class="reqn">rate(epoch) = initial/(1 + decay \times epoch)</code>
+</p>
+</li>
+<li> <p><code>schedule_decay_expo()</code>: <code class="reqn">rate(epoch) = initial\exp(-decay \times epoch)</code>
+</p>
+</li>
+<li> <p><code>schedule_step()</code>: <code class="reqn">rate(epoch) = initial \times reduction^{floor(epoch / steps)}</code>
+</p>
+</li>
+<li> <p><code>schedule_cyclic()</code>: <code class="reqn">cycle = floor( 1 + (epoch / 2 / step size) )</code>,
+<code class="reqn">x = abs( ( epoch / step size ) - ( 2 * cycle) + 1 )</code>, and
+<code class="reqn">rate(epoch) = initial + ( largest - initial ) * \max( 0, 1 - x)</code>
+</p>
+</li>
+</ul>
+<h3>Value</h3>
+
+<p>A numeric value for the updated learning rate.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>brulee_mlp()</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">library(ggplot2)
+library(dplyr)
+library(purrr)
+
+iters &lt;- 0:50
+
+bind_rows(
+ tibble(epoch = iters, rate = map_dbl(iters, schedule_decay_time), type = "decay_time"),
+ tibble(epoch = iters, rate = map_dbl(iters, schedule_decay_expo), type = "decay_expo"),
+ tibble(epoch = iters, rate = map_dbl(iters, schedule_step), type = "step"),
+ tibble(epoch = iters, rate = map_dbl(iters, schedule_cyclic), type = "cyclic")
+) %&gt;%
+ ggplot(aes(epoch, rate)) +
+ geom_line() +
+ facet_wrap(~ type)
+
+# ------------------------------------------------------------------------------
+# Use with neural network
+
+
+</code></pre>
+
+
+</div>

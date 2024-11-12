@@ -1,0 +1,158 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>evalMusycModel</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Evaluate MuSyC Response Surfaces</h2>
+
+<h3>Description</h3>
+
+<p>Evaluates the Mulitdimensional Synergy of Combinations (MuSyC) model of
+combined action for the given values and parameters (Wooten <em>et al.</em> 2021).
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">evalMusycModel(DA, DB, mupar, calcderivs = FALSE)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>DA</code></td>
+<td>
+<p>A vector of concentrations of drug A in a combination (values 0
+and <code>Inf</code> are permitted). Must be length 1 or the same length as <code>DB</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>DB</code></td>
+<td>
+<p>A vector of concentrations of drug B in a combination (values 0
+and <code>Inf</code> are permitted). Must be length 1 or the same length as <code>DA</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>mupar</code></td>
+<td>
+<p>A MuSyC response surface parameter vector; may be length 8, 10,
+or 12 (see details for specifics of MuSyC parameters)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>calcderivs</code></td>
+<td>
+<p>Primarily used by fitting functions for non-linear
+optimization.  If <code>FALSE</code> (the default), the function returns a vector of
+response values; if <code>TRUE</code>, it returns a list including the partial
+derivatives of the BRAID parameters.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The multi-dimensional synergy of combinatoins, or MySyC, model is a
+parametric response surface model introduced by Wooten et al. in 2021.  The
+method models the effect of combination by simulating occupancy in four
+compartments in which compounds are affected or unaffected by either drug.
+The full MuSyC model can be specified by a total of twelve parameters:
+</p>
+
+<ul>
+<li> <p><code>IDMA</code>: dose of median effect of first drug
+</p>
+</li>
+<li> <p><code>IDMB</code>: dose of median effect of second drug
+</p>
+</li>
+<li> <p><code>na</code>: Hill slope of first drug
+</p>
+</li>
+<li> <p><code>nb</code>: Hill slope of second drug
+</p>
+</li>
+<li> <p><code>alpha12</code>: factor by which first drug potentiates the second
+</p>
+</li>
+<li> <p><code>alpha21</code>: factor by which second drug potentiates the first
+</p>
+</li>
+<li> <p><code>gamma12</code>: factor by which first drug increases second drug's Hill slope
+</p>
+</li>
+<li> <p><code>gamma21</code>: factor by which second drug increases first drug's Hill slope
+</p>
+</li>
+<li> <p><code>E0</code> - the observed effect when unaffected by either drug
+</p>
+</li>
+<li> <p><code>EfA</code> - the observed effect when affected by drug 1 but not drug 2
+</p>
+</li>
+<li> <p><code>EfB</code> - the observed effect when affected by drug 2 but not drug 1
+</p>
+</li>
+<li> <p><code>Ef</code> - the observed effect when affected by both drugs
+</p>
+</li>
+</ul>
+<p>In practice, <code>gamma12</code> and <code>gamma21</code> are rarely used, so a ten-element
+parameter vector specifies the other 10 values and assumes that <code>gamma12</code>
+and <code>gamma21</code> are both equal to 1.  In some cases it is even useful to
+specify a MuSyC surface with no interaction at all with an eight-element
+vector, in which case <code>alpha12</code>, <code>alpha21</code>, <code>gamma12</code>, and <code>gamma21</code> are all
+set equal to 1.
+</p>
+
+
+<h3>Value</h3>
+
+<p>If <code>calcderivs</code> is <code>FALSE</code>, a numeric vector the same length as <code>DA</code>
+and/or <code>DB</code> with the predicted MuSyC response surface values.  If
+<code>calcderivs</code> is <code>TRUE</code>, a list with two elements: <code>value</code>, containing the
+response surface values, and <code>derivatives</code>, a matrix with as many rows as
+<code>value</code> has elements, and all columns containing the partial derivatives of
+the response surface with respect to the fitted MuSyC response surface
+parameters
+</p>
+
+
+<h3>References</h3>
+
+<p>Wooten, David J, Christian T Meyer, Alexander LR Lubbock, Vito Quaranta,
+and Carlos F Lopez. 2021. “MuSyC Is a Consensus Framework That Unifies
+Multi-Drug Synergy Metrics for Combinatorial Drug Discovery.”
+<em>Nature Communications</em> <strong>12</strong> (1): 4607.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">efficacyPar &lt;- c(
+    1, 1, 3, 3,
+                      # Omitted shape synergy parameters assume to be 1
+    0, 100, 100, 125  # Elevated Ef indicates efficacy synergy
+)
+potencyPar &lt;- c(
+    1, 1, 3, 3,
+    10, 15,           # alphas above 1 indicate potency synergy
+    0, 100, 100, 100  # No efficacy synergy
+)
+
+concentrations &lt;- c(0, 2^(-3:3))
+surface &lt;- data.frame(
+    concA = rep(concentrations,each=length(concentrations)),
+    concB = rep(concentrations,times=length(concentrations))
+)
+surface$efficacy &lt;- evalMusycModel(surface$concA, surface$concB, efficacyPar)
+surface$potency  &lt;- evalMusycModel(surface$concA, surface$concB, potencyPar)
+
+head(surface)
+</code></pre>
+
+
+</div>

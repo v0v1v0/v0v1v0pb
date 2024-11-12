@@ -1,0 +1,326 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>use</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Import a module or package</h2>
+
+<h3>Description</h3>
+
+<p><code>box::use</code> imports one or more modules and/or packages, and makes them
+available in the calling environment.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">box::use(prefix/mod, ...)
+
+box::use(pkg, ...)
+
+box::use(alias = prefix/mod, ...)
+
+box::use(alias = pkg, ...)
+
+box::use(prefix/mod[attach_list], ...)
+
+box::use(pkg[attach_list], ...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>further import declarations</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>prefix/mod</code></td>
+<td>
+<p>a qualified module name</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>pkg</code></td>
+<td>
+<p>a package name</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>alias</code></td>
+<td>
+<p>an alias name</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>attach_list</code></td>
+<td>
+<p>a list of names to attached, optionally witha aliases of
+the form <code>alias = name</code>; or the special placeholder name <code>...</code></p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p><code>box::use(...)</code> specifies a list of one or more import declarations,
+given as individual arguments to <code>box::use</code>, separated by comma.
+<code>box::use</code> permits using a trailing comma after the last import
+declaration. Each import declaration takes one of the following forms:
+</p>
+
+<dl>
+<dt>
+<code><var>prefix</var>/<var>mod</var></code>:</dt>
+<dd>
+<p>Import a module given the qualified module name
+<code><var>prefix</var>/<var>mod</var></code> and make it available locally using the
+name <code><var>mod</var></code>. The <code><var>prefix</var></code> itself can be a nested
+name to allow importing specific submodules. <em>Local imports</em> can be
+specified via the prefixes starting with <code>.</code> and <code>..</code>, to
+override the search path and use the local path instead. See the
+‘Search path’ below for details.
+</p>
+</dd>
+<dt>
+<code><var>pkg</var></code>:</dt>
+<dd>
+<p>Import a package <code><var>pkg</var></code> and make it available locally using its own
+package name.
+</p>
+</dd>
+<dt>
+<code><var>alias</var> = <var>prefix</var>/<var>mod</var></code> or <code><var>alias</var> = <var>pkg</var></code>:</dt>
+<dd>
+<p>Import a module or package, and make it available locally using the name
+<code><var>alias</var></code> instead of its regular module or package name.
+</p>
+</dd>
+<dt>
+<code><var>prefix</var>/<var>mod</var>[<var>attach_list</var>]</code> or <code><var>pkg</var>[<var>attach_list</var>]</code>:</dt>
+<dd>
+<p>Import a module or package and attach the exported symbols listed in
+<code><var>attach_list</var></code> locally. This declaration does <em>not</em> make
+the module/package itself available locally. To override this, provide
+an alias, that is, use <code><var>alias</var> =
+     <var>prefix</var>/<var>mod</var>[<var>attach_list</var>]</code> or <code><var>alias</var> =
+     <var>pkg</var>[<var>attach_list</var>]</code>.
+</p>
+<p>The <code><var>attach_list</var></code> is a comma-separated list of names,
+optionally with aliases assigned via <code>alias = name</code>. The list can
+also contain the special symbol <code>...</code>, which causes <em>all</em>
+exported names of the module/package to be imported.
+</p>
+</dd>
+</dl>
+<p>See the vignette at <code>vignette('box', 'box')</code> for detailed examples of
+the different types of use declarations listed above.
+</p>
+
+
+<h3>Value</h3>
+
+<p><code>box::use</code> has no return value. It is called for its
+side effect.
+</p>
+
+
+<h3>Import semantics</h3>
+
+<p>Modules and packages are loaded into dedicated namespace environments. Names
+from a module or package can be selectively attached to the current scope as
+shown above.
+</p>
+<p>Unlike with <code>library</code>, attaching happens <em>locally</em>,
+i.e. in the caller’s environment: if <code>box::use</code> is executed in the
+global environment, the effect is the same. Otherwise, the effect of
+importing and attaching a module or package is limited to the caller’s local
+scope (its <code>environment()</code>). When used <em>inside a module</em> at module
+scope, the newly imported module is only available inside the module’s scope,
+not outside it (nor in other modules which might be loaded).
+</p>
+<p>Member access of (non-attached) exported names of modules and packages
+happens via the <code>$</code> operator. This operator does not perform partial
+argument matching, in contrast with the behavior of the <code>$</code> operator in
+base <span style="font-family: Courier New, Courier; color: #666666;"><b>R</b></span>, which matches partial names.
+</p>
+<p><strong>Note</strong> that replacement functions (i.e. functions of the form
+<code>fun&lt;-</code>) must be <em>attached</em> to be usable, because <span style="font-family: Courier New, Courier; color: #666666;"><b>R</b></span> syntactically
+does not allow assignment calls where the left-hand side of the assignment
+contains <code>$</code>.
+</p>
+
+
+<h3>Export specification</h3>
+
+<p>Names defined in modules can be marked as <em>exported</em> by prefixing them
+with an <code>@export</code> tag comment; that is, the name needs to be immediately
+prefixed by a comment that reads, verbatim, <code>#' @export</code>. That line may
+optionally be part of a <span class="pkg">roxygen2</span> documentation for that name.
+</p>
+<p>Alternatively, exports may be specified via the
+<code>box::export</code> function, but using declarative
+<code>@export</code> tags is generally preferred.
+</p>
+<p>A module which has not declared any exports is treated as a <em>legacy
+module</em> and exports <em>all</em> default-visible names (that is, all names that
+do not start with a dot (<code>.</code>). This usage is present only for backwards
+compatibility with plain <span style="font-family: Courier New, Courier; color: #666666;"><b>R</b></span> scripts, and its usage is <em>not recommended</em>
+when writing new modules.
+</p>
+<p>To define a module that exports no names, call <code>box::export()</code> without
+arguments. This prevents the module from being treated as a legacy module.
+</p>
+
+
+<h3>Search path</h3>
+
+<p>Modules are searched in the module search path, given by
+<code>getOption('box.path')</code>. This is a character vector of paths to search,
+from the highest to the lowest priority. The current directory is always
+considered last. That is, if a file ‘<span class="file">a/b.r</span>’ exists both locally in the
+current directory and in a module search path, the local file ‘<span class="file">./a/b.r</span>’
+will <em>not</em> be loaded, unless the import is explicitly declared as
+<code>box::use(./a/b)</code>.
+</p>
+<p>Modules in the module search path <em>must be organised in subfolders</em>, and
+must be imported fully qualified. Keep in mind that <code>box::use(name)</code>
+will <em>never</em> attempt to load a module; it always attempts to load a
+package. A common module organisation is by project, company or user name;
+for instance, fully qualified module names could mirror repository names on
+source code sharing websites (such as GitHub).
+</p>
+<p>Given a declaration <code>box::use(a/b)</code> and a search path ‘<span class="file"><var>p</var></span>’, if
+the file ‘<span class="file"><var>p</var>/a/b.r</span>’ does not exist, <span class="pkg">box</span> alternatively looks
+for a nested file ‘<span class="file"><var>p</var>/a/b/__init__r</span>’ to load. Module path names are
+<em>case sensitive</em> (even on case insensitive file systems), but the file
+extension can be spelled as either ‘<span class="file">.r</span>’ or ‘<span class="file">.R</span>’ (if both exist,
+<code>.r</code> is given preference).
+</p>
+<p>The module search path can be overridden by the environment variable
+<span class="env">R_BOX_PATH</span>. If set, it may consist of one or more search paths,
+separated by the platform’s path separator (i.e. <code>;</code> on Windows, and
+<code>:</code> on most other platforms).
+</p>
+<p><strong>Deprecation warning:</strong> in the next major version, <span class="pkg">box</span> will read
+environment variables only <em>once</em>, at package load time. Modifying the
+value of <span class="env">R_BOX_PATH</span> afterwards will have no effect, unless the package
+is unloaded and reloaded.
+</p>
+<p>The <em>current directory</em> is context-dependent: inside a module, the
+directory corresponds to the module’s directory. Inside an <span style="font-family: Courier New, Courier; color: #666666;"><b>R</b></span> code file
+invoked from the command line, it corresponds to the directory containing
+that file. If the code is running inside a <span class="pkg">Shiny</span> application or a
+<span class="pkg">knitr</span> document, the directory of the execution is used. Otherwise (e.g.
+in an interactive <span style="font-family: Courier New, Courier; color: #666666;"><b>R</b></span> session), the current working directory as given by
+<code>getwd()</code> is used.
+</p>
+<p>Local import declarations (that is, module prefixes that start with <code>./</code>
+or <code>../</code>) never use the search path to find the module. Instead,
+only the current module’s directory (for <code>./</code>) or the parent module’s
+directory (for <code>../</code>) is looked at. <code>../</code> can be nested:
+<code>../../</code> denotes the grandparent module, etc.
+</p>
+
+
+<h3>S3 support</h3>
+
+<p>Modules can contain S3 generics and methods. To override known generics
+(= those defined outside the module), methods inside a module need to be
+registered using <code>box::register_S3_method</code>.
+See the documentation there for details.
+</p>
+
+
+<h3>Module names</h3>
+
+<p>A module’s full name consists of one or more <span style="font-family: Courier New, Courier; color: #666666;"><b>R</b></span> names separated by <code>/</code>.
+Since <code>box::use</code> declarations contain <span style="font-family: Courier New, Courier; color: #666666;"><b>R</b></span> expressions, the names need to
+be valid <span style="font-family: Courier New, Courier; color: #666666;"><b>R</b></span> names. Non-syntactic names need to be wrapped in backticks; see
+Quotes.
+</p>
+<p>Furthermore, since module names usually correspond to file or folder names,
+they should consist only of valid path name characters to ensure portability.
+</p>
+
+
+<h3>Encoding</h3>
+
+<p>All module source code files are assumed to be UTF-8 encoded.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>box::name</code> and <code>box::file</code> give
+information about loaded modules.
+<code>box::help</code> displays help for a module’s exported names.
+<code>box::unload</code> and <code>box::reload</code> aid
+during module development by performing dynamic unloading and reloading of
+modules in a running <span style="font-family: Courier New, Courier; color: #666666;"><b>R</b></span> session.
+<code>box::export</code> can be used as an alternative to
+<code>@export</code> comments inside a module to declare module exports.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R"># Set the module search path for the example module.
+old_opts = options(box.path = system.file(package = 'box'))
+
+# Basic usage
+# The file `mod/hello_world.r` exports the functions `hello` and `bye`.
+box::use(mod/hello_world)
+hello_world$hello('Robert')
+hello_world$bye('Robert')
+
+# Using an alias
+box::use(world = mod/hello_world)
+world$hello('John')
+
+# Attaching exported names
+box::use(mod/hello_world[hello])
+hello('Jenny')
+# Exported but not attached, thus access fails:
+try(bye('Jenny'))
+
+# Attach everything, give `hello` an alias:
+box::use(mod/hello_world[hi = hello, ...])
+hi('Eve')
+bye('Eve')
+
+# Reset the module search path
+on.exit(options(old_opts))
+
+## Not run: 
+# The following code illustrates different import declaration syntaxes
+# inside a single `box::use` declaration:
+
+box::use(
+    global/mod,
+    mod2 = ./local/mod,
+    purrr,
+    tbl = tibble,
+    dplyr = dplyr[filter, select],
+    stats[st_filter = filter, ...],
+)
+
+# This declaration makes the following names available in the caller’s scope:
+#
+# 1. `mod`, which refers to the module environment for  `global/mod`
+# 2. `mod2`, which refers to the module environment for `./local/mod`
+# 3. `purrr`, which refers to the package environment for ‘purrr’
+# 4. `tbl`, which refers to the package environment for ‘tibble’
+# 5. `dplyr`, which refers to the package environment for ‘dplyr’
+# 6. `filter` and `select`, which refer to the names exported by ‘dplyr’
+# 7. `st_filter`, which refers to `stats::filter`
+# 8. all other exported names from the ‘stats’ package
+
+## End(Not run)
+</code></pre>
+
+
+</div>

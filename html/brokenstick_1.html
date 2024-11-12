@@ -1,0 +1,251 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>brokenstick</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Fit a <code>brokenstick</code> model to irregular data</h2>
+
+<h3>Description</h3>
+
+<p>The <code>brokenstick()</code> function fits an irregularly observed series
+of measurements onto a user-specified grid of points (knots).
+The model codes the grid by a series of linear B-splines.
+Each modelled trajectory consists of straight lines that join at
+the chosen knots and look like a broken stick. Differences between
+observations are expressed by a random effect per knot.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">brokenstick(
+  formula,
+  data,
+  knots = NULL,
+  boundary = NULL,
+  k = 5L,
+  degree = 1L,
+  method = c("kr", "lmer"),
+  control = set_control(method = method, ...),
+  na.action = na.exclude,
+  light = FALSE,
+  hide = c("right", "left", "boundary", "internal", "none"),
+  ...
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>formula</code></td>
+<td>
+<p>A formula specifying the outcome, the predictor and the group
+variable in <code>data</code>. The generic shape is <code>formula = y ~ x | group</code>. The
+left-hand side is the outcome, the right-hand side the predictor, and the
+name of the grouping variable occurs after the <code>|</code> sign. Formula treatment
+is non-standard: 1) <code>y</code> and <code>x</code> should be numeric, 2) only one variable
+is allowed in each model term (additional variables will be ignored).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+<p>A data frame or matrix containing the outcome (numeric),
+predictor (numeric) and group (numeric, factor, character) variable.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>knots</code></td>
+<td>
+<p>Optional, but recommended. Numerical vector with the
+locations of the internal knots to be placed on the values of the predictor.
+The function sorts the internal knots in increasing order.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>boundary</code></td>
+<td>
+<p>Optional, but recommended. Numerical vector of
+length 2 with the left and right boundary knot. The <code>boundary</code>
+setting is passed to <code>splines::bs()</code> as the <code>Boundary.knots</code> argument.
+If not specified, the function determines the boundary knots as
+<code>range(x)</code>. When specified, the <code>boundary</code> range is internally
+expanded to include at least <code>range(knots)</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>k</code></td>
+<td>
+<p>Optional, a convenience parameter for the number of
+internal knots. If specified, then <code>k</code> internal knots are placed
+at equidense quantiles of the predictor. For example,
+specifying <code>k = 1</code> puts a knot at the 50th quantile (median),
+setting <code>k = 3</code> puts knots at the 25th, 50th and 75th quantiles,
+and so on. If the user specifies both <code>k</code> and <code>knots</code> arguments
+then <code>knots</code> takes precedence. The default is <code>k = 5</code>, so if the user
+does not specify any of <code>knots</code>, <code>boundary</code> or <code>k</code>, then the knots
+will be at the 16th, 33th, 50th, 66th and 84th quantile of the
+predictor.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>degree</code></td>
+<td>
+<p>the degree of the spline. The broken stick model
+requires linear splines, so the default is <code>degree = 1</code>.
+Setting <code>degree = 0</code> yields (crisp) dummy coding, and one
+column less than for <code>degree = 1</code>. The <code>brokenstick</code> package supports
+only <code>degree = 0</code> and <code>degree = 1</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>method</code></td>
+<td>
+<p>Estimation method. Either <code>"kr"</code> (for the
+Kasim-Raudenbush sampler) or <code>"lmer"</code> (for <code>lme4::lmer()</code>).
+Version 1.1.1.9000 changed the default to <code>method = "kr"</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>control</code></td>
+<td>
+<p>List of control options returned by <code>set_control()</code> used
+to set algorithmic details. A list with parameters. When not specified,
+the functions sets to defaults
+for method <code>"kr"</code> by <code>control_kr()</code>, and
+for method <code>"lmer"</code> by <code>lme4::lmerControl()</code>. For ease of use, the user
+may set individual options to <code>"kr"</code> (e.g. <code>niter = 500</code>) via the ...
+arguments.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>na.action</code></td>
+<td>
+<p>A function that indicates what <code>lme4::lmer()</code> should so
+when the data contain <code>NA</code>s. Default set to <code>na.exclude</code>. Only used by
+method <code>"lmer"</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>light</code></td>
+<td>
+<p>Should the returned object be lighter? If <code>light = TRUE</code>
+the returned object will contain only the model settings and parameter
+estimates and not store the <code>data</code>, <code>imp</code> and <code>mod</code> elements. The light
+object can be used to predict broken stick estimates for new data, but
+does not disclose the training data and is very small (often &lt;20 Kb).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>hide</code></td>
+<td>
+<p>Should output for knots be hidden in get, print, summary and plot
+functions? Can be <code>"left"</code>, <code>"right"</code>, <code>"boundary"</code>, <code>"internal"</code> or <code>"none"</code>.
+The default is <code>"right"</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Forwards arguments to <code>control_kr()</code>.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The choice between <code>method = "kr"</code> and <code>method = "lmer"</code> depends on the size
+of the data and the complexity of the model. In general, setting <code>method = "lmer"</code>
+can require substantial calculation time for more complex models
+(say &gt; 8 internal knots) and may not converge. Method <code>"kr"</code> is less
+sensitive to model complexity and small samples, and has the added benefit that the
+variance-covariance matrix of the random effects can be constrained through the
+<code>cormodel</code> argument. On the other hand, <code>"lmer"</code> is the better-researched
+method, and is more efficient for simpler models and datasets with many
+rows.
+</p>
+<p>The default algorithm since version 2.0 is the Bayesian Kasim-Raudenbush
+sampler (<code>method = "kr"</code>). The variance-covariance matrix of the broken stick
+estimates absorbs the relations over time. The <code>"kr"</code> method allows
+enforcing a simple structure on this variance-covariance matrix. Currently,
+there are three such correlation models: <code>"none"</code> (default), <code>"argyle"</code>
+and <code>"cole"</code>. Specify the <code>seed</code> argument for reproducibility.
+See <code>control_kr()</code> for more details.
+</p>
+<p>The alternative <code>method = "lmer"</code> fits the broken stick model by
+<code>lme4::lmer()</code>. With this method, the variance-covariance matrix can only be
+unstructured. This estimate may be unstable if the number of children is
+small relative to the number of specified knots. The default setting
+in <code>lme4::lmerControl()</code> is  <code>check.nobs.vs.nRE= "stop"</code>. The
+<code style="white-space: pre;">⁠[set_control()]⁠</code> function changes this to <code>check.nobs.vs.nRE= "warning"</code>
+by default, since otherwise many broken stick models would not run at all.
+The method throws warnings that estimates are not stable. It can be time
+for models with many internal knots. Despite the warnings,
+the results often look reasonable.
+</p>
+<p>Diagnostics with <span class="pkg">coda</span> and <span class="pkg">lme4</span>: The function returns an object
+of class <code>brokenstick</code>. For <code>method = "kr"</code> the list component named
+<code>"mod"</code> contains a list of <code>mcmc</code> objects that can be further analysed with
+<code>coda::acfplot()</code>, <code>coda::autocorr()</code>, <code>coda::crosscorr()</code>, <code>coda::cumuplot()</code>,
+<code>coda::densplot()</code>, <code>coda::effectiveSize()</code>, <code>coda::geweke.plot()</code>,
+<code>coda::raftery.diag()</code>, <code>coda::traceplot()</code> and the usual <code>plot()</code>
+and <code>summary()</code> functions. For <code>method = "lmer"</code> the list component named
+<code>"mod"</code> contains an object of class lme4::merMod. These model objects
+are omitted in light <code>brokenstick</code> objects.
+</p>
+
+
+<h3>Value</h3>
+
+<p>A object of class <code>brokenstick</code>.
+</p>
+
+
+<h3>Note</h3>
+
+<p>Note that automatic knot specification is data-dependent, and may not reproduce
+on other data. Likewise, knots specified via <code>k</code> are data-dependent and do not transfer
+to other  data sets. Fixing the model requires specifying both <code>knots</code> and
+<code>boundary</code>.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+data &lt;- smocc_200[1:1198, ]
+
+# using kr method, default
+f1 &lt;- brokenstick(hgt_z ~ age | id, data, knots = 0:2, seed = 123)
+plot(f1, data, n_plot = 9)
+
+# study sampling behaviour of the sigma2 parameter with coda
+library("coda")
+plot(f1$mod$sigma2)
+acfplot(f1$mod$sigma2)
+
+# using lmer method
+f2 &lt;- brokenstick(hgt_z ~ age | id, data, knots = 0:2, method = "lmer")
+plot(f2, data, n_plot = 9)
+
+# drill down into merMod object with standard diagnostics in lme4
+summary(f2$mod)
+plot(f2$mod)
+
+# a model with more knots
+knots &lt;- round(c(0, 1, 2, 3, 6, 9, 12, 15, 18, 24, 36) / 12, 4)
+
+# method kr takes about 2 seconds
+f3 &lt;- brokenstick(hgt_z ~ age | id, data, knots, seed = 222)
+plot(f3, data, n_plot = 9)
+
+# method lmer takes about 40 seconds
+f4 &lt;- brokenstick(hgt_z ~ age | id, data, knots, method = "lmer")
+plot(f4, data, n_plot = 9)
+
+</code></pre>
+
+
+</div>

@@ -1,0 +1,155 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>irf.bvar</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Impulse response and forecast error methods for Bayesian VARs</h2>
+
+<h3>Description</h3>
+
+<p>Retrieves / calculates impulse response functions (IRFs) and/or forecast
+error variance decompositions (FEVDs) for Bayesian VARs generated via
+<code>bvar</code>. If the object is already present and no settings are
+supplied it is simply retrieved, otherwise it will be calculated ex-post.
+Note that FEVDs require the presence / calculation of IRFs.
+To store the results you may want to assign the output using the setter
+function (<code>irf(x) &lt;- irf(x)</code>). May also be used to update
+confidence bands.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">## S3 method for class 'bvar'
+irf(x, ..., conf_bands, n_thin = 1L, verbose = FALSE)
+
+## S3 method for class 'bvar'
+fevd(x, ..., conf_bands, n_thin = 1L)
+
+irf(x, ...)
+
+## Default S3 method:
+irf(x, ...)
+
+irf(x) &lt;- value
+
+fevd(x, ...)
+
+## Default S3 method:
+fevd(x, ...)
+
+fevd(x) &lt;- value
+
+## S3 method for class 'bvar_irf'
+summary(object, vars_impulse = NULL, vars_response = NULL, ...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>x, object</code></td>
+<td>
+<p>A <code>bvar</code> object, obtained from <code>bvar</code>.
+Summary and print methods take in a <code>bvar_irf</code> / <code>bvar_fevd</code>
+object.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>A <code>bv_irf</code> object or arguments to be fed into
+<code>bv_irf</code>. Contains settings for the IRFs / FEVDs.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>conf_bands</code></td>
+<td>
+<p>Numeric vector of confidence bands to apply.
+E.g. for bands at 5%, 10%, 90% and 95% set this to <code>c(0.05, 0.1)</code>.
+Note that the median, i.e. 0.5 is always included.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>n_thin</code></td>
+<td>
+<p>Integer scalar. Every <em>n_thin</em>'th draw in <em>x</em> is used
+to calculate, others are dropped.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>verbose</code></td>
+<td>
+<p>Logical scalar. Whether to print intermediate results and
+progress.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>value</code></td>
+<td>
+<p>A <code>bvar_irf</code> object to assign.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>vars_impulse, vars_response</code></td>
+<td>
+<p>Optional numeric or character vector.
+Used to subset the summary method's outputs to certain variables by position
+or name (must be available). Defaults to <code>NULL</code>, i.e. all variables.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>Returns a list of class <code>bvar_irf</code> including IRFs and optionally
+FEVDs at desired confidence bands. The <code>fevd</code> method only returns a
+the nested <code>bvar_fevd</code> object.
+The summary method returns a numeric array of impulse responses at the
+specified confidence bands.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>plot.bvar_irf</code>; <code>bv_irf</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+# Access a subset of the fred_qd dataset
+data &lt;- fred_qd[, c("CPIAUCSL", "UNRATE", "FEDFUNDS")]
+# Transform it to be stationary
+data &lt;- fred_transform(data, codes = c(5, 5, 1), lag = 4)
+
+# Estimate a BVAR using one lag, default settings and very few draws
+x &lt;- bvar(data, lags = 1, n_draw = 600L, n_burn = 100L, verbose = FALSE)
+
+# Compute + store IRF with a longer horizon, no identification and thinning
+irf(x) &lt;- irf(x, bv_irf(horizon = 24L, identification = FALSE), n_thin = 5L)
+
+# Update the confidence bands of the IRFs
+irf(x, conf_bands = c(0.01, 0.05, 0.1))
+
+# Recalculate with sign restrictions provided via the ellipsis
+irf(x, sign_restr = matrix(c(1, NA, NA, -1, 1, -1, -1, 1, 1), nrow = 3))
+
+# Recalculate with zero and sign restrictions provided via the ellipsis
+irf(x, sign_restr = matrix(c(1, 0, 1, NA, 1, 1, -1, -1, 1), nrow = 3))
+
+# Calculate the forecast error variance decomposition
+fevd(x)
+
+# Get a summary of the saved impulse response function
+summary(x)
+
+# Limit the summary to responses of variable #2
+summary(x, vars_response = 2L)
+
+</code></pre>
+
+
+</div>

@@ -1,0 +1,294 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>snp_ldpred2_inf</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>LDpred2</h2>
+
+<h3>Description</h3>
+
+<p>LDpred2. Tutorial at <a href="https://privefl.github.io/bigsnpr/articles/LDpred2.html">https://privefl.github.io/bigsnpr/articles/LDpred2.html</a>.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">snp_ldpred2_inf(corr, df_beta, h2)
+
+snp_ldpred2_grid(
+  corr,
+  df_beta,
+  grid_param,
+  burn_in = 50,
+  num_iter = 100,
+  ncores = 1,
+  return_sampling_betas = FALSE,
+  ind.corr = cols_along(corr)
+)
+
+snp_ldpred2_auto(
+  corr,
+  df_beta,
+  h2_init,
+  vec_p_init = 0.1,
+  burn_in = 500,
+  num_iter = 200,
+  sparse = FALSE,
+  verbose = FALSE,
+  report_step = num_iter + 1L,
+  allow_jump_sign = TRUE,
+  shrink_corr = 1,
+  use_MLE = TRUE,
+  p_bounds = c(1e-05, 1),
+  alpha_bounds = c(-1.5, 0.5),
+  ind.corr = cols_along(corr),
+  ncores = 1
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>corr</code></td>
+<td>
+<p>Sparse correlation matrix as an SFBM.
+If <code>corr</code> is a dsCMatrix or a dgCMatrix, you can use <code>as_SFBM(corr)</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>df_beta</code></td>
+<td>
+<p>A data frame with 3 columns:
+</p>
+
+<ul>
+<li> <p><code style="white-space: pre;">⁠$beta⁠</code>: effect size estimates
+</p>
+</li>
+<li> <p><code style="white-space: pre;">⁠$beta_se⁠</code>: standard errors of effect size estimates
+</p>
+</li>
+<li> <p><code style="white-space: pre;">⁠$n_eff⁠</code>: either GWAS sample size(s) when estimating <code>beta</code> for a
+continuous trait, or in the case of a binary trait, this is
+<code>4 / (1 / n_control + 1 / n_case)</code>; in the case of a meta-analysis, you
+should sum the effective sample sizes of each study instead of using the
+total numbers of cases and controls, see <a href="https://doi.org/10.1016/j.biopsych.2022.05.029">doi:10.1016/j.biopsych.2022.05.029</a>;
+when using a mixed model, the effective sample size needs to be adjusted
+as well, see <a href="https://doi.org/10.1016/j.xhgg.2022.100136">doi:10.1016/j.xhgg.2022.100136</a>.
+</p>
+</li>
+</ul>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>h2</code></td>
+<td>
+<p>Heritability estimate.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>grid_param</code></td>
+<td>
+<p>A data frame with 3 columns as a grid of hyper-parameters:
+</p>
+
+<ul>
+<li> <p><code style="white-space: pre;">⁠$p⁠</code>: proportion of causal variants
+</p>
+</li>
+<li> <p><code style="white-space: pre;">⁠$h2⁠</code>: heritability (captured by the variants used)
+</p>
+</li>
+<li> <p><code style="white-space: pre;">⁠$sparse⁠</code>: boolean, whether a sparse model is sought
+They can be run in parallel by changing <code>ncores</code>.
+</p>
+</li>
+</ul>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>burn_in</code></td>
+<td>
+<p>Number of burn-in iterations.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>num_iter</code></td>
+<td>
+<p>Number of iterations after burn-in.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ncores</code></td>
+<td>
+<p>Number of cores used. Default doesn't use parallelism.
+You may use <code>bigstatsr::nb_cores()</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>return_sampling_betas</code></td>
+<td>
+<p>Whether to return all sampling betas (after
+burn-in)? This is useful for assessing the uncertainty of the PRS at the
+individual level (see <a href="https://doi.org/10.1101/2020.11.30.403188">doi:10.1101/2020.11.30.403188</a>).
+Default is <code>FALSE</code> (only returns the averaged final vectors of betas).
+If <code>TRUE</code>, only one set of parameters is allowed.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ind.corr</code></td>
+<td>
+<p>Indices to "subset" <code>corr</code>, as if this was run with
+<code>corr[ind.corr, ind.corr]</code> instead. No subsetting by default.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>h2_init</code></td>
+<td>
+<p>Heritability estimate for initialization.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>vec_p_init</code></td>
+<td>
+<p>Vector of initial values for p. Default is <code>0.1</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>sparse</code></td>
+<td>
+<p>In LDpred2-auto, whether to also report a sparse solution by
+running LDpred2-grid with the estimates of p and h2 from LDpred2-auto, and
+sparsity enabled. Default is <code>FALSE</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>verbose</code></td>
+<td>
+<p>Whether to print "p // h2" estimates at each iteration.
+Disabled when parallelism is used.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>report_step</code></td>
+<td>
+<p>Step to report sampling betas (after burn-in and before
+unscaling). Nothing is reported by default. If using <code>num_iter = 200</code> and
+<code>report_step = 20</code>, then 10 vectors of sampling betas are reported
+(as a sparse matrix with 10 columns).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>allow_jump_sign</code></td>
+<td>
+<p>Whether to allow for effects sizes to change sign in
+consecutive iterations? Default is <code>TRUE</code> (normal sampling). You can use
+<code>FALSE</code> to force effects to go through 0 first before changing sign. Setting
+this parameter to <code>FALSE</code> could be useful to prevent instability (oscillation
+and ultimately divergence) of the Gibbs sampler. This would also be useful
+for accelerating convergence of chains with a large initial value for p.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>shrink_corr</code></td>
+<td>
+<p>Shrinkage multiplicative coefficient to apply to off-diagonal
+elements of the correlation matrix. Default is <code>1</code> (unchanged).
+You can use e.g. <code>0.95</code> to add a bit of regularization.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>use_MLE</code></td>
+<td>
+<p>Whether to use maximum likelihood estimation (MLE) to estimate
+alpha and the variance component (since v1.11.4), or assume that alpha is
+-1 and estimate the variance of (scaled) effects as h2/(m*p), as it was
+done in earlier versions of LDpred2-auto (e.g. in v1.10.8). Default is <code>TRUE</code>,
+which should provide a better model fit, but might also be less robust.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>p_bounds</code></td>
+<td>
+<p>Boundaries for the estimates of p (the polygenicity).
+Default is <code>c(1e-5, 1)</code>. You can use the same value twice to fix p.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>alpha_bounds</code></td>
+<td>
+<p>Boundaries for the estimates of <code class="reqn">\alpha</code>.
+Default is <code>c(-1.5, 0.5)</code>. You can use the same value twice to fix <code class="reqn">\alpha</code>.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>For reproducibility, <code>set.seed()</code> can be used to ensure that two runs of
+LDpred2 give the exact same results (since v1.10).
+</p>
+
+
+<h3>Value</h3>
+
+<p><code>snp_ldpred2_inf</code>: A vector of effects, assuming an infinitesimal model.
+</p>
+<p><code>snp_ldpred2_grid</code>: A matrix of effect sizes, one vector (column)
+for each row of <code>grid_param</code>. Missing values are returned when strong
+divergence is detected. If using <code>return_sampling_betas</code>, each column
+corresponds to one iteration instead (after burn-in).
+</p>
+<p><code>snp_ldpred2_auto</code>: A list (over <code>vec_p_init</code>) of lists with
+</p>
+
+<ul>
+<li> <p><code style="white-space: pre;">⁠$beta_est⁠</code>: vector of effect sizes (on the allele scale); note that
+missing values are returned when strong divergence is detected
+</p>
+</li>
+<li> <p><code style="white-space: pre;">⁠$beta_est_sparse⁠</code> (only when <code>sparse = TRUE</code>): sparse vector of effect sizes
+</p>
+</li>
+<li> <p><code style="white-space: pre;">⁠$postp_est⁠</code>: vector of posterior probabilities of being causal
+</p>
+</li>
+<li> <p><code style="white-space: pre;">⁠$corr_est⁠</code>, the "imputed" correlations between variants and phenotypes,
+which can be used for post-QCing variants by comparing those to
+<code>with(df_beta, beta / sqrt(n_eff * beta_se^2 + beta^2))</code>
+</p>
+</li>
+<li> <p><code style="white-space: pre;">⁠$sample_beta⁠</code>: sparse matrix of sampling betas (see parameter <code>report_step</code>),
+<em>not</em> on the allele scale, for which you need to multiply by
+<code>with(df_beta, sqrt(n_eff * beta_se^2 + beta^2))</code>
+</p>
+</li>
+<li> <p><code style="white-space: pre;">⁠$path_p_est⁠</code>: full path of p estimates (including burn-in);
+useful to check convergence of the iterative algorithm
+</p>
+</li>
+<li> <p><code style="white-space: pre;">⁠$path_h2_est⁠</code>: full path of h2 estimates (including burn-in);
+useful to check convergence of the iterative algorithm
+</p>
+</li>
+<li> <p><code style="white-space: pre;">⁠$path_alpha_est⁠</code>: full path of alpha estimates (including burn-in);
+useful to check convergence of the iterative algorithm
+</p>
+</li>
+<li> <p><code style="white-space: pre;">⁠$h2_est⁠</code>: estimate of the (SNP) heritability (also see coef_to_liab)
+</p>
+</li>
+<li> <p><code style="white-space: pre;">⁠$p_est⁠</code>: estimate of p, the proportion of causal variants
+</p>
+</li>
+<li> <p><code style="white-space: pre;">⁠$alpha_est⁠</code>: estimate of alpha, the parameter controlling the
+relationship between allele frequencies and expected effect sizes
+</p>
+</li>
+<li> <p><code style="white-space: pre;">⁠$h2_init⁠</code> and <code style="white-space: pre;">⁠$p_init⁠</code>: input parameters, for convenience
+</p>
+</li>
+</ul>
+</div>

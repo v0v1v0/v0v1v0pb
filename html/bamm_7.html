@@ -1,0 +1,160 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>bam_sim</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>bam_sim: Simulate dispersal dynamics using the set B of the BAM framework.</h2>
+
+<h3>Description</h3>
+
+<p>bam_sim: Simulate dispersal dynamics using the set B of the BAM framework.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">bam_sim(
+  sp1,
+  sp2,
+  set_M,
+  initial_points,
+  periods_toxic,
+  periods_suitable,
+  nsteps,
+  progress_bar = TRUE
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>sp1</code></td>
+<td>
+<p>Niche model of the focal species (the one that disperses).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>sp2</code></td>
+<td>
+<p>Niche model of the species with whom sp1 interacts
+(currently no dispersal dynamics for this species).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>set_M</code></td>
+<td>
+<p>A setM object containing the adjacency matrix for sp1.
+See <code>adj_mat</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>initial_points</code></td>
+<td>
+<p>A sparse vector returned by the function
+<code>occs2sparse</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>periods_toxic</code></td>
+<td>
+<p>Time periods that sps2 takes to develop defense
+mechanisms (i.e. toxic).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>periods_suitable</code></td>
+<td>
+<p>This is the time that sp2 takes to become non-toxic</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nsteps</code></td>
+<td>
+<p>Number of steps to run the simulation</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>progress_bar</code></td>
+<td>
+<p>Show progress bar</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The returned object inherits from <code>setA</code>,
+<code>setM</code> classes. Details about the dynamic model
+can be found in Soberon and Osorio-Olvera (2022). The model is cellular
+automata where the occupied area of a species at time <code class="reqn">t+1</code> is
+estimated by the multiplication of three
+binary matrices: one matrix represents movements (M), another
+abiotic -niche- tolerances (A), and a third, biotic interactions (B)
+(Soberon and Osorio-Olvera, 2022).
+</p>
+<p style="text-align: center;"><code class="reqn">\mathbf{G}_j(t+1) =\mathbf{B}_j(t)\mathbf{A}_j(t)\mathbf{M}_j
+\mathbf{G}_j(t)</code>
+</p>
+
+
+
+<h3>Value</h3>
+
+<p>An object of class bam. The object contains 12 slots of information
+(see details) from which simulation results are stored in sdm_sim object,
+a list of sparse matrices with results of each simulation step.
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Luis Osorio-Olvera &amp; Jorge Soberón
+</p>
+
+
+<h3>References</h3>
+
+<p>Soberón J, Osorio-Olvera L (2023).
+“A dynamic theory of the area of distribution.”
+<em>Journal of Biogeography6</em>, <b>50</b>, 1037-1048.
+<a href="https://doi.org/10.1111/jbi.14587">doi:10.1111/jbi.14587</a>, <a href="https://onlinelibrary.wiley.com/doi/abs/10.1111/jbi.14587">https://onlinelibrary.wiley.com/doi/abs/10.1111/jbi.14587</a>..
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R"># Compute dispersal dynamics of Urania boisduvalii as a function of
+# palatable Omphalea
+urap &lt;- system.file("extdata/urania_omph/urania_guanahacabibes.tif",
+                                  package = "bamm")
+ura &lt;- raster::raster(urap)
+ompp &lt;- system.file("extdata/urania_omph/omphalea_guanahacabibes.tif",
+                                  package = "bamm")
+omp &lt;- raster::raster(ompp)
+msparse &lt;- bamm::model2sparse(ura)
+init_coordsdf &lt;- data.frame(x=-84.38751, y= 22.02932)
+initial_points &lt;- bamm::occs2sparse(modelsparse = msparse,init_coordsdf)
+set_M &lt;- bamm::adj_mat(modelsparse = msparse,ngbs = 1)
+ura_sim &lt;- bamm::bam_sim(sp1=ura, sp2=omp, set_M=set_M,
+                         initial_points=initial_points,
+                         periods_toxic=5,
+                         periods_suitable=1,
+                         nsteps=40)
+ura_omp &lt;- bamm::sim2Raster(ura_sim)
+raster::plot(ura_omp[[c(1,5,10,15,20,30,35,40)]])
+
+if(requireNamespace("animation")){
+# Animation example
+anp &lt;-tempfile(pattern = "simulation_results_",fileext = ".gif")
+# new_sim &lt;- bamm::sim2Animation(sdm_simul = ura_sim,
+#                                which_steps = seq_len(ura_sim@sim_steps),
+#                                fmt = "GIF",
+#                               filename = anp)
+}
+
+</code></pre>
+
+
+</div>

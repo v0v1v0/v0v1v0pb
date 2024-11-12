@@ -1,0 +1,192 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>mlestimate</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Maximum likelihood estimate</h2>
+
+<h3>Description</h3>
+
+<p>Perform inference of bias and interaction parameters for a single response group
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">mlestimate(
+  xi,
+  weights = NULL,
+  qJ = NULL,
+  method = "pseudo",
+  L = NULL,
+  lambda = 1e-05,
+  lambdah = 0,
+  symmetrize = TRUE,
+  eps = 0.9,
+  nprint = 100,
+  itmax = 1e+05,
+  tolerance = 1e-04,
+  verbose = 1,
+  prior.count = 1,
+  naive = FALSE,
+  lz.half = FALSE
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>xi</code></td>
+<td>
+<p>Data matrix; expected to be numeric with elements ranging from 
+zero to positive integral upper bound <code>L-1</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>weights</code></td>
+<td>
+<p>Frequency vector of number of times each row of <code>xi</code> 
+is to be repeated. If <code>NULL</code>, defaults to 1. Expected
+to be non-negative integers.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>qJ</code></td>
+<td>
+<p>Matrix of logicals indicating which predictor pairs are
+interacting. If <code>NULL</code>, all are allowed.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>method</code></td>
+<td>
+<p><code>c('pseudo','mf')</code> for pseudo-likelihood maximization or
+mean field inference.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>L</code></td>
+<td>
+<p>Vector of number of factor levels in each predictor. If
+<code>NULL</code>, will be inferred from <code>xi</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>lambda</code></td>
+<td>
+<p>Vector of L2 regularization parameters for 
+<code>method = 'pseudo'</code>. Applies to interaction parameters <code>J</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>lambdah</code></td>
+<td>
+<p>L2 parameters for <code>h</code> in <code>'pseudo'</code>.
+If <code>NULL</code>, it is set equal to <code>lambda</code>.
+<code>lambdah = 0</code> will free <code>h</code> from penalization.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>symmetrize</code></td>
+<td>
+<p>Enforce the symmetry of interaction parameters by
+taking mean values of the matrix and its trace:
+<code class="reqn">J_{ij}^{(y)}(x_1,x_2)=J_{ji}^{(y)}(x_2,x_1)</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>eps</code></td>
+<td>
+<p>Vector of regularization parameters for <code>mf</code>. Must be
+within the range of <code class="reqn">\epsilon \in [0,1]</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nprint</code></td>
+<td>
+<p>Frequency of printing iteration progress under <code>'pseudo'</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>itmax</code></td>
+<td>
+<p>Maximum number of iterations for <code>'pseudo'</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>tolerance</code></td>
+<td>
+<p>Upper bound for fractional changes in pseduo-likelihood
+values before termiating iteration in <code>'pseudo'</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>verbose</code></td>
+<td>
+<p>Verbosity level.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>prior.count</code></td>
+<td>
+<p>Prior count for <code>method = 'mf'</code> to reduce
+numerical instability.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>naive</code></td>
+<td>
+<p>Naive Bayes inference. Equivalent to <code>method = 'mf'</code> together
+with <code>eps = 0</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>lz.half</code></td>
+<td>
+<p>Divide interaction term in approximation to <code class="reqn">\ln Z_{iy}</code>
+in <code>'pseudo'</code>.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>Given numeric data matrix, either pseudo-likelihood
+of mean-field theory is used to find the maximum likelihood estimate
+of bias <code>h</code> and interaction <code>J</code> parameters. Normally
+called by <code>bbl</code> rather than directly.
+</p>
+
+
+<h3>Value</h3>
+
+<p>List of inferred parameters <code>h</code> and <code>J</code>. See 
+<code>bbl</code> for parameter structures.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">set.seed(535)
+predictors &lt;- list()
+for(i in 1:5) predictors[[i]] &lt;- c('a','c','g','t')
+par &lt;- randompar(predictors)
+par
+xi &lt;- sample_xi(nsample=5000, predictors=predictors, h=par$h, J=par$J,
+                code_out=TRUE)
+head(xi)
+ps &lt;- mlestimate(xi=xi, method='pseudo', lambda=0)
+ps$h
+ps$J[[1]]
+mf &lt;- mlestimate(xi=xi, method='mf', eps=0.9)
+plot(x=unlist(par$h), y=unlist(ps$h), xlab='True', ylab='Inferred')
+segments(x0=-2, x1=2, y0=-2, y1=2, lty=2)
+points(x=unlist(par$J), y=unlist(ps$J), col='red')
+points(x=unlist(par$h), y=unlist(mf$h), col='blue')
+points(x=unlist(par$J), y=unlist(mf$J), col='green')
+</code></pre>
+
+
+</div>

@@ -1,0 +1,204 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>equilibrium.imposed.ET</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Equilibrium and Imposed Evapotranspiration</h2>
+
+<h3>Description</h3>
+
+<p>Evapotranspiration (ET) split up into imposed ET and equilibrium ET.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">equilibrium.imposed.ET(
+  data,
+  Tair = "Tair",
+  pressure = "pressure",
+  VPD = "VPD",
+  Gs = "Gs_ms",
+  Rn = "Rn",
+  G = NULL,
+  S = NULL,
+  missing.G.as.NA = FALSE,
+  missing.S.as.NA = FALSE,
+  Esat.formula = c("Sonntag_1990", "Alduchov_1996", "Allen_1998"),
+  constants = bigleaf.constants()
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+<p>Data.frame or matrix containing all required input variables</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Tair</code></td>
+<td>
+<p>Air temperature (deg C)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>pressure</code></td>
+<td>
+<p>Atmospheric pressure (kPa)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>VPD</code></td>
+<td>
+<p>Air vapor pressure deficit (kPa)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Gs</code></td>
+<td>
+<p>surface conductance to water vapor (m s-1)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Rn</code></td>
+<td>
+<p>Net radiation (W m-2)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>G</code></td>
+<td>
+<p>Ground heat flux (W m-2); optional</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>S</code></td>
+<td>
+<p>Sum of all storage fluxes (W m-2); optional</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>missing.G.as.NA</code></td>
+<td>
+<p>if <code>TRUE</code>, missing G are treated as <code>NA</code>s, otherwise set to 0.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>missing.S.as.NA</code></td>
+<td>
+<p>if <code>TRUE</code>, missing S are treated as <code>NA</code>s, otherwise set to 0.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Esat.formula</code></td>
+<td>
+<p>Optional: formula to be used for the calculation of esat and the slope of esat.
+One of <code>"Sonntag_1990"</code> (Default), <code>"Alduchov_1996"</code>, or <code>"Allen_1998"</code>.
+See <code>Esat.slope</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>constants</code></td>
+<td>
+<p>cp - specific heat of air for constant pressure (J K-1 kg-1) <br>
+eps - ratio of the molecular weight of water vapor to dry air (-) <br>
+Pa2kPa - conversion pascal (Pa) to kilopascal (kPa)</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>Total evapotranspiration can be written in the form (Jarvis &amp; McNaughton 1986):
+</p>
+<p style="text-align: center;"><code class="reqn">ET = \Omega ET_eq + (1 - \Omega)ET_imp</code>
+</p>
+
+<p>where <code class="reqn">\Omega</code> is the decoupling coefficient as calculated from
+<code>decoupling</code>. <code>ET_eq</code> is the equilibrium evapotranspiration rate,
+the ET rate that would occur under uncoupled conditions, where the heat budget
+is dominated by radiation (when Ga -&gt; 0):
+</p>
+<p style="text-align: center;"><code class="reqn">ET_eq = (\Delta * (Rn - G - S) * \lambda) / (\Delta + \gamma)</code>
+</p>
+
+<p>where <code class="reqn">\Delta</code> is the slope of the saturation vapor pressure curve (kPa K-1),
+<code class="reqn">\lambda</code> is the latent heat of vaporization (J kg-1), and <code class="reqn">\gamma</code>
+is the psychrometric constant (kPa K-1).
+<code>ET_imp</code> is the imposed evapotranspiration rate, the ET rate
+that would occur under fully coupled conditions (when Ga -&gt; inf):
+</p>
+<p style="text-align: center;"><code class="reqn">ET_imp = (\rho * cp * VPD * Gs * \lambda) / \gamma</code>
+</p>
+
+<p>where <code class="reqn">\rho</code> is the air density (kg m-3).
+</p>
+
+
+<h3>Value</h3>
+
+<p>A data.frame with the following columns:
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>ET_eq</code></td>
+<td>
+<p>Equilibrium ET (kg m-2 s-1)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ET_imp</code></td>
+<td>
+<p>Imposed ET (kg m-2 s-1)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>LE_eq</code></td>
+<td>
+<p>Equilibrium LE (W m-2)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>LE_imp</code></td>
+<td>
+<p>Imposed LE (W m-2)</p>
+</td>
+</tr>
+</table>
+<h3>Note</h3>
+
+<p>Surface conductance (Gs) can be calculated with <code>surface.conductance</code>.
+Aerodynamic conductance (Ga) can be calculated using <code>aerodynamic.conductance</code>.
+</p>
+
+
+<h3>References</h3>
+
+<p>Jarvis, P.G., McNaughton, K.G., 1986: Stomatal control of transpiration:
+scaling up from leaf to region. Advances in Ecological Research 15, 1-49.
+</p>
+<p>Monteith, J.L., Unsworth, M.H., 2008: Principles of Environmental Physics.
+3rd edition. Academic Press, London.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>decoupling</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">df &lt;- data.frame(Tair=20,pressure=100,VPD=seq(0.5,4,0.5),
+                 Gs_ms=seq(0.01,0.002,length.out=8),Rn=seq(50,400,50))            
+equilibrium.imposed.ET(df)            
+            
+</code></pre>
+
+
+</div>

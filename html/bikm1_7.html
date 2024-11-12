@@ -1,0 +1,190 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>BIKM1_MLBM_Binary</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>BIKM1_MLBM_Binary fitting procedure</h2>
+
+<h3>Description</h3>
+
+<p>Produce a blockwise estimation of  double matrices of observations.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">BIKM1_MLBM_Binary(x,y,Gmax,Hmax,Lmax,a=4,b=1,
+Gstart=2,Hstart=2,Lstart=2,init_choice='smallVBayes',userparam=NULL,
+ntry=50,criterion_choice='ICL', mc.cores=1,verbose=TRUE)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>matrix of observations (1rst matrix).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>y</code></td>
+<td>
+<p>matrix of observations (2nd matrix).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Gmax</code></td>
+<td>
+<p>a positive integer less than number of rows.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Hmax</code></td>
+<td>
+<p>a positive integer less than number of columns of the 1st matrix.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Lmax</code></td>
+<td>
+<p>a positive integer less than number of columns of the 2nd matrix. The bikm1 procedure stops while the numbers of rows is higher than Gmax or the number of columns is higher than Hmax or the numbers of columns(2nd matrix) is higher than Lmax.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>a</code></td>
+<td>
+<p>hyperparameter used in the VBayes algorithm for priors on the mixing proportions.
+By default, a=4.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>b</code></td>
+<td>
+<p>hyperparameter used in the VBayes algorithm for prior on the Bernoulli parameter.
+By default, b=1.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Gstart</code></td>
+<td>
+<p>a positive integer to initialize the procedure with number of row clusters.
+By default, Gstart=2.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Hstart</code></td>
+<td>
+<p>a positive integer to initialize the procedure with number of column clusters.
+By default, Hstart=2.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Lstart</code></td>
+<td>
+<p>a positive integer to initialize the procedure with number of column clusters.
+By default, Lstart=2.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>init_choice</code></td>
+<td>
+<p>character string corresponding to the chosen initialization strategy used for the procedure, which can be "random" or "smallVBayes" or "user".
+By default, init_choice="smallVBayes".</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>userparam</code></td>
+<td>
+<p>In the case where init_choice is "user", a list containing partitions z,v and w.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ntry</code></td>
+<td>
+<p>a positive integer corresponding to the number of times which is launched the small VBayes initialization strategy. By default ntry=100.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>criterion_choice</code></td>
+<td>
+<p>Character string corresponding to the chosen criterion used for model selection, which can be "ICL" as for now.
+By default, criterion_choice="ICL".</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>mc.cores</code></td>
+<td>
+<p>a positive integer corresponding to the available number of cores for parallel computing.
+By default, mc.cores=1.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>verbose</code></td>
+<td>
+<p>logical. To display each step and the result. By default verbose=TRUE.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>a BIKM1_MLBM_Binary object including
+</p>
+<p><code>model_max</code>: the selected model by the procedure including free energy W, theta, conditional probabilities (s_ig, r_jh,t_kl), iter, empty_cluster, and the selected partitions z,v and w.
+</p>
+<p><code>criterion_choice</code>: the chosen criterion
+</p>
+<p><code>init_choice</code>: the chosen init_choice
+</p>
+<p><code>criterion_tab</code>: matrix containing the criterion values for each selected number of row and column
+</p>
+<p><code>W_tab</code>: matrix containing the free energy values for each selected number of row and column
+</p>
+<p><code>criterion_max</code>: maximum of the criterion values
+</p>
+<p><code>gopt</code>: the selected number of rows
+</p>
+<p><code>hopt</code>: the selected number of columns (1rst matrix)
+</p>
+<p><code>lopt</code>: the selected number of columns (2nd matrix)
+</p>
+
+
+<h3>References</h3>
+
+<p>Govaert and Nadif. Co-clustering, Wyley (2013).
+</p>
+<p>Keribin, Brault and Celeux. Estimation and Selection for the Latent Block Model on Categorical Data, Statistics and Computing (2014).
+</p>
+<p>Robert. Classification crois\'ee pour l'analyse de bases de donn\'ees de grandes dimensions de pharmacovigilance. Paris Saclay (2017).
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+require(bikm1)
+set.seed(42)
+n=200
+J=120
+K=120
+g=3
+h=2
+l=2
+theta=list()
+theta$pi_g=1/g *matrix(1,g,1)
+theta$rho_h=1/h *matrix(1,h,1)
+theta$tau_l=1/l *matrix(1,l,1)
+theta$alpha_gh=matrix(runif(6),ncol=h)
+theta$beta_gl=matrix(runif(6),ncol=l)
+data=BinBlocRnd_MLBM(n,J,K,theta)
+res=BIKM1_MLBM_Binary(data$x,data$y,3,2,2,Gstart=3,Hstart=2,Lstart=2,init_choice='user',
+userparam=list(z=data$xrow,v=data$xcolx,w=data$xcoly))
+
+
+</code></pre>
+
+
+</div>

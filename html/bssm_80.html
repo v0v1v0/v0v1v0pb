@@ -1,0 +1,141 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>ssm_sde</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Univariate state space model with continuous SDE dynamics</h2>
+
+<h3>Description</h3>
+
+<p>Constructs an object of class <code>ssm_sde</code> by defining the functions for
+the drift, diffusion and derivative of diffusion terms of univariate SDE,
+as well as the log-density of observation equation. We assume that the
+observations are measured at integer times (missing values are allowed).
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">ssm_sde(
+  y,
+  drift,
+  diffusion,
+  ddiffusion,
+  obs_pdf,
+  prior_pdf,
+  theta,
+  x0,
+  positive
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>y</code></td>
+<td>
+<p>Observations as univariate time series (or vector) of length
+<code class="reqn">n</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>drift, diffusion, ddiffusion</code></td>
+<td>
+<p>An external pointers for the C++ functions
+which
+define the drift, diffusion and derivative of diffusion functions of SDE.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>obs_pdf</code></td>
+<td>
+<p>An external pointer for the C++ function which
+computes the observational log-density given the the states and parameter
+vector theta.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>prior_pdf</code></td>
+<td>
+<p>An external pointer for the C++ function which
+computes the prior log-density given the parameter vector theta.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>theta</code></td>
+<td>
+<p>Parameter vector passed to all model functions.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>x0</code></td>
+<td>
+<p>Fixed initial value for SDE at time 0.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>positive</code></td>
+<td>
+<p>If <code>TRUE</code>, positivity constraint is
+forced by <code>abs</code> in Milstein scheme.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>As in case of <code>ssm_nlg</code> models, these general models need a bit more
+effort from the user, as you must provide the several small C++ snippets
+which define the model structure. See vignettes for an example and
+<code>cpp_example_model</code>.
+</p>
+
+
+<h3>Value</h3>
+
+<p>An object of class <code>ssm_sde</code>.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+ # Takes a while on CRAN
+library("sde")
+set.seed(1)
+# theta_0 = rho = 0.5
+# theta_1 = nu = 2
+# theta_2 = sigma = 0.3
+x &lt;- sde.sim(t0 = 0, T = 50, X0 = 1, N = 50,
+       drift = expression(0.5 * (2 - x)),
+       sigma = expression(0.3),
+       sigma.x = expression(0))
+y &lt;- rpois(50, exp(x[-1]))
+
+# source c++ snippets
+pntrs &lt;- cpp_example_model("sde_poisson_OU")
+
+sde_model &lt;- ssm_sde(y, pntrs$drift, pntrs$diffusion,
+ pntrs$ddiffusion, pntrs$obs_density, pntrs$prior,
+ c(rho = 0.5, nu = 2, sigma = 0.3), 1, positive = FALSE)
+
+est &lt;- particle_smoother(sde_model, L = 12, particles = 500)
+
+ts.plot(cbind(x, est$alphahat, 
+  est$alphahat - 2*sqrt(c(est$Vt)), 
+  est$alphahat + 2*sqrt(c(est$Vt))), 
+  col = c(2, 1, 1, 1), lty = c(1, 1, 2, 2))
+
+
+# Takes time with finer mesh, parallelization with IS-MCMC helps a lot
+out &lt;- run_mcmc(sde_model, L_c = 4, L_f = 8, 
+  particles = 50, iter = 2e4,
+  threads = 4L)
+
+
+</code></pre>
+
+
+</div>

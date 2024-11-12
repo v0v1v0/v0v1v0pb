@@ -1,0 +1,200 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>hhj</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Hall, Horowitz, and Jing (1995) "HHJ" Algorithm to Select the Optimal Block-Length</h2>
+
+<h3>Description</h3>
+
+<p>Perform the Hall, Horowitz, and Jing (1995) "HHJ" cross-validation algorithm
+to select the optimal block-length for a bootstrap on dependent data
+(block-bootstrap). Dependent data such as stationary time series are suitable
+for usage with the HHJ algorithm.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">hhj(
+  series,
+  nb = 100L,
+  n_iter = 10L,
+  pilot_block_length = NULL,
+  sub_sample = NULL,
+  k = "two-sided",
+  bofb = 1L,
+  search_grid = NULL,
+  grid_step = c(1L, 1L),
+  cl = NULL,
+  verbose = TRUE,
+  plots = TRUE
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>series</code></td>
+<td>
+<p>a numeric vector or time series giving the original data for
+which to find the optimal block-length for.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nb</code></td>
+<td>
+<p>an integer value, number of bootstrapped series to compute.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>n_iter</code></td>
+<td>
+<p>an integer value, maximum number of iterations for the HHJ
+algorithm to compute.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>pilot_block_length</code></td>
+<td>
+<p>a numeric value, the block-length (<code class="reqn">l*</code> in
+<em>HHJ</em>) for which to perform initial block bootstraps.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>sub_sample</code></td>
+<td>
+<p>a numeric value, the length of each overlapping
+subsample, <code class="reqn">m</code> in <em>HHJ</em>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>k</code></td>
+<td>
+<p>a character string, either <code>"bias/variance"</code>,
+<code>"one-sided"</code>, or <code>"two-sided"</code> depending on the desired object of
+estimation. If the desired bootstrap statistic is bias or variance then
+select <code>"bias/variance"</code> which sets <code class="reqn">k = 3</code> per HHJ. If the object
+of estimation is the one-sided or two-sided distribution function, then set
+<code>k = "one-sided"</code> or <code>k = "two-sided"</code> which sets <code class="reqn">k = 4</code> and
+<code class="reqn">k = 5</code>, respectively. For the purpose of generating symmetric confidence
+intervals around an unknown parameter, <code>k = "two-sided"</code> (the default)
+should be used.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>bofb</code></td>
+<td>
+<p>a numeric value, length of the basic blocks in the
+<em>block-of-blocks</em> bootstrap, <em>see</em> <code>m = </code> for
+<code>tsbootstrap</code> and Kunsch (1989).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>search_grid</code></td>
+<td>
+<p>a numeric value, the range of solutions around <code class="reqn">l*</code> to
+evaluate within the <code class="reqn">MSE</code> function <em>after</em> the first iteration. The
+first iteration will search through all the possible block-lengths unless
+specified in <code>grid_step = </code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>grid_step</code></td>
+<td>
+<p>a numeric value or vector of at most length 2, the number of
+steps to increment over the subsample block-lengths when evaluating the
+<code class="reqn">MSE</code> function. If <code>grid_step = 1</code> then each block-length will be
+evaluated in the <code class="reqn">MSE</code> function. If <code>grid_step &gt; 1</code>, the <code class="reqn">MSE</code>
+function will search over the sequence of block-lengths from <code>1</code> to
+<code>m</code> by <code>grid_step</code>. If <code>grid_step</code> is a vector of length 2,
+the first iteration will step by the first element of <code>grid_step</code> and
+subsequent iterations will step by the second element.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>cl</code></td>
+<td>
+<p>a cluster object, created by package <span class="pkg">parallel</span>,
+<span class="pkg">doParallel</span>, or <span class="pkg">snow</span>. If <code>NULL</code>, no parallelization will be
+used.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>verbose</code></td>
+<td>
+<p>a logical value, if set to <code>FALSE</code> then no interim
+messages are output to the console. Error messages will still be output.
+Default is <code>TRUE</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>plots</code></td>
+<td>
+<p>a logical value, if set to <code>FALSE</code> then no interim plots
+are output to the console. Default is <code>TRUE</code>.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The HHJ algorithm is computationally intensive as it relies on a
+cross-validation process using a type of subsampling to estimate the mean
+squared error (<code class="reqn">MSE</code>) incurred by the bootstrap at various block-lengths.
+</p>
+<p>Under-the-hood, <code>hhj()</code> makes use of <code>tsbootstrap</code>,
+<em>see</em> Trapletti and Hornik (2020), to perform the moving block-bootstrap
+(or the <em>block-of-blocks</em> bootstrap by setting <code>bofb &gt; 1</code>) according
+to Kunsch (1989).
+</p>
+
+
+<h3>Value</h3>
+
+<p>an object of class 'hhj'
+</p>
+
+
+<h3>References</h3>
+
+<p>Adrian Trapletti and Kurt Hornik (2020). tseries: Time Series Analysis and
+Computational Finance. R package version 0.10-48.
+</p>
+<p>Kunsch, H. (1989) The Jackknife and the Bootstrap for General Stationary
+Observations. The Annals of Statistics, 17(3), 1217-1241. Retrieved
+February 16, 2021, from <a href="http://www.jstor.org/stable/2241719">http://www.jstor.org/stable/2241719</a>
+</p>
+<p>Peter Hall, Joel L. Horowitz, Bing-Yi Jing, On blocking rules for the
+bootstrap with dependent data, Biometrika, Volume 82, Issue 3,
+September 1995, Pages 561-574, DOI: doi: <a href="https://doi.org/10.1093/biomet/82.3.561">10.1093/biomet/82.3.561</a>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+# Generate AR(1) time series
+sim &lt;- stats::arima.sim(list(order = c(1, 0, 0), ar = 0.5),
+                        n = 500, innov = rnorm(500))
+
+# Calculate optimal block length for series
+hhj(sim, sub_sample = 10)
+
+
+# Use parallel computing
+library(parallel)
+
+# Make cluster object with 2 cores
+cl &lt;- makeCluster(2)
+
+# Calculate optimal block length for series
+hhj(sim, cl = cl)
+
+
+</code></pre>
+
+
+</div>

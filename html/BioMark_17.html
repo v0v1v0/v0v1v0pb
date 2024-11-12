@@ -1,0 +1,201 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>ROC</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>ROC curves</h2>
+
+<h3>Description</h3>
+
+<p>Functions for making, plotting and analysing ROC curves.</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">ROC(TestResult, ...)
+## Default S3 method:
+ROC(TestResult, D, take.abs = TRUE, ...)
+## S3 method for class 'ROC'
+plot(x, type = "b", null.line = TRUE,
+xlab = "False Pos. Rate", ylab = "True Pos. Rate",
+xlim = c(0, 1), ylim = c(0, 1), main = "ROC", ...) 
+## S3 method for class 'ROC'
+points(x, ...)
+## S3 method for class 'ROC'
+lines(x, ...)
+## S3 method for class 'ROC'
+identify(x, labels = NULL, ..., digits = 1)
+## S3 method for class 'ROC'
+print(x, ...)
+roc.value(found, true, totalN)
+AUC(x, max.mspec)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>TestResult</code></td>
+<td>
+<p>Typically regression coefficients or t
+statistics. Note that when p values are used directly, the least
+significant values would be selected first. In this case one should
+use 1/p.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>D</code></td>
+<td>
+<p>True, known, differences, either expressed as a vector of 0
+and 1 of the same length as <code>TestResult</code> or as a vector of
+indices.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>take.abs</code></td>
+<td>
+<p>Logical, indicating whether to take absolute values of
+the test statistic.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>An object of class ROC.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>type, xlab, ylab, xlim, ylim, main, labels, digits</code></td>
+<td>
+<p>Standard
+arguments to functions like <code>plot</code> and <code>identify</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>null.line</code></td>
+<td>
+<p>Logical, whether to draw the line y = x,
+corresponding to random guessing.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>max.mspec</code></td>
+<td>
+<p>Maximal value of the True Positive Rate to consider
+in AUC calculations. Setting this to a value smaller than one (which
+is the default) leads to a partial AUC value, which may in many
+cases be more useful.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>found</code></td>
+<td>
+<p>The indices of the coefficients identified with a
+biomarker identification method.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>true</code></td>
+<td>
+<p>The indices of the true biomarkers.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>totalN</code></td>
+<td>
+<p>The total number of variables to choose from.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Further arguments, especially useful in the plotting
+functions.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>Function <code>ROC</code> returns a list with elements:
+</p>
+
+<ol>
+<li>
+<p>sensSensitivity, or True Positive Rate (TPR).
+</p>
+</li>
+<li>
+<p>mspec1 - Specificity, or False Positive Rate (FPR).
+</p>
+</li>
+<li>
+<p>testlevels of the test statistic.
+</p>
+</li>
+<li>
+<p>callFunction call.
+</p>
+</li>
+</ol>
+<p>Function <code>roc.value</code> returns a list with elements <code>sens</code> and
+<code>mspec</code>, i.e., one point on a ROC curve.
+</p>
+<p>Function <code>AUC</code> returns the area under the curve, measured up to the
+value of <code>max.mspec</code> - if the latter is smaller than 1, it is a
+partial AUC curve.
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Ron Wehrens</p>
+
+
+<h3>References</h3>
+
+<p>T. Lumley: ROC curves - in Programme's Niche, R News 4/1, June 2004.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">data(spikedApples)
+apple.coef &lt;- get.biom(X = spikedApples$dataMatrix,
+                       Y = rep(1:2, each = 10),
+                       fmethod = "vip",
+                       ncomp = 3, type = "coef")
+
+## ROC curve for all VIP values, ordered according to size
+true.biom &lt;- (1:ncol(spikedApples$dataMatrix) %in% spikedApples$biom)
+vip.roc &lt;- ROC(apple.coef$vip, true.biom)
+plot(vip.roc)
+
+## Add stability-based selection point
+apple.stab &lt;- get.biom(X = spikedApples$dataMatrix,
+                       Y = rep(1:2, each = 10),
+                       fmethod = "vip",
+                       ncomp = 3, type = "stab")
+stab.roc &lt;- roc.value(apple.stab$vip[[1]]$biom.indices,
+                      spikedApples$biom,
+                      totalN = ncol(spikedApples$dataMatrix))
+points(stab.roc, col = "red", pch = 19, cex = 1.5)
+
+## Not run: 
+## Add HC-based selection point
+## Attention: takes approx. 2 minutes on my PC
+apple.HC &lt;- get.biom(X = spikedApples$dataMatrix,
+                     Y = rep(1:2, each = 10),
+                     fmethod = "vip",
+                     ncomp = 3, type = "HC")
+HC.roc &lt;- roc.value(apple.HC$vip$biom.indices,
+                    spikedApples$biom,
+                    totalN = ncol(spikedApples$dataMatrix))
+points(HC.roc, col = "blue", pch = 19, cex = 1.5)
+
+## End(Not run)
+</code></pre>
+
+
+</div>

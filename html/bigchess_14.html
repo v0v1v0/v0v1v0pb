@@ -1,0 +1,88 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>read.pgn.db</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Reads PGN files into database table</h2>
+
+<h3>Description</h3>
+
+<p>Reads PGN files into database table
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">read.pgn.db(con, batch.size = 10^6, conn, table.name = "pgn", ...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>con</code></td>
+<td>
+<p>connection argument passed directly to readLines() function. String - the name of the file which the data are to be read from or connection object or URL.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>batch.size</code></td>
+<td>
+<p>number of lines to read in one batch, default is 10^6.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>conn</code></td>
+<td>
+<p>connection argument created by dbConnect</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>table.name</code></td>
+<td>
+<p>string (default "pgn"), table name, used in dbWriteTable(conn, table.name, read.pgn(batch))</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>further arguments passed directly to read.pgn() function (besides ignore.other.games and big.mode)</p>
+</td>
+</tr>
+</table>
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+f &lt;- system.file("extdata", "Carlsen.gz", package = "bigchess")
+con &lt;- gzfile(f,"rbt",encoding = "latin1")
+require(RSQLite)
+conn &lt;- dbConnect(SQLite())
+read.pgn.db(con,stat.moves = FALSE,conn = conn)
+dbGetQuery(conn, "SELECT COUNT(*) FROM pgn") #2410
+dbDisconnect(conn)
+# Works with all types of connections (also gz or zip files).
+# con argument is passed directly to readLines(con,batch.size)
+# so (if total number of lines to read is greater then batch.size)
+# depending on platform use it correctly:
+# Windows ('rb' opening mode for loop over readLines):
+con &lt;- gzfile(system.file("extdata", "Carlsen.gz", package = "bigchess"),"rb",encoding = "latin1")
+# con &lt;- file("path_to_big_chess_file.pgn","rb",encoding = "latin1")
+read.pgn.db(con,conn = conn)
+
+
+# Linux/Mac OS X ('r' opening mode for loop over readLines):
+con &lt;- gzfile(system.file("extdata", "Carlsen.gz", package = "bigchess"),"r",encoding = "latin1")
+# con &lt;- file("path_to_big_chess_file.pgn","r",encoding = "latin1")
+read.pgn.db(con,conn = conn)
+
+
+# Windows (example of zipped file handling)
+unzf &lt;- unzip("zipped_pgn_file.zip")
+read.pgn.db(con,conn = conn)
+
+</code></pre>
+
+
+</div>

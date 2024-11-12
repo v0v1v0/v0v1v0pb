@@ -1,0 +1,114 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>stitch_on</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Stitch behavioural data by putting together the same individuals recorded over different experiments
+on the basis of a user-defined identifier</h2>
+
+<h3>Description</h3>
+
+<p>This function can merge rows of data from the same individual that was recorded over multiple experiments.
+A usual scenario in which <code>stitch_on</code> can be used is when an experiment is interrupted and a new recording is started
+on the same biological subjects.
+Stitching assumes the users has defined a <em>unique id</em> in the metadata that refers to a specific individual.
+Then, if any data that comes from the same unique id, it is merged.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">stitch_on(x, on, time_ref = "datetime", use_time = F,
+  time_variable = "t")
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>behavr object</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>on</code></td>
+<td>
+<p>name of a metavariable serving as a unique id (per individual)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>time_ref</code></td>
+<td>
+<p>name of a metavariable used to align time (e.g. <code>"date"</code>, or <code>"datetime"</code>)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>use_time</code></td>
+<td>
+<p>whether to use time as well as date</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>time_variable</code></td>
+<td>
+<p>name of the variable describing time</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>When several rows of the metadata match a unique id (several experiments),
+the first (in time) experiment is used as the reference id.
+The data from the following one(s) will be added with a time lag equals to the difference between
+the values of <code>time_ref</code>.
+When data is not aligned to circadian time, it makes sense to set <code>use_time = TRUE</code>.
+Otherwise, the assumption is that the time is already aligned to a circadian reference,
+so only the date is used.
+</p>
+
+
+<h3>Value</h3>
+
+<p>a behavr table
+</p>
+
+
+<h3>See Also</h3>
+
+
+<ul><li> <p>behavr – to formally create a behavr object
+</p>
+</li></ul>
+<h3>Examples</h3>
+
+<pre><code class="language-R">set.seed(1)
+met1 &lt;- data.table::data.table(uid = 1:5,id = 1:5,
+                               condition = letters[1:5],
+                               sex = c("M", "M", "M", "F", "F"),
+                               key = "id")
+met2 &lt;- data.table::data.table(uid = 1:4, id = 6:9,
+                               condition = letters[1:4],
+                               sex=c("M", "M", "M", "F"),
+                               key = "id")
+met1[, datetime := as.POSIXct("2015-01-02")]
+met2[, datetime := as.POSIXct("2015-01-03")]
+met &lt;- rbind(met1, met2)
+data.table::setkeyv(met, "id")
+t &lt;- 1L:100L
+data &lt;- met[,list(t = t,
+                  x = rnorm(100),
+                  y = rnorm(100),
+                  eating = runif(100) &gt; .5 ),
+            by = "id"]
+d &lt;- behavr(data, met)
+summary(d)
+d2 &lt;- stitch_on(d, on = "uid")
+summary(d2)
+
+</code></pre>
+
+
+</div>

@@ -1,0 +1,266 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>predict.bayesreg</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Prediction method for Bayesian penalised regression (<code>bayesreg</code>) models</h2>
+
+<h3>Description</h3>
+
+<p>Predict values based on Bayesian penalised regression (<code>bayesreg</code>) models.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">## S3 method for class 'bayesreg'
+predict(
+  object,
+  newdata,
+  type = "linpred",
+  bayes.avg = FALSE,
+  sum.stat = "mean",
+  CI = 95,
+  ...
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>object</code></td>
+<td>
+<p>an object of class <code>"bayesreg"</code> created as a result of a call to <code>bayesreg</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>newdata</code></td>
+<td>
+<p>A data frame providing the variables from which to produce predictions.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>type</code></td>
+<td>
+<p>The type of predictions to produce; if <code>type="linpred"</code> it will return the linear predictor for binary, 
+count and continuous data. If <code>type="prob"</code> it will return predictive probability estimates for provided 'y' data (see below for more details).
+If <code>type="response"</code> it will return the predicted conditional mean of the target (see below for more details).
+If <code>type="class"</code> and the data is binary, it will return the best guess at the class of the target variable.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>bayes.avg</code></td>
+<td>
+<p>logical; whether to produce predictions using Bayesian averaging.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>sum.stat</code></td>
+<td>
+<p>The type of summary statistic to use; either <code>sum.stat="mean"</code> or <code>sum.stat="median"</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>CI</code></td>
+<td>
+<p>The size (level, as a percentage) of the credible interval to report (default: 95, i.e. a 95% credible interval)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Further arguments passed to or from other methods.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p><code>predict.bayesreg</code> produces a vector or matrix of predictions of the specified type. If <code>bayes.avg</code> is 
+<code>FALSE</code> a matrix with a single column <code>pred</code> is returned, containing the predictions.
+</p>
+<p>If <code>bayes.avg</code> is <code>TRUE</code>, three additional columns are returned: <code>se(pred)</code>, which contains 
+standard errors for the predictions, and two columns containing the credible intervals (at the specified level) for the predictions.
+</p>
+
+
+<h3>Details</h3>
+
+<p><code>predict.bayesreg</code> produces predicted values using variables from the specified data frame. The type of predictions produced 
+depend on the value of the parameter <code>type</code>:
+</p>
+
+<ul>
+<li>
+<p> If <code>type="linpred"</code>, the predictions that are returned will be the value of the linear predictor formed from the model 
+coefficients and the provided data. 
+</p>
+</li>
+<li>
+<p> If <code>type="response"</code>, the predictions will be the conditional mean for each data point. For Gaussian, Laplace and Student-t targets
+the conditional mean is simply equal to the linear predictor; for binary data, the predictions will 
+be the probability of the target being equal to the second level of the factor variable; for count data, the conditional mean
+will be exp(linear predictor).
+</p>
+</li>
+<li>
+<p> If <code>type="prob"</code>, the predictions will be probabilities. The specified data frame must include a column with the same name as the 
+target variable on which the model was created. The predictions will then be the probability (density) values for these target values. 
+</p>
+</li>
+<li>
+<p> If <code>type="class"</code> and the target variable is binary, the predictions will be the most likely class.
+</p>
+</li>
+</ul>
+<p>If <code>bayes.avg</code> is <code>FALSE</code> the predictions will be produced by using a summary of the posterior samples of the coefficients 
+and scale parameters as estimates for the model. If <code>bayes.avg</code> is <code>TRUE</code>, the predictions will be produced by posterior 
+averaging over the posterior samples of the coefficients and scale parameters, allowing the uncertainty in the estimation process to 
+be explicitly taken into account in the prediction process. 
+</p>
+<p>If <code>sum.stat="mean"</code> and <code>bayes.avg</code> is <code>FALSE</code>, the mean of the posterior samples will be used as point estimates for
+making predictions. Likewise, if <code>sum.stat="median"</code> and <code>bayes.avg</code> is <code>FALSE</code>, the co-ordinate wise posterior medians 
+will be used as estimates for making predictions. If <code>bayes.avg</code> is <code>TRUE</code> and <code>type!="prob"</code>, the posterior mean 
+(median) of the predictions from each of the posterior samples will be used as predictions. The value of <code>sum.stat</code> has no effect 
+if <code>type="prob"</code>.
+</p>
+
+
+<h3>See Also</h3>
+
+<p>The model fitting function <code>bayesreg</code> and summary function <code>summary.bayesreg</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+
+# The examples below that are run by CRAN use n.cores=2 to limit the number 
+# of cores to two for CRAN check compliance.
+
+# In practice you can simply omit this option to let bayesreg use as many
+# as are available (which is usually total number of cores - 1)
+
+# If you do not want to use multiple cores you can set parallel=F
+
+# -----------------------------------------------------------------
+# Example 1: Fitting linear models to data and generating credible intervals
+X = 1:10;
+y = c(-0.6867, 1.7258, 1.9117, 6.1832, 5.3636, 7.1139, 9.5668, 10.0593, 11.4044, 6.1677);
+df = data.frame(X,y)
+
+# Gaussian ridge
+rv.L &lt;- bayesreg(y~., df, model = "laplace", prior = "ridge", n.samples = 1e3, n.cores = 2)
+
+# Plot the different estimates with credible intervals
+plot(df$X, df$y, xlab="x", ylab="y")
+
+yhat &lt;- predict(rv.L, df, bayes.avg=TRUE)
+lines(df$X, yhat[,1], col="blue", lwd=2.5)
+lines(df$X, yhat[,3], col="blue", lwd=1, lty="dashed")
+lines(df$X, yhat[,4], col="blue", lwd=1, lty="dashed")
+yhat &lt;- predict(rv.L, df, bayes.avg=TRUE, sum.stat = "median")
+lines(df$X, yhat[,1], col="red", lwd=2.5)
+
+legend(1,11,c("Posterior Mean (Bayes Average)","Posterior Median (Bayes Average)"),
+       lty=c(1,1),col=c("blue","red"),lwd=c(2.5,2.5), cex=0.7)
+
+
+# -----------------------------------------------------------------
+# Example 2: Predictive density for continuous data
+X = 1:10;
+y = c(-0.6867, 1.7258, 1.9117, 6.1832, 5.3636, 7.1139, 9.5668, 10.0593, 11.4044, 6.1677);
+df = data.frame(X,y)
+
+# Gaussian ridge
+rv.G &lt;- bayesreg(y~., df, model = "gaussian", prior = "ridge", n.samples = 1e3, n.cores = 2)
+
+# Produce predictive density for X=2
+df.tst = data.frame(y=seq(-7,12,0.01),X=2)
+prob_noavg_mean &lt;- predict(rv.G, df.tst, bayes.avg=FALSE, type="prob", sum.stat = "mean")
+prob_noavg_med  &lt;- predict(rv.G, df.tst, bayes.avg=FALSE, type="prob", sum.stat = "median")
+prob_avg        &lt;- predict(rv.G, df.tst, bayes.avg=TRUE, type="prob")
+
+# Plot the density
+plot(NULL, xlim=c(-7,12), ylim=c(0,0.14), xlab="y", ylab="p(y)")
+lines(df.tst$y, prob_noavg_mean[,1],lwd=1.5)
+lines(df.tst$y, prob_noavg_med[,1], col="red",lwd=1.5)
+lines(df.tst$y, prob_avg[,1], col="green",lwd=1.5)
+
+legend(-7,0.14,c("Mean (no averaging)","Median (no averaging)","Bayes Average"),
+       lty=c(1,1,1),col=c("black","red","green"),lwd=c(1.5,1.5,1.5), cex=0.7)
+
+title('Predictive densities for X=2')
+
+
+## Not run: 
+# -----------------------------------------------------------------
+# Example 3: Poisson (count) regression
+
+X  = matrix(rnorm(100*20),100,5)
+b  = c(0.5,-1,0,0,1)
+nu = X%*%b + 1
+y  = rpois(lambda=exp(nu),n=length(nu))
+
+df &lt;- data.frame(X,y)
+
+# Fit a Poisson regression
+rv.pois = bayesreg(y~.,data=df, model="poisson", prior="hs", burnin=1e4, n.samples=1e4)
+ 
+# Make a prediction for the first five rows
+# By default this predicts the log-rate (i.e., the linear predictor)
+predict(rv.pois,df[1:5,]) 
+
+# This is the response (i.e., conditional mean of y)
+exp(predict(rv.pois,df[1:5,])) 
+
+# Same as above ... compare to the actual targets
+cbind(exp(predict(rv.pois,df[1:5,])), y[1:5])
+
+# Slightly different as E[exp(x)]!=exp(E[x])
+predict(rv.pois,df[1:5,], type="response", bayes.avg=TRUE) 
+
+# 99% credible interval for response
+predict(rv.pois,df[1:5,], type="response", bayes.avg=TRUE, CI=99) 
+
+
+# -----------------------------------------------------------------
+# Example 4: Logistic regression on spambase
+data(spambase)
+ 
+# bayesreg expects binary targets to be factors
+spambase$is.spam &lt;- factor(spambase$is.spam)
+  
+# First take a subset of the data (1/10th) for training, reserve the rest for testing
+spambase.tr  = spambase[seq(1,nrow(spambase),10),]
+spambase.tst = spambase[-seq(1,nrow(spambase),10),]
+  
+# Fit a model using logistic horseshoe for 2,000 samples
+rv &lt;- bayesreg(is.spam ~ ., spambase.tr, model = "logistic", prior = "horseshoe", n.samples = 2e3)
+  
+# Summarise, sorting variables by their ranking importance
+rv.s &lt;- summary(rv,sort.rank=TRUE)
+
+# Make predictions about testing data -- get class predictions and class probabilities
+y_pred &lt;- predict(rv, spambase.tst, type='class')
+y_prob &lt;- predict(rv, spambase.tst, type='prob')
+
+# Check how well our predictions did by generating confusion matrix
+table(y_pred, spambase.tst$is.spam)
+
+# Calculate logarithmic loss on test data
+y_prob &lt;- predict(rv, spambase.tst, type='prob')
+cat('Neg Log-Like for no Bayes average, posterior mean estimates: ', sum(-log(y_prob[,1])), '\n')
+y_prob &lt;- predict(rv, spambase.tst, type='prob', sum.stat="median")
+cat('Neg Log-Like for no Bayes average, posterior median estimates: ', sum(-log(y_prob[,1])), '\n')
+y_prob &lt;- predict(rv, spambase.tst, type='prob', bayes.avg=TRUE)
+cat('Neg Log-Like for Bayes average: ', sum(-log(y_prob[,1])), '\n')
+
+## End(Not run)
+</code></pre>
+
+
+</div>

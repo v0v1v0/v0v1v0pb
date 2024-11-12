@@ -1,0 +1,400 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>fit_angmix</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Fitting Bivariate and univariate angular mixture models</h2>
+
+<h3>Description</h3>
+
+<p>Fitting Bivariate and univariate angular mixture models
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">fit_angmix(
+  model = "vmsin",
+  data,
+  ncomp,
+  cov.restrict = "NONE",
+  unimodal.component = FALSE,
+  start_par = NULL,
+  rand_start = rep(FALSE, n.chains),
+  method = "hmc",
+  perm_sampling = FALSE,
+  n.chains = 3,
+  chains_parallel = TRUE,
+  return_llik_contri = FALSE,
+  int.displ = 3,
+  epsilon = 0.1,
+  L = 10,
+  epsilon.random = TRUE,
+  L.random = FALSE,
+  burnin.prop = 0.5,
+  tune.prop = 1,
+  thin = 1,
+  propscale = 0.05,
+  n.iter = 500,
+  pmix.alpha = NULL,
+  norm.var = 1000,
+  autotune = TRUE,
+  show.progress = TRUE,
+  accpt.prob.upper,
+  accpt.prob.lower,
+  epsilon.incr = 0.05,
+  L.incr = 0.075,
+  tune.incr = 0.05,
+  tune_ave_size = 100,
+  kappa_upper = 150,
+  kappa_lower = 1e-04,
+  return_tune_param = FALSE,
+  qrnd = NULL,
+  n_qrnd = NULL,
+  ...
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>model</code></td>
+<td>
+<p>angular model whose mixtures are to be fitted. Available choices are <code>"vmsin", "vmcos"</code> and <code>"wnorm2"</code> for
+bivariate data, and <code>"vm"</code> and <code>"wnorm"</code> for univariate data.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+<p>data matrix (if bivarate, in which case it must have two columns) or vector. If outside, the values
+are transformed into the scale <code class="reqn">[0, 2\pi)</code>. *Note:* BAMBI cannot handle missing data. Missing values must
+either be removed or properly imputed.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ncomp</code></td>
+<td>
+<p>number of components in the mixture model. Must be a positive integer. vector values are not allowed.
+If <code>comp == 1</code>, a single component model is fitted.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>cov.restrict</code></td>
+<td>
+<p>Should there be any restriction on the covariance parameter for a bivariate model. Available choices are
+<code>"POSITIVE", "NEGATIVE", "ZERO"</code> and "NONE". Note that <code>"ZERO"</code> fits a mixture with product components. Defaults to
+<code>"NONE"</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>unimodal.component</code></td>
+<td>
+<p>logical. Should each component in the mixture model be unimodal? Only used if <code>model</code> is either <code>"vmsin"</code>
+or <code>"vmcos"</code>. Defaults to FALSE.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>start_par</code></td>
+<td>
+<p>list with elements <code>pmix</code> (ignored if <code>comp == 1</code>), together with <code>kappa1, kappa2, mu1</code> and <code>mu2</code>,
+for bivariate models, and <code>kappa</code> and <code>mu</code> for univariate models,
+all being vectors of length same as <code>ncomp</code>.
+These provides the starting values for the Markov chain; with <code class="reqn">j</code>-th component of each vector corresponding to the <code class="reqn">j</code>-th
+component of the mixture distribution. If missing, the data is first clustered into <code>ncomp</code> groups either via k-means (after
+projecting onto a unit sphere), or randomly, depending on <code>rand_start</code>,  and then moment estimators for components are used as
+the starting points. Note that a very wrong starting point can potentially lead the chain to get stuck at a wrong solution for thousands
+of iterations. As such, we recommend using the default option, which is k-means followed by moment estimation.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>rand_start</code></td>
+<td>
+<p>logical. Should a random starting clustering be used? Must be either a scalar, or a vector of length <code>ncomp</code>,
+one for each chain. Ignored if <code>start_par</code> is supplied. See <code>start_par</code> for more details. Defaults to <code>FALSE</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>method</code></td>
+<td>
+<p>MCMC strategy to be used for the model paramters:  <code>"hmc"</code> or <code>"rwmh"</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>perm_sampling</code></td>
+<td>
+<p>logical. Should the permutation sampling algorithm of Fruhwirth-Schnatter (2001) be used?
+If TRUE, at every iteration after burnin, once model parameters and mixing proportions are sampled,
+a random permutation of 1, ..., ncomp is considered, and components are relabelled according
+to this random permutation. This forced random label switchings may imporve the mixing rate of the chage. However, (automated) tuning
+is very difficult with such a scheme, as there is no simple way of keeping track of the "original" component labels. This creates problem
+with computing standard deviations of the generated model parameters, thus making the
+scaling step used in tuning for <code>epsilon</code> or <code>paramscale</code> problematic as well. As such, <code>perm_sampling</code> is always turned
+off during burn-in (even if <code>autotune = FALSE</code>), and turned on thereafter, if <code>TRUE</code>.
+Defaults to and is set to <code>FALSE</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>n.chains</code></td>
+<td>
+<p>number of chains to run. Must be a positive integer.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>chains_parallel</code></td>
+<td>
+<p>logical. Should the chains be run in parallel? Defaluts to TRUE, and ignored if <code>n.chains</code> = 1.
+Note that parallelization is implemented via future_lapply from package <code>future.apply</code> which
+uses futures for this purpose, and thus provides a convenient way of parallelization across various OSs and computing environments.
+However, a proper plan must be set for the parallization before running the chain. Otherwise the chains will run sequentially.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>return_llik_contri</code></td>
+<td>
+<p>logical. Should the log likelihood contribution of each data point for each MCMC iteration in each chain be returned? This makes
+computation of waic.angmcmc and loo.angmcmc much faster. *Warning*: Depending on the length of data and <code>n.iter</code>, this can be
+very memory intensive. We suggest setting <code>return_llik_contri = TRUE</code> only if waic.angmcmc and loo.angmcmc are aimed for. Defaults to
+<code>FALSE</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>int.displ</code></td>
+<td>
+<p>absolute integer displacement for each coordinate for <code>wnorm</code> and <code>wnorm2</code> models (ignored otherwise). Default is 3.
+Allowed minimum and maximum are 1 and 5 respectively.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>epsilon, L</code></td>
+<td>
+<p>tuning parameters for HMC; ignored if <code>method = "rwmh"</code>. <code>epsilon</code> (step-size) is a single number,
+or a vector of size <code>2*ncomp</code> for univariate models and <code>5*ncomp</code> for bivariate models. Note that the "mass matrix"
+in HMC is assumed to be identity. As such, <code>epsilon</code>'s corresponding to different model parameters need to be in proper scale for
+optimal acceptance rate. Can be autotuned during burnin. See <code>autotune</code>.
+<code>L</code> (leapfrog steps) is a positive integer or a vector of positive integers of length <code>n.chains</code>.
+If multiple chains are used, we suggest same <code>L</code> values acorss different chains to make the chains as homogenous as possible.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>epsilon.random</code></td>
+<td>
+<p>logical. Should <code>epsilon*delta</code>, where <code>delta</code> is a random
+number between <code>(1-epsilon.incr, 1+epsilon.incr)</code> be used instead of <code>epsilon</code> at each iteration?
+Ignored if <code>method = "rwmh"</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>L.random</code></td>
+<td>
+<p>logical. Should a random integer between <code>L.orig/exp(L.incr)</code> and <code>L.orig*exp(L.incr)</code>be used instead as <code>L</code>
+at each iteration? Ignored if <code>method = "rwmh"</code>. Defaults to <code>TRUE</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>burnin.prop</code></td>
+<td>
+<p>proportion of iterations to used for burnin. Must be a be a number in [0, 1].
+Default is 0.5.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>tune.prop</code></td>
+<td>
+<p>proportion of *<code>burnin</code>* used to tune the parameters (<code>epsilon</code> in HMC and
+<code>propscale</code> in RWMH). Must be a number between 0 and 1; defaults to 1.  Ignored if <code>autotune == FALSE</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>thin</code></td>
+<td>
+<p>thining size to be used. Must be a positive integer. If <code>thin = </code> n, then every nth iteration is reatained
+in the final MCMC sample.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>propscale</code></td>
+<td>
+<p>tuning parameters for RWMH; a vector of size 5 (for bivariate models) or 2 (for univariate models) representing
+the variances for the proposal normal densities
+for the model parameters. Ignored if <code>method = "hmc"</code>. Can be autotuned during burnin. See <code>autotune</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>n.iter</code></td>
+<td>
+<p>number of iterations for the Markov Chain.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>pmix.alpha</code></td>
+<td>
+<p>concentration parameter(s) for the Dirichlet prior for <code>pmix</code>. Must either be a positive real number, or a vector
+with positive entries and of length <code>ncomp</code>. The default is <code class="reqn">(r+r(r+1)/2)/2+3</code>, where <code class="reqn">r</code> is 1 or 2 according as whether
+the model is univariate or bivariate. Note that it is recommended to use larger <code>alpha</code> values to ensure the a good posterior behavior,
+especially when fit_incremental_angmix is used for model selection, which handles overfitting in "let two component-specific parameters be
+size, and then penalizes for model complexity. See Fruhwirth-Schnatter (2011) for more details on this.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>norm.var</code></td>
+<td>
+<p>variance (hyper-) parameters in the normal prior for <code>log(kappa), log(kappa1), log(kappa2)</code> and <code>kappa3</code>. (Prior mean is zero).
+Can be a vector. Default is 1000 that makes the prior non-informative.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>autotune</code></td>
+<td>
+<p>logical. Should the Markov chain auto-tune the parameter <code>epsilon</code> (in HMC) or
+<code>propscale</code> (in RWMH) during burn-in?  Set to <code>TRUE</code> by default. An adaptive tuning strategy is implemented.
+Here, at every 10th iteration during in burn-in, the acceptance ratio in the last <code>tune_ave_size</code>
+iterations is calculated. Then the tuning parameter is decreased  (increased) by a factor of
+<code>1-tune.incr</code> (<code>1+tune.incr</code>) if the calculated acceptance rate
+falls below (above) <code>accpt.prob.lower</code> (<code>accpt.prob.upper</code>). In addditon, when <code>iter</code> is a multiple of
+<code>tune_ave_size</code>, <code>epsilon</code> for each model parameter is rescaled via the standard deviation of
+the corresponding parameter over the past <code>tune_ave_size</code> iterations.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>show.progress</code></td>
+<td>
+<p>logical. Should a progress bar be displayed?</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>accpt.prob.lower, accpt.prob.upper</code></td>
+<td>
+<p>lower and upper limits of acceptance ratio to be maintained while tuning
+during burn-in. Must be numbers between 0 and 1, which <code>accpt.prob.lower &lt; accpt.prob.upper</code>. See <code>autotune</code>. Default to (0.6, 0,9) for HMC and  (0.3, 0.5) for RWMH.
+Ignored if <code>autotune = FALSE</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>epsilon.incr</code></td>
+<td>
+<p>amount of randomness incorporated in <code>epsilon</code> if <code>epsilon.random = TRUE</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>L.incr</code></td>
+<td>
+<p>amount of randomness incorporated in L if <code>L.random = TRUE</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>tune.incr</code></td>
+<td>
+<p>how much should the tuning parameter be increased or decreased at each step while tuning during burn-in?
+Must be a number between 0 and 1. See <code>autotune</code>. Defaults to 0.05. Ignored if <code>autotune = FALSE</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>tune_ave_size</code></td>
+<td>
+<p>number previous iterations used to compute the acceptance rate while tuning in burn-in. Must be a positive
+integer. Defaults to 100.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>kappa_upper, kappa_lower</code></td>
+<td>
+<p>upper and lower bounds for the concentration and (absolute) association parameters. Must be a positive integers. Defaults to 150 and 1e-4,
+and parameter with value above or below these limits rarely make sense in practice.
+Warning: values much larger or smaller than the default are not recommended as they can cause numerical instability.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>return_tune_param</code></td>
+<td>
+<p>logical. Should the values of the tuning parameters used at each iteration in each chain be returned? Defaults to <code>FALSE</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>qrnd, n_qrnd</code></td>
+<td>
+<p>Used only if <code>method="vmcos"</code>. See dvmcos for details.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Unused.</p>
+</td>
+</tr>
+</table>
+<h3>Note</h3>
+
+<p>Sampling is done in log scale for the concentration parameters (kappa, kappa1 and kappa2).
+</p>
+<p>Parallelization is done by default when more than one chain is used,
+but the chains can be run sequentially as well by setting
+<code>chains_parallel = FALSE</code>. To retain reproducibility while running
+multiple chains in parallel, the same RNG state is passed at the
+beginning of each chain. This is done by specifying <code>future.seed = TRUE</code>
+in <code>future.apply::future_lapply</code> call. Then at the beginning of the i-th
+chain, before drawing any parameters, i-many Uniform(0, 1) random numbers are
+generated using <code>runif(i)</code> (and then thrown away). This ensures that the
+RNG states across chains prior to random generation of the parameters are
+different, and hence, no two chains can become identical, even if they have
+the same starting and tuning parameters. This, however creates a difference
+between a <code>fit_angmix</code> call with multiple chains which is run sequentially
+by setting <code>chains_parallel = FALSE</code>, and another which is run sequentially
+because of a sequential <code>plan()</code> (or no <code>plan()</code>), with
+<code>chains_parallel = TRUE</code>. In the former, different RNG states are passed at
+the initiation of each chain.
+</p>
+
+
+<h3>References</h3>
+
+<p>Fruhwirth-Schnatter, S. (2011). Label switching under model uncertainty. Mixtures: Estimation and Application, 213-239.
+</p>
+<p>Fruhwirth-Schnatter, S. (2001). Markov chain Monte Carlo estimation of classical and dynamic switching and mixture models. Journal of the American Statistical Association, 96(453), 194-209.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R"># illustration only - more iterations needed for convergence
+fit.vmsin.20 &lt;- fit_angmix("vmsin", tim8,
+  ncomp = 3, n.iter = 20,
+  n.chains = 1
+)
+fit.vmsin.20
+
+
+# Parallelization is implemented via future_lapply from the
+# package future.apply. To parallelize, first provide a parallel
+# plan(); otherwise the chains will run sequentially.
+# Note that not all plan() might work on every OS, as they execute
+# functions defined internally in fit_mixmodel. We suggest
+# plan(multisession) which works on every OS.
+
+library(future)
+library(parallel)
+# plan(multisession, gc = TRUE) # parallelize chains
+
+set.seed(1)
+MC.fit &lt;- fit_angmix("vmsin", tim8,
+  ncomp = 3, n.iter = 5000,
+  n.chains = 3
+)
+
+
+pointest(MC.fit)
+
+MC.fix &lt;- fix_label(MC.fit)
+
+contour(MC.fit)
+contour(MC.fix)
+lpdtrace(MC.fit)
+
+
+</code></pre>
+
+
+</div>

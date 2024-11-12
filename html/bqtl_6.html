@@ -1,0 +1,142 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>bqtl</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2> Bayesian QTL Model Fitting </h2>
+
+<h3>Description</h3>
+
+<p>Find maximum likelihood estimate(s) or posterior mode(s) for QTL
+model(s). Use Laplace approximation to determine the posterior mass
+associated with the model(s). 
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">
+bqtl(reg.formula, ana.obj, scope = ana.obj$reg.names, expand.specials = NULL, ...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>reg.formula</code></td>
+<td>
+<p>A formula.object like <code> y ~ add.PVV4 *
+     add.H15C12 </code>.  The names of the independent
+variables on the right hand side of the formula are the names of loci
+or the names of additive and dominance terms associated with loci.  In
+addition, one can use <code>locus</code> or <code>configs</code> terms to specify
+one or a collection of terms in a shorthand notation.  See <code>
+     locus</code> for more details.  The left hand side is the name
+of a trait variable stored in the search path, as a column of the
+data frame <code>data</code>, or <code>y</code> if the phenotype variable in
+<code> ana.obj</code> is used. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ana.obj</code></td>
+<td>
+<p> The result of <code> make.analysis.obj </code>. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>scope</code></td>
+<td>
+<p>passed to <code>lapadj</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>expand.specials</code></td>
+<td>
+<p>passed to <code>lapadj</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p> Arguments to pass to <code>lapadj</code>, e.g. <code>rparm</code> and
+<code>return.hess</code></p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>This function is a wrapper for <code>lapadj</code>. It does a lot
+of useful packaging through the <code> configs </code> terms. If there
+is no <code>configs</code> term, then the result is simply the output of
+<code> lapadj</code> with the <code>call</code> attribute replaced by the
+call to <code>bqtl</code>  
+</p>
+
+
+<h3>Value</h3>
+
+<p>The result(s) of calling <code> lapadj</code>.
+If <code>configs</code> is used in the <code>reg.formula</code>, then the
+result is a list with one element for each formula. Each element is the
+value returned by <code>lapadj</code>
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Charles C. Berry <a href="mailto:cberry@ucsd.edu">cberry@ucsd.edu</a> </p>
+
+
+<h3>References</h3>
+
+<p>Tierney L. and Kadane J.B. (1986) Accurate Approximations for Posterior Moments
+and Marginal Densities. <em>JASA</em>, <b>81</b>,82–86. 
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>locus</code>, <code>configs</code>, <code>lapadj</code> </p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+data(little.ana.bc )                        # load  BC1 dataset
+
+loglik( bqtl( bc.phenotype ~ 1, little.ana.bc ) ) #null loglikelihood
+                                                  #on chr 1 near cM 25
+loglik(bqtl(bc.phenotype~locus(chromo=1,cM=25),little.ana.bc))
+
+little.bqtl &lt;-                              # two genes with epistasis
+   bqtl(bc.phenotype ~ m.12 * m.24, little.ana.bc)
+summary(little.bqtl)
+
+several.epi &lt;-                              # 20 epistatic models
+    bqtl( bc.phenotype ~ m.12 * locus(31:50), little.ana.bc)
+several.main &lt;-                             # main effects only
+    bqtl( bc.phenotype ~ m.12 + locus(31:50), little.ana.bc)
+
+max.loglik &lt;- max( loglik(several.epi) - loglik(several.main) )
+
+round(
+     c( Chi.Square=2*max.loglik, df=1, p.value=1-pchisq(2*max.loglik,1))
+      ,2)
+
+five.gene &lt;-                                 ## a five gene model
+  bqtl( bc.phenotype ~ locus( 12, 32, 44, 22, 76 ), little.ana.bc , return.hess=TRUE )
+
+regr.coef.table &lt;- summary(five.gene)$coefficients
+
+round( regr.coef.table[,"Value"] +  # coefs inside 95% CI
+          qnorm(0.025) * regr.coef.table[,"Std.Err"] %o%
+            c("Lower CI"=1,"Estimate"=0,"Upper CI"=-1),3)
+
+
+
+</code></pre>
+
+
+</div>

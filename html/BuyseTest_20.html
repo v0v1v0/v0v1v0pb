@@ -1,0 +1,504 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>BuyseTest</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Two-group GPC</h2>
+
+<h3>Description</h3>
+
+<p>Performs Generalized Pairwise Comparisons (GPC) between two groups.
+Can handle one or several binary, continuous and time-to-event endpoints.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">BuyseTest(
+  formula,
+  data,
+  scoring.rule = NULL,
+  pool.strata = NULL,
+  correction.uninf = NULL,
+  model.tte = NULL,
+  method.inference = NULL,
+  n.resampling = NULL,
+  strata.resampling = NULL,
+  hierarchical = NULL,
+  weightEndpoint = NULL,
+  weightObs = NULL,
+  neutral.as.uninf = NULL,
+  add.halfNeutral = NULL,
+  keep.pairScore = NULL,
+  seed = NULL,
+  cpus = NULL,
+  trace = NULL,
+  treatment = NULL,
+  endpoint = NULL,
+  type = NULL,
+  threshold = NULL,
+  status = NULL,
+  operator = NULL,
+  censoring = NULL,
+  restriction = NULL,
+  strata = NULL
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>formula</code></td>
+<td>
+<p>[formula] a symbolic description of the GPC model,
+typically <code>treatment ~ type1(endpoint1) + type2(endpoint2, threshold2) + strata</code>.
+See Details, section "Specification of the GPC model".</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+<p>[data.frame] dataset.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>scoring.rule</code></td>
+<td>
+<p>[character] method used to compare the observations of a pair in presence of right censoring (i.e. <code>"timeToEvent"</code> endpoints).
+Can be <code>"Gehan"</code> or <code>"Peron"</code>.
+See Details, section "Handling missing values".</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>pool.strata</code></td>
+<td>
+<p>[character] weights used to combine estimates across strata. Can be
+<code>"Buyse"</code> to weight proportionally to the number of pairs in the strata,
+<code>"CMH"</code> to weight proportionally to the ratio between the number of pairs in the strata and the number of observations in the strata.
+<code>"equal"</code> to weight equally each strata,
+or <code>"var-netBenefit"</code> to weight each strata proportionally to the precision of its estimated net benefit (similar syntax for the win ratio: <code>"var-winRatio"</code>)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>correction.uninf</code></td>
+<td>
+<p>[integer] should a correction be applied to remove the bias due to the presence of uninformative pairs?
+0 indicates no correction, 1 impute the average score of the informative pairs, and 2 performs IPCW.
+See Details, section "Handling missing values".</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>model.tte</code></td>
+<td>
+<p>[list] optional survival models relative to each time to each time to event endpoint.
+Models must <code>prodlim</code> objects and stratified on the treatment and strata variable. When used, the uncertainty from the estimates of these survival models is ignored.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>method.inference</code></td>
+<td>
+<p>[character] method used to compute confidence intervals and p-values.
+Can be <code>"none"</code>, <code>"u-statistic"</code>, <code>"permutation"</code>, <code>"studentized permutation"</code>, <code>"bootstrap"</code>, <code>"studentized bootstrap"</code>, <code>"varExact permutation"</code>.
+See Details, section "Statistical inference".</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>n.resampling</code></td>
+<td>
+<p>[integer] the number of permutations/samples used for computing the confidence intervals and the p.values. 
+See Details, section "Statistical inference".</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>strata.resampling</code></td>
+<td>
+<p>[character] the variable on which the permutation/sampling should be stratified. 
+See Details, section "Statistical inference".</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>hierarchical</code></td>
+<td>
+<p>[logical] should only the uninformative pairs be analyzed at the lower priority endpoints (hierarchical GPC)?
+Otherwise all pairs will be compaired for all endpoint (full GPC).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>weightEndpoint</code></td>
+<td>
+<p>[numeric vector] weights used to cumulating the pairwise scores over the endpoints.
+Only used when <code>hierarchical=FALSE</code>. Disregarded if the argument <code>formula</code> is defined.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>weightObs</code></td>
+<td>
+<p>[character or numeric vector] weights or variable in the dataset containing the weight associated to each observation.
+These weights are only considered when performing GPC (but not when fitting surival models).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>neutral.as.uninf</code></td>
+<td>
+<p>[logical vector] should paired classified as neutral be re-analyzed using endpoints of lower priority (as it is done for uninformative pairs).
+See Details, section "Handling missing values".</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>add.halfNeutral</code></td>
+<td>
+<p>[logical] should half of the neutral score be added to the favorable and unfavorable scores?</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>keep.pairScore</code></td>
+<td>
+<p>[logical] should the result of each pairwise comparison be kept?</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>seed</code></td>
+<td>
+<p>[integer, &gt;0] Random number generator (RNG) state used when starting resampling.
+If <code>NULL</code> no state is set.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>cpus</code></td>
+<td>
+<p>[integer, &gt;0] the number of CPU to use.
+Only the permutation test can use parallel computation.
+See Details, section "Statistical inference".</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>trace</code></td>
+<td>
+<p>[integer] should the execution of the function be traced ? <code>0</code> remains silent
+and <code>1</code>-<code>3</code> correspond to a more and more verbose output in the console.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>treatment, endpoint, type, threshold, status, operator, censoring, restriction, strata</code></td>
+<td>
+<p>Alternative to <code>formula</code> for describing the GPC model.
+See Details, section "Specification of the GPC model".</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p><b>Specification of the GPC model</b> <br>
+There are two way to specify the GPC model in <code>BuyseTest</code>.
+A <em>Formula interface</em> via the argument <code>formula</code> where the response variable should be a binary variable defining the treatment arms. 
+The rest of the formula should indicate the endpoints by order of priority and the strata variables (if any).
+A <em>Vector interface</em> using  the following arguments </p>
+
+<ul>
+<li> <p><code>treatment</code>: [character] name of the treatment variable identifying the control and the experimental group.
+Must have only two levels (e.g. <code>0</code> and <code>1</code>).
+</p>
+</li>
+<li> <p><code>endpoint</code>: [character vector] the name of the endpoint variable(s).
+</p>
+</li>
+<li> <p><code>threshold</code>: [numeric vector] critical values used to compare the pairs (threshold of minimal important difference).
+A pair will be classified as neutral if the difference in endpoint is strictly below this threshold.
+There must be one threshold for each endpoint variable; it must be <code>NA</code> for binary endpoints and positive for continuous or time to event endpoints. 
+</p>
+</li>
+<li> <p><code>status</code>: [character vector] the name of the binary variable(s) indicating whether the endpoint was observed or censored.
+Must value <code>NA</code> when the endpoint is not a time to event.
+</p>
+</li>
+<li> <p><code>operator</code>: [character vector] the sign defining a favorable endpoint.
+<code>"&gt;0"</code> indicates that higher values are favorable while "&lt;0" indicates the opposite.
+</p>
+</li>
+<li> <p><code>type</code>: [character vector] indicates whether it is
+a binary outcome  (<code>"b"</code>, <code>"bin"</code>, or <code>"binary"</code>),
+a continuous outcome  (<code>"c"</code>, <code>"cont"</code>, or <code>"continuous"</code>),
+or a time to event outcome  (<code>"t"</code>, <code>"tte"</code>, <code>"time"</code>, or <code>"timetoevent"</code>)
+</p>
+</li>
+<li> <p><code>censoring</code>: [character vector] is the endpoint subject to right or left censoring (<code>"left"</code> or <code>"right"</code>). The default is right-censoring.
+</p>
+</li>
+<li> <p><code>restriction</code>: [numeric vector] value above which any difference is classified as neutral.
+</p>
+</li>
+<li> <p><code>strata</code>: [character vector] if not <code>NULL</code>, the GPC will be applied within each group of patient defined by the strata variable(s).
+</p>
+</li>
+</ul>
+<p>The formula interface can be more concise, especially when considering few outcomes, but may be more difficult to apprehend for new users.
+Note that arguments <code>endpoint</code>, <code>threshold</code>, <code>status</code>, <code>operator</code>,  <code>type</code>, and <code>censoring</code> must have the same length. <br><br><br></p>
+<p><b>GPC procedure</b> <br>
+The GPC procedure form all pairs of observations, one belonging to the experimental group and the other to the control group, and class them in 4 categories: </p>
+
+<ul>
+<li> <p><em>Favorable pair</em>: the endpoint is better for the observation in the experimental group.
+</p>
+</li>
+<li> <p><em>Unfavorable pair</em>: the endpoint is better for the observation in the control group.
+</p>
+</li>
+<li> <p><em>Neutral pair</em>: the difference between the endpoints of the two observations is (in absolute value) below the threshold. When <code>threshold=0</code>, neutral pairs correspond to pairs with equal endpoint. Lower-priority outcomes (if any) are then used to classified the pair into favorable/unfavorable.
+</p>
+</li>
+<li> <p><em>Uninformative pair</em>: censoring/missingness prevents from classifying into favorable, unfavorable or neutral.
+</p>
+</li>
+</ul>
+<p>With complete data, pairs can be decidely classified as favorable/unfavorable/neutral.
+In presence of missing values, the GPC procedure uses the scoring rule (argument <code>scoring.rule</code>) and the correction for uninformative pairs (argument <code>correction.uninf</code>) to classify the pairs.
+The classification may not be 0,1, e.g. the probability that the pair is favorable/unfavorable/neutral with the Peron's scoring rule.
+To export the classification of each pair set the argument <code>keep.pairScore</code> to <code>TRUE</code> and call the function <code>getPairScore</code> on the result of the <code>BuyseTest</code> function. <br><br><br></p>
+<p><b>Handling missing values</b>
+</p>
+
+<ul>
+<li> <p><code>scoring.rule</code>: indicates how to handle right-censoring in time to event endpoints using information from the survival curves.
+The Gehan's scoring rule (argument <code>scoring.rule="Gehan"</code>) only scores pairs that can be decidedly classified as favorable, unfavorable, or neutral
+while the "Peron"'s scoring rule (argument <code>scoring.rule="Peron"</code>) uses the empirical survival curves of each group to also score the pairs that cannot be decidedly classified.
+The Peron's scoring rule is the recommanded scoring rule but only handles right-censoring. 
+</p>
+</li>
+<li> <p><code>correction.uninf</code>: indicates how to handle missing values that could not be classified by the scoring rule.  </p>
+
+<dl>
+<dt><code>correction.uninf=0</code></dt>
+<dd>
+<p> treat them as uninformative: this is an equivalent to complete case analysis when <code>neutral.as.uninf=FALSE</code>, while when <code>neutral.as.uninf=TRUE</code>, uninformative pairs are treated as neutral, i.e., analyzed at the following endpoint (if any). This approach will (generally) lead to biased estimates for the proportion of favorable, unfavorable, or neutral pairs.</p>
+</dd>
+<dt><code>correction.uninf=1</code></dt>
+<dd>
+<p> imputes to the uninformative pairs the average score of the informative pairs, i.e. assumes that uninformative pairs would on average behave like informative pairs. This is therefore the recommanded approach when this assumption is resonnable, typically when the the tail of the survival function estimated by the Kaplan–Meier method is close to 0.</p>
+</dd>
+<dt><code>correction.uninf=2</code></dt>
+<dd>
+<p> uses inverse probability of censoring weights (IPCW), i.e. up-weight informative pairs to represent uninformative pairs. It also assumes that uninformative pairs would on average behave like informative pairs and is only recommanded when the analysis is stopped after the first endpoint with uninformative pairs.</p>
+</dd>
+</dl>
+<p>Note that both corrections will convert the whole proportion of uninformative pairs of a given endpoint into favorable, unfavorable, or neutral pairs. See Peron et al (2021) for further details and recommandations <br><br></p>
+</li>
+</ul>
+<p><b>Statistical inference</b> <br>
+The argument <code>method.inference</code> defines how to approximate the distribution of the GPC estimators and so how standard errors, confidence intervals, and p-values are computed.
+Available methods are:
+</p>
+
+<ul>
+<li>
+<p> argument <code>method.inference="none"</code>: only the point estimate is computed which makes the execution of the <code>BuyseTest</code> faster than with the other methods.
+</p>
+</li>
+<li>
+<p> argument <code>method.inference="u-statistic"</code>: compute the variance of the estimate using a H-projection of order 1 (default option) or 2 (see <code>BuyseTest.options</code>). The first order is downward biased but consistent. When considering the Gehan scoring rule, no transformation nor correction, the second order is unbiased and equivalent to the variance of the bootstrap distribution. P-values and confidence intervals are then evaluated assuming that the estimates follow a Gaussian distribution.
+<b>WARNING</b>: the current implementation of the H-projection is not valid when using corrections for uninformative pairs (<code>correction.uninf=1</code>, or <code>correction.uninf=2</code>).
+</p>
+</li>
+<li>
+<p> argument <code>method.inference="permutation"</code>: perform a permutation test, estimating in each sample the summary statistics (net benefit, win ratio).
+</p>
+</li>
+<li>
+<p> argument <code>method.inference="studentized permutation"</code>: perform a permutation test, estimating in each sample the summary statistics (net benefit, win ratio) and the variance-covariance matrix of the estimate.
+</p>
+</li>
+<li>
+<p> argument <code>method.inference="varExact permutation"</code>: compute the variance of the permutation distribution using a closed-form formula (Anderson and Verbeeck 2023). P-values and confidence intervals are then evaluated assuming that the estimates follow a Gaussian distribution.
+<b>WARNING</b>: the current implementation of the variance estimator for the permutation distribution is not valid when using the Peron scoring rule or corrections for uninformative pairs.
+</p>
+</li>
+<li>
+<p> argument <code>method.inference="bootstrap"</code>: perform a non-parametric boostrap, estimating in each sample the summary statistics (net benefit, win ratio).
+</p>
+</li>
+<li>
+<p> argument <code>method.inference="studentized bootstrap"</code>: perform a non-parametric boostrap, estimating in each sample the summary statistics (net benefit, win ratio) and the variance-covariance matrix of the estimator.
+</p>
+</li>
+</ul>
+<p>Additional arguments for permutation and bootstrap resampling:
+</p>
+
+<ul>
+<li> <p><code>strata.resampling</code> If <code>NA</code> or of length 0, the permutation/non-parametric boostrap will be performed by resampling in the whole sample.
+Otherwise, the permutation/non-parametric boostrap will be performed separately for each level that the variable defined in <code>strata.resampling</code> take.
+</p>
+</li>
+<li> <p><code>n.resampling</code> set the number of permutations/samples used.
+A large number of permutations (e.g. <code>n.resampling=10000</code>) are needed to obtain accurate CI and p.value. See (Buyse et al., 2010) for more details.
+</p>
+</li>
+<li> <p><code>seed</code>: the seed is used to generate one seed per sample. These seeds are the same whether one or several CPUs are used.
+</p>
+</li>
+<li> <p><code>cpus</code> indicates whether the resampling procedure can be splitted on several cpus to save time. Can be set to <code>"all"</code> to use all available cpus.
+The detection of the number of cpus relies on the <code>detectCores</code> function from the <em>parallel</em> package. <br><br></p>
+</li>
+</ul>
+<p><b>Pooling results across strata</b> <br> Consider <code class="reqn">K</code> strata and denote by <code class="reqn">m_k</code> and <code class="reqn">n_k</code> the sample size in the control and active arm (respectively) for strata <code class="reqn">k</code>. Let <code class="reqn">\sigma_k</code> be the standard error of the strata-specific summary statistic (e.g. net benefit). The strata specific weights, <code class="reqn">w_k</code>, are given by:
+</p>
+
+<ul>
+<li> <p><code>"CMH"</code>: <code class="reqn">w_k=\frac{\frac{m_k \times n_k}{m_k + n_k}}{\sum_{l=1}^K \frac{m_l \times n_l}{m_l + n_l}}</code>. Optimal if the if the odds ratios are constant across strata.
+</p>
+</li>
+<li> <p><code>"equal"</code>:  <code class="reqn">w_k=\frac{1}{K}</code>
+</p>
+</li>
+<li> <p><code>"Buyse"</code>:  <code class="reqn">w_k=\frac{m_k \times n_k}{\sum_{l=1}^K m_l \times n_l}</code>. Optimal if the risk difference is constant across strata
+</p>
+</li>
+<li> <p><code>"var-*"</code> (e.g. <code>"var-netBenefit"</code>): . <code class="reqn">w_k=\frac{1/\sigma^2_k}{\sum_{l=1}^K 1/\sigma^2_k}</code>
+</p>
+</li>
+</ul>
+<p>Only when using <code>"var-winRatio"</code>, the pooled Win Ratio is computed by pooling the strata-specific win-ratios. Otherwise the pooled Win Ratio is obtained by dividing the pooled number of favorable pairs divided by the pooled number of unfavorable pairs, possibly adding half the pooled neutral pairs, according to formula (1) in Dong et al. (2018). <br><br></p>
+<p><b>Default values</b> <br>
+The default of the arguments
+<code>scoring.rule</code>, <code>correction.uninf</code>, <code>method.inference</code>, <code>n.resampling</code>,
+<code>hierarchical</code>, <code>neutral.as.uninf</code>, <code>keep.pairScore</code>, <code>strata.resampling</code>,
+<code>cpus</code>, <code>trace</code> is read from <code>BuyseTest.options()</code>. <br>
+Additional (hidden) arguments are </p>
+
+<ul>
+<li> <p><code>alternative</code> [character] the alternative hypothesis. Must be one of "two.sided", "greater" or "less" (used by <code>confint</code>).
+</p>
+</li>
+<li> <p><code>conf.level</code> [numeric] level for the confidence intervals (used by <code>confint</code>).
+</p>
+</li>
+<li> <p><code>keep.survival</code> [logical] export the survival values used by the Peron's scoring rule.
+</p>
+</li>
+<li> <p><code>order.Hprojection</code> [1 or 2] the order of the H-projection used to compute the variance when <code>method.inference="u-statistic"</code>. 
+</p>
+</li>
+</ul>
+<h3>Value</h3>
+
+<p>An <span style="font-family: Courier New, Courier; color: #666666;"><b>R</b></span> object of class <code>S4BuyseTest</code>.
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Brice Ozenne
+</p>
+
+
+<h3>References</h3>
+
+<p>On the GPC procedure: Marc Buyse (2010). <b>Generalized pairwise comparisons of prioritized endpoints in the two-sample problem</b>. <em>Statistics in Medicine</em> 29:3245-3257 <br>
+On the win ratio: D. Wang, S. Pocock (2016). <b>A win ratio approach to comparing continuous non-normal outcomes in clinical trials</b>. <em>Pharmaceutical Statistics</em> 15:238-245 <br>
+On the stratified win ratio: G. Dong et al. (2018). <b>The stratified win ratio</b>. <em>Journal of biopharmaceutical statistics</em>. 28(4):778-796 <br>
+On the Peron's scoring rule: J. Peron, M. Buyse, B. Ozenne, L. Roche and P. Roy (2018). <b>An exten sion of generalized pairwise comparisons for prioritized outcomes in the presence of censoring</b>. <em>Statistical Methods in Medical Research</em> 27: 1230-1239. <br>
+On the Gehan's scoring rule: Gehan EA (1965). <b>A generalized two-sample Wilcoxon test for doubly censored data</b>. <em>Biometrika</em>  52(3):650-653 <br>
+On inference in GPC using the U-statistic theory: Ozenne B, Budtz-Jorgensen E, Peron J (2021). <b>The asymptotic distribution of the Net Benefit estimator in presence of right-censoring</b>. <em>Statistical Methods in Medical Research</em> 2021 doi:10.1177/09622802211037067 <br>
+On how to handle right-censoring: J. Peron, M. Idlhaj, D. Maucort-Boulch, et al. (2021) <b>Correcting the bias of the net benefit estimator due to right-censored observations</b>. <em>Biometrical Journal</em> 63: 893–906. 
+On how using a restriction time: Piffoux M, Ozenne B, De Backer M, Buyse M, Chiem JC, Péron J (2024). <b>Restricted Net Treatment Benefit in oncology</b>. <em>Journal of Clinical Epidemiology</em>. Jun;170:111340. <br>
+On closed-form formula for permutation variance:  W.N. Anderson and J. Verbeeck (2023). <b>Exact Permutation and Bootstrap Distribution of Generalized Pairwise Comparisons Statistics</b>. <em>Mathematics</em> , 11, 1502. doi:10.3390/math11061502.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>S4BuyseTest-summary</code> for a summary of the results of generalized pairwise comparison. <br><code>S4BuyseTest-confint</code> for exporting estimates with confidence intervals and p-values. <br><code>S4BuyseTest-model.tables</code> for exporting the number or percentage of favorable/unfavorable/neutral/uninformative pairs. <br><code>S4BuyseTest-sensitivity</code> for performing a sensitivity analysis on the choice of the threshold(s). <br><code>S4BuyseTest-plot</code> for graphical display of the pairs across endpoints. <br><code>S4BuyseTest-getIid</code> for exporting the first order H-decomposition. <br><code>S4BuyseTest-getPairScore</code> for exporting the scoring of each pair.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">library(data.table)
+
+#### simulate some data ####
+set.seed(10)
+df.data &lt;- simBuyseTest(1e2, n.strata = 2)
+
+## display 
+if(require(prodlim)){
+   resKM_tempo &lt;- prodlim(Hist(eventtime,status)~treatment, data = df.data)
+   plot(resKM_tempo)
+}
+
+#### one time to event endpoint ####
+BT &lt;- BuyseTest(treatment ~ TTE(eventtime, status = status), data= df.data)
+
+summary(BT) ## net benefit
+model.tables(BT) ## export the table at the end of summary
+summary(BT, percentage = FALSE)  
+summary(BT, statistic = "winRatio") ## win Ratio
+
+## permutation instead of asymptotics to compute the p-value
+## Not run: 
+    BTperm &lt;- BuyseTest(treatment ~ TTE(eventtime, status = status), data=df.data,
+                    method.inference = "permutation", n.resampling = 1e3)
+
+## End(Not run)
+
+summary(BTperm)
+summary(BTperm, statistic = "winRatio") 
+
+## same with parallel calculations
+## Not run: 
+    BTperm &lt;- BuyseTest(treatment ~ TTE(eventtime, status = status), data=df.data,
+                    method.inference = "permutation", n.resampling = 1e3, cpus = 8)
+    summary(BTperm)
+
+## End(Not run)
+
+## method Gehan is much faster but does not optimally handle censored observations
+BT &lt;- BuyseTest(treatment ~ TTE(eventtime, status = status), data=df.data,
+                scoring.rule = "Gehan", trace = 0)
+summary(BT)
+
+#### one time to event endpoint: only differences in survival over 1 unit ####
+BT &lt;- BuyseTest(treatment ~ TTE(eventtime, threshold = 1, status = status), data=df.data)
+summary(BT)
+
+#### one time to event endpoint with a strata variable
+BTS &lt;- BuyseTest(treatment ~ strata + TTE(eventtime, status = status), data=df.data)
+summary(BTS)
+
+#### several endpoints with a strata variable
+ff &lt;- treatment ~ strata + T(eventtime, status, 1) + B(toxicity) 
+ff &lt;- update(ff, 
+            ~. + T(eventtime, status, 0.5) + C(score, 1) + T(eventtime, status, 0.25))
+
+BTM &lt;- BuyseTest(ff, data=df.data)
+summary(BTM)
+plot(BTM)
+
+#### real example : veteran dataset of the survival package ####
+## Only one endpoint. Type = Time-to-event. Thresold = 0. Stratfication by histological subtype
+## scoring.rule = "Gehan"
+
+if(require(survival)){
+## Not run: 
+  data(cancer, package = "survival") ## import veteran
+ 
+  ## scoring.rule = "Gehan"
+  BT_Gehan &lt;- BuyseTest(trt ~ celltype + TTE(time,threshold=0,status=status), 
+                        data=veteran, scoring.rule="Gehan")
+  
+  summary_Gehan &lt;- summary(BT_Gehan)
+  summary_Gehan &lt;- summary(BT_Gehan, statistic = "winRatio")
+  
+  ## scoring.rule = "Peron"
+  BT_Peron &lt;- BuyseTest(trt ~ celltype + TTE(time,threshold=0,status=status), 
+                        data=veteran, scoring.rule="Peron")
+
+  summary(BT_Peron)
+
+## End(Not run)
+}
+</code></pre>
+
+
+</div>

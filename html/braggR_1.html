@@ -1,0 +1,157 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>sample_aggregator</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Revealed Aggregator</h2>
+
+<h3>Description</h3>
+
+<p>This function allows the user to compute the revealed aggregator from <em>Satopää, V.A. (2021):
+Regularized Aggregation of One-off Probability Predictions</em>.
+The current version of the paper is available at <a href="https://papers.ssrn.com/sol3/papers.cfm?abstract_id=3769945">https://papers.ssrn.com/sol3/papers.cfm?abstract_id=3769945</a>.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">sample_aggregator(
+  p,
+  p0 = NULL,
+  alpha = NULL,
+  beta = NULL,
+  a = 1/2,
+  b = 1/2,
+  num_sample = 1e+06,
+  burnin = num_sample/2,
+  thin = 1,
+  seed = 1
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>p</code></td>
+<td>
+<p>Vector of <code class="reqn">K \ge 2</code> forecasters' probability estimates of a future binary event.
+These values represent probability predictions and must be strictly between 0 and 1.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>p0</code></td>
+<td>
+<p>The forecasters' common prior. This represents a probability prediction based 
+on some of the forecasters' common evidence and must be strictly between 0 and 1.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>alpha, beta</code></td>
+<td>
+<p>The shape and scale parameters of the prior beta distribution of the common prior.
+If omitted, the sampler uses the fixed common prior given by <code>p0</code>.
+However, if <code>alpha</code> and <code>beta</code> are provided, they must be strictly positive.
+In this case, the common prior <code>p0</code> will be treated as a random variable and sampled along with the other model parameters.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>a, b</code></td>
+<td>
+<p>The parameters for the prior distribution of <code class="reqn">(\rho, \gamma, \delta)</code> in  <em>Satopää, V.A. (2021)</em>.
+The default choice <code>a = 1/2</code> and <code>b = 1/2</code> gives the Jeffreys' independence prior.
+If <code class="reqn">p_0</code> is not equal to <code class="reqn">0.5</code>, then <code>a = 1</code> and <code>b = 1/2</code> give the Jeffreys' prior.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>num_sample</code></td>
+<td>
+<p>The number of posterior samples to be drawn.
+This does not take into account burnin and thinning.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>burnin</code></td>
+<td>
+<p>The number of the initial <code>num_sample</code> posterior draws that are discarded for burnin.
+This value cannot exceed <code>num_sample</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>thin</code></td>
+<td>
+<p>After <code>burnin</code> draws have been discarded, the final sample is formed by keeping every <code>thin</code>'th value.
+To ensure that the final sample holds at least two draws, <code>thin</code> can be at most <code>(num_sample-burnin)/2</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>seed</code></td>
+<td>
+<p>The seed value for random value generation.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>A data frame with rows representing posterior draws of <code class="reqn">(p*, \rho, \gamma, \delta, p0)</code>. The columns are:
+</p>
+
+<ul>
+<li>
+<p><code>aggregate</code>: The posterior samples of the oracle aggregator <code class="reqn">p*</code>.
+The average of these values gives the revealed aggregator <code class="reqn">p''</code>.
+The 95% interval of these values gives the 95% credible interval of the oracle aggregator.
+</p>
+</li>
+<li>
+<p><code>rho</code>: The posterior samples of the forecasters' shared evidence, <code class="reqn">\rho</code>.
+</p>
+</li>
+<li>
+<p><code>gamma</code>: The posterior samples of the forecasters' total evidence, <code class="reqn">\gamma</code>.
+The difference <code>gamma</code>-<code>rho</code> gives the posterior samples of
+the forecasters' rational disagreement.
+</p>
+</li>
+<li>
+<p><code>delta</code>: The posterior samples of the forecasters' total evidence plus noise, <code class="reqn">\delta</code>.
+The difference <code>delta</code>-<code>gamma</code> gives the posterior samples of
+the forecasters' irrational disagreement.
+</p>
+</li>
+<li>
+<p><code>p0</code>: The posterior samples of the forecasters' common prior.
+If a beta prior distribution is not specified via the arguments <code>alpha</code> and <code>beta</code>,
+then all elements of this column are equal to the fixed common prior given by the <code>p0</code> argument.
+</p>
+</li>
+</ul>
+<h3>Examples</h3>
+
+<pre><code class="language-R"># Illustration on Scenario B in Satopää, V.A. (2021).
+# Forecasters' probability predictions:
+p = c(1/2, 5/16, 1/8, 1/4, 1/2)
+
+# Aggregate with a fixed common prior of 0.5.
+# Sample the posterior distribution:
+post_sample = sample_aggregator(p, p0 = 0.5, num_sample = 10^6, seed = 1)
+# The posterior means of the model parameters:
+colMeans(post_sample[,-1])
+# The posterior mean of the oracle aggregator, a.k.a., the revealed aggregator:
+mean(post_sample[,1])
+# The 95% credible interval for the oracle aggregator:
+quantile(post_sample[,1], c(0.025, 0.975))
+
+
+# Aggregate based a uniform distribution on the common prior
+# Recall that Beta(1,1) corresponds to the uniform distribution.
+# Sample the posterior distribution:
+post_sample = sample_aggregator(p, alpha = 1, beta = 1, num_sample = 10^6, seed = 1)
+# The posterior means of the oracle aggregate and the model parameters:
+colMeans(post_sample)
+</code></pre>
+
+
+</div>

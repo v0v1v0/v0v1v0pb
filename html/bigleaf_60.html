@@ -1,0 +1,269 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>stomatal.slope</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Stomatal Slope Parameter "g1"</h2>
+
+<h3>Description</h3>
+
+<p>Estimation of the intrinsic WUE metric "g1" (stomatal slope) 
+from nonlinear regression.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">stomatal.slope(
+  data,
+  Tair = "Tair",
+  pressure = "pressure",
+  GPP = "GPP",
+  Gs = "Gs_mol",
+  VPD = "VPD",
+  Ca = "Ca",
+  Rleaf = NULL,
+  model = c("USO", "Ball&amp;Berry", "Leuning"),
+  robust.nls = FALSE,
+  nmin = 40,
+  fitg0 = FALSE,
+  g0 = 0,
+  fitD0 = FALSE,
+  D0 = 1.5,
+  Gamma = 50,
+  missing.Rleaf.as.NA = FALSE,
+  constants = bigleaf.constants(),
+  ...
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+<p>Data.frame or matrix containing all required columns</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Tair</code></td>
+<td>
+<p>Air (or surface) temperature (deg C)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>pressure</code></td>
+<td>
+<p>Atmospheric pressure (kPa)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>GPP</code></td>
+<td>
+<p>Gross primary productivity (umol CO2 m-2 s-1)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Gs</code></td>
+<td>
+<p>Surface conductance to water vapor (mol m-2 s-1)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>VPD</code></td>
+<td>
+<p>Vapor pressure deficit (kPa)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Ca</code></td>
+<td>
+<p>Atmospheric CO2 concentration (air or surface) (umol mol-1)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Rleaf</code></td>
+<td>
+<p>Ecosystem respiration stemming from leaves (umol CO2 m-2 s-1); defaults to 0</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>model</code></td>
+<td>
+<p>Stomatal model used. One of <code>"USO","Ball&amp;Berry","Leuning"</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>robust.nls</code></td>
+<td>
+<p>Use robust nonlinear regression (<code>nlrob</code>)? Default is <code>FALSE</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nmin</code></td>
+<td>
+<p>Minimum number of data required to perform the fit; defaults to 40.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>fitg0</code></td>
+<td>
+<p>Should g0 and g1 be fitted simultaneously?</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>g0</code></td>
+<td>
+<p>Minimum stomatal conductance (mol m-2 s-1); ignored if <code>fitg0 = TRUE</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>fitD0</code></td>
+<td>
+<p>Should D0 be fitted along with g1 (and g0 if <code>fitg0 = TRUE</code>)?; only used if <code>model = "Leuning"</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>D0</code></td>
+<td>
+<p>Stomatal sensitivity parameter to VPD; only used if <code>model = "Leuning"</code> and <code>fitD0 = FALSE</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Gamma</code></td>
+<td>
+<p>Canopy CO2 compensation point (umol mol-1); only used if <code>model = "Leuning"</code>. 
+Can be a constant or a variable. Defaults to 50 umol mol-1.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>missing.Rleaf.as.NA</code></td>
+<td>
+<p>if Rleaf is provided, should missing values be treated as <code>NA</code> (<code>TRUE</code>)
+or set to 0 (<code>FALSE</code>, the default)?</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>constants</code></td>
+<td>
+<p>Kelvin - conversion degree Celsius to Kelvin <br>
+Rgas - universal gas constant (J mol-1 K-1) <br>
+DwDc - Ratio of the molecular diffusivities for water vapor and CO2</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Additional arguments to <code>nls</code> or <code>nlrob</code> if <code>robust.nls = TRUE</code>.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>All stomatal models were developed at leaf-level, but its parameters 
+can also be estimated at ecosystem level (but be aware of caveats).
+</p>
+<p>The unified stomatal optimization (USO) model is given by (Medlyn et al. 2011):
+</p>
+<p style="text-align: center;"><code class="reqn">gs = g0 + 1.6*(1.0 + g1/sqrt(VPD)) * An/ca</code>
+</p>
+
+<p>The semi-empirical model by Ball et al. 1987 is defined as:
+</p>
+<p style="text-align: center;"><code class="reqn">gs = g0 + g1* ((An * rH) / ca)</code>
+</p>
+
+<p>Leuning 1995 suggested a revised version of the Ball&amp;Berry model:
+</p>
+<p style="text-align: center;"><code class="reqn">gs = g0 + g1*An / ((ca - \Gamma) * (1 + VPD/D0))</code>
+</p>
+
+<p>where <code class="reqn">\Gamma</code> is by default assumed to be constant, but likely varies with temperature and among
+plant species. 
+The equations above are valid at leaf-level. At ecosystem level, An is replaced by GPP (or GPP - Rleaf,
+where Rleaf is leaf respiration), and gs (stomatal conductance) by Gs (surface conductance). 
+The parameters in the models are estimated using nonlinear regression (<code>nls</code>) if
+<code>robust.nls = FALSE</code> and weighted nonlinear regression if <code>robust.nls = TRUE</code>.
+The weights are calculated from <code>nlrob</code>, and <code>nls</code>
+is used for the actual fitting.
+Alternatively to measured VPD and Ca (i.e. conditions at instrument height), conditions at 
+the big-leaf surface can be provided. Those can be calculated using <code>surface.conditions</code>.
+</p>
+
+
+<h3>Value</h3>
+
+<p>A <code>nls</code> model object, containing information on the fitted parameters, their uncertainty range,
+model fit, etc.
+</p>
+
+
+<h3>References</h3>
+
+<p>Medlyn B.E., et al., 2011: Reconciling the optimal and empirical approaches to
+modelling stomatal conductance. Global Change Biology 17, 2134-2144.
+</p>
+<p>Ball T.J., Woodrow I.E., Berry J.A. 1987: A model predicting stomatal conductance
+and its contribution to the control of photosynthesis under different environmental conditions.
+In: Progress in Photosynthesis Research, edited by J.Biggins, pp. 221-224, Martinus Nijhoff Publishers,
+Dordrecht, Netherlands.
+</p>
+<p>Leuning R., 1995: A critical appraisal of a combined stomatal-photosynthesis
+model for C3 plants. Plant, Cell and Environment 18, 339-355.
+</p>
+<p>Knauer, J. et al., 2018: Towards physiologically meaningful water-use efficiency estimates
+from eddy covariance data. Global Change Biology 24, 694-710.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>surface.conductance</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## filter data to ensure that Gs is a meaningful proxy to canopy conductance (Gc)
+DE_Tha_Jun_2014_2 &lt;- filter.data(DE_Tha_Jun_2014,quality.control=FALSE,
+                                 vars.qc=c("Tair","precip","VPD","H","LE"),
+                                 filter.growseas=FALSE,filter.precip=TRUE,
+                                 filter.vars=c("Tair","PPFD","ustar","LE"),
+                                 filter.vals.min=c(5,200,0.2,0),
+                                 filter.vals.max=c(NA,NA,NA,NA),NA.as.invalid=TRUE,
+                                 quality.ext="_qc",good.quality=c(0,1),
+                                 missing.qc.as.bad=TRUE,GPP="GPP",doy="doy",
+                                 year="year",tGPP=0.5,ws=15,min.int=5,precip="precip",
+                                 tprecip=0.1,precip.hours=24,records.per.hour=2)
+
+# calculate Gs from the the inverted PM equation
+Ga &lt;- aerodynamic.conductance(DE_Tha_Jun_2014_2,Rb_model="Thom_1972")[,"Ga_h"]
+
+# if G and/or S are available, don't forget to indicate (they are ignored by default).
+Gs_PM &lt;- surface.conductance(DE_Tha_Jun_2014_2,Tair="Tair",pressure="pressure",
+                             Rn="Rn",G="G",S=NULL,VPD="VPD",Ga=Ga,
+                             formulation="Penman-Monteith")[,"Gs_mol"]
+                             
+### Estimate the stomatal slope parameter g1 using the USO model
+mod_USO &lt;- stomatal.slope(DE_Tha_Jun_2014_2,model="USO",GPP="GPP",Gs=Gs_PM,
+                          robust.nls=FALSE,nmin=40,fitg0=FALSE)
+                          
+### Use robust regression to minimize influence of outliers in Gs                           
+mod_USO &lt;- stomatal.slope(DE_Tha_Jun_2014_2,model="USO",GPP="GPP",Gs=Gs_PM,
+                          robust.nls=TRUE,nmin=40,fitg0=FALSE)
+
+### Estimate the same parameter from the Ball&amp;Berry model and prescribe g0
+mod_BB &lt;- stomatal.slope(DE_Tha_Jun_2014_2,model="Ball&amp;Berry",GPP="GPP",
+                         robust.nls=FALSE,Gs=Gs_PM,g0=0.01,nmin=40,fitg0=FALSE)
+
+## same for the Leuning model, but this time estimate both g1 and g0 (but fix D0)
+mod_Leu &lt;- stomatal.slope(DE_Tha_Jun_2014_2,model="Leuning",GPP="GPP",Gs=Gs_PM,
+                          robust.nls=FALSE,nmin=40,fitg0=FALSE,D0=1.5,fitD0=FALSE)
+
+</code></pre>
+
+
+</div>

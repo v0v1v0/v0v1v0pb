@@ -1,0 +1,492 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>calcBgVol</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>
+Calculate Cumulative Biogas Production from Volumetric Data
+</h2>
+
+<h3>Description</h3>
+
+<p><code>calcBgVol</code> (for <em>calc</em>ulation of <em>b</em>io<em>g</em>as production from <em>vol</em>umetric) measurements) calculates cumulative biogas, methane production and production rates from individual volume and composition measurements for any number of bottles.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">calcBgVol(
+  # Main arguments
+  dat, comp = NULL, temp = NULL,
+  pres = NULL, interval = TRUE, 
+  data.struct = 'longcombo',
+  # Column names
+  id.name = 'id', time.name = 'time', vol.name = 'vol',
+  comp.name = NULL,
+  # Additional arguments
+  headspace = NULL, vol.hs.name = 'vol.hs',
+  # Calculation method and other settings
+  cmethod = 'removed', imethod = 'linear', extrap = FALSE, 
+  addt0 = TRUE, showt0 = TRUE,
+  dry = FALSE, 
+  empty.name = NULL,
+  # Warnings and messages
+  std.message = !quiet,
+  check = TRUE,
+  # Units and standard conditions
+  temp.std = getOption('temp.std', as.numeric(NA)),
+  pres.std = getOption('pres.std', as.numeric(NA)),
+  unit.temp = getOption('unit.temp', 'C'),
+  unit.pres = getOption('unit.pres', 'atm'),
+  quiet = FALSE
+  ) 
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>dat</code></td>
+<td>
+
+<p>a data frame with bottle identification code; time of measurement (as <code>numeric</code>, or <code>POSIX</code>); and measured biogas volume.
+See Details section for details on units.
+Additional columns can be present–these will be returned in the output data frame.
+See <code>data.struct</code> argument for details on how data frames are structured.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>comp</code></td>
+<td>
+
+<p>(optional) a data frame with the columns bottle identification code; time of measurement, (as <code>numeric</code>, or <code>POSIX</code>); and methane concentration within dry biogas as a mole fraction, considering only methane and carbon dioxide (unless <code>cmethod = "total"</code>) or a single numeric value.
+If omitted, cumulative biogas volume will still be calculated and returned (but no methane data will be returned).
+The names of these columns are specified with <code>id.name</code>, <code>time.name</code>, and <code>comp.name</code>.
+Default is <code>NULL</code>.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>temp</code></td>
+<td>
+
+<p>the temperature at which biogas volume was measured.
+A length-one numeric vector.
+Degrees Celcius by default (see <code>unit.temp</code> argument). 
+Default is <code>NULL</code>, which suppresses correction for temperature and pressure. 
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>pres</code></td>
+<td>
+
+<p>the absolute pressure at which biogas volume was measured.
+A length-one numeric vector or a character vector giving the name of the column in <code>dat</code> with the pressure measurements.
+Atmospheres by default (see <code>unit.pres</code> argument). 
+Default is <code>NULL</code>, which suppresses correction for temperature and pressure. 
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>interval</code></td>
+<td>
+
+<p>do biogas volume measurements represent production only from the time interval between observations (default)?
+<code>interval = FALSE</code> means measured gas volume is cumulative.
+Default is <code>TRUE</code>.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>data.struct</code></td>
+<td>
+
+<p>the structure of input data. The default of 'longcombo' means separate objects for volume and composition (if available).
+The <code>dat</code> data frame must have bottle identification code and time columns with names specified with <code>id.name</code> and <code>time.name</code>, volume data in a single column with the name specified by <code>vol.name</code>, and biogas composition in a single column with the name specified by <code>comp.name</code>
+For the <code>data.struct = 'long'</code> option, two separate data frames are needed, one for volume and one for composition (if available).
+Each data frame must have bottle identification code and time columns with names specified with <code>id.name</code> and <code>time.name</code>.
+The <code>dat</code> data frame must have volume data in a single column with the name specified by <code>vol.name</code>.
+The <code>comp</code> data frame must have biogas composition in a single column with the name specified by <code>comp.name</code>.
+For the <code>data.struct = 'wide'</code> option, two separate data frames are needed as in <code>'long'</code>, but there are no bottle identification code columns.
+Instead, in <code>dat</code>, volume data are in a separate column for each bottle, and column names are bottle identification codes.
+Here, <code>vol.name</code> should be the name of the first column with volume data.
+All following columns are assumed to also have volume data.
+And in <code>comp</code>, biogas composition data are also in a separate column for each bottle, also with bottle identification codes for column names.
+Here, <code>comp.name</code> should be the name of the first column with biogas composition data, as for <code>dat</code>.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>id.name</code></td>
+<td>
+
+<p>name of the bottle identification code column in <code>dat</code>. Must be the same in all data frames used in the function. Default is <code>"id"</code>.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>time.name</code></td>
+<td>
+
+<p>name of column containing time data in <code>dat</code> and <code>comp</code> data frames. Default is <code>"time"</code>.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>vol.name</code></td>
+<td>
+
+<p>name of column containing the primary response variable (as-measured volume) in <code>dat</code> data frame. Default is <code>vol</code>.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>comp.name</code></td>
+<td>
+
+<p>name of column containing biogas mole fraction of methane in <code>comp</code> data frame. Default is <code>"xCH4"</code>. Must be normalised so xCH4 + xCO2 = 1.0 unless <code>cmethod = "total"</code>.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>headspace</code></td>
+<td>
+
+<p>(optional) a data frame or length-one numeric vector with bottle headspace volume(s).
+If a data frame is used, it should at least contain a <code>"id"</code> (bottle identification code) column (see <code>"id.name"</code>) and headspace volume column (see <code>vol.hs.name</code> argument).
+Required if <code>cmethod = "total"</code>.
+Default is <code>NULL</code>.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>vol.hs.name</code></td>
+<td>
+
+<p>name of column containing headspace volume data in optional <code>headspace</code> data frame. 
+Default is <code>"vol.hs"</code>.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>cmethod</code></td>
+<td>
+
+<p>method for calculating cumulative methane production.
+Use <code>"removed"</code> to base production on <code>xCH4</code> and gas volumes removed (default).
+Use <code>"total"</code> to base it on the sum of methane removed and methane remaining in the bottle headspace.
+For <code>"removed"</code>, <em><code>xCH4</code> should be calculated based on methane and CO2 only (xCH4 + xCO2 = 1.0).</em>
+For <code>"total"</code>, <em><code>xCH4</code> should be calculated including all biogas components (CH4, CO2, N2, H2S, etc.) except water.</em>
+Length one character vector. 
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>imethod</code></td>
+<td>
+
+<p>method used for interpolation of <code>xCH4</code>.
+This is passed as the <code>method</code> argument to <code>interp</code>.
+Length one character vector. 
+Default is <code>"linear"</code> for linear interpolation.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>extrap</code></td>
+<td>
+
+<p>should <code>comp.name</code> be extrapolated? 
+Length one logical vector.
+This is passed as the <code>extrap</code> argument to <code>interp</code>. 
+Default is <code>FALSE</code>.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>addt0</code></td>
+<td>
+
+<p>is the earliest time in <code>dat</code> data frame “time zero” (start time)? 
+If not, this argument adds a row with <code>time.name = 0</code> for each bottle in order to calculate production rates for the first observation.
+This addition is only made when <code>time.name</code> is <code>numeric</code> (or <code>integer</code>).
+Length-one logical vector.
+Default is <code>TRUE</code>.
+To return these additional rows in the output, see <code>showt0</code>.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>showt0</code></td>
+<td>
+
+<p>should “time zero” rows be returned in the output?
+Can be convenient for plotting cumulative volumes.
+Only applies if <code>time.name</code> is <code>numeric</code> (or <code>integer</code>).
+These rows may have been present in the original data (<code>dat</code>) or added by the function (see <code>addt0</code>).
+Default value depends on <code>dat</code> <code>time.name</code> column content. 
+If <code>time.name</code> column is numeric and contains 0 then the default value is <code>TRUE</code> and otherwise <code>FALSE</code>. 
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>dry</code></td>
+<td>
+
+<p>set to <code>TRUE</code> if volume data are standardised to dry conditions (e.g., AMPTS II data). 
+The default (<code>FALSE</code>) means biogas is assumed to be saturated with water vapor.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>empty.name</code></td>
+<td>
+
+<p>column containing a binary (logical, or integer or numeric (1 or 0)) variable indicating when accumulated biogas was emptied. 
+Use for mix of cumulative/interval data.
+If used, <code>interval</code> is ignored.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>std.message</code></td>
+<td>
+
+<p>should a message with the standard conditions be displayed? 
+Default is <code>TRUE</code>. 
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>check</code></td>
+<td>
+
+<p>should input data be checked for unreasonable values (with warnings)? 
+Currently only composition values are checked.
+Default is <code>TRUE</code>.
+Values are changed if outside 0, 1 (divided by 100).
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>temp.std</code></td>
+<td>
+
+<p>standard temperature for presentation of biogas and methane results.
+Length one numeric vector.
+Default value is 0 degrees C (set in <code>stdVol</code>).
+Argument is passed to <code>stdVol</code>.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>pres.std</code></td>
+<td>
+
+<p>standard pressure for presentation of biogas and methane results.
+Length one numeric vector.
+Default value is 1.0 atm (101325 Pa) (set in <code>stdVol</code>).
+Argument is passed to <code>stdVol</code>.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>unit.temp</code></td>
+<td>
+
+<p>temperature units for <code>temp</code> and <code>temp.std</code> arguments.
+
+Default is <code>"C"</code>. 
+Argument is passed to <code>stdVol</code>.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>unit.pres</code></td>
+<td>
+
+<p>pressure units for <code>pres</code> and <code>pres.std</code> arguments.
+
+Default is <code>"atm"</code>.
+Argument is passed to <code>stdVol</code>.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>quiet</code></td>
+<td>
+
+<p>use to suppress messages. Default is <code>FALSE</code>.
+</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>Using volume data from <code>dat</code> and gas composition from <code>comp</code>, this function will calculate standardised biogas and methane production (if <code>comp</code> is provided) for each observation,  interpolating <code>comp.name</code> (from <code>comp</code> argument) to each <code>time.name</code> in <code>dat</code> if needed, and summing these for cumulative values. 
+All volumes (input and output) have the same units, e.g., mL, L, SCF.
+</p>
+<p>Biogas composition (<code>comp.name</code> column in <code>comp</code>) is specified as the mole fraction of methane in dry biogas, normalised so mole fractions of methane and carbon dioxide sum to unity (Richards et al. 1991). Alternatively, if <code>cmethod</code> is set to <code>"total"</code>, biogas composition is the mole fraction of methane in dry biogas (include all the other gases except water). 
+</p>
+<p>Standard values and units for temperature and pressure can be globally set using the function <code>options</code>.
+See <code>stdVol</code>.
+To surpress volume correction to a “standard” temperature and pressure, leave <code>temp</code> as <code>NULL</code> (the default).
+</p>
+<p>If <code>check = TRUE</code>, the input values of mole fraction of methane in biogas are checked, and a warning is returned if the are outside 0, 1.
+</p>
+<p>See associated vignette (<code>calcBgVol_function.Rnw</code>) for more information.
+</p>
+
+
+<h3>Value</h3>
+
+<p>a data frame with all the columns originally present in <code>dat</code>, plus these others:
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>vBg</code></td>
+<td>
+<p>Standardised volume of biogas production for individual event.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>xCH4</code></td>
+<td>
+<p>Interpolated mole fraction of methane in biogas.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>vCH4</code></td>
+<td>
+<p>Standardised volume of methane production for individual event. Only if <code>comp</code> is provided.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>vhsCH4</code></td>
+<td>
+<p>Standardised volume of methane present in bottle headspace. Only if <code>method = "total"</code> is used.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>cvBg</code></td>
+<td>
+<p>Standardised cumulative volume of biogas production.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>cvCH4</code></td>
+<td>
+<p>Standardised cumulative volume of methane production. Only if <code>comp</code> is provided.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>rvBg</code></td>
+<td>
+<p>Production rate of biogas.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>rvCH4</code></td>
+<td>
+<p>Production rate of methane. Only if <code>comp</code> is provided.</p>
+</td>
+</tr>
+</table>
+<h3>Author(s)</h3>
+
+<p>Sasha D. Hafner and Nanna Lojborg
+</p>
+
+
+<h3>References</h3>
+
+<p>Hafner, S.D., Rennuit, C., Triolo, J.M., Richards, B.K. 2015. Validation of a simple gravimetric method for measuring biogas production in laboratory experiments. <em>Biomass and Bioenergy</em> <b>83</b>, 297-301.
+</p>
+<p>Richards, B.K., Cummings, R.J., White, T.E., Jewell, W.J. 1991. Methods for kinetic analysis of methane fermentation in high solids biomass digesters. <em>Biomass and Bioenergy</em> 1: 65-73.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>cumBg</code>,
+<code>calcBgMan</code>,
+<code>calcBgGD</code>,
+<code>summBg</code>,
+<code>interp</code>,
+<code>stdVol</code>,
+<code>options</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R"> 
+# Example with long structured input data frame
+
+data("s3lcombo")
+s3lcombo
+
+# Calculate cumulative production and rates from s3lcombo
+# With default data structure comp argument is not needed
+# Necessary to extrapolate because first observations are missing xCH4
+cbg &lt;- calcBgVol(s3lcombo, 
+                 temp = 25, pres = 1,
+                 id.name = 'id', time.name = 'time.d', 
+                 vol.name = 'vol.ml', comp.name = 'xCH4', 
+                 extrap = TRUE)
+head(cbg)
+
+# Plot results
+## Not run: 
+  # Not run just because it is a bit slow
+  ggplot(cbg, aes(time.d, cvCH4, colour = id)) + 
+         geom_point() + geom_line(aes(group = id)) +
+         labs(x = "Time (d)", y = "Cumulative methane production  (mL)", colour = "Bottle ID")  + 
+         theme_bw() 
+
+  plot(ggplot)
+
+## End(Not run)
+
+
+# Wide data structure, from AMPTS II in this case
+data("feedVol")
+head(feedVol)
+
+# By default biogas is assumed to be saturated with water vapor
+# Composition is set to a single value. 
+# Data are cumulative
+args(calcBgVol)
+cbg &lt;- calcBgVol(feedVol, comp = 1, temp = 0, pres = 1,
+                 interval = FALSE, data.struct = 'wide',
+                 id.name = "id", time.name = 'time.d', vol.name = '1', 
+                 dry = TRUE)
+
+head(cbg)
+
+
+# Calculate cumulative production and rates from vol and comp
+# Biogas volume and composition can be in separate data frames
+data("vol")
+data("comp")
+
+head(vol)
+head(comp)
+
+# extrap = TRUE is needed to get CH4 results here because first xCH4 values are missing
+cbg &lt;- calcBgVol(vol, comp = comp, temp = 20, pres = 1, 
+                 data.struct = "long",
+                 id.name = "id", time.name = "days", comp.name = "xCH4", 
+                 vol.name = "vol", extrap = TRUE)
+
+head(cbg)
+
+
+</code></pre>
+
+
+</div>

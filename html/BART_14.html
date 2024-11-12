@@ -1,0 +1,191 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>crisk.pre.bart</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Data construction for competing risks with BART</h2>
+
+<h3>Description</h3>
+
+<p>Competing risks contained in <code class="reqn">(t, \delta, x)</code> must be translated to data
+suitable for the BART competing risks model; see <code>crisk.bart</code> for more details.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">crisk.pre.bart( times, delta, x.train=NULL, x.test=NULL,
+                x.train2=x.train, x.test2=x.test, K=NULL )
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>times</code></td>
+<td>
+
+<p>The time of event or right-censoring.<br></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>delta</code></td>
+<td>
+
+<p>The event indicator: 1 is a cause 1 event, 2 a cause 2 while 0 is censored.<br></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>x.train</code></td>
+<td>
+
+<p>Explanatory variables for training (in sample) data of cause 1.<br>
+If provided, must be a matrix
+with (as usual) rows corresponding to observations and columns to variables.<br></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>x.test</code></td>
+<td>
+
+<p>Explanatory variables for test (out of sample) data of cause 1.<br>
+If provided, must be a matrix and have the same structure as x.train.<br></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>x.train2</code></td>
+<td>
+
+<p>Explanatory variables for training (in sample) data of cause 2.<br>
+If provided, must be a matrix
+with (as usual) rows corresponding to observations and columns to variables.<br></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>x.test2</code></td>
+<td>
+
+<p>Explanatory variables for test (out of sample) data of cause 2.<br>
+If provided, must be a matrix and have the same structure as x.train.<br></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>K</code></td>
+<td>
+
+<p>If provided, then coarsen <code>times</code> per the quantiles
+<code class="reqn">1/K, 2/K, ..., K/K</code>.
+</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p><code>surv.pre.bart</code> returns a list.
+Besides the items listed below, the list has
+a <code>times</code> component giving the unique times and <code>K</code> which is the number of
+unique times.
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>y.train</code></td>
+<td>
+<p>A vector of binary responses for cause 1.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>y.train2</code></td>
+<td>
+<p>A vector of binary responses for cause 2.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>cond</code></td>
+<td>
+<p>A vector of indices of <code>y.train</code> indicating censored subjects.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>binaryOffset</code></td>
+<td>
+<p>The binary offset for <code>y.train</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>binaryOffset2</code></td>
+<td>
+<p>The binary offset for <code>y.train2</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>tx.train</code></td>
+<td>
+<p>A matrix with rows consisting of time and the
+covariates of the training data for cause 1.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>tx.train2</code></td>
+<td>
+<p>A matrix with rows consisting of time and the
+covariates of the training data for cause 2.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>tx.test</code></td>
+<td>
+<p>A matrix with rows consisting of time and the
+covariates of the test data, if any, for cause 1.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>tx.test2</code></td>
+<td>
+<p>A matrix with rows consisting of time and the
+covariates of the test data, if any, for cause 2.</p>
+</td>
+</tr>
+</table>
+<h3>See Also</h3>
+
+<p><code>crisk.bart</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+data(transplant)
+
+delta &lt;- (as.numeric(transplant$event)-1)
+
+delta[delta==1] &lt;- 4
+delta[delta==2] &lt;- 1
+delta[delta&gt;1] &lt;- 2
+table(delta, transplant$event)
+
+table(1+floor(transplant$futime/30.5)) ## months
+times &lt;- 1+floor(transplant$futime/30.5)
+
+typeO &lt;- 1*(transplant$abo=='O')
+typeA &lt;- 1*(transplant$abo=='A')
+typeB &lt;- 1*(transplant$abo=='B')
+typeAB &lt;- 1*(transplant$abo=='AB')
+table(typeA, typeO)
+
+x.train &lt;- cbind(typeO, typeA, typeB, typeAB)
+
+N &lt;- nrow(x.train)
+
+x.test &lt;- x.train
+
+x.test[1:N, 1:4] &lt;- matrix(c(1, 0, 0, 0), nrow=N, ncol=4, byrow=TRUE)
+
+pre &lt;- crisk.pre.bart(x.train=x.train, times=times, delta=delta, x.test=x.test)
+
+</code></pre>
+
+
+</div>

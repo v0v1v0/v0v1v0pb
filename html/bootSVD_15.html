@@ -1,0 +1,94 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>reindexMatricesByK</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Used for calculation of low dimensional standard errors &amp; percentiles, by re-indexing the <code class="reqn">A^b</code> by PC index (<code class="reqn">k</code>) rather than bootstrap index (<code class="reqn">b</code>).</h2>
+
+<h3>Description</h3>
+
+<p>This function is used as a precursor step for calculate bootstrap standard errors, or percentiles. For very high dimensional data, we recommend that the this function be applied to the low dimensional components <code class="reqn">A^b</code>, but the function can also be used to reorder a list of high dimensional bootstrap PCs. It can equivalently be used to reorder a list of scores. In general, we recommend that as many operations as possible be applied to the low dimensional components, as opposed to their high dimensional counterparts.  This function is called by <code>getMomentsAndMomentCI</code>.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">reindexMatricesByK(matricesByB, pattern)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>matricesByB</code></td>
+<td>
+<p>a <code>B</code>-length list of (<code>r</code> by <code>K</code>) matrices from each bootstrap sample. If the list elements have class <code>ff</code>, the returned matrices will also have class <code>ff</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>pattern</code></td>
+<td>
+<p>(optional) passed to <code>ff</code>.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>a <code>K</code>-length list of (<code class="reqn">B</code> by <code class="reqn">r</code>) matrices. If elements of <code>matricesByB</code> have class <code>ff</code>, then the returned, reordered matrices will also have class <code>ff</code>.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">#use small n, small B, for a quick illustration
+set.seed(0)
+Y&lt;-simEEG(n=100, centered=TRUE, wide=TRUE) 
+svdY&lt;-fastSVD(Y)
+V&lt;- svdY$v #original sample PCs
+DUt&lt;- tcrossprod(diag(svdY$d),svdY$u)
+bInds&lt;-genBootIndeces(B=50,n=dim(DUt)[2])
+bootSVD_LD_output&lt;-bootSVD_LD(DUt=DUt,bInds=bInds,K=3,verbose=interactive())
+
+########
+# to get 'low dimensional PC' moments and lower percentiles
+AsByB&lt;-bootSVD_LD_output$As
+AsByK&lt;-reindexMatricesByK(AsByB)
+
+meanA1&lt;-	apply(AsByK[[1]],2,mean)
+seA1&lt;-	apply(AsByK[[1]],2,sd)
+pA1&lt;-	apply(AsByK[[1]],2,function(x) quantile(x,.05))
+#can also use lapply to get a list (indexed by k=1,...K) of 
+#the means, standard errors, or percentiles for each PC. 
+#See example below, for high dimensional bootstrap PCs.
+
+#Alternatively, moments can be calculated with
+seA1_v2&lt;- getMomentsAndMomentCI(As=AsByK,
+		V=diag(dim(AsByK[[1]])[2]))$sdPCs[[1]]
+all(seA1_v2==seA1)
+
+#Additional examples of exploring the low dimensional bootstrap 
+#PC distribution are given in the documentation for 
+#the 'bootSVD' function.
+#########
+
+#########
+#High dimensional percentiles for each PC
+VsByB&lt;-As2Vs(As=AsByB,V=V)
+VsByK&lt;-reindexMatricesByK(VsByB)
+percentileCI_Vs&lt;-lapply(VsByK,function(mat_k){
+	apply(mat_k,2,function(x) quantile(x,c(.025,.975)))
+})
+k=2 # the 2nd PC is a little more interesting here.
+matplot(t(percentileCI_Vs[[k]]),type='l',lty=1,col='blue')
+lines(V[,k])
+########
+
+# Note: This function can also be used to reorganize the
+#   high dimensional PCs. For 'ff' matrices, this will
+#   create a new set of files on disk. 
+</code></pre>
+
+
+</div>

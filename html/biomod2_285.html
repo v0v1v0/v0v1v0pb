@@ -1,0 +1,201 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>BIOMOD.ensemble.models.out</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>
+<code>BIOMOD_EnsembleModeling()</code> output object class</h2>
+
+<h3>Description</h3>
+
+<p>Class returned by <code>BIOMOD_EnsembleModeling</code>, and used by 
+<code>BIOMOD_LoadModels</code>, <code>BIOMOD_PresenceOnly</code> and 
+<code>BIOMOD_EnsembleForecasting</code>
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">## S4 method for signature 'BIOMOD.ensemble.models.out'
+show(object)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table><tr style="vertical-align: top;">
+<td><code>object</code></td>
+<td>
+<p>a <code>BIOMOD.ensemble.models.out</code> object</p>
+</td>
+</tr></table>
+<h3>Slots</h3>
+
+
+<dl>
+<dt><code>modeling.id</code></dt>
+<dd>
+<p>a <code>character</code> corresponding to the name (ID) of the
+simulation set</p>
+</dd>
+<dt><code>dir.name</code></dt>
+<dd>
+<p>a <code>character</code> corresponding to the modeling folder</p>
+</dd>
+<dt><code>sp.name</code></dt>
+<dd>
+<p>a <code>character</code> corresponding to the species name</p>
+</dd>
+<dt><code>expl.var.names</code></dt>
+<dd>
+<p>a <code>vector</code> containing names of explanatory
+variables</p>
+</dd>
+<dt><code>models.out</code></dt>
+<dd>
+<p>a <code>BIOMOD.stored.models.out-class</code> object
+containing informations from <code>BIOMOD_Modeling</code> object</p>
+</dd>
+<dt><code>em.by</code></dt>
+<dd>
+<p>a <code>character</code> corresponding to the way kept models have
+been combined to build the ensemble models, must be among
+<code>PA+run</code>, <code>PA+algo</code>, <code>PA</code>,
+<code>algo</code>, <code>all</code></p>
+</dd>
+<dt><code>em.computed</code></dt>
+<dd>
+<p>a <code>vector</code> containing names of ensemble models</p>
+</dd>
+<dt><code>em.failed</code></dt>
+<dd>
+<p>a <code>vector</code> containing names of failed ensemble models</p>
+</dd>
+<dt><code>em.models_kept</code></dt>
+<dd>
+<p>a <code>list</code> containing single models for each ensemble model</p>
+</dd>
+<dt><code>models.evaluation</code></dt>
+<dd>
+<p>a <code>BIOMOD.stored.data.frame-class</code> object
+containing models evaluation</p>
+</dd>
+<dt><code>variables.importance</code></dt>
+<dd>
+<p>a <code>BIOMOD.stored.data.frame-class</code> object
+containing variables importance</p>
+</dd>
+<dt><code>models.prediction</code></dt>
+<dd>
+<p>a <code>BIOMOD.stored.data.frame-class</code> object
+containing models predictions</p>
+</dd>
+<dt><code>models.prediction.eval</code></dt>
+<dd>
+<p>a <code>BIOMOD.stored.data.frame-class</code>
+object containing models predictions for evaluation data</p>
+</dd>
+<dt><code>link</code></dt>
+<dd>
+<p>a <code>character</code> containing the file name of the saved object</p>
+</dd>
+</dl>
+<h3>Author(s)</h3>
+
+<p>Damien Georges
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>BIOMOD_EnsembleModeling</code>, <code>BIOMOD_LoadModels</code>, 
+<code>BIOMOD_PresenceOnly</code>, <code>bm_VariablesImportance</code>, 
+<code>bm_PlotEvalMean</code>, <code>bm_PlotEvalBoxplot</code>, 
+<code>bm_PlotVarImpBoxplot</code>, <code>bm_PlotResponseCurves</code>
+</p>
+<p>Other Toolbox objects: 
+<code>BIOMOD.formated.data</code>,
+<code>BIOMOD.formated.data.PA</code>,
+<code>BIOMOD.models.options</code>,
+<code>BIOMOD.models.out</code>,
+<code>BIOMOD.options.dataset</code>,
+<code>BIOMOD.options.default</code>,
+<code>BIOMOD.projection.out</code>,
+<code>BIOMOD.stored.data</code>,
+<code>biomod2_ensemble_model</code>,
+<code>biomod2_model</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+showClass("BIOMOD.ensemble.models.out")
+
+## ----------------------------------------------------------------------- #
+library(terra)
+
+# Load species occurrences (6 species available)
+data(DataSpecies)
+head(DataSpecies)
+
+# Select the name of the studied species
+myRespName &lt;- 'GuloGulo'
+
+# Get corresponding presence/absence data
+myResp &lt;- as.numeric(DataSpecies[, myRespName])
+
+# Get corresponding XY coordinates
+myRespXY &lt;- DataSpecies[, c('X_WGS84', 'Y_WGS84')]
+
+# Load environmental variables extracted from BIOCLIM (bio_3, bio_4, bio_7, bio_11 &amp; bio_12)
+data(bioclim_current)
+myExpl &lt;- terra::rast(bioclim_current)
+
+
+
+## ----------------------------------------------------------------------- #
+file.out &lt;- paste0(myRespName, "/", myRespName, ".AllModels.models.out")
+if (file.exists(file.out)) {
+  myBiomodModelOut &lt;- get(load(file.out))
+} else {
+
+  # Format Data with true absences
+  myBiomodData &lt;- BIOMOD_FormatingData(resp.var = myResp,
+                                       expl.var = myExpl,
+                                       resp.xy = myRespXY,
+                                       resp.name = myRespName)
+
+  # Model single models
+  myBiomodModelOut &lt;- BIOMOD_Modeling(bm.format = myBiomodData,
+                                      modeling.id = 'AllModels',
+                                      models = c('RF', 'GLM'),
+                                      CV.strategy = 'random',
+                                      CV.nb.rep = 2,
+                                      CV.perc = 0.8,
+                                      OPT.strategy = 'bigboss',
+                                      metric.eval = c('TSS','ROC'),
+                                      var.import = 3,
+                                      seed.val = 42)
+}
+
+
+## ----------------------------------------------------------------------- #
+# Model ensemble models
+myBiomodEM &lt;- BIOMOD_EnsembleModeling(bm.mod = myBiomodModelOut,
+                                      models.chosen = 'all',
+                                      em.by = 'all',
+                                      em.algo = c('EMmean', 'EMca'),
+                                      metric.select = c('TSS'),
+                                      metric.select.thresh = c(0.7),
+                                      metric.eval = c('TSS', 'ROC'),
+                                      var.import = 3,
+                                      seed.val = 42)
+myBiomodEM
+
+
+</code></pre>
+
+
+</div>

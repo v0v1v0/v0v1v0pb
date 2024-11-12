@@ -1,0 +1,136 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>mlf</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Extract backbone using the Marginal Likelihood Filter</h2>
+
+<h3>Description</h3>
+
+<p><code>mlf</code> extracts the backbone of a weighted network using the Marginal Likelihood Filter
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">mlf(
+  W,
+  alpha = 0.05,
+  missing.as.zero = FALSE,
+  signed = FALSE,
+  mtc = "none",
+  class = "original",
+  narrative = FALSE
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>W</code></td>
+<td>
+<p>An integer-weighted unipartite graph, as: (1) an adjacency matrix in the form of a matrix or sparse <code>Matrix</code>; (2) an edgelist in the form of a three-column dataframe; (3) an <code>igraph</code> object.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>alpha</code></td>
+<td>
+<p>real: significance level of hypothesis test(s)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>missing.as.zero</code></td>
+<td>
+<p>boolean: should missing edges be treated as edges with zero weight and tested for significance</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>signed</code></td>
+<td>
+<p>boolean: TRUE for a signed backbone, FALSE for a binary backbone (see details)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>mtc</code></td>
+<td>
+<p>string: type of Multiple Test Correction to be applied; can be any method allowed by <code>p.adjust</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>class</code></td>
+<td>
+<p>string: the class of the returned backbone graph, one of c("original", "matrix", "Matrix", "igraph", "edgelist").
+If "original", the backbone graph returned is of the same class as <code>W</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>narrative</code></td>
+<td>
+<p>boolean: TRUE if suggested text &amp; citations should be displayed.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The <code>mlf</code> function applies the marginal likelihood filter (MLF; Dianati, 2016), which compares an edge's weight to
+its expected weight in a graph that preserves the total weight and preserves the degree sequence <em>on average</em>.
+The graph may be directed or undirected, however the edge weights must be positive integers.
+</p>
+<p>When <code>signed = FALSE</code>, a one-tailed test (is the weight stronger?) is performed for each edge. The resulting backbone
+contains edges whose weights are significantly <em>stronger</em> than expected in the null model. When <code>signed = TRUE</code>, a
+two-tailed test (is the weight stronger or weaker?) is performed for each edge. The resulting backbone contains
+positive edges for those whose weights are significantly <em>stronger</em>, and negative edges for those whose weights are
+significantly <em>weaker</em>, than expected in the null model.
+</p>
+<p>If <code>W</code> is an unweighted bipartite graph, then the MLF is applied to its weighted bipartite projection.
+</p>
+
+
+<h3>Value</h3>
+
+<p>If <code>alpha</code> != NULL: Binary or signed backbone graph of class <code>class</code>.
+</p>
+<p>If <code>alpha</code> == NULL: An S3 backbone object containing (1) the weighted graph as a matrix, (2) upper-tail p-values as a
+matrix, (3, if <code>signed = TRUE</code>) lower-tail p-values as a matrix, (4, if present) node attributes as a dataframe, and
+(5) several properties of the original graph and backbone model, from which a backbone can subsequently be extracted
+using <code>backbone.extract()</code>.
+</p>
+
+
+<h3>References</h3>
+
+<p>package: Neal, Z. P. (2022). backbone: An R Package to Extract Network Backbones. <em>PLOS ONE, 17</em>, e0269137. <a href="https://doi.org/10.1371/journal.pone.0269137">doi:10.1371/journal.pone.0269137</a>
+</p>
+<p>mlf: Dianati, N. (2016). Unwinding the hairball graph: Pruning algorithms for weighted complex networks. <em>Physical Review E, 93</em>, 012304. <a href="https://doi.org/10.1103/PhysRevE.93.012304">doi:10.1103/PhysRevE.93.012304</a>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">#A network with heterogeneous weights
+net &lt;- matrix(c(0,10,10,10,10,75,0,0,0,0,
+                10,0,1,1,1,0,0,0,0,0,
+                10,1,0,1,1,0,0,0,0,0,
+                10,1,1,0,1,0,0,0,0,0,
+                10,1,1,1,0,0,0,0,0,0,
+                75,0,0,0,0,0,100,100,100,100,
+                0,0,0,0,0,100,0,10,10,10,
+                0,0,0,0,0,100,10,0,10,10,
+                0,0,0,0,0,100,10,10,0,10,
+                0,0,0,0,0,100,10,10,10,0),10)
+
+net &lt;- igraph::graph_from_adjacency_matrix(net, mode = "undirected", weighted = TRUE)
+plot(net, edge.width = sqrt(igraph::E(net)$weight)) #A stronger clique &amp; a weaker clique
+
+strong &lt;- igraph::delete_edges(net, which(igraph::E(net)$weight &lt; mean(igraph::E(net)$weight)))
+plot(strong) #A backbone of stronger-than-average edges ignores the weaker clique
+
+bb &lt;- mlf(net, alpha = 0.05, narrative = TRUE) #An MLF backbone...
+plot(bb) #...preserves edges at multiple scales
+</code></pre>
+
+
+</div>

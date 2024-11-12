@@ -1,0 +1,155 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>SimulatedDataGenerator.CumulativeProbit</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Simulating a longitudinal ordinal data with HSD correlation structures.</h2>
+
+<h3>Description</h3>
+
+<p>This function is used to simulate data for the cumulative probit mixed-effects model with HSD correlation structures.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">SimulatedDataGenerator.CumulativeProbit(
+  Num.of.Obs,
+  Num.of.TimePoints,
+  Num.of.Cats,
+  Fixed.Effs,
+  Random.Effs,
+  DesignMat,
+  Missing,
+  HSD.DesignMat.para
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>Num.of.Obs</code></td>
+<td>
+<p>the number of subjects will be simulated.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Num.of.TimePoints</code></td>
+<td>
+<p>the maximum number of time points among all subjects.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Num.of.Cats</code></td>
+<td>
+<p>the number of categories.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Fixed.Effs</code></td>
+<td>
+<p>a vector of regression coefficients.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Random.Effs</code></td>
+<td>
+<p>a list of covariance matrix and the degree of freedom, <br>
+e.g., <code>list(Sigma = 0.5*diag(1), df=3)</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>DesignMat</code></td>
+<td>
+<p>a design matrix.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Missing</code></td>
+<td>
+<p>a list of the missing mechanism of observations, 0: data is complete, 1: missing complete at random, 2: missing at random related to responses , and 3: 2: missing at random related to covariates and the corresponding regression coefficients (weights) on the previous observed values either responses or covariates, e.g.,  <code>Missing = list(Missing.Mechanism = 3, RegCoefs = c(0.4, 1.2, -2.1))</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>HSD.DesignMat.para</code></td>
+<td>
+<p>the list of parameters in HSD correlation structure, <br>
+e.g., <code>HSD.DesignMat.para = list(HSD.para = HSD.para, DesignMat = w)</code>.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>a list containing the following components:
+</p>
+
+<dl>
+<dt>sim.data</dt>
+<dd>
+<p>The simulated response variables <code class="reqn">y</code>, covariates <code class="reqn">x</code>'s, and subject identifcation ‘<span class="samp">⁠id⁠</span>’.</p>
+</dd>
+<dt>beta.true</dt>
+<dd>
+<p>The given values of fixed effects.</p>
+</dd>
+<dt>classes</dt>
+<dd>
+<p>The intervals of classes.</p>
+</dd>
+<dt>HSD.para</dt>
+<dd>
+<p>The given values of parameters in HSD model.</p>
+</dd>
+</dl>
+<h3>Examples</h3>
+
+<pre><code class="language-R">## Not run: 
+library(BayesRGMM)
+rm(list=ls(all=TRUE))
+
+Fixed.Effs = c(-0.1, 0.1, -0.1)  
+P = length(Fixed.Effs) 
+q = 1 #number of random effects
+T = 7 #time points
+N = 100 #number of subjects
+Num.of.Cats = 3 #number of categories 
+num.of.iter = 1000 #number of iterations
+
+HSD.para = c(-0.9, -0.6) #the parameters in HSD model
+a = length(HSD.para)
+w = array(runif(T*T*a), c(T, T, a)) #design matrix in HSD model
+ 
+for(time.diff in 1:a)
+w[, , time.diff] = 1*(as.matrix(dist(1:T, 1:T, method="manhattan")) 
+==time.diff)
+
+
+x = array(0, c(T, P, N))
+for(i in 1:N){
+    x[, 1, i] = 1:T
+    x[, 2, i] = rbinom(1, 1, 0.5)
+    x[, 3, i] = x[, 1, i]*x[, 2, i]
+}
+
+DesignMat = x
+
+#MAR
+CPREM.sim.data = SimulatedDataGenerator.CumulativeProbit(
+ Num.of.Obs = N, Num.of.TimePoints = T, Num.of.Cats = Num.of.Cats, 
+ Fixed.Effs = Fixed.Effs, Random.Effs = list(Sigma = 0.5*diag(1), df=3), 
+ DesignMat = DesignMat, Missing = list(Missing.Mechanism = 2, 
+ MissingRegCoefs=c(-0.7, -0.2, -0.1)), 
+ HSD.DesignMat.para = list(HSD.para = HSD.para, DesignMat = w))
+
+
+print(table(CPREM.sim.data$sim.data$y))
+print(CPREM.sim.data$classes)
+
+## End(Not run)
+</code></pre>
+
+
+</div>

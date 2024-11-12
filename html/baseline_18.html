@@ -1,0 +1,110 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>baseline.TAP</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2> TAP </h2>
+
+<h3>Description</h3>
+
+<p>An implementation of Roman Svoboda and Jirí Málek's algorithm for baseline identification in kinetic anlaysis of derivative kinetic data.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">baseline.TAP(spectra, t, interval = 15, tol = 0.001)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>spectra</code></td>
+<td>
+<p> Matrix with spectra in rows </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>t</code></td>
+<td>
+<p> Optional vector of spectrum abcissa </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>interval</code></td>
+<td>
+<p> Distance from spectrum end to starting points for the TAP (default = 15) </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>tol</code></td>
+<td>
+<p> Tolerance of difference between iterations (default = 0.001) </p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>(i) A first approximation of the baseline equation is selected as the straight line between start and end of the curve.
+(ii) Based on the first approximation of the baseline equation, the phase change progress parameter is calculated.
+(iii) An updated equation of the baseline is calculated and the phase change progress parameter equation from step (ii).
+(iv) The baseline equation from step (iii) is compared (point by point) with the one from the previous iteration. If the convergence criterion is met (the difference between every baseline value corresponding to two successive iterations was less than 0.1%) the procedure is stopped and the final baseline equation is selected. If the convergence criterion is not fulfilled then a new iteration is carried out from step (ii) until convergence was achieved.
+</p>
+
+
+<h3>Value</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>baseline </code></td>
+<td>
+<p>Matrix of baselines corresponding to spectra <code>spectra</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>corrected </code></td>
+<td>
+<p>Matrix of baseline corrected spectra</p>
+</td>
+</tr>
+</table>
+<h3>Author(s)</h3>
+
+<p> Kristian Hovde Liland </p>
+
+
+<h3>References</h3>
+
+<p> Roman Svoboda and Jirí Málek:
+Importance of proper baseline identification for the subsequent kinetic analysis of derivative kinetic data, Journal of Thermal Analysis and Calorimetry. </p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R"># My T
+myT &lt;- 40:170
+
+# My artifical curve
+myAlpha &lt;- c(seq(0.01, 0.02, length.out=40),
+             dnorm(seq(-3,3,length.out=51))/2+(0:50)/2000+0.02)
+myAlpha &lt;- c(myAlpha,
+             seq(myAlpha[90]-0.001, 0.01, length.out=40))
+myAlpha &lt;- myAlpha - min(myAlpha)
+myAlpha &lt;- cumsum(dadt &lt;- myAlpha/sum(myAlpha))
+
+# Discrete derivative
+mydAlpha &lt;- c(0,diff(myAlpha)); mydAlpha &lt;- matrix(mydAlpha, ncol=length(mydAlpha))
+rm(myAlpha) # Throw away myAlpha
+
+# Compute baseline from T and derivative
+B &lt;- baseline(mydAlpha, t=myT, method="TAP")
+
+# Plot 
+plot(B, xlab = "T", ylab = "da/dT")
+</code></pre>
+
+
+</div>

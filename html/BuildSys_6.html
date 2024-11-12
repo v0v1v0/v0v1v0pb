@@ -1,0 +1,429 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>BuildSys-package</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>
+System for Building and Debugging C/C++ Dynamic Libraries
+</h2>
+
+<h3>Description</h3>
+
+<p>A build system based on 'GNU make' that creates and
+    maintains (simply) make files in an R session and provides
+    GUI debugging support through 'Microsoft Visual Code'.
+</p>
+
+
+<h3>Details</h3>
+
+<p>In the standard <em>R</em> approach dynamic libraries are typically built using the <em>R CMD</em> interface.
+That interface in turn uses the <em>GNU make</em> system to build the library through a generic makefile
+bundled with <em>R</em>. This is presumably done to simplify the process of building dynamic libraries for
+the less experience. The downside however, is adding complexity to the process when doing more esoteric 
+programming that makes use of static or dynamic libraries outside of those bundled with <em>R</em>. In those 
+cases it is likely that we may need to specify compiler include options to be able to successfully compile 
+the code but <em>R CMD SHLIB</em> provides no direct method of acomplishing this task. Instead we have to create a 
+<em>Makevars</em> file that defines the variables <code>PKG_CFLAGS</code>, <code>PKG_CXXFLAGS</code> or <code>PKG_FFLAGS</code> 
+to achieve the desired outcome. 
+</p>
+<p>It is also common to have build issues with libraries not linking because of missing dependencies or link 
+order issues (libraries must be linked in the correct order with <em>gcc</em> to ensure error free linking). 
+Resolving these link related issues is made more complex through the <em>R CMD</em> interface because it is no
+longer possible to simply look at the makefile definition and make modifications to it in an attempt to resolve 
+the build problem. By having a system approach whereby makefiles are the centre of the build process and not 
+obfuscated away in an R installation folder, the process of debugging build issues is made simpler by virtue 
+of the fact that all necessary changes to fix the build are in one file only, and a simple one at that.
+</p>
+<p>Lastly, a major part of developing library code is debugging and standard <em>R</em> provides little support
+for that. Developers typically rely on <em>gdb / lldb</em> command line driven debugger support, which is
+daunting for an inexperienced user, so much so that many will simply resort to print statement based
+debugging approaches, which whilst capable of resolving bugs, is a cumbersome and slow approach. What
+is required is an easy to use and full featured GUI based debugger and to that end, <em>Microsoft Visual Code</em>
+coupled with the machine interface (/MI) support in <em>gdb / lldb</em> provide the perfect solution.
+</p>
+<p><code>BuildSys</code> provides a simple but complete and flexible way to create project makefiles, build libraries
+and launch GUI based debug sessions, all from within <em>R</em>. The makefiles it creates are permanent rather
+than transitory so in the event of build troubles it is easy to resort to tinkering with the makefile
+to resolve the cause of the build problem and then reflect the necessary fixes in the <em>R</em> based project
+definition.
+</p>
+
+
+<h4>Project Creation</h4>
+
+<p><code>BuildSys</code> encapsulates a C/C++ dynamic library project definition into an S4 class <code>BSysProject</code>.
+To create a new project we simply create a new instance of that class and <code>BuildSys</code> will construct
+the appropriate project definition. For example,
+</p>
+<p><code>Project &lt;- new("BSysProject", "./MyFolder")</code>
+</p>
+<p>will search the directory <code>./MyFolder</code> for source files (<code>.c, .cpp</code> etc) and add them to the project definition.
+In searching for source files it will also scan the found source files for include statements and any found includes
+will be saved as dependencies for the give source file. No attempt is made to properly parse the source so
+if the code uses conditional preprocessing statements the situation may arrise that an include file is
+marked as a dependency when for the given build configuration it may not be. In any case, this will not
+affect the ability to correctly build the library but will just mean the dependencies are marked wider than true.
+</p>
+<p>Another feature of the dependency check is that any include files not found are considered externalities and
+if they belong to a known set, will result in the automatic addition of library and include path dependencies
+for the project. Currently <code>BuildSys</code> knows about <code>TMB.hpp, Rcpp.hpp</code> and <code>RcppEigen.hpp</code>, so if any of these are
+included into the source file then the necessary include file and define dependencies will be added. This added
+feature means <em>TMB</em> and <em>Rcpp</em> users have minimalistic usage requirements to construct libraries with <code>BuildSys</code> and
+need not provide any additional information other than the working folder and possibly the source files being compiled.
+</p>
+<p>A typical project will also need to be given a name but if there is only one source file then the name
+can be omitted and is inferred from the filename of the source file. For instance, we can explicitly
+name the project with,
+</p>
+<p><code>Project &lt;- new("BSysProject", WorkingFolder="./MyFolder", Name="MyProject")</code>
+</p>
+<p>A <code>WorkingFolder</code> must be provided which names the folder where the source code resides and can be either an absolute path or one
+relative to the <em>R</em> working directory. 
+</p>
+<p>Finally, if our project is hierarchical in its structure (eg. having source in one folder, header files in another folder,
+and binary output in yet another) <code>BuildSys</code> can accomodate that too. In such case we set <code>Flat=FALSE</code> with,
+</p>
+<p><code>Project &lt;- new("BSysProject", WorkingFolder="./MyFolder", Name="MyProject", Flat=FALSE)</code>
+</p>
+<p>For this case the relevent folders are,
+</p>
+<pre>
+MyFolder/src
+MyFolder/include
+MyFolder/obj
+</pre>
+<p>These sub folder names are the default behaviour. If these sub folder names are not as required they can be renamed
+using the <code>SourceName</code>, <code>IncludeName</code> and <code>ObjName</code> arguments in the <code>BSysProject</code> initilizer.
+That is,
+</p>
+<p><code>Project &lt;- new("BSysProject", WorkingFolder="./MyFolder", Name="MyProject", Flat=FALSE, SourceName="source", IncludeName="header")</code>
+</p>
+<p>Given an existing project, we can also re-initialize it using the <code>initProjectFromFolder</code> method which has the same
+argument list as the <code>initialize</code> method (it is actually called from the <code>initialize</code> method). For instance, as with the above,
+</p>
+<p><code>Project &lt;- initProjectFromFolder(Project, WorkingFolder="./MyFolder", Name="MyProject", Flat=FALSE, SourceName="source", IncludeName="header")</code>
+</p>
+
+
+
+<h4>Project Compilation</h4>
+
+<p>Once we have constructed a <code>Project</code> object compilation is simply a matter of calling the <code>make</code> method. As with
+traditional GNU makefiles, calling <code>make</code> with no arguments compiles the dynamic library. Calling make with a
+<code>"clean"</code> argument erases all object files and the built dynamic library. For example,
+</p>
+<pre>
+make(Project) # Compiles the source files and links the dynamic library
+
+make(Project, "clean") # deletes all .o object files and the dynamic library
+</pre>
+<p>Since the makefile is permanent a subsequent call to <code>make</code> for an already built project will return immediately
+as the library is already present and up to date. If a source file is altered then only the files with stale
+dependencies will be recompiled and linked into a new dynamic library build.
+</p>
+<p>Internally <code>make</code> will call the <code>buildMakefile</code> method to first construct an up to date makefile representing
+the project. Each makefile has an <em>md5 digest</em> in it which will be updated should you alter the project at all and
+this stamp is then used to determine if the makefile needs re-construction. If the makefile is re-constructed during
+a call to <code>make</code> then a make clean operation will be carried out to ensure the entire project is re-built. This
+should ensure that the state of the project, makefile and the build remains in sync.
+</p>
+<p>Finally, if your project needs to install the library and/or include files to a specific location, that behaviour is also
+catered for in <code>BuildSys</code>. Simply specify the install locations with the <code>InstallLibraryName</code> and <code>InstallIncludeName</code>
+arguments in the <code>BSysProject</code> initializer. For instance,
+</p>
+<p><code>Project &lt;- new("BSysProject", WorkingFolder="./MyFolder", Flat=F, InstallLibraryName="inst/lib", InstallIncludeName="inst/include")</code>
+</p>
+
+
+
+<h4>Loading and Unloading the Library</h4>
+
+<p>Once the project is made using the <code>make</code> method the dynamic library can be loaded into <em>R</em> memory. We do so using the
+<code>loadLibrary</code> method and we can similarly unload the library using the <code>unloadLibrary</code> method. The library
+name is based upon the project name and the path to the library can be obtained with the <code>libraryPath</code> method. For example,
+</p>
+<pre>
+loadLibrary(Project) # load the library built by Project
+
+unloadLibrary(Project) # unload the library built by Project
+
+libraryPath(Project) # return the path to the library built by Project
+</pre>
+
+
+
+<h4>Debugging the Library</h4>
+
+<p>To debug a dynamic library a debug build must be made to include the symbolic information needed with the dynamic library.
+By default, projects constructed using <code>BuildSys</code> will be created as debug builds. This is controlled by the <code>Debug</code> argument
+supplied in the call to the <code>BSysProject</code> initilizer. For instance,
+</p>
+<p><code>Project &lt;- new("BSysProject", Debug=TRUE)</code>
+</p>
+<p>creates a debug enabled project whereas,
+</p>
+<p><code>Project &lt;- new("BSysProject", Debug=FALSE)</code>
+</p>
+<p>create a release / optimised project. For an existing project we can make a debug build by supplying the <code>Debug</code> argument
+to the call to the <code>make</code> method as with,
+</p>
+<p><code>Project &lt;- make(Project, Debug=TRUE)</code>
+</p>
+<p>Recall that for <em>S4 class methods</em> to change the object state we need to assign the returned modified object to the original one,
+which is why the above example assigns the <code>make</code> call to <code>Project</code>.
+</p>
+<p>Debugging is handled through <em>Microsoft Visual Code</em> and <em>gdb / lldb</em> and it is assumed that these components are installed and
+functional. For information regarding the installation of these components consult the next section.
+</p>
+<p>To debug an existing dynamic library (built from a <code>BSysProject</code>) simply call the <code>vcDebug</code> method as follows.
+</p>
+<p><code>vcDebug(Project) # Debug the library created by project</code>
+</p>
+<p>Calling this method will open an instance of <em>Microsoft Visual Code</em> that is correctly initialised to debug your library code. Within
+<em>Visual Code</em> you can open the source file/s of your library, set breakpoints and run a debug session. To run a debug
+session select the <em>run/Start Debugging</em> menu item. Doing so will result in a new instance of <em>R</em> being launched which contains
+the same environment (including loaded packages and loaded dynamic libraries) as the parent <em>R</em> session where <code>vcDebug</code> was first
+called. This <em>R</em> session is your <em>sandbox</em> to safely debug your library in and leaves the parent <em>R</em> session safe from loss should
+your code crash <em>R</em> completely.
+</p>
+<p>Typically when debugging a new library the library requires <em>R</em> setup code to initialise as a foundation for library use and/or testing.
+With <code>BuildSys</code> you should perform this initial setup of <em>R</em> in the parent <em>R</em> session before calling <code>vcDebug</code> so that you
+never have to initialise <em>R</em> in your debug session. Its correct state will have been initialised from the parent <em>R</em> session.
+</p>
+
+
+
+<h4>Software Installation Requirements for Debugging</h4>
+
+<p>In order to debug code with <code>BuildSys</code> <em>Microsoft Visual Code</em> must be installed. You can download and install this software from
+here:
+</p>
+<p><a href="https://code.visualstudio.com/download">Download Visual Studio Code</a>
+</p>
+<p>Choose the appropriate installer for your operating system. On Windows and Linux the installer should include <em>code</em> in the <code>PATH</code> environment variable.
+Verify this by opening a new shell/command prompt and typing,
+</p>
+<p><code>code</code>
+</p>
+<p>and enter. If <em>Visual Code</em> starts then the <code>PATH</code> enviroment variable is correctly set. If it fails to start then add it to the
+system <code>PATH</code> environment variable. 
+</p>
+<p>On MacOS the application name is <code>Visual Studio Code.app</code> and is an application bundle. For it to be usable by <em>BuildSys</em> drag the <em>Visual Studio Code</em> application bundle to the <em>Applications</em> folder using <em>Finder</em>. 
+</p>
+<p>On <em>Windows</em> you will have to install <em>Rtools</em> which you can find here:
+</p>
+<p><a href="https://cran.r-project.org/bin/windows/Rtools/">Using Rtools40 on Windows</a>
+</p>
+<p>You will need to add <em>R</em> and <em>Rtools</em> to the system <em>Path</em>. For instance add,
+</p>
+<pre>
+C:\rtools40\mingw64\bin\
+C:\rtools40\usr\bin\
+C:\Program Files\R\R-4.0.1\bin\x64\
+</pre>
+<p>but be aware that the locations may differ in your case depending on which version of <em>R</em> and <em>Rtools</em> and where these products were installed.
+To set environment variables in <em>Windows 10</em>,
+</p>
+
+<ol>
+<li>
+<p> Open the Start Search, type in “env”, and choose “Edit the system environment variables”:
+</p>
+</li>
+<li>
+<p> Click the “Environment Variables...” button.
+</p>
+</li>
+<li>
+<p> Set the environment variables as needed. The New button adds an additional variable.
+</p>
+</li>
+<li>
+<p> Dismiss all of the dialogs by choosing “OK”. Your changes are saved!
+</p>
+</li>
+</ol>
+<p>In Windows after installing <em>Rtools</em> we also need to install <em>gdb</em>. To install <em>gdb</em>, open an <em>MSYS2</em> shell (In explorer migrate to the Rtools40 folder
+and double click on <em>msys2.exe</em>) and enter the following commands,
+</p>
+<pre>
+pacman -Sy
+pacman -S mingw-w64-{i686,x86_64}-gdb
+</pre>
+<p>After installing verify that <em>gdb</em> is installed by opening a new <em>DOS box</em> and typing,
+</p>
+<p><code>gdb -v</code>
+</p>
+<p>If all is correct it should respond with something like,
+</p>
+<pre>
+GNU gdb (GDB) 8.3.1
+Copyright (C) 2019 Free Software Foundation, Inc.
+License GPLv3+: GNU GPL version 3 or later &lt;http://gnu.org/licenses/gpl.html&gt;
+This is free software: you are free to change and redistribute it.
+There is NO WARRANTY, to the extent permitted by law.
+</pre>
+<p>On <em>MacOS / OS X</em> you will need to install <em>Xcode</em> to have access to both <em>clang</em> and <em>lldb</em>. Go to <em>Mac App Store</em> and download and install <em>Xcode</em>.
+</p>
+<p>On <em>Linux</em> you will need to have <em>gcc</em> installed. Installation of <em>gcc</em> on <em>Linux</em> is omitted because of the
+many and varied ways to do so depending on the distribution being used. Please consult <em>Google</em> on this topic for more information
+on installing development tools on <em>Linux</em>.
+</p>
+<p>On <em>Windows</em> and <em>Linux</em>, you will also need to install the <em>Microsoft C/C++ IntelliSense, debugging, and code browsing</em> extension in
+<em>Microsoft Visual Code</em>. To install, press <em>Ctrl+Shift+X</em> and search for <em>C/C++</em> and then click on <em>Install</em> beside the
+<em>Microsoft C/C++ IntelliSense, debugging, and code browsing</em> entry in the list. On <em>MacOS / OS X</em> you will need to install
+the <em>Microsoft C/C++ IntelliSense, debugging, and code browsing</em> and <em>CodeLLDB</em> extensions. To install press <em>CMD+Shift+X</em> and 
+search for <em>C/C++</em> and then click on <em>Install</em> beside the <em>Microsoft C/C++ IntelliSense, debugging, and code browsing</em> entry in the list,
+then also search for <em>CodeLLDB</em> and click on the <em>Install</em> next to <em>Native debugger based on LLDB</em> in the list.
+</p>
+
+<p>On <em>MacOS (OS X 10.11 and later)</em> <em>Apple</em> introduced <em>System Integrity Protection</em> which restricts the ability to debug your code from within an R session. 
+To debug code in R using <em>BuildSys</em> and <em>CodeLLDB</em> will require that the debugging restrictions are disabled. To do so shutdown <em>MacOS</em>, then press and hold down <em>CMD+R</em>
+keys while pressing the power button and keep them depressed until you see a language selection dialog. After selecting the language you should see
+the <em>Utilities Window</em>. In the menu bar at the top of the screen select the <em>utilities/Terminal</em> menu and in the terminal session enter
+the follow command:
+</p>
+<pre>
+csrutil enable --without debug
+</pre>
+<p>You will be prompted for your password. Enter your password to carry out the command. If successful you will be presented with a warning about it being a non-standard configuration. 
+Now re-boot your Mac by selecting the re-boot option from the Apple menu at the top of the screen. You should now be able to debug your R dynamic libraries with <em>BuildSys</em>.
+</p>
+
+
+<h3>Note</h3>
+
+<p>If the absolute path to source and dynamic library files contains spaces then debugging in <em>Visual Code</em> fails to function correctly.
+To ensure code is debuggable users will need to avoid putting code in folders with whitespace in the folder names.
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Paavo Jumppanen [aut, cre]
+</p>
+<p>Maintainer: Paavo Jumppanen &lt;paavo.jumppanen@csiro.au&gt;
+</p>
+
+
+<h3>See Also</h3>
+
+<p><a href="https://code.visualstudio.com/docs/cpp/cpp-debug">Debug C++ in Visual Studio Code</a>
+<a href="https://developer.apple.com/documentation/security/disabling_and_enabling_system_integrity_protection">Disabling and Enabling System Integrity Protection</a>
+<a href="https://developer.apple.com/forums/thread/17452">Enabling parts of System Integrity Protection while disabling specific parts?</a>
+<code>make</code>
+<code>buildMakefile</code>
+<code>vcDebug</code>
+<code>loadLibrary</code>
+<code>unloadLibrary</code>
+<code>libraryPath</code>
+<code>sourcePath</code>
+<code>includePath</code>
+<code>objPath</code>
+<code>installLibraryPath</code>
+<code>installIncludePath</code>
+<code>clean</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">ProjectFolder &lt;- tempdir()
+
+# Create source file for finite convolution example in "Writing R Extensions"  
+lines &lt;- c(
+"#include &lt;R.h&gt;",
+"#include &lt;Rinternals.h&gt;",
+"",
+"SEXP convolve2(SEXP a, SEXP b)",
+"{",
+"    int na, nb, nab;",
+"    double *xa, *xb, *xab;",
+"    SEXP ab;",
+"",
+"    a = PROTECT(coerceVector(a, REALSXP));",
+"    b = PROTECT(coerceVector(b, REALSXP));",
+"    na = length(a); nb = length(b); nab = na + nb - 1;",
+"    ab = PROTECT(allocVector(REALSXP, nab));",
+"    xa = REAL(a); xb = REAL(b); xab = REAL(ab);",
+"    for(int i = 0; i &lt; nab; i++) xab[i] = 0.0;",
+"    for(int i = 0; i &lt; na; i++)",
+"        for(int j = 0; j &lt; nb; j++) xab[i + j] += xa[i] * xb[j];",
+"    UNPROTECT(3);",
+"    return ab;",
+"}")  
+
+SourceFilePath &lt;- paste0(ProjectFolder, "/convolve.c")
+writeLines(lines, SourceFilePath)
+
+# digest need not be loaded but the digest package needs to be installed
+# as it is used to create a digest of the project to track the need for
+# makefile re-creation.
+require(BuildSys)
+
+# create project to build shared library, a flat project with source in current working directory. 
+Project &lt;- new("BSysProject", ProjectFolder)
+
+# re-initialise project from current working directory, new("BSysProject") calls this internally
+Project &lt;- initProjectFromFolder(Project, ProjectFolder)
+
+# build the shared library
+make(Project)
+
+# get project library path
+libraryPath(Project)
+
+# get project source path
+sourcePath(Project)
+
+# get project include path
+includePath(Project)
+
+# get project object path
+objPath(Project)
+
+# get project install library path
+installLibraryPath(Project)
+
+# get project install include path
+installIncludePath(Project)
+
+# load the library
+loadLibrary(Project)
+
+# R wrapper on .Call
+conv &lt;- function(a, b) .Call("convolve2", a, b)
+
+# Test data
+a &lt;- rnorm(100)
+b &lt;- rep(1.0, times=10)
+
+# call the shared library function
+conv(a, b)
+
+## Not run: 
+# open a debug session - assumes Visual Studio Code is installed as directed in the 
+# package documentation. This will open a Visual Studio Code session. In that session
+# open the convolve.c source file and set breakpoints, then select the "run/start debugging"
+# menu to debug. This will start a new R session with the same state as the parent 
+# R session where vcDebug() is first called. In the new debug session run the following
+# command:
+#
+# conv(a, b)
+vcDebug(Project)
+
+## End(Not run)
+
+# unload the shared library
+unloadLibrary(Project)
+
+# clean up example
+make(Project, "clean")
+clean(Project)
+unlink(SourceFilePath)
+</code></pre>
+
+
+</div>

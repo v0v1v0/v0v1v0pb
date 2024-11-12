@@ -1,0 +1,114 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>calc_power_prior_beta</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Calculate Power Prior Beta</h2>
+
+<h3>Description</h3>
+
+<p>Calculate a (potentially inverse probability weighted) beta
+power prior for the control response rate using external control data.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">calc_power_prior_beta(external_data, response, prior)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>external_data</code></td>
+<td>
+<p>This can either be a <code>prop_scr_obj</code> created by calling
+<code>create_prop_scr()</code> or a tibble of the external data. If it is just a
+tibble the weights will be assumed to be 1.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>response</code></td>
+<td>
+<p>Name of response variable</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>prior</code></td>
+<td>
+<p>A beta distributional object that is the initial prior for the
+control response rate before the external control data are observed</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>Weighted participant-level response data from an external study are
+incorporated into an inverse probability weighted (IPW) power prior for the
+control response rate <code class="reqn">\theta_C</code>. When borrowing information from an
+external control arm of size <code class="reqn">N_{EC}</code>, the components of the IPW power
+prior for <code class="reqn">\theta_C</code> are defined as follows:
+</p>
+
+<dl>
+<dt>Initial prior:</dt>
+<dd>
+<p><code class="reqn">\theta_C \sim \mbox{Beta}(\nu_0, \phi_0)</code></p>
+</dd>
+<dt>IPW likelihood of the external response data <code class="reqn">\boldsymbol{y}_E</code> with
+weights <code class="reqn">\hat{\boldsymbol{a}}_0</code>:</dt>
+<dd>
+<p><code class="reqn">\mathcal{L}_E(\theta_C \mid
+    \boldsymbol{y}_E, \hat{\boldsymbol{a}}_0) \propto \exp \left( \sum_{i=1}^{N_{EC}}
+    \hat{a}_{0i} \left[ y_i \log(\theta_C) + (1 - y_i) \log(1 - \theta_C) \right] \right)</code></p>
+</dd>
+<dt>IPW power prior:</dt>
+<dd>
+<p><code class="reqn">\theta_C \mid \boldsymbol{y}_E, \hat{\boldsymbol{a}}_0
+    \sim \mbox{Beta} \left( \sum_{i=1}^{N_{EC}} \hat{a}_{0i} y_i + \nu_0,
+    \sum_{i=1}^{N_{EC}} \hat{a}_{0i} (1 - y_i) + \phi_0 \right)</code></p>
+</dd>
+</dl>
+<p>Defining the weights <code class="reqn">\hat{\boldsymbol{a}}_0</code> to equal 1 results in a
+conventional beta power prior.
+</p>
+
+
+<h3>Value</h3>
+
+<p>Beta power prior object
+</p>
+
+
+<h3>See Also</h3>
+
+<p>Other power prior: 
+<code>calc_power_prior_norm()</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">library(distributional)
+library(dplyr)
+# This function can be used directly on the data
+calc_power_prior_beta(external_data = ex_binary_df,
+  response = y,
+  prior = dist_beta(0.5, 0.5))
+
+# Or this function can be used with a propensity score object
+ps_obj &lt;- calc_prop_scr(internal_df = filter(int_binary_df, trt == 0),
+  external_df = ex_binary_df,
+  id_col = subjid,
+  model = ~ cov1 + cov2 + cov3 + cov4)
+
+calc_power_prior_beta(ps_obj,
+  response = y,
+  prior = dist_beta(0.5, 0.5))
+</code></pre>
+
+
+</div>

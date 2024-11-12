@@ -1,0 +1,309 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>read.pdb</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2> Read PDB File</h2>
+
+<h3>Description</h3>
+
+<p>Read a Protein Data Bank (PDB) coordinate file.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">read.pdb(file, maxlines = -1, multi = FALSE, rm.insert = FALSE,
+         rm.alt = TRUE, ATOM.only = FALSE, hex = FALSE, verbose = TRUE)
+
+read.pdb2(file, maxlines = -1, multi = FALSE, rm.insert = FALSE,
+         rm.alt = TRUE, ATOM.only = FALSE, verbose = TRUE)
+
+## S3 method for class 'pdb'
+print(x, printseq=TRUE, ...)
+
+## S3 method for class 'pdb'
+summary(object, printseq=FALSE, ...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>file</code></td>
+<td>
+<p> a single element character vector containing the name of
+the PDB file to be read, or the four letter PDB identifier for
+online file access. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>maxlines</code></td>
+<td>
+<p> the maximum number of lines to read before giving up
+with large files. By default if will read up to the end of input on
+the connection. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>multi</code></td>
+<td>
+<p> logical, if TRUE multiple ATOM records are read for all
+models in multi-model files and their coordinates returned. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>rm.insert</code></td>
+<td>
+<p> logical, if TRUE PDB insert records are ignored. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>rm.alt</code></td>
+<td>
+<p> logical, if TRUE PDB alternate records are ignored. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ATOM.only</code></td>
+<td>
+<p> logical, if TRUE only ATOM/HETATM records are stored.
+Useful for speed enhancements with large files where secondary structure, 
+biological unit and other remark records are not required. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>hex</code></td>
+<td>
+<p> logical, if TRUE enable parsing of hexadecimal atom
+numbers (&gt; 99.999) and residue numbers (&gt; 9.999) (e.g. from VMD). Note
+that numbering is assumed to be consecutive (with no missing numbers)
+and the hexadecimals should start at atom number 100.000 and residue
+number 10.000 and proceed to the end of file. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>verbose</code></td>
+<td>
+<p> print details of the reading process. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p> a PDB structure object obtained from
+<code>read.pdb</code>.  </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>object</code></td>
+<td>
+<p> a PDB structure object obtained from
+<code>read.pdb</code>.  </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>printseq</code></td>
+<td>
+<p> logical, if TRUE the PDB ATOM sequence will be printed
+to the screen. See also <code>pdbseq</code>.  </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p> additional arguments to ‘print’. </p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p><code>read.pdb</code> is a re-implementation (using Rcpp) of the slower but
+more tested R implementation of the same function (called
+<code>read.pdb2</code> since bio3d-v2.3).
+</p>
+<p><code>maxlines</code> may be set so as to restrict the reading to a portion
+of input files. Note that the preferred means of reading large 
+multi-model files is via binary DCD or NetCDF format trajectory files 
+(see the <code>read.dcd</code> and <code>read.ncdf</code> functions).
+</p>
+
+
+<h3>Value</h3>
+
+<p>Returns a list of class <code>"pdb"</code> with the following components:
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>atom</code></td>
+<td>
+<p> a data.frame containing all atomic coordinate ATOM and 
+HETATM data, with a row per ATOM/HETATM and a column per record type.  
+See below for details of the record type naming convention (useful for 
+accessing columns). </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>helix </code></td>
+<td>
+ <p>‘start’, ‘end’ and ‘length’ of H
+type sse, where start and end are residue numbers “resno”. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>sheet </code></td>
+<td>
+ <p>‘start’, ‘end’ and ‘length’ of E
+type sse, where start and end are residue numbers “resno”. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>seqres </code></td>
+<td>
+<p> sequence from SEQRES field. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>xyz </code></td>
+<td>
+<p> a numeric matrix of class <code>"xyz"</code> containing the
+ATOM and HETATM coordinate data. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>calpha </code></td>
+<td>
+<p> logical vector with length equal to <code>nrow(atom)</code>
+with TRUE values indicating a C-alpha “elety”. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>remark </code></td>
+<td>
+<p> a list object containing information taken from 'REMARK'
+records of a <code>"pdb"</code>. It can be used for building biological units
+(See <code>biounit</code>). </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>call </code></td>
+<td>
+<p> the matched call. </p>
+</td>
+</tr>
+</table>
+<h3>Note</h3>
+
+ 
+<p>For both <code>atom</code> and <code>het</code> list components the column names can be
+used as a convenient means of data access, namely:
+Atom serial number “eleno” ,
+Atom type “elety”,
+Alternate location indicator “alt”,
+Residue name “resid”,
+Chain identifier “chain”,
+Residue sequence number “resno”,
+Code for insertion of residues “insert”,
+Orthogonal coordinates “x”,
+Orthogonal coordinates “y”,
+Orthogonal coordinates “z”,
+Occupancy “o”, and
+Temperature factor “b”.
+See examples for further details.
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p> Barry Grant </p>
+
+
+<h3>References</h3>
+
+<p>Grant, B.J. et al. (2006) <em>Bioinformatics</em> <b>22</b>, 2695–2696.
+</p>
+<p>For a description of PDB format (version3.3) see:<br><a href="http://www.wwpdb.org/documentation/format33/v3.3.html">http://www.wwpdb.org/documentation/format33/v3.3.html</a>.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>atom.select</code>, <code>write.pdb</code>,
+<code>trim.pdb</code>, <code>cat.pdb</code>, 
+<code>read.prmtop</code>, <code>as.pdb</code>,
+<code>read.dcd</code>, <code>read.ncdf</code>, 
+<code>read.fasta.pdb</code>, <code>read.fasta</code>, 
+<code>biounit</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## Read a PDB file from the RCSB online database
+#pdb &lt;- read.pdb("4q21")
+
+## Read a PDB file from those included with the package
+pdb &lt;- read.pdb( system.file("examples/1hel.pdb", package="bio3d") )
+
+## Print a brief composition summary
+pdb
+
+## Examine the storage format (or internal *str*ucture)
+str(pdb)
+
+## Print data for the first four atom
+pdb$atom[1:4,]
+
+## Print some coordinate data
+head(pdb$atom[, c("x","y","z")])
+
+## Or coordinates as a numeric vector
+#head(pdb$xyz)
+
+## Print C-alpha coordinates (can also use 'atom.select' function)
+head(pdb$atom[pdb$calpha, c("resid","elety","x","y","z")])
+inds &lt;- atom.select(pdb, elety="CA")
+head( pdb$atom[inds$atom, ] )
+
+## The atom.select() function returns 'indices' (row numbers)
+## that can be used for accessing subsets of PDB objects, e.g.
+inds &lt;- atom.select(pdb,"ligand")
+pdb$atom[inds$atom,]
+pdb$xyz[inds$xyz]
+
+## See the help page for atom.select() function for more details.
+
+
+## Not run: 
+## Print SSE data for helix and sheet,
+##  see also dssp() and stride() functions
+print.sse(pdb)
+pdb$helix
+pdb$sheet$start
+  
+## Print SEQRES data
+pdb$seqres
+
+## SEQRES as one letter code
+aa321(pdb$seqres)
+
+## Where is the P-loop motif in the ATOM sequence
+inds.seq &lt;- motif.find("G....GKT", pdbseq(pdb))
+pdbseq(pdb)[inds.seq]
+
+## Where is it in the structure
+inds.pdb &lt;- atom.select(pdb,resno=inds.seq, elety="CA")
+pdb$atom[inds.pdb$atom,]
+pdb$xyz[inds.pdb$xyz]
+
+## View in interactive 3D mode
+#view(pdb)
+
+## End(Not run)
+
+</code></pre>
+
+
+</div>

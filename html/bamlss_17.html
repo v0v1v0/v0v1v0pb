@@ -1,0 +1,328 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>opt_bbfit</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Batchwise Backfitting</h2>
+
+<h3>Description</h3>
+
+<p>Batchwise backfitting estimation engine for GAMLSS using very large data sets.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">## Batchwise backfitting engine.
+opt_bbfit(x, y, family, shuffle = TRUE, start = NULL, offset = NULL,
+  epochs = 1, nbatch = 10, verbose = TRUE, ...)
+
+bbfit(x, y, family, shuffle = TRUE, start = NULL, offset = NULL,
+  epochs = 1, nbatch = 10, verbose = TRUE, ...)
+
+## Parallel version.
+opt_bbfitp(x, y, family, mc.cores = 1, ...)
+
+## Loglik contribution plot.
+contribplot(x, ...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>For function <code>bfit()</code> the <code>x</code> list, as returned from function
+<code>bamlss.frame</code>, holding all model matrices and other information that is used for
+fitting the model. For the updating functions an object as returned from function
+<code>smooth.construct</code> or <code>smoothCon</code>. For function
+<code>contribplot()</code>, a <code>"bamlss"</code> object using <code>bbfit()</code> with argument
+<code>select = TRUE</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>y</code></td>
+<td>
+<p>The model response, as returned from function <code>bamlss.frame</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>family</code></td>
+<td>
+<p>A <span class="pkg">bamlss</span> family object, see <code>family.bamlss</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>shuffle</code></td>
+<td>
+<p>Should observations be shuffled?</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>start</code></td>
+<td>
+<p>A named numeric vector containing possible starting values, the names are based on
+function <code>parameters</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>offset</code></td>
+<td>
+<p>Can be used to supply model offsets for use in fitting,
+returned from function <code>bamlss.frame</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>epochs</code></td>
+<td>
+<p>For how many epochs should the algorithm run?</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nbatch</code></td>
+<td>
+<p>Number of batches. Can also be a number between 0 and 1, i.e., determining
+the fraction of observations that should be used for fitting.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>verbose</code></td>
+<td>
+<p>Print information during runtime of the algorithm.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>mc.cores</code></td>
+<td>
+<p>On how many cores should estimation be started?</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>For <code>bbfitp()</code> all arguments to be passed to <code>bbfit()</code>.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The algorithm uses batch-wise estimation of regression coefficients and smoothing variances.
+The smoothing variances are estimated on an hold-out batch. This way, models for very large
+data sets can be estimated. Note, the algorithm can work in combination with the <span class="pkg">ff</span>
+and <span class="pkg">ffbase</span> package, i.e., the entire data is never in the computer RAM. Therefore, the
+data can either to be stored as comma separated file on disc or provided as <code>"ffdf"</code>
+data frame, see also the examples.
+</p>
+<p>The optimizer functions use additional arguments:
+</p>
+
+<ul>
+<li> <p><code>batch_ids</code>. This argument can either be a list of indices specifying the
+batches that should be used for estimation, or a vector of length 2, where the
+first element specifies the number of observations that should be sampled for each
+batch and the second argument specifies the number of batches, see the example.
+</p>
+</li>
+<li> <p><code>nu</code>, the step length control parameter. Defaults to <code>nu = 0.05</code>.
+If argument <code>slice = TRUE</code> then <code>nu = 1</code>.
+</p>
+</li>
+<li> <p><code>loglik</code>, defaults to <code>loglik = FALSE</code>. If set to <code>loglik = TRUE</code>
+the "out-of-sample" log-likelihood is used for smoothing variance estimation.
+</p>
+</li>
+<li> <p><code>aic</code>, defaults to <code>aic = FALSE</code>, If set to <code>aic = TRUE</code>
+the "out-of-sample" AIC is used for smoothing variance estimation.
+</p>
+</li>
+<li> <p><code>eps_loglik</code>, defaults to <code>eps_loglik = 0.01</code>. This argument specifies
+the relative change in the "out-of-sample" log-likelihood that is needed such that
+a model term gets updated.
+</p>
+</li>
+<li> <p><code>select</code>, defaults to <code>select = FALSE</code>. If set to <code>select = TRUE</code>,
+the algorithm only selects the model term with the largest contribution in the
+"out-of-sample" log-likelihood for updating in each iteration/batch.
+</p>
+</li>
+<li> <p><code>always</code>, defaults to <code>always = FALSE</code>. If set to <code>always = TRUE</code>
+no log-likelihood contribution checks will be used and model terms are always updated.
+</p>
+</li>
+<li> <p><code>K</code>, defaults to <code>K = 2</code>. This argument controls the penalty on the
+degrees of freedom in the computation of the AIC.
+</p>
+</li>
+<li> <p><code>slice</code>, defaults to <code>slice = FALSE</code>. If set to <code>slice = TRUE</code>,
+slice sampling using the "out-of-sample" log-likelihood or AIC is used for smoothing
+variance estimation. Moreover, <code>always = TRUE</code>, <code>eps_loglik = -Inf</code> and
+<code>nu = 1</code>. If <code>slice</code> is an integer <code>n</code>, slice sampling is started after
+<code>n</code> iterations, before smoothing variances are optimized.
+</p>
+</li>
+</ul>
+<p>When using function <code>opt_bbfitp</code>, the parameter updates are stored as <code>"mcmc"</code>
+objects. In this case the traceplots can be visualized using <code>plot.bamlss</code>.
+</p>
+
+
+<h3>Value</h3>
+
+<p>For function <code>opt_bbfit()</code> a list containing the following objects:
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>fitted.values</code></td>
+<td>
+<p>A named list of the fitted values of the modeled parameters
+of the selected distribution.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>parameters</code></td>
+<td>
+<p>The estimated set regression coefficients and smoothing variances.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>shuffle</code></td>
+<td>
+<p>Logical</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>runtime</code></td>
+<td>
+<p>The runtime of the algorithm.</p>
+</td>
+</tr>
+</table>
+<h3>See Also</h3>
+
+<p><code>bamlss</code>, <code>bfit</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## Not run: ## Simulate data.
+set.seed(123)
+d &lt;- GAMart(n = 27000, sd = -1)
+
+## Write data to disc.
+tf &lt;- tempdir()
+write.table(d, file.path(tf, "d.raw"), quote = FALSE, row.names = FALSE, sep = ",")
+
+## Model formula.
+f &lt;- list(
+  y ~ s(x1,k=40) + s(x2,k=40) + s(x3,k=40) + te(lon,lat,k=10),
+  sigma ~ s(x1,k=40) + s(x2,k=40) + s(x3,k=40) + te(lon,lat,k=10)
+)
+
+## Specify 50 batches with 1000 observations.
+batch_ids &lt;- c("nobs" = 1000, "nbatch" = 50)
+
+## Note, can also be a list of indices, e.g.
+## batch_ids &lt;- lapply(1:50, function(i) { sample(1:nrow(d), size = 1000) })
+
+## Different flavors:
+## (1) Using "out-of-sample" aic for smoothing
+##     variance estimation. Update is only accepted
+##     if the "out-of-sample" log-likelihood is
+##     increased. If data is a filepath, the data set is
+##     read into R using package ff and model and
+##     design matrices are processed with ff. This may
+##     take some time depending on the size of the data.
+set.seed(1)
+b1 &lt;- bamlss(f, data = file.path(tf, "d.raw"),
+  sampler = FALSE, optimizer = opt_bbfit,
+  batch_ids = batch_ids, nu = 0.1, aic = TRUE, eps_loglik = -Inf,
+  always = FALSE)
+
+## Plot estimated effects.
+## plot(b1)
+
+## Plot coefficient paths for x3 in mu.
+## pathplot(b1, name = "mu.s.s(x3).b")
+
+## (2) Same but always update, this mimics the classic SGD.
+##     Note, for prediction only the last iteration is
+##     used in this case. To use more iterations use opt_bbfitp(),
+##     Then iterations are stored as "mcmc" object and we can
+##     predict using the burnin argment, e.g.,
+##     p &lt;- predict(b2, model = "mu", burnin = 35)
+set.seed(2)
+b2 &lt;- bamlss(f, data = file.path(tf, "d.raw"),
+  sampler = FALSE, optimizer = opt_bbfit,
+  batch_ids = batch_ids, nu = 0.1, aic = TRUE, eps_loglik = -Inf,
+  always = TRUE)
+
+## Plot coefficient paths for x3 in mu.
+## pathplot(b2, name = "mu.s.s(x3).b")
+
+## (3) Boosting type flavor, only update model term with
+##     the largest contribution in the "out-of-sample"
+##     log-likelihood. In this case, if edf = 0 during
+##     runtime of the algorithm, no model has an additional
+##     contribution and the algorithm converges. This
+##     behavior is controlled by argument eps_loglik, the
+##     higher eps_loglik, the more restrictive is the
+##     updating step.
+
+## Initialize intercepts.
+set.seed(0)
+
+batch_ids &lt;- lapply(1:400, function(i) { sample(1:nrow(d), size = 1000) })
+
+b0 &lt;- bamlss(y ~ 1, data = d, sampler = FALSE, optimizer = opt_bbfitp,
+  batch_ids = batch_ids)
+
+## Compute starting values, remove the first
+## 10 iterates and compute the mean of the
+## remaining iterates.
+start &lt;- coef(b0, FUN = mean, burnin = 200)
+
+## Start boosting, only update if change in
+## "out-of-sample" log-likelihood is 0.1
+## eps_loglik = 0.001.
+b3 &lt;- bamlss(f, data = d, sampler = FALSE, optimizer = opt_bbfit,
+    batch_ids = batch_ids, nu = 0.1, aic = TRUE, eps_loglik = 0.001,
+    select = TRUE, always = FALSE, start = start)
+
+## Plot log-likelihood contributions.
+## contribplot(b3)
+## In this case, the algorithm did not converge,
+## we need more iterations/batches.
+
+## Note, prediction uses last iterate.
+p3 &lt;- predict(b3, model = "mu")
+
+## (4) Use slice sampling under the "out-of-sample"
+##     log likelihood for estimation of smoothing
+##     variances. In this case model terms are always
+##     updated ad parameter paths behave like a MCMC
+##     chain. Therefore, use opt_bbfitp(), which stores
+##     parameter paths as "mcmc" objects and we can
+##     inspect using traceplots. Note nu = 1 if
+##     slice = TRUE.
+set.seed(4)
+b4 &lt;- bamlss(f, data = d, sampler = FALSE, optimizer = opt_bbfitp,
+  batch_ids = batch_ids, aic = TRUE, slice = TRUE)
+
+## plot(b4)
+
+## Plot parameter updates/samples.
+## plot(b4, which = "samples")
+
+## Predict with burnin and compute mean
+## prediction of the last 20 iterates.
+p4 &lt;- predict(b4, model = "mu", burnin = 30, FUN = mean)
+
+## End(Not run)
+</code></pre>
+
+
+</div>

@@ -1,0 +1,171 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>network.run</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Run the model using the network object</h2>
+
+<h3>Description</h3>
+
+<p>This is the core function that runs the model in our program. Before running this function, we need to specify data, prior, JAGS code, etc. using <code>network.data</code>.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">network.run(
+  network,
+  inits = NULL,
+  RNG.inits = NULL,
+  n.chains = 3,
+  max.run = 1e+05,
+  setsize = 10000,
+  n.run = 50000,
+  conv.limit = 1.05,
+  extra.pars.save = NULL
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>network</code></td>
+<td>
+<p>Network object created from <code>network.data</code> function</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>inits</code></td>
+<td>
+<p>Initial values for the parameters being sampled. If left unspecified, program will generate reasonable initial values.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>RNG.inits</code></td>
+<td>
+<p>List of .RNG.name and .RNG.seed that control the JAGS RNGs. Please refer to jags.model function in rjags for more information.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>n.chains</code></td>
+<td>
+<p>Number of chains to run</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>max.run</code></td>
+<td>
+<p>Maximum number of iterations that user is willing to run. If the algorithm is not converging, it will run up to <code>max.run</code> iterations before printing a message that it did not converge</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>setsize</code></td>
+<td>
+<p>Number of iterations that are run between convergence checks. If the algorithm converges fast, user wouldn't need a big setsize. The number that is printed between each convergence checks is the gelman-rubin diagnostics and we would want that to be below the conv.limit the user specifies.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>n.run</code></td>
+<td>
+<p>Final number of iterations that the user wants to store. If after the algorithm converges, user wants less number of iterations, we thin the sequence. If the user wants more iterations, we run extra iterations to reach the specified number of runs</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>conv.limit</code></td>
+<td>
+<p>Convergence limit for Gelman and Rubin's convergence diagnostic. Point estimate is used (instead of 95 percent C.I.) to test convergence of parameters for study-specific baselines (eta), average treatment effect (d), between-study heterogeneity (log variance (logvar)), and regression parameters when covariates (beta) or baseline risk (b_bl).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>extra.pars.save</code></td>
+<td>
+<p>Parameters that user wants to save besides the default parameters saved. See code using <code>cat(network$code)</code> to see which parameters can be saved.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>data_rjags</code></td>
+<td>
+<p>Data that is put into rjags function <code>jags.model</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>inits</code></td>
+<td>
+<p>Initial values that are either specified by the user or generated as a default</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>RNG.inits</code></td>
+<td>
+<p>List of .RNG.name and .RNG.seed used for reproducibility</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>pars.save</code></td>
+<td>
+<p>Parameters that are saved. Add more parameters in extra.pars.save if other variables are desired</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>burnin</code></td>
+<td>
+<p>Half of the converged sequence is thrown out as a burnin</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>n.thin</code></td>
+<td>
+<p>If the number of iterations user wants (n.run) is less than the number of converged sequence after burnin, we thin the sequence and store the thinning interval</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>samples</code></td>
+<td>
+<p>MCMC samples stored using jags. The returned samples have the form of mcmc.list and can be directly applied to coda functions</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>max.gelman</code></td>
+<td>
+<p>Maximum Gelman and Rubin's convergence diagnostic calculated for the final sample</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>conv.save</code></td>
+<td>
+<p>Variables that were tested for convergence using Gelman and Rubin's diagnostic</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>deviance</code></td>
+<td>
+<p>Contains deviance statistics such as pD (effective number of parameters) and DIC (Deviance Information Criterion)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>rank.tx</code></td>
+<td>
+<p>Rank probability calculated for each treatments. <code>rank.preference</code> parameter in <code>network.data</code> is used to define whether higher or lower value is preferred. The numbers are probabilities that a given treatment has been in certain rank in the sequence.</p>
+</td>
+</tr>
+</table>
+<h3>Examples</h3>
+
+<pre><code class="language-R">#parkinson's example (normal)
+network &lt;- with(parkinsons,{
+  network.data(Outcomes, Study, Treat, SE = SE, response = "normal")
+})
+
+result &lt;- network.run(network)
+
+</code></pre>
+
+
+</div>

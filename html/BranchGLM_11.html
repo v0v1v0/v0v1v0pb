@@ -1,0 +1,581 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>BranchGLM</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Fits GLMs</h2>
+
+<h3>Description</h3>
+
+<p>Fits generalized linear models (GLMs) via RcppArmadillo with the
+ability to perform some computation in parallel with OpenMP.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">BranchGLM(
+  formula,
+  data = NULL,
+  family,
+  link,
+  offset = NULL,
+  method = "Fisher",
+  grads = 10,
+  parallel = FALSE,
+  nthreads = 8,
+  tol = 1e-06,
+  maxit = NULL,
+  init = NULL,
+  fit = TRUE,
+  contrasts = NULL,
+  keepData = TRUE,
+  keepY = TRUE
+)
+
+BranchGLM.fit(
+  x,
+  y,
+  family,
+  link,
+  offset = NULL,
+  method = "Fisher",
+  grads = 10,
+  parallel = FALSE,
+  nthreads = 8,
+  init = NULL,
+  maxit = NULL,
+  tol = 1e-06
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>formula</code></td>
+<td>
+<p>a formula for the model.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+<p>an optional data.frame, list or environment (or object coercible by
+as.data.frame to a data.frame), containing the variables in formula.
+Neither a matrix nor an array will be accepted. If not found in <code>data</code>, the
+variables are taken from <code>environment(formula)</code>, typically the environment from
+which <code>BranchGLM</code> is called.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>family</code></td>
+<td>
+<p>the distribution used to model the data, one of "gaussian",
+"gamma", "binomial", or "poisson". A <code>family</code> object may also be supplied for
+one of the accepted distributions.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>link</code></td>
+<td>
+<p>the link used to link the mean structure to the linear predictors. One of
+"identity", "logit", "probit", "cloglog", "sqrt", "inverse", or "log". The accepted
+links depend on the specified family, see more in details. This only needs to be
+supplied if a string is supplied for <code>family</code>. If a <code>family</code> object is supplied
+for the <code>family</code> argument, then the link function is taken from that <code>family</code>
+object.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>offset</code></td>
+<td>
+<p>the offset vector, by default the zero vector is used.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>method</code></td>
+<td>
+<p>one of "Fisher", "BFGS", or "LBFGS". BFGS and L-BFGS are
+quasi-newton methods which are typically faster than Fisher's scoring when
+there are many covariates (at least 50).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>grads</code></td>
+<td>
+<p>a positive integer to denote the number of gradients used to
+approximate the inverse information with, only for <code>method = "LBFGS"</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>parallel</code></td>
+<td>
+<p>a logical value to indicate if parallelization should be used.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nthreads</code></td>
+<td>
+<p>a positive integer to denote the number of threads used with OpenMP,
+only used if <code>parallel = TRUE</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>tol</code></td>
+<td>
+<p>a positive number to denote the tolerance used to determine model convergence.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>maxit</code></td>
+<td>
+<p>a positive integer to denote the maximum number of iterations performed.
+The default for Fisher's scoring is 50 and for the other methods the default is 200.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>init</code></td>
+<td>
+<p>a numeric vector of initial values for the betas, if not specified
+then they are automatically selected via linear regression with the transformation
+specified by the link function. This is ignored for linear regression models.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>fit</code></td>
+<td>
+<p>a logical value to indicate whether to fit the model or not.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>contrasts</code></td>
+<td>
+<p>see <code>contrasts.arg</code> of <code>model.matrix.default</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>keepData</code></td>
+<td>
+<p>a logical value to indicate whether or not to store a copy of
+data and the design matrix, the default is TRUE. If this is FALSE, then the
+results from this cannot be used inside of <code>VariableSelection</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>keepY</code></td>
+<td>
+<p>a logical value to indicate whether or not to store a copy of y,
+the default is TRUE. If this is FALSE, then the binomial GLM helper functions
+may not work and this cannot be used inside of <code>VariableSelection</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>design matrix used for the fit, must be numeric.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>y</code></td>
+<td>
+<p>outcome vector, must be numeric.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+
+
+<h4>Fitting</h4>
+
+<p>Can use BFGS, L-BFGS, or Fisher's scoring to fit the GLM. BFGS and L-BFGS are
+typically faster than Fisher's scoring when there are at least 50 covariates
+and Fisher's scoring is typically best when there are fewer than 50 covariates.
+This function does not currently support the use of weights. In the special
+case of gaussian regression with identity link the <code>method</code> argument is ignored
+and the normal equations are solved directly.
+</p>
+<p>The models are fit in C++ by using Rcpp and RcppArmadillo. In order to help
+convergence, each of the methods makes use of a backtracking line-search using
+the strong Wolfe conditions to find an adequate step size. There are
+three conditions used to determine convergence, the first is whether there is a
+sufficient decrease in the negative log-likelihood, the second is whether
+the l2-norm of the score is sufficiently small, and the last condition is
+whether the change in each of the beta coefficients is sufficiently
+small. The <code>tol</code> argument controls all of these criteria. If the algorithm fails to
+converge, then <code>iterations</code> will be -1.
+</p>
+<p>All observations with any missing values are removed before model fitting.
+</p>
+<p><code>BranchGLM.fit</code> can be faster than calling <code>BranchGLM</code> if the
+x matrix and y vector are already available, but doesn't return as much information.
+The object returned by <code>BranchGLM.fit</code> is not of class <code>BranchGLM</code>, so
+all of the methods for <code>BranchGLM</code> objects such as <code>predict</code> or
+<code>VariableSelection</code> cannot be used.
+</p>
+
+
+
+<h4>Dispersion Parameter</h4>
+
+<p>The dispersion parameter for binomial and Poisson regression is always fixed to be 1.
+For gaussian and gamma regression, the MLE of the dispersion parameter is used
+for the calculation of the log-likelihood and the Pearson estimator of the dispersion parameter
+is used for the calculation of standard errors for the coefficient estimates.
+</p>
+
+
+
+<h4>Families and Links</h4>
+
+<p>The binomial family accepts "cloglog", "log", "logit", and "probit" as possible
+link functions. The gamma and gaussian families accept "identity", "inverse",
+"log", and "sqrt" as possible link functions. The Poisson family accepts "identity",
+"log", and "sqrt" as possible link functions.
+</p>
+
+
+
+<h3>Value</h3>
+
+<p><code>BranchGLM</code> returns a <code>BranchGLM</code> object which is a list with the following components
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>coefficients</code></td>
+<td>
+<p> a data.frame with the coefficient estimates, SEs, Wald test statistics, and p-values</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>iterations</code></td>
+<td>
+<p> number of iterations it took the algorithm to converge, if the algorithm failed to converge then this is -1</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>dispersion</code></td>
+<td>
+<p> a vector of length 2 with the MLE of the dispersion parameter first and the Pearson estimator of the dispersion parameter second</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>logLik</code></td>
+<td>
+<p> the log-likelihood of the fitted model</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>vcov</code></td>
+<td>
+<p> the variance-covariance matrix of the fitted model</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>resDev</code></td>
+<td>
+<p> the residual deviance of the fitted model</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>AIC</code></td>
+<td>
+<p> the AIC of the fitted model</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>preds</code></td>
+<td>
+<p> predictions from the fitted model</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>linpreds</code></td>
+<td>
+<p> linear predictors from the fitted model</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>residuals</code></td>
+<td>
+<p> a numeric vector with the Pearson residuals</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>variance</code></td>
+<td>
+<p> a numeric vector with the variance evaluated at the final coefficient estimates</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>tol</code></td>
+<td>
+<p> tolerance used to fit the model</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>maxit</code></td>
+<td>
+<p> maximum number of iterations used to fit the model</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>formula</code></td>
+<td>
+<p> formula used to fit the model</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>method</code></td>
+<td>
+<p> iterative method used to fit the model</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>grads</code></td>
+<td>
+<p> number of gradients used to approximate inverse information for L-BFGS</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>y</code></td>
+<td>
+<p> y vector used in the model, not included if <code>keepY = FALSE</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p> design matrix used to fit the model, not included if <code>keepData = FALSE</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>rownames</code></td>
+<td>
+<p> rownames taken from the design matrix</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>offset</code></td>
+<td>
+<p> offset vector in the model, not included if <code>keepData = FALSE</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>fulloffset</code></td>
+<td>
+<p> supplied offset vector, not included if <code>keepData = FALSE</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+<p> original <code>data</code> argument supplied to the function, not included if <code>keepData = FALSE</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>mf</code></td>
+<td>
+<p> the model frame, not included if <code>keepData = FALSE</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>numobs</code></td>
+<td>
+<p> number of observations in the design matrix</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>names</code></td>
+<td>
+<p> names of the predictor variables</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>yname</code></td>
+<td>
+<p> name of y variable</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>parallel</code></td>
+<td>
+<p> whether parallelization was employed to speed up model fitting process</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>missing</code></td>
+<td>
+<p> number of missing values removed from the original dataset</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>link</code></td>
+<td>
+<p> link function used to model the data</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>family</code></td>
+<td>
+<p> family used to model the data</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ylevel</code></td>
+<td>
+<p> the levels of y, only included for binomial glms</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>xlev</code></td>
+<td>
+<p> the levels of the factors in the dataset</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>terms</code></td>
+<td>
+<p>the terms object used</p>
+</td>
+</tr>
+</table>
+<p><code>BranchGLM.fit</code> returns a list with the following components
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>coefficients</code></td>
+<td>
+<p> a data.frame with the coefficients estimates, SEs, Wald test statistics, and p-values</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>iterations</code></td>
+<td>
+<p> number of iterations it took the algorithm to converge, if the algorithm failed to converge then this is -1</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>dispersion</code></td>
+<td>
+<p> a vector of length 2 with the MLE of the dispersion parameter first and the Pearson estimator of the dispersion parameter second</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>logLik</code></td>
+<td>
+<p> the log-likelihood of the fitted model</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>vcov</code></td>
+<td>
+<p> the variance-covariance matrix of the fitted model</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>resDev</code></td>
+<td>
+<p> the residual deviance of the fitted model</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>AIC</code></td>
+<td>
+<p> the AIC of the fitted model</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>preds</code></td>
+<td>
+<p> predictions from the fitted model</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>linpreds</code></td>
+<td>
+<p> linear predictors from the fitted model</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>residuals</code></td>
+<td>
+<p> a numeric vector with the Pearson residuals</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>variance</code></td>
+<td>
+<p> a numeric vector with the variance evaluated at the final coefficient estimates</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>tol</code></td>
+<td>
+<p> tolerance used to fit the model</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>maxit</code></td>
+<td>
+<p> maximum number of iterations used to fit the model</p>
+</td>
+</tr>
+</table>
+<h3>References</h3>
+
+<p>McCullagh, P., &amp; Nelder, J. A. (1989). Generalized Linear Models (2nd ed.).
+Chapman &amp; Hall.
+</p>
+
+
+<h3>See Also</h3>
+
+<p>predict.BranchGLM, coef.BranchGLM, VariableSelection, confint.BranchGLM, logLik.BranchGLM
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">Data &lt;- iris
+
+# Linear regression
+## Using BranchGLM
+BranchGLM(Sepal.Length ~ ., data = Data, family = "gaussian", link = "identity")
+
+## Using BranchGLM.fit
+x &lt;- model.matrix(Sepal.Length ~ ., data = Data)
+y &lt;- Data$Sepal.Length
+BranchGLM.fit(x, y, family = "gaussian", link = "identity")
+
+# Gamma regression
+## Using BranchGLM
+BranchGLM(Sepal.Length ~ ., data = Data, family = "gamma", link = "log")
+
+### init
+BranchGLM(Sepal.Length ~ ., data = Data, family = "gamma", link = "log", 
+init = rep(0, 6), maxit = 50, tol = 1e-6, contrasts = NULL)
+
+### method
+BranchGLM(Sepal.Length ~ ., data = Data, family = "gamma", link = "log", 
+init = rep(0, 6), maxit = 50, tol = 1e-6, contrasts = NULL, method = "LBFGS")
+
+### offset
+BranchGLM(Sepal.Length ~ ., data = Data, family = "gamma", link = "log", 
+init = rep(0, 6), maxit = 50, tol = 1e-6, contrasts = NULL, 
+offset = Data$Sepal.Width)
+
+## Using BranchGLM.fit
+x &lt;- model.matrix(Sepal.Length ~ ., data = Data)
+y &lt;- Data$Sepal.Length
+BranchGLM.fit(x, y, family = "gamma", link = "log", init = rep(0, 6), 
+maxit = 50, tol = 1e-6, offset = Data$Sepal.Width)
+
+
+</code></pre>
+
+
+</div>

@@ -1,0 +1,115 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>configure_prior</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Generic S3 method for configuring the default prior for a bmmodel</h2>
+
+<h3>Description</h3>
+
+<p>Called by bmm() to automatically construct the priors for a given
+model, data and formula, and combine it with the prior given by the user. The
+first method executed is configure_prior.bmmodel, which will build the prior
+based on information from the model object such as fixed_parameters,
+default_priors, etc. Thus it is important to define these values in the model
+object. The function will also recognize if the user has specified that some
+parameters should be fixed to a constant and put the appropriate constant
+priors. Any additional priors that a developer wants to specify, which are
+not based on information in the model object, can be defined in the
+configure_prior.* method for the model. See configure_prior.imm_full for an
+example.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">configure_prior(model, data, formula, user_prior, ...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>model</code></td>
+<td>
+<p>A <code>bmmodel</code> object</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+<p>A data.frame containing the data used in the model</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>formula</code></td>
+<td>
+<p>A <code>brmsformula</code> object returned from configure_model()</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>user_prior</code></td>
+<td>
+<p>A <code>brmsprior</code> object given by the user as an argument to
+bmm()</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Additional arguments passed to the method</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>A <code>brmsprior</code> object containing the default priors for the model
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+configure_prior.mixture3p &lt;- function(model, data, formula, user_prior, ...) {
+  # if there is set_size 1 in the data, set constant prior over thetant for set_size1
+  prior &lt;- brms::empty_prior()
+  set_size_var &lt;- model$other_vars$set_size
+  prior_cond &lt;- any(data$ss_numeric == 1) &amp;&amp; !is.numeric(data[[set_size_var]])
+
+  thetant_preds &lt;- rhs_vars(formula$pforms$thetant)
+  if (prior_cond &amp;&amp; set_size_var %in% thetant_preds) {
+    prior &lt;- prior + brms::prior_("constant(-100)",
+      class = "b",
+      coef = paste0(set_size_var, 1),
+      nlpar = "thetant"
+    )
+  }
+  # check if there is a random effect on theetant that include set_size as predictor
+  bterms &lt;- brms::brmsterms(formula$pforms$thetant)
+  re_terms &lt;- bterms$dpars$mu$re
+  if (!is.null(re_terms)) {
+    for (i in 1:nrow(re_terms)) {
+      group &lt;- re_terms$group[[i]]
+      form &lt;- re_terms$form[[i]]
+      thetant_preds &lt;- rhs_vars(form)
+
+      if (prior_cond &amp;&amp; set_size_var %in% thetant_preds) {
+        prior &lt;- prior + brms::prior_("constant(1e-8)",
+          class = "sd",
+          coef = paste0(set_size_var, 1),
+          group = group,
+          nlpar = "thetant"
+        )
+      }
+    }
+  }
+
+  prior
+}
+
+</code></pre>
+
+
+</div>

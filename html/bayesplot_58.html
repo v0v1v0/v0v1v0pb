@@ -1,0 +1,391 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>MCMC-distributions</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Histograms and kernel density plots of MCMC draws</h2>
+
+<h3>Description</h3>
+
+<p>Various types of histograms and kernel density plots of MCMC draws. See the
+<strong>Plot Descriptions</strong> section, below, for details.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">mcmc_hist(
+  x,
+  pars = character(),
+  regex_pars = character(),
+  transformations = list(),
+  ...,
+  facet_args = list(),
+  binwidth = NULL,
+  bins = NULL,
+  breaks = NULL,
+  freq = TRUE,
+  alpha = 1
+)
+
+mcmc_dens(
+  x,
+  pars = character(),
+  regex_pars = character(),
+  transformations = list(),
+  ...,
+  facet_args = list(),
+  trim = FALSE,
+  bw = NULL,
+  adjust = NULL,
+  kernel = NULL,
+  n_dens = NULL,
+  alpha = 1
+)
+
+mcmc_hist_by_chain(
+  x,
+  pars = character(),
+  regex_pars = character(),
+  transformations = list(),
+  ...,
+  facet_args = list(),
+  binwidth = NULL,
+  bins = NULL,
+  freq = TRUE,
+  alpha = 1
+)
+
+mcmc_dens_overlay(
+  x,
+  pars = character(),
+  regex_pars = character(),
+  transformations = list(),
+  ...,
+  facet_args = list(),
+  color_chains = TRUE,
+  trim = FALSE,
+  bw = NULL,
+  adjust = NULL,
+  kernel = NULL,
+  n_dens = NULL
+)
+
+mcmc_dens_chains(
+  x,
+  pars = character(),
+  regex_pars = character(),
+  transformations = list(),
+  ...,
+  color_chains = TRUE,
+  bw = NULL,
+  adjust = NULL,
+  kernel = NULL,
+  n_dens = NULL
+)
+
+mcmc_dens_chains_data(
+  x,
+  pars = character(),
+  regex_pars = character(),
+  transformations = list(),
+  ...,
+  bw = NULL,
+  adjust = NULL,
+  kernel = NULL,
+  n_dens = NULL
+)
+
+mcmc_violin(
+  x,
+  pars = character(),
+  regex_pars = character(),
+  transformations = list(),
+  ...,
+  facet_args = list(),
+  probs = c(0.1, 0.5, 0.9)
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>An object containing MCMC draws:
+</p>
+
+<ul>
+<li>
+<p> A 3-D array, matrix, list of matrices, or data frame. The MCMC-overview
+page provides details on how to specify each these.
+</p>
+</li>
+<li>
+<p> A <code>draws</code> object from the <span class="pkg">posterior</span> package (e.g.,
+<code>draws_array</code>, <code>draws_rvars</code>, etc.).
+</p>
+</li>
+<li>
+<p> An object with an <code>as.array()</code> method that returns the same kind of 3-D
+array described on the MCMC-overview page.
+</p>
+</li>
+</ul>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>pars</code></td>
+<td>
+<p>An optional character vector of parameter names. If neither
+<code>pars</code> nor <code>regex_pars</code> is specified then the default is to use <em>all</em>
+parameters. As of version <code style="white-space: pre;">⁠1.7.0⁠</code>, <strong>bayesplot</strong> also supports 'tidy'
+parameter selection by specifying <code>pars = vars(...)</code>, where <code>...</code> is
+specified the same way as in dplyr::select(...) and
+similar functions. Examples of using <code>pars</code> in this way can be found on the
+Tidy parameter selection page.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>regex_pars</code></td>
+<td>
+<p>An optional regular expression to use for
+parameter selection. Can be specified instead of <code>pars</code> or in addition to
+<code>pars</code>. When using <code>pars</code> for tidy parameter selection, the <code>regex_pars</code>
+argument is ignored since select helpers
+perform a similar function.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>transformations</code></td>
+<td>
+<p>Optionally, transformations to apply to parameters
+before plotting. If <code>transformations</code> is a function or a single string
+naming a function then that function will be used to transform all
+parameters. To apply transformations to particular parameters, the
+<code>transformations</code> argument can be a named list with length equal to
+the number of parameters to be transformed. Currently only univariate
+transformations of scalar parameters can be specified (multivariate
+transformations will be implemented in a future release). If
+<code>transformations</code> is a list, the name of each list element should be a
+parameter name and the content of each list element should be a function
+(or any item to match as a function via <code>match.fun()</code>, e.g. a
+string naming a function). If a function is specified by its name as a
+string (e.g. <code>"log"</code>), then it can be used to construct a new
+parameter label for the appropriate parameter (e.g. <code>"log(sigma)"</code>).
+If a function itself is specified
+(e.g. <code>log</code> or <code>function(x) log(x)</code>)
+then <code>"t"</code> is used in the new parameter label to indicate that the
+parameter is transformed (e.g. <code>"t(sigma)"</code>).
+</p>
+<p>Note: due to partial argument matching <code>transformations</code> can be
+abbreviated for convenience in interactive use (e.g., <code>transform</code>).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Currently ignored.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>facet_args</code></td>
+<td>
+<p>A named list of arguments (other than <code>facets</code>) passed
+to <code>ggplot2::facet_wrap()</code> or <code>ggplot2::facet_grid()</code>
+to control faceting. Note: if <code>scales</code> is not included in <code>facet_args</code>
+then <strong>bayesplot</strong> may use <code>scales="free"</code> as the default (depending
+on the plot) instead of the <strong>ggplot2</strong> default of <code>scales="fixed"</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>binwidth</code></td>
+<td>
+<p>Passed to <code>ggplot2::geom_histogram()</code> to override
+the default binwidth.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>bins</code></td>
+<td>
+<p>Passed to <code>ggplot2::geom_histogram()</code> to override
+the default binwidth.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>breaks</code></td>
+<td>
+<p>Passed to <code>ggplot2::geom_histogram()</code> as an
+alternative to <code>binwidth</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>freq</code></td>
+<td>
+<p>For histograms, <code>freq=TRUE</code> (the default) puts count on the
+y-axis. Setting <code>freq=FALSE</code> puts density on the y-axis. (For many
+plots the y-axis text is off by default. To view the count or density
+labels on the y-axis see the <code>yaxis_text()</code> convenience
+function.)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>alpha</code></td>
+<td>
+<p>Passed to the geom to control the transparency.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>trim</code></td>
+<td>
+<p>A logical scalar passed to <code>ggplot2::geom_density()</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>bw, adjust, kernel, n_dens</code></td>
+<td>
+<p>Optional arguments passed to
+<code>stats::density()</code> to override default kernel density estimation
+parameters. <code>n_dens</code> defaults to <code>1024</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>color_chains</code></td>
+<td>
+<p>Option for whether to separately color chains.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>probs</code></td>
+<td>
+<p>A numeric vector passed to <code>ggplot2::geom_violin()</code>'s
+<code>draw_quantiles</code> argument to specify at which quantiles to draw
+horizontal lines. Set to <code>NULL</code> to remove the lines.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>A ggplot object that can be further customized using the <strong>ggplot2</strong> package.
+</p>
+
+
+<h3>Plot Descriptions</h3>
+
+
+<dl>
+<dt><code>mcmc_hist()</code></dt>
+<dd>
+<p>Histograms of posterior draws with all chains merged.
+</p>
+</dd>
+<dt><code>mcmc_dens()</code></dt>
+<dd>
+<p>Kernel density plots of posterior draws with all chains merged.
+</p>
+</dd>
+<dt><code>mcmc_hist_by_chain()</code></dt>
+<dd>
+<p>Histograms of posterior draws with chains separated via faceting.
+</p>
+</dd>
+<dt><code>mcmc_dens_overlay()</code></dt>
+<dd>
+<p>Kernel density plots of posterior draws with chains separated but
+overlaid on a single plot.
+</p>
+</dd>
+<dt><code>mcmc_violin()</code></dt>
+<dd>
+<p>The density estimate of each chain is plotted as a violin with
+horizontal lines at notable quantiles.
+</p>
+</dd>
+<dt><code>mcmc_dens_chains()</code></dt>
+<dd>
+<p>Ridgeline kernel density plots of posterior draws with chains separated
+but overlaid on a single plot. In <code>mcmc_dens_overlay()</code> parameters
+appear in separate facets; in <code>mcmc_dens_chains()</code> they appear in the
+same panel and can overlap vertically.
+</p>
+</dd>
+</dl>
+<h3>See Also</h3>
+
+<p>Other MCMC: 
+<code>MCMC-combos</code>,
+<code>MCMC-diagnostics</code>,
+<code>MCMC-intervals</code>,
+<code>MCMC-nuts</code>,
+<code>MCMC-overview</code>,
+<code>MCMC-parcoord</code>,
+<code>MCMC-recover</code>,
+<code>MCMC-scatterplots</code>,
+<code>MCMC-traces</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">set.seed(9262017)
+# some parameter draws to use for demonstration
+x &lt;- example_mcmc_draws()
+dim(x)
+dimnames(x)
+
+##################
+### Histograms ###
+##################
+
+# histograms of all parameters
+color_scheme_set("brightblue")
+mcmc_hist(x)
+
+# histograms of some parameters
+color_scheme_set("pink")
+mcmc_hist(x, pars = c("alpha", "beta[2]"))
+
+mcmc_hist(x, pars = "sigma", regex_pars = "beta")
+
+# example of using 'transformations' argument to plot log(sigma),
+# and parsing facet labels (e.g. to get greek letters for parameters)
+mcmc_hist(x, transformations = list(sigma = "log"),
+          facet_args = list(labeller = ggplot2::label_parsed)) +
+          facet_text(size = 15)
+
+# instead of list(sigma = "log"), you could specify the transformation as
+# list(sigma = log) or list(sigma = function(x) log(x)), but then the
+# label for the transformed sigma is 't(sigma)' instead of 'log(sigma)'
+mcmc_hist(x, transformations = list(sigma = log))
+
+# separate histograms by chain
+color_scheme_set("pink")
+mcmc_hist_by_chain(x, regex_pars = "beta")
+
+
+#################
+### Densities ###
+#################
+
+mcmc_dens(x, pars = c("sigma", "beta[2]"),
+          facet_args = list(nrow = 2))
+
+# separate and overlay chains
+color_scheme_set("mix-teal-pink")
+mcmc_dens_overlay(x, pars = c("sigma", "beta[2]"),
+                  facet_args = list(nrow = 2)) +
+                  facet_text(size = 14)
+x2 &lt;- example_mcmc_draws(params = 6)
+mcmc_dens_chains(x2, pars = c("beta[1]", "beta[2]", "beta[3]"))
+
+# separate chains as violin plots
+color_scheme_set("green")
+mcmc_violin(x) + panel_bg(color = "gray20", size = 2, fill = "gray30")
+
+</code></pre>
+
+
+</div>

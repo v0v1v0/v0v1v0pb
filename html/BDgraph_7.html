@@ -1,0 +1,235 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>bdgraph.mpl</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>	Search algorithm in graphical models using marginal pseudo-likehlihood </h2>
+
+<h3>Description</h3>
+
+<p>This function consists of several sampling algorithms for Bayesian model determination in undirected graphical models based on mariginal pseudo-likelihood. 
+To speed up the computations, the birth-death MCMC sampling algorithms are implemented in parallel using <span class="pkg">OpenMP</span> in <code>C++</code>.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">bdgraph.mpl( data, n = NULL, method = "ggm", transfer = TRUE, 
+             algorithm = "bdmcmc", iter = 5000, burnin = iter / 2, 
+             g.prior = 0.2, g.start = "empty", 
+             jump = NULL, alpha = 0.5, save = FALSE, 
+             cores = NULL, operator = "or", verbose = TRUE )
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+
+<p>there are two options: (1) an (<code class="reqn">n \times p</code>) <code>matrix</code> or a <code>data.frame</code> corresponding to the data, 
+(2) an (<code class="reqn">p \times p</code>) covariance matrix as <code class="reqn">S=X'X</code> which <code class="reqn">X</code> is the data matrix 
+(<code class="reqn">n</code> is the sample size and <code class="reqn">p</code> is the number of variables). 
+It also could be an object of class "<code>sim</code>", from function <code>bdgraph.sim</code>.
+The input matrix is automatically identified by checking the symmetry.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>n</code></td>
+<td>
+<p>number of observations. It is needed if the "<code>data</code>" is a covariance matrix.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>method</code></td>
+<td>
+
+<p>character with two options "<code>ggm</code>" (default), "<code>dgm</code>" and "<code>dgm-binary</code>". 
+Option "<code>ggm</code>" is for Gaussian graphical models based on Gaussianity assumption.
+Option "<code>dgm</code>" is for discrete graphical models for the count data.
+Option "<code>dgm-binary</code>" is for discrete graphical models for the data that are binary.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>transfer</code></td>
+<td>
+<p> for only <code>'count'</code> data which <code>method</code> = "<code>dgm</code>" or <code>method</code> = "<code>dgm-binary</code>". </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>algorithm</code></td>
+<td>
+
+<p>character with two options "<code>bdmcmc</code>" (default) and "<code>rjmcmc</code>". 
+Option "<code>bdmcmc</code>" is based on birth-death MCMC algorithm.
+Option "<code>rjmcmc</code>" is based on reverible jump MCMC algorithm.
+Option <code>"hc"</code>     is based on hill-climbing algorithm; this algorithm is only for count data which <code>method</code> = "<code>dgm</code>" or <code>method</code> = "<code>dgm-binary</code>".
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>iter</code></td>
+<td>
+<p>   number of iteration for the sampling algorithm. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>burnin</code></td>
+<td>
+<p> number of burn-in iteration for the sampling algorithm. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>g.prior</code></td>
+<td>
+
+<p>for determining the prior distribution of each edge in the graph. 
+There are two options: a single value between <code class="reqn">0</code> and <code class="reqn">1</code> (e.g. <code class="reqn">0.5</code> as a noninformative prior) 
+or an (<code class="reqn">p \times p</code>) matrix with elements between <code class="reqn">0</code> and <code class="reqn">1</code>.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>g.start</code></td>
+<td>
+
+<p>corresponds to a starting point of the graph. It could be an (<code class="reqn">p \times p</code>) matrix, "<code>empty</code>" (default), or "<code>full</code>". 
+Option "<code>empty</code>" means the initial graph is an empty graph and "<code>full</code>" means a full graph. 
+It also could be an object with <code>S3</code> class "<code>bdgraph</code>" of <code>R</code> package <code>BDgraph</code> or the class <code>"ssgraph"</code> of <code>R</code> package <code>ssgraph::ssgraph()</code>; 
+this option can be used to run the sampling algorithm from the last objects of previous run (see examples).     
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>jump</code></td>
+<td>
+
+<p>it is only for the BDMCMC algorithm (<code>algorithm</code> = "<code>bdmcmc</code>").
+It is for simultaneously updating multiple links at the same time to update graph in the BDMCMC algorithm.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>alpha</code></td>
+<td>
+<p> value of the hyper parameter of Dirichlet, which is a prior distribution. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>save</code></td>
+<td>
+
+<p>logical: if FALSE (default), the adjacency matrices are NOT saved. 
+If TRUE, the adjacency matrices after burn-in are saved.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>cores</code></td>
+<td>
+<p> number of cores to use for parallel execution. 
+The case <code>cores</code> = "<code>all</code>" means all CPU cores to use for parallel execution. 
+
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>operator</code></td>
+<td>
+<p> character with two options "<code>or</code>" (default) and  "<code>and</code>". It is for hill-climbing algorithm. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>verbose</code></td>
+<td>
+<p> logical: if TRUE (default), report/print the MCMC running time. </p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>An object with <code>S3</code> class "<code>bdgraph</code>" is returned:
+</p>
+<table><tr style="vertical-align: top;">
+<td><code>p_links</code></td>
+<td>
+<p> upper triangular matrix which corresponds the estimated posterior probabilities of all possible links. </p>
+</td>
+</tr></table>
+<p>For the case "<code>save</code> = <code>TRUE</code>" is returned:
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>sample_graphs</code></td>
+<td>
+<p> vector of strings which includes the adjacency matrices of visited graphs after burn-in.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>graph_weights</code></td>
+<td>
+<p> vector which includes the waiting times of visited graphs after burn-in. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>all_graphs</code></td>
+<td>
+<p>vector which includes the identity of the adjacency matrices for all iterations after burn-in. 
+It is needed for monitoring the convergence of the BD-MCMC algorithm.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>all_weights</code></td>
+<td>
+<p>vector which includes the waiting times for all iterations after burn-in. It is needed for monitoring the convergence of the BD-MCMC algorithm.</p>
+</td>
+</tr>
+</table>
+<h3>Author(s)</h3>
+
+<p> Reza Mohammadi <a href="mailto:a.mohammadi@uva.nl">a.mohammadi@uva.nl</a>, Adrian Dobra, and Johan Pensar </p>
+
+
+<h3>References</h3>
+
+<p>Mohammadi, R., Schoonhoven, M., Vogels, L., and Birbil, S.I. (2023) Large-scale Bayesian Structure Learning for Gaussian Graphical Models using Marginal Pseudo-likelihood, <em>arXiv preprint</em>, <a href="https://doi.org/10.48550/arXiv.2307.00127">doi:10.48550/arXiv.2307.00127</a>
+</p>
+<p>Dobra, A. and Mohammadi, R. (2018). Loglinear Model Selection and Human Mobility, <em>Annals of Applied Statistics</em>, 12(2):815-845, <a href="https://doi.org/10.1214/18-AOAS1164">doi:10.1214/18-AOAS1164</a>
+</p>
+<p>Mohammadi, A. and Wit, E. C. (2015). Bayesian Structure Learning in Sparse Gaussian Graphical Models, <em>Bayesian Analysis</em>, 10(1):109-138, <a href="https://doi.org/10.1214/14-BA889">doi:10.1214/14-BA889</a>
+</p>
+<p>Vogels, L., Mohammadi, R., Schoonhoven, M., and Birbil, S.I. (2023) Bayesian Structure Learning in Undirected Gaussian Graphical Models: Literature Review with Empirical Comparison, <em>arXiv preprint</em>, <a href="https://doi.org/10.48550/arXiv.2307.02603">doi:10.48550/arXiv.2307.02603</a>
+</p>
+<p>Mohammadi, A. and Dobra, A. (2017). The <code>R</code> Package <span class="pkg">BDgraph</span> for Bayesian Structure Learning in Graphical Models, <em>ISBA Bulletin</em>, 24(4):11-16
+</p>
+<p>Pensar, J. et al (2017) Marginal pseudo-likelihood learning of discrete Markov network structures, <em>Bayesian Analysis</em>, 12(4):1195-215, <a href="https://doi.org/10.1214/16-BA1032">doi:10.1214/16-BA1032</a>
+</p>
+<p>Mohammadi, R. and Wit, E. C. (2019). <span class="pkg">BDgraph</span>: An <code>R</code> Package for Bayesian Structure Learning in Graphical Models, <em>Journal of Statistical Software</em>, 89(3):1-30, <a href="https://doi.org/10.18637/jss.v089.i03">doi:10.18637/jss.v089.i03</a> 
+</p>
+
+
+<h3>See Also</h3>
+
+ <p><code>bdgraph</code>, <code>bdgraph.dw</code>, <code>bdgraph.sim</code>, <code>summary.bdgraph</code>, <code>compare</code> </p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R"># Generating multivariate normal data from a 'random' graph
+data.sim &lt;- bdgraph.sim( n = 70, p = 5, size = 7, vis = TRUE )
+   
+bdgraph.obj &lt;- bdgraph.mpl( data = data.sim, iter = 500 )
+  
+summary( bdgraph.obj )
+   
+# To compare the result with true graph
+compare( bdgraph.obj, data.sim, main = c( "Target", "BDgraph" ) )
+</code></pre>
+
+
+</div>

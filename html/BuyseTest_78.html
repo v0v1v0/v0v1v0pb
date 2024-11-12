@@ -1,0 +1,100 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>getPseudovalue</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Extract the pseudovalues of the Estimator</h2>
+
+<h3>Description</h3>
+
+<p>Extract the pseudovalues of the estimator.
+The average of the pseudovalues is the estimate and their standard deviation the standard error of the estimate times a factor n
+(i.e. a t-test on their mean will give asymptotically valid confidence intervals and p-values).
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">getPseudovalue(object, statistic = NULL, endpoint = NULL)
+
+## S4 method for signature 'S4BuyseTest'
+getPseudovalue(object, statistic = NULL, endpoint = NULL)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>object</code></td>
+<td>
+<p>an <span style="font-family: Courier New, Courier; color: #666666;"><b>R</b></span> object of class <code>S4BuyseTest</code>, i.e., output of <code>BuyseTest</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>statistic</code></td>
+<td>
+<p>[character] the type of statistic relative to which the pseudovalues should be computed.
+Can be <code>"netBenefit"</code>, <code>"winRatio"</code>, <code>"favorable"</code>, or <code>"unfavorable"</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>endpoint</code></td>
+<td>
+<p>[character] for which endpoint(s) the pseudovalues should be output?
+If <code>NULL</code> returns the sum of the H-decomposition over all endpoints.</p>
+</td>
+</tr>
+</table>
+<h3>Author(s)</h3>
+
+<p>Brice Ozenne
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>BuyseTest</code> for performing a generalized pairwise comparison. <br><code>S4BuyseTest-summary</code> for a more detailed presentation of the <code>S4BuyseTest</code> object.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">set.seed(10)
+n &lt;- 250
+d &lt;- simBuyseTest(n)
+
+e.BT &lt;- BuyseTest(treatment ~ tte(eventtime,status,2) + bin(toxicity),
+                 data = d, trace = 0)
+
+#### net Benefit
+pseudo &lt;- getPseudovalue(e.BT)
+summary(lm(pseudo~1))$coef
+## asymptotically equivalent to
+confint(e.BT, transformation = TRUE)
+## (small differences: small sample corrections)
+
+summary(lm(getPseudovalue(e.BT, endpoint = 1)~1))$coef
+
+#### win Ratio
+pseudo &lt;- getPseudovalue(e.BT, statistic = "winRatio")
+summary(lm(pseudo~1))$coef ## wrong p-value (should compare to 1 instead of 0)
+## asymptotically equivalent to
+confint(e.BT, statistic = "winRatio", transformation = TRUE)
+
+#### favorable
+pseudo &lt;- getPseudovalue(e.BT, statistic = "favorable")
+summary(lm(pseudo~1))$coef ## wrong p-value (should compare to 1/2 instead of 0)
+## asymptotically equivalent to
+confint(e.BT, statistic = "favorable", transformation = TRUE)
+
+#### unfavorable
+pseudo &lt;- getPseudovalue(e.BT, statistic = "unfavorable")
+summary(lm(pseudo~1))$coef ## wrong p-value (should compare to 1/2 instead of 0)
+## asymptotically equivalent to
+confint(e.BT, statistic = "unfavorable", transformation = TRUE)
+</code></pre>
+
+
+</div>

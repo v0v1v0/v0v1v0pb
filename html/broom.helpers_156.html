@@ -1,0 +1,172 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>tidy_add_n</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Add the (weighted) number of observations</h2>
+
+<h3>Description</h3>
+
+<p>Add the number of observations in a new column <code>n_obs</code>, taking into account any
+weights if they have been defined.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">tidy_add_n(x, model = tidy_get_model(x))
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>(<code>data.frame</code>)<br>
+A tidy tibble as produced by <code style="white-space: pre;">⁠tidy_*()⁠</code> functions.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>model</code></td>
+<td>
+<p>(a model object, e.g. <code>glm</code>)<br>
+The corresponding model, if not attached to <code>x</code>.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>For continuous variables, it corresponds to all valid observations
+contributing to the model.
+</p>
+<p>For categorical variables coded with treatment or sum contrasts,
+each model term could be associated to only one level of the original
+categorical variable. Therefore, <code>n_obs</code> will correspond to the number of
+observations associated with that level. <code>n_obs</code> will also be computed for
+reference rows. For polynomial contrasts (defined with <code>stats::contr.poly()</code>),
+all levels will contribute to the computation of each model term. Therefore,
+<code>n_obs</code> will be equal to the total number of observations. For Helmert and custom
+contrasts, only rows contributing positively (i.e. with a positive contrast)
+to the computation of a term will be considered for estimating <code>n_obs</code>. The
+result could therefore be difficult to interpret. For a better understanding
+of which observations are taken into account to compute <code>n_obs</code> values, you
+could look at <code>model_compute_terms_contributions()</code>.
+</p>
+<p>For interaction terms, only rows contributing to all the terms of the
+interaction will be considered to compute <code>n_obs</code>.
+</p>
+<p>For binomial logistic models, <code>tidy_add_n()</code> will also return the
+corresponding number of events (<code>n_event</code>) for each term, taking into account
+any defined weights. Observed proportions could be obtained as <code>n_obs / n_event</code>.
+</p>
+<p>Similarly, a number of events will be computed for multinomial logistic
+models (<code>nnet::multinom()</code>) for each level of the outcome (<code>y.level</code>),
+corresponding to the number of observations equal to that outcome level.
+</p>
+<p>For Poisson models, <code>n_event</code> will be equal to the number of counts per term.
+In addition, a third column <code>exposure</code> will be computed. If no offset is
+defined, exposure is assumed to be equal to 1 (eventually multiplied by
+weights) per observation. If an offset is defined, <code>exposure</code> will be equal
+to the (weighted) sum of the exponential of the offset (as a reminder, to
+model the effect of <code>x</code> on the ratio <code>y / z</code>, a Poisson model will be defined
+as <code>glm(y ~ x + offset(log(z)), family = poisson)</code>). Observed rates could be
+obtained with <code>n_event / exposure</code>.
+</p>
+<p>For Cox models (<code>survival::coxph()</code>), an individual could be coded
+with several observations (several rows). <code>n_obs</code> will correspond to the
+weighted number of observations which could be different from the number of
+individuals <code>n_ind</code>. <code>tidy_add_n()</code> will also compute a (weighted) number of
+events (<code>n_event</code>) according to the definition of the <code>survival::Surv()</code>
+object.
+Exposure time is also returned in <code>exposure</code> column. It is equal to the
+(weighted) sum of the time variable if only one variable time is passed to
+<code>survival::Surv()</code>, and to the (weighted) sum of <code>time2 - time</code> if two time
+variables are defined in <code>survival::Surv()</code>.
+</p>
+<p>For competing risk regression models (<code>tidycmprsk::crr()</code>), <code>n_event</code> takes
+into account only the event of interest defined by <code>failcode.</code>
+</p>
+<p>The (weighted) total number of observations (<code>N_obs</code>), of individuals
+(<code>N_ind</code>), of events (<code>N_event</code>) and of exposure time (<code>Exposure</code>) are
+stored as attributes of the returned tibble.
+</p>
+
+
+<h3>See Also</h3>
+
+<p>Other tidy_helpers: 
+<code>tidy_add_coefficients_type()</code>,
+<code>tidy_add_contrasts()</code>,
+<code>tidy_add_estimate_to_reference_rows()</code>,
+<code>tidy_add_header_rows()</code>,
+<code>tidy_add_pairwise_contrasts()</code>,
+<code>tidy_add_reference_rows()</code>,
+<code>tidy_add_term_labels()</code>,
+<code>tidy_add_variable_labels()</code>,
+<code>tidy_attach_model()</code>,
+<code>tidy_disambiguate_terms()</code>,
+<code>tidy_identify_variables()</code>,
+<code>tidy_plus_plus()</code>,
+<code>tidy_remove_intercept()</code>,
+<code>tidy_select_variables()</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+lm(Petal.Length ~ ., data = iris) |&gt;
+  tidy_and_attach() |&gt;
+  tidy_add_n()
+
+lm(Petal.Length ~ ., data = iris, contrasts = list(Species = contr.sum)) |&gt;
+  tidy_and_attach() |&gt;
+  tidy_add_n()
+
+lm(Petal.Length ~ ., data = iris, contrasts = list(Species = contr.poly)) |&gt;
+  tidy_and_attach() |&gt;
+  tidy_add_n()
+
+lm(Petal.Length ~ poly(Sepal.Length, 2), data = iris) |&gt;
+  tidy_and_attach() |&gt;
+  tidy_add_n()
+
+df &lt;- Titanic |&gt;
+  dplyr::as_tibble() |&gt;
+  dplyr::mutate(Survived = factor(Survived, c("No", "Yes")))
+
+glm(
+  Survived ~ Class + Age + Sex,
+  data = df, weights = df$n, family = binomial,
+  contrasts = list(Age = contr.sum, Class = "contr.helmert")
+) |&gt;
+  tidy_and_attach() |&gt;
+  tidy_add_n()
+
+glm(
+  Survived ~ Class * (Age:Sex),
+  data = df, weights = df$n, family = binomial,
+  contrasts = list(Age = contr.sum, Class = "contr.helmert")
+) |&gt;
+  tidy_and_attach() |&gt;
+  tidy_add_n()
+
+glm(response ~ age + grade * trt, gtsummary::trial, family = poisson) |&gt;
+  tidy_and_attach() |&gt;
+  tidy_add_n()
+
+glm(
+  response ~ trt * grade + offset(log(ttdeath)),
+  gtsummary::trial,
+  family = poisson
+) |&gt;
+  tidy_and_attach() |&gt;
+  tidy_add_n()
+
+</code></pre>
+
+
+</div>

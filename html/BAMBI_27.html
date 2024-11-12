@@ -1,0 +1,305 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>fit_incremental_angmix</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Stepwise fitting of angular mixture models with incremental component sizes and optimum model selection</h2>
+
+<h3>Description</h3>
+
+<p>Stepwise fitting of angular mixture models with incremental component sizes and optimum model selection
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">fit_incremental_angmix(
+  model,
+  data,
+  crit = "LOOIC",
+  start_ncomp = 1,
+  max_ncomp = 10,
+  L = NULL,
+  fn = mean,
+  fix_label = NULL,
+  form = 2,
+  start_par = NULL,
+  prev_par = TRUE,
+  logml_maxiter = 10000,
+  return_all = FALSE,
+  save_fits = FALSE,
+  save_file = NULL,
+  save_dir = "",
+  silent = FALSE,
+  return_llik_contri = (crit %in% c("LOOIC", "WAIC")),
+  use_best_chain = TRUE,
+  alpha = 0.05,
+  bonferroni_alpha = TRUE,
+  bonferroni_adj_type = "decreasing",
+  ...
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>model</code></td>
+<td>
+<p>angular model whose mixtures are to be fitted. Available choices are <code>"vmsin", "vmcos"</code> and <code>"wnorm2"</code> for
+bivariate data, and <code>"vm"</code> and <code>"wnorm"</code> for univariate data.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+<p>data matrix (if bivarate, in which case it must have two columns) or vector. If outside, the values
+are transformed into the scale <code class="reqn">[0, 2\pi)</code>. *Note:* BAMBI cannot handle missing data. Missing values must
+either be removed or properly imputed.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>crit</code></td>
+<td>
+<p>model selection criteria, one of <code>"LOOIC", "WAIC", "AIC", "BIC", "DIC"</code> or <code>"LOGML"</code>. Default is
+<code>"LOOIC"</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>start_ncomp</code></td>
+<td>
+<p>starting component size. A single component model is fitted if <code>start_ncomp</code> is equal to one.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>max_ncomp</code></td>
+<td>
+<p>maximum number of components allowed in the mixture model.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>L</code></td>
+<td>
+<p>HMC tuning parameter (trajectory length) passed to fit_angmix. Can be a numeric vetor (or scalar), in which case
+the same <code>L</code> is passed to all fit_angmix calls, or can be a list of length <code>max_ncomp-start_ncomp+1</code>,
+so that <code>L_list[[i]]</code> is passed as the argument <code>L</code> to fit_angmix call with <code>ncomp = max_ncomp+i-1</code>. See
+fit_angmix for more details on <code>L</code> including its default values. Ignored if <code>method = "rwmh"</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>fn</code></td>
+<td>
+<p>function to evaluate on MCMC samples to estimate parameters.
+Defaults to <code>mean</code>, which computes the estimated posterior means. If <code>fn = max</code>,
+then MAP estimate is calculated from the MCMC run. Used only if <code>crit = "DIC"</code>, and ignored otherwise.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>fix_label</code></td>
+<td>
+<p>logical. Should the label switchings on the current fit (only the corresponding "best chain" if <code>use_best_chain = TRUE</code>)
+be fixed before computing parameter estimates and model selection criterion? Defaults to <code>TRUE</code> if <code>perm_sampling</code> is true in
+the fit_angmix call, or if <code>crit = "DIC"</code> and <code>form = 1</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>form</code></td>
+<td>
+<p>form of crit to be used. Available choices are 1 and 2. Used only if <code>crit</code> is <code>"DIC"</code> and ignored otherwise.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>start_par</code></td>
+<td>
+<p>list with elements <code>pmix</code> (ignored if <code>comp == 1</code>), together with <code>kappa1, kappa2, mu1</code> and <code>mu2</code>,
+for bivariate models, and <code>kappa</code> and <code>mu</code> for univariate models,
+all being vectors of length same as <code>ncomp</code>.
+These provides the starting values for the Markov chain; with <code class="reqn">j</code>-th component of each vector corresponding to the <code class="reqn">j</code>-th
+component of the mixture distribution. If missing, the data is first clustered into <code>ncomp</code> groups either via k-means (after
+projecting onto a unit sphere), or randomly, depending on <code>rand_start</code>,  and then moment estimators for components are used as
+the starting points. Note that a very wrong starting point can potentially lead the chain to get stuck at a wrong solution for thousands
+of iterations. As such, we recommend using the default option, which is k-means followed by moment estimation.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>prev_par</code></td>
+<td>
+<p>logical. Should the MAP estimated parameters from the model with <code>ncomp = K</code> be used in the model
+with <code>ncomp = K+1</code> as the starting parameters, with the component with largest mixing proportion appearing twice in the
+bigger model?</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>logml_maxiter</code></td>
+<td>
+<p>maximum number of iterations (<code>maxiter</code>) passed to bridge_sampler for calculating
+<code>LOGML</code>. Ignored if <code>crit</code> is not <code>LOGML</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>return_all</code></td>
+<td>
+<p>logical. Should all angmcmc objects obtained during step-wise run be returned? *Warning*: depending on the
+sizes of <code>n.iter</code>, <code>start_ncomp</code>, <code>max_ncomp</code> and <code>n.chains</code>, this can be very memory intesive. In such
+cases, it is recommended that <code>return_all</code> be set to <code>FALSE</code>, and, if required, the intermediate fitted objects be
+saved to file by setting <code>save_fits = TRUE</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>save_fits</code></td>
+<td>
+<p>logical. Should the intermediate angmcmc objects obtained during step-wise run be saved
+to file using save? Defaults to TRUE. See <code>save_file</code> and <code>save_dir</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>save_file, save_dir</code></td>
+<td>
+<p><code>save_file</code> is a list of size <code>max_ncomp-start_ncomp+1</code>,
+with k-th entry providing the <code>file</code>
+argument used to save the intermediate angmcmc object with <code>ncomp = k</code> (titled <code>"fit_angmcmc"</code>).
+If not provided, then k-th element
+of <code>save_file[[k]]</code> is taken to be <code>paste(save_dir, "comp_k", sep="/")</code>. Both are ignored if
+<code>save_fits = FALSE</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>silent</code></td>
+<td>
+<p>logical. Should the current status (such as what is the current component labels, which job is being done etc.)
+be printed? Defaults to <code>TRUE</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>return_llik_contri</code></td>
+<td>
+<p>passed to fit_angmix. By default, set to <code>TRUE</code> if <code>crit</code> is either <code>"LOOIC"</code>
+or <code>"WAIC"</code>, and to <code>FALSE</code> otherwise.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>use_best_chain</code></td>
+<td>
+<p>logical. Should only the "best" chain obtained during each intermediate fit be used during
+computation of model selection criterion? Here "best" means the chain
+with largest (mean over iterations) log-posterior density. This can be helpful if one of the chains gets stuck at local optima. Defaults to TRUE.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>alpha</code></td>
+<td>
+<p>significance level used in the test H_0K: expected log predictive density (elpd) for the fitted model with  K components &gt;= elpd for the fitted model
+with K + 1 components if <code>crit</code> is <code>"LOOIC"</code> or <code>"WAIC"</code>.
+Must be a scalar between 0 and 1. Defaults to 0.05. See Details. Ignored for any other <code>crit</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>bonferroni_alpha</code></td>
+<td>
+<p>logical. Should a Bonferroni correction be made on the test size <code>alpha</code> to adjust for
+multiplicity due to (<code>max_ncomp</code> - <code>start_ncomp</code>) possible hypothesis tests? Defaults to TRUE.
+Relevant only if <code>crit</code> is in  <code>c("LOOIC", "WAIC")</code>, and ignored otherwise. See Details.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>bonferroni_adj_type</code></td>
+<td>
+<p>character string. Denoting type of Bonferroni adjustment to make.
+Possible choices are <code>"decreasing"</code> (default) and <code>"equal"</code>. Ignored if either <code>bonferroni_alpha</code>
+is FALSE, or <code>crit</code> is outside <code>c("LOOIC", "WAIC")</code>. See Details.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>additional arguments passed to fit_angmix.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The goal is to fit an angular mixture model with an optimally chosen component size K.
+To obtain an optimum K, mixture models with incremental component sizes
+between <code>start_ncomp</code> and <code>max_ncomp</code> are fitted incrementally using fit_angmix,
+starting from K = 1.
+If the model selection criterion <code>crit</code> is <code>"LOOIC"</code> or <code>"WAIC"</code>, then a test of hypothesis
+H_0K: expected log predictive density (elpd) for the fitted model with  K components &gt;= elpd for the fitted model
+with K + 1 components, is performed at every K &gt;= 1. The test-statistic used for the test is an approximate z-score
+based on the normalized estimated elpd difference between the two models obtained from compare, which provides
+estimated elpd difference along with its standard error estimate. Because the computed standard error of elpd difference
+can be overly optimistic when the elpd difference is small (in particular &lt; 4),
+a conservative worst-case estimate (equal to twice of the computed standard error)
+is used in such cases. To account for multiplicity among the M =
+(<code>max_ncomp</code> - <code>start_ncomp</code>) possible sequential tests performed,
+by default a Bonferroni adjustment to the test level <code>alpha</code> is made.
+Set <code>bonferroni_alpha = FALSE</code> to remove the adjustment. To encourage
+parsimony in the final model, by default (<code>bonferroni_adj_type = "decreasing"</code>)
+a decreasing sequence of adjusted alphas of the form <code>alpha * (0.5)^(1:M) / sum((0.5)^(1:M))</code>
+is used. Set <code>bonferroni_adj_type = "equal"</code>
+to use equal sequence of adjusted alphas (i.e., <code>alpha/M</code>) instead.
+</p>
+<p>The incremental fitting stops if  H_0K cannot be rejected
+(at level <code>alpha</code>) for some K &gt;= 1; this K is then regarded as the optimum number of components.
+If <code>crit</code> is not <code>"LOOIC"</code> or <code>"WAIC"</code> then mixture model with the first minimum value of the model selection criterion <code>crit</code>
+is taken as the best model.
+</p>
+<p>Note that in each intermediate fitted model, the total number of components (instead of the number of
+"non-empty components") in the model is used to estimate of the true component
+size, and then the fitted model is penalized for model complexity (via the model selection criterion used).
+This approach of selecting an optimal K follows the perspective "let two component specific parameters
+be identical" for overfitting mixtures, and as such the  Dirichlet prior hyper-parameters <code>pmix.alpha</code>
+(passed to fit_angmix) should be large. See  Fruhwirth-Schnatter (2011) for more deltails.
+</p>
+<p>Note that the stability of bridge_sampler used in marginal likelihood estimation heavily depends on stationarity of the
+chains. As such, while using this criterion, we recommending running the chain long engouh, and setting <code>fix_label = TRUE</code>
+for optimal performance.
+</p>
+
+
+<h3>Value</h3>
+
+<p>Returns a named list (with class = <code>stepfit</code>) with the following seven elements:
+</p>
+<p><code>fit.all</code> (if <code>return_all = TRUE</code>) - a list all angmcmc objects created at each component size;
+</p>
+<p><code>fit.best</code> - angmcmc object corresponding to the optimum component size;
+</p>
+<p><code>ncomp.best</code> - optimum component size (integer);
+</p>
+<p><code>crit</code> - which model comparison criterion used (one of <code>"LOOIC", "WAIC", "AIC", "BIC", "DIC"</code> or <code>"LOGML"</code>);
+</p>
+<p><code>crit.all</code> - all <code>crit</code> values calculated (for all component sizes);
+</p>
+<p><code>crit.best</code> - <code>crit</code> value for the optimum component size; and
+</p>
+<p><code>maxllik.all</code> - maximum (obtained from MCMC iterations) log likelihood for all fitted models
+</p>
+<p><code>maxllik.best</code> - maximum log likelihodd for the optimal model; and
+</p>
+<p><code>check_min</code> - logical; is the optimum component size less than <code>max_ncomp</code>?
+</p>
+
+
+<h3>References</h3>
+
+<p>Fruhwirth-Schnatter, S.: Label switching under model uncertainty. In: Mengerson, K., Robert, C., Titterington, D. (eds.) Mixtures:
+Estimation and Application, pp. 213-239. Wiley, New York (2011).
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R"># illustration only - more iterations needed for convergence
+set.seed(1)
+fit.vmsin.step.15 &lt;- fit_incremental_angmix("vmsin", tim8, "BIC", start_ncomp = 1,
+                                          max_ncomp = 3, n.iter = 15,
+                                          n.chains = 1, save_fits=FALSE)
+(fit.vmsin.best.15 &lt;- bestmodel(fit.vmsin.step.15))
+lattice::densityplot(fit.vmsin.best.15)
+
+</code></pre>
+
+
+</div>

@@ -1,0 +1,92 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>fastSVD</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Fast SVD of a wide or tall matrix</h2>
+
+<h3>Description</h3>
+
+<p><code>fastSVD</code> uses the inherent low dimensionality of a wide, or tall, matrix to quickly calculate its SVD. For a matrix <code class="reqn">A</code>, this function solves <code class="reqn">svd(A)=UDV'</code>. 
+This function can be applied to either standard matrices, or, when the data is too large to be stored in memeory, to matrices with class <code>ff</code>. <code>ff</code> objects have a representation in memory, but store their contents on disk. In these cases, <code>fastSVD</code> will implement block matrix algebra to compute the SVD.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">fastSVD(A, nv = min(dim(A)), warning_type = "silent", center_A = FALSE,
+  pattern = NULL)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>A</code></td>
+<td>
+<p>matrix of dimension (<code class="reqn">n</code> by <code class="reqn">m</code>). This can be either of class <code>matrix</code> or <code>ff</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nv</code></td>
+<td>
+<p>number of high dimensional singular vectors to obtain. If <code class="reqn">n&gt;m</code>, this is the number of <code class="reqn">n</code>-dimensional left singular vectors to be computed. If <code class="reqn">n&lt;m</code>, this is the number of <code class="reqn">m</code>-dimensional right singular vectors to be computed.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>warning_type</code></td>
+<td>
+<p>passed to <code>qrSVD</code>, which calculates either <code>svd(tcrossprod(A))</code> or <code>svd(crossprod(A))</code>, whichever is of lower dimension.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>center_A</code></td>
+<td>
+<p>Whether the matrix <code>A</code> should be centered before taking it's SVD. Centering is done along whichever dimension of <code>A</code> is larger. For example, if <code>A</code> is tall, then setting <code>center_A=TRUE</code> will return the SVD of <code>A</code> after centering the rows of <code>A</code>. This centering is implemented as a low dimensional matrix operation that does not require creating a copy of the original matrix <code>A</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>pattern</code></td>
+<td>
+<p>passed to <code>ff</code>. When <code>A</code> has class <code>ff</code>, the returned high dimensional singular vectors will also have class <code>ff</code>. The argument <code>pattern</code> is passed to <code>ff</code> when creating the files on disk for the high dimensional singular vectors.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>Users might also consider changing the global option <code>ffbatchbytes</code>, from the <code>ff</code> package. When a <code>ff</code> object is entered, the <code>ffbatchbytes</code> option determines the maximum block size in the block matrix algebra used to calculate the SVD.
+</p>
+
+
+<h3>Value</h3>
+
+<p>Let <code class="reqn">r</code> be the rank of the matrix <code>A</code>. <code>fastSVD</code> solves <code class="reqn">svd(A)=UDV'</code>, where <code class="reqn">U</code> is an (<code class="reqn">n</code> by <code class="reqn">r</code>) orthonormal matrix, <code class="reqn">D</code> is an (<code class="reqn">r</code> by <code class="reqn">r</code>) diagonal matrix; and <code class="reqn">V</code> is a (<code class="reqn">m</code> by <code class="reqn">r</code>) orthonormal matrix. When <code>A</code> is entered as an <code>ff</code> object, the high dimensional singular vectors of <code>A</code> will be returned as an <code>ff</code> object as well. For matrices where one dimension is substantially large than the other, calculation times are considerably faster than the standard <code>svd</code> function.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+
+Y&lt;-simEEG(n=100,centered=TRUE,wide=TRUE)
+svdY&lt;-fastSVD(Y)
+svdY
+matplot(svdY$v[,1:5],type='l',lty=1) #sample PCs for a wide matrix are the right singular vectors
+
+#Note: For a tall, demeaned matrix Y, with columns corresponding 
+#to subjects and rows to measurements, 
+#the PCs are the high dimensional left singular vectors.
+
+#Example with 'ff'
+dev.off()
+library(ff)
+Yff&lt;-as.ff(Y)
+svdYff&lt;-fastSVD(Yff)
+svdYff
+matplot(svdYff$v[,1:5],type='l',lty=1) 
+</code></pre>
+
+
+</div>

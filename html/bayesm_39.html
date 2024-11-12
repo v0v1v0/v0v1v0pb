@@ -1,0 +1,299 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>rhierLinearMixture</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Gibbs Sampler for Hierarchical Linear Model with Mixture-of-Normals Heterogeneity</h2>
+
+<h3>Description</h3>
+
+<p><code>rhierLinearMixture</code> implements a Gibbs Sampler for hierarchical linear models with a mixture-of-normals prior.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">rhierLinearMixture(Data, Prior, Mcmc)</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>Data </code></td>
+<td>
+<p>list(regdata, Z)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Prior</code></td>
+<td>
+<p>list(deltabar, Ad, mubar, Amu, nu, V, nu.e, ssq, ncomp)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Mcmc </code></td>
+<td>
+<p>list(R, keep, nprint)</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+
+
+<h4>Model and Priors</h4>
+
+<p><code>nreg</code> regression equations with <code>nvar</code> as the number of <code class="reqn">X</code> vars in each equation <br><code class="reqn">y_i = X_i\beta_i + e_i</code> with <code class="reqn">e_i</code> <code class="reqn">\sim</code> <code class="reqn">N(0, \tau_i)</code>  
+</p>
+<p><code class="reqn">\tau_i</code> <code class="reqn">\sim</code> <code class="reqn">nu.e*ssq_i/\chi^2_{nu.e}</code> where  <code class="reqn">\tau_i</code> is the variance of <code class="reqn">e_i</code><br><code class="reqn">B = Z\Delta + U</code> or <code class="reqn">\beta_i = \Delta' Z[i,]' + u_i</code> <br><code class="reqn">\Delta</code> is an <code class="reqn">nz x nvar</code> matrix <br></p>
+<p><code class="reqn">Z</code> should <em>not</em> include an intercept and should be centered for ease of interpretation. 
+The mean of each of the <code>nreg</code> <code class="reqn">\beta</code>s is the mean of the normal mixture. 
+Use <code>summary()</code> to compute this mean from the <code>compdraw</code> output.
+</p>
+<p><code class="reqn">u_i</code> <code class="reqn">\sim</code> <code class="reqn">N(\mu_{ind}, \Sigma_{ind})</code><br><code class="reqn">ind</code> <code class="reqn">\sim</code> <code class="reqn">multinomial(pvec)</code> <br></p>
+<p><code class="reqn">pvec</code> <code class="reqn">\sim</code> <code class="reqn">dirichlet(a)</code><br><code class="reqn">delta = vec(\Delta)</code> <code class="reqn">\sim</code> <code class="reqn">N(deltabar, A_d^{-1})</code><br><code class="reqn">\mu_j</code> <code class="reqn">\sim</code> <code class="reqn">N(mubar, \Sigma_j(x) Amu^{-1})</code><br><code class="reqn">\Sigma_j</code> <code class="reqn">\sim</code> <code class="reqn">IW(nu, V)</code> <br></p>
+<p>Be careful in assessing the prior parameter <code>Amu</code>: 0.01 can be too small for some applications. 
+See chapter 5 of Rossi et al for full discussion.<br></p>
+
+
+
+<h4>Argument Details</h4>
+
+<p><em><code>Data  = list(regdata, Z)</code> [<code>Z</code> optional]</em>
+</p>
+
+<table>
+<tr>
+<td style="text-align: left;">
+    <code>regdata:        </code> </td>
+<td style="text-align: left;"> list of lists with <code class="reqn">X</code> and <code class="reqn">y</code> matrices for each of <code>nreg=length(regdata)</code> regressions </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+    <code>regdata[[i]]$X: </code> </td>
+<td style="text-align: left;"> <code class="reqn">n_i x nvar</code> design matrix for equation <code class="reqn">i</code>  </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+    <code>regdata[[i]]$y: </code> </td>
+<td style="text-align: left;"> <code class="reqn">n_i x 1</code> vector of observations for equation <code class="reqn">i</code> </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+    <code>Z:              </code> </td>
+<td style="text-align: left;"> <code class="reqn">nreg x nz</code> matrix of unit characteristics (def: vector of ones)
+    </td>
+</tr>
+</table>
+<p><em><code>Prior = list(deltabar, Ad, mubar, Amu, nu, V, nu.e, ssq, ncomp)</code> [all but <code>ncomp</code> are optional]</em>
+</p>
+
+<table>
+<tr>
+<td style="text-align: left;">
+    <code>deltabar:       </code> </td>
+<td style="text-align: left;"> <code class="reqn">nz x nvar</code> vector of prior means (def: 0) </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+    <code>Ad:             </code> </td>
+<td style="text-align: left;"> prior precision matrix for vec(Delta) (def: 0.01*I) </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+    <code>mubar:          </code> </td>
+<td style="text-align: left;"> <code class="reqn">nvar x 1</code> prior mean vector for normal component mean (def: 0) </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+    <code>Amu:            </code> </td>
+<td style="text-align: left;"> prior precision for normal component mean (def: 0.01) </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+    <code>nu:             </code> </td>
+<td style="text-align: left;"> d.f. parameter for IW prior on normal component Sigma (def: nvar+3) </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+    <code>V:              </code> </td>
+<td style="text-align: left;"> PDS location parameter for IW prior on normal component Sigma (def: nu*I) </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+    <code>nu.e:           </code> </td>
+<td style="text-align: left;"> d.f. parameter for regression error variance prior (def: 3) </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+    <code>ssq:            </code> </td>
+<td style="text-align: left;"> scale parameter for regression error variance prior (def: <code>var(y_i)</code>) </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+    <code>a:              </code> </td>
+<td style="text-align: left;"> Dirichlet prior parameter (def: 5) </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+    <code>ncomp:          </code> </td>
+<td style="text-align: left;"> number of components used in normal mixture
+    </td>
+</tr>
+</table>
+<p><em><code>Mcmc  = list(R, keep, nprint)</code> [only <code>R</code> required]</em>
+</p>
+
+<table>
+<tr>
+<td style="text-align: left;">
+    <code>R:              </code> </td>
+<td style="text-align: left;"> number of MCMC draws </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+    <code>keep:           </code> </td>
+<td style="text-align: left;"> MCMC thinning parm -- keep every <code>keep</code>th draw (def: 1) </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+    <code>nprint:         </code> </td>
+<td style="text-align: left;"> print the estimated time remaining for every <code>nprint</code>'th draw (def: 100, set to 0 for no print)
+    </td>
+</tr>
+</table>
+<h4>
+<code>nmix</code> Details</h4>
+
+<p><code>nmix</code> is a list with 3 components. Several functions in the <code>bayesm</code> package that involve a Dirichlet Process or mixture-of-normals return <code>nmix</code>. Across these functions, a common structure is used for <code>nmix</code> in order to utilize generic summary and plotting functions. 
+</p>
+
+<table>
+<tr>
+<td style="text-align: left;">
+  <code>probdraw:</code> </td>
+<td style="text-align: left;"> <code class="reqn">ncomp x R/keep</code> matrix that reports the probability that each draw came from a particular component </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+  <code>zdraw:   </code> </td>
+<td style="text-align: left;"> <code class="reqn">R/keep x nobs</code> matrix that indicates which component each draw is assigned to (here, null) </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+  <code>compdraw:</code> </td>
+<td style="text-align: left;"> A list of <code class="reqn">R/keep</code> lists of <code class="reqn">ncomp</code> lists. Each of the inner-most lists has 2 elemens: a vector of draws for <code>mu</code> and a matrix of draws for the Cholesky root of <code>Sigma</code>.
+  </td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>A list containing:
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>taudraw   </code></td>
+<td>
+<p><code class="reqn">R/keep x nreg</code> matrix of error variance draws</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>betadraw  </code></td>
+<td>
+<p><code class="reqn">nreg x nvar x R/keep</code> array of individual regression coef draws</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Deltadraw </code></td>
+<td>
+<p><code class="reqn">R/keep x nz*nvar</code> matrix of Deltadraws</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nmix      </code></td>
+<td>
+<p>a list containing: <code>probdraw</code>, <code>zdraw</code>, <code>compdraw</code> (see “<code>nmix</code> Details” section)</p>
+</td>
+</tr>
+</table>
+<h3>Author(s)</h3>
+
+<p>Peter Rossi, Anderson School, UCLA, <a href="mailto:perossichi@gmail.com">perossichi@gmail.com</a>.</p>
+
+
+<h3>References</h3>
+
+<p>For further discussion, see Chapter 5, <em>Bayesian Statistics and Marketing</em> by Rossi, Allenby, and McCulloch.</p>
+
+
+<h3>See Also</h3>
+
+ <p><code>rhierLinearModel</code> </p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">if(nchar(Sys.getenv("LONG_TEST")) != 0) {R=2000} else {R=10}
+set.seed(66)
+
+nreg = 300
+nobs = 500
+nvar = 3
+nz = 2
+
+Z = matrix(runif(nreg*nz), ncol=nz) 
+Z = t(t(Z) - apply(Z,2,mean))
+Delta = matrix(c(1,-1,2,0,1,0), ncol=nz)
+tau0 = 0.1
+iota = c(rep(1,nobs))
+
+## create arguments for rmixture
+
+tcomps = NULL
+a = matrix(c(1,0,0,0.5773503,1.1547005,0,-0.4082483,0.4082483,1.2247449), ncol=3)
+tcomps[[1]] = list(mu=c(0,-1,-2),   rooti=a) 
+tcomps[[2]] = list(mu=c(0,-1,-2)*2, rooti=a)
+tcomps[[3]] = list(mu=c(0,-1,-2)*4, rooti=a)
+tpvec = c(0.4, 0.2, 0.4)
+
+## simulated data with Z
+regdata = NULL
+betas = matrix(double(nreg*nvar), ncol=nvar)
+tind = double(nreg)
+
+for (reg in 1:nreg) {
+  tempout = rmixture(1,tpvec,tcomps)
+  betas[reg,] = Delta%*%Z[reg,] + as.vector(tempout$x)
+  tind[reg] = tempout$z
+  X = cbind(iota, matrix(runif(nobs*(nvar-1)),ncol=(nvar-1)))
+  tau = tau0*runif(1,min=0.5,max=1)
+  y = X%*%betas[reg,] + sqrt(tau)*rnorm(nobs)
+  regdata[[reg]] = list(y=y, X=X, beta=betas[reg,], tau=tau)
+}
+
+## run rhierLinearMixture
+
+Data1 = list(regdata=regdata, Z=Z)
+Prior1 = list(ncomp=3)
+Mcmc1 = list(R=R, keep=1)
+
+out1 = rhierLinearMixture(Data=Data1, Prior=Prior1, Mcmc=Mcmc1)
+
+cat("Summary of Delta draws", fill=TRUE)
+summary(out1$Deltadraw, tvalues=as.vector(Delta))
+
+cat("Summary of Normal Mixture Distribution", fill=TRUE)
+summary(out1$nmix)
+
+## plotting examples
+if(0){
+  plot(out1$betadraw)
+  plot(out1$nmix)
+  plot(out1$Deltadraw)
+}
+</code></pre>
+
+
+</div>

@@ -1,0 +1,507 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>bsims_init</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>
+bSims simulation functions
+</h2>
+
+<h3>Description</h3>
+
+<p>Functions to initialize, populate, animate, detect, and transcribe
+simulated birds in a point count.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">bsims_init(extent = 10, road = 0, edge = 0, offset = 0)
+
+bsims_populate(x, density = 1, abund_fun = NULL, xy_fun = NULL,
+  margin = 0, maxit = 100, fail = FALSE, ...)
+
+bsims_animate(x, vocal_rate = 1, move_rate = 0, duration = 10,
+  movement = 0, mixture = 1, avoid = c("none", "R", "ER"),
+  initial_location=FALSE, allow_overlap=TRUE, ...)
+
+bsims_detect(x, xy = c(0, 0), tau = 1, dist_fun = NULL,
+  event_type = c("vocal", "move", "both"),
+  sensitivity=1, direction=FALSE, ...)
+
+bsims_transcribe(x, tint = NULL, rint = Inf,
+  error = 0, bias = 1,
+  condition=c("event1", "det1", "alldet"),
+  event_type=NULL, perception=NULL, ...)
+
+bsims_all(...)
+
+## S3 method for class 'bsims_landscape'
+print(x, ...)
+## S3 method for class 'bsims_population'
+print(x, ...)
+## S3 method for class 'bsims_events'
+print(x, ...)
+## S3 method for class 'bsims_detections'
+print(x, ...)
+## S3 method for class 'bsims_transcript'
+print(x, ...)
+## S3 method for class 'bsims_all'
+print(x, ...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>extent</code></td>
+<td>
+
+<p>extent of simulation area, an extent x extent square with (0,0) at the center.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>road</code></td>
+<td>
+
+<p>half width of the road stratum (perpendicular to the y axis).
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>edge</code></td>
+<td>
+
+<p>width of edge, same width on both sides of the road stratum.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>offset</code></td>
+<td>
+
+<p>offset to apply to road and edge strata relative to the center in the x direction.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+
+<p>a simulation object.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>density</code></td>
+<td>
+
+<p>population density, D, recycled 3x for the 3 strata
+(H: habitat, E: edge, R: road).
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>abund_fun</code></td>
+<td>
+
+<p>function to simulate abundance, N ~ Poisson(lambda), lambda=DA by default.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>xy_fun</code></td>
+<td>
+
+<p>function used to simulate nest locations, see <code>acceptreject</code>.
+The function should return probability (value between 0 and 1),
+<code>NULL</code> means complete spatial randomness.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>margin, maxit, fail</code></td>
+<td>
+
+<p>arguments passed to <code>acceptreject</code> when using <code>xy_fun</code>
+to simulate nest locations.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>vocal_rate, move_rate</code></td>
+<td>
+
+<p>Vocal and movement rates (see <code>events</code>).
+Both of these rates can be: a single number;
+a vector of length <code>length(mixture)</code> (behavior based finite mixture groups);
+a vector of length 3 with <code>mixture=1</code> (corresponding to HER strata);
+or a matrix of dimension 3 x <code>length(mixture)</code>
+(HER strata x number of behavior based groups).
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>duration</code></td>
+<td>
+
+<p>total time duration to consider (in minutes), passed to <code>events</code>.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>movement</code></td>
+<td>
+
+<p>standard deviation for a bivariate Normal kernel to simulate
+locations centered at the nest location, passed to <code>events</code>.
+Can refer to the same stratum and behavior based groups as <code>move_rate</code>.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>mixture</code></td>
+<td>
+
+<p>behavior based finite mixture group proportions.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>avoid</code></td>
+<td>
+
+<p>range along the x axis to avoid with respect to movement locations,
+passed to <code>events</code>.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>initial_location</code></td>
+<td>
+
+<p>logical, <code>move_rate</code> and <code>vocal_rate</code> are
+silently ignored if <code>TRUE</code>
+and nest locations are provided as part of the events table.
+This renders all individuals equally available for detection.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>allow_overlap</code></td>
+<td>
+
+<p>logical, allowing overlap between neighboring nests when movement is involved.
+If <code>FALSE</code>, Voronoi tessellation is used to prevent overlap.
+If <code>TRUE</code>, the unconstrained bivariate Normal kernel is used.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>xy</code></td>
+<td>
+
+<p>a vector of x and y coordinates describing the position of the observer.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>tau</code></td>
+<td>
+
+<p>parameter of the distance function.
+Can be a single numeric value;
+a vector of length 2 to provide parameters for
+vocalization (1st value) and movement (2nd value) related events;
+(H: habitat, E: edge, R: road, in this order);
+a vector of length 3 to provide parameters for the 3 strata
+(H: habitat, E: edge, R: road);
+or a 3 x 2 matrix combining strata (rows) and
+vocalization/movement (columns) related parameters.
+Segmented sound attenuation is used when the values are different
+in the 3 strata (see <code>dist_fun2</code>).
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>dist_fun</code></td>
+<td>
+
+<p>distance function (1st argument is distance, second is <code>tau</code>).
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>event_type</code></td>
+<td>
+
+<p>type of events to access (vocal, movement, or both).
+Inherits value from input object when <code>NULL</code>.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>tint</code></td>
+<td>
+
+<p>time interval break points in minutes.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>rint</code></td>
+<td>
+
+<p>distance interval break points in units of 100 meter.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>condition</code></td>
+<td>
+
+<p>conditioning type to define availability for each individual:
+<code>"event1"</code>: the 1st event (detected or not);
+<code>"det1"</code>: the 1st detection;
+<code>"alldet"</code>: all detections (counting the same individual multiple times).
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>error</code></td>
+<td>
+
+<p>log scale standard deviation (SD) for distance estimation error,
+see <code>rlnorm2</code>.
+When <code>direction=TRUE</code>, error changes based on the angle between the observer and the individual's (random) singing direction. When the bird faces the observer (0 degrees) SD is 0, when the bird is facing away (180 degrees) SD is <code>error</code>. In the range between 0-180 degrees the SD is changing according to the cosine of the degree: SD*(0.5-cos(degree*pi/180)/2).
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>bias</code></td>
+<td>
+
+<p>nonnegative numeric, the distance estimation bias. The default value (1) means no bias, &lt;1 indicates negative bias (perceived distance is less than true distance), &gt;1 indicates positive bias (perceived distance is higher than true distance). This acts as a multiplier and can be combined with <code>error</code>.
+When <code>direction=TRUE</code>, bias changes based on the angle between the observer and the individual's (random) singing direction. When the bird faces the observer (0 degrees) perceived distance equals the true distance, when the bird is facing away (180 degrees) perceived distance is <code>bias</code> * true distance. In the range between 0-180 degrees the bias is changing according to the cosine of the degree: 1+(bias-1)*(0.5-cos(degree*pi/180)/2).
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>perception</code></td>
+<td>
+
+<p>perceived number of individuals relative to the actual number of individuals.
+A non-negative number (&lt;1 values lead to under counting,
+&gt;1 values lead to over counting),
+or <code>NULL</code> (observer correctly identifies all individuals).
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>sensitivity</code></td>
+<td>
+
+<p>non-negative numeric value indicating the sensitivity of the sensor
+receiving the signal. Can be of length 1 (applies to both vocal and movement events)
+or a named vector of length 2 (names should indicate which one
+is <code>"vocal"</code> or <code>"move"</code>). Sensitivity of 1 means that
+the process captured by <code>tau</code> is unaffected.
+Less than 1 values indicate lower sensitivity (effectively decreasing tau),
+larger than 1 values indicate higher sensitivity (effectively increasing tau).
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>direction</code></td>
+<td>
+
+<p>logical. When <code>TRUE</code>, tau for vocalizations (not for movement) changes based on the angle between the observer and the individual's (random) singing direction. When the bird faces the observer (0 degrees) tau is unaffected, when the bird is facing away (180 degrees) tau is <code>sensitivity * tau</code>. In the range between 0-180 degrees the effect is changing according to the cosine of the degree (0.5-cos(degree*pi/180)/2).
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+
+<p>other arguments passed to underlying functions.
+For the <code>bsims_all</code> wrapper, it means all
+the arguments (except for <code>x</code>) that the underlying
+<code>bsims_*</code> functions have. <code>bsims_all</code> can also take a single
+list as its argument.
+</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The functions capturing the simulation layers
+are supposed to be called in sequence,
+allowing to simulate multiple realities by keeping
+preceding layers intact. Construction allows easy piping.
+The <code>bsims_all</code> function is a wrapper for the <code>bsims_*</code>
+layer functions.
+</p>
+<p>The simulations follow time-removal and distance sampling models based on
+Matsuoka et al. (2012) &lt;doi:10.1525/auk.2012.11190&gt;,
+Solymos et al. (2013) &lt;doi:10.1111/2041-210X.12106&gt;,
+and Solymos et al. (2018) &lt;doi:10.1650/CONDOR-18-32.1&gt;,
+and sound attenuation experiments by
+Yip et al. (2017) &lt;doi:10.1650/CONDOR-16-93.1&gt;.
+</p>
+
+
+<h3>Value</h3>
+
+<p><code>bsims_init</code> returns a landscape object.
+</p>
+<p><code>bsims_populate</code> returns a population object.
+</p>
+<p><code>bsims_animate</code> returns an events object.
+</p>
+<p><code>bsims_detect</code> returns a detections object.
+</p>
+<p><code>bsims_transcribe</code> returns a transcript object.
+</p>
+<p><code>get_table</code> returns the removal table.
+</p>
+<p><code>bsims_all</code> returns a closure with
+<code>$settings()</code>, <code>$new(recover = FALSE)</code>,
+and <code>$replicate(B, recover = FALSE, cl = NULL)</code>
+functions. The settings function returns the input arguments as a list;
+the new function returns a single transcript object;
+the replicate function takes an argument for the
+number of replicates (<code>B</code>) and returns a list of transcript objects
+with B elements.
+The <code>cl</code> argument is used to parallelize the work,
+can be a numeric value on Unix/Linux/OSX, or a cluster object on any OS,
+see examples.
+The 'recover = TRUE' argument allows to run simulations with error
+catching based on <code>try</code>.
+</p>
+<p>Note that simulated objects returned by <code>bsims_all</code>
+will contain different realizations and all the conditionally
+independent layers. Use a layered approach if former layers are meant
+to be kept identical across runs.
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Peter Solymos
+</p>
+
+
+<h3>References</h3>
+
+<p>Matsuoka, S. M., Bayne, E. M., Solymos, P., Fontaine, P.,
+Cumming, S. G., Schmiegelow, F. K. A., &amp; Song, S. A., 2012.
+Using binomial distance-sampling models to estimate the
+effective detection radius of point-counts surveys across boreal Canada.
+<em>Auk</em>, <strong>129</strong>: 268–282.
+&lt;doi:10.1525/auk.2012.11190&gt;
+</p>
+<p>Solymos, P., Matsuoka, S. M., Bayne, E. M., Lele, S. R., Fontaine, P.,
+Cumming, S. G., Stralberg, D., Schmiegelow, F. K. A. &amp; Song, S. J., 2013.
+Calibrating indices of avian density from non-standardized survey data:
+making the most of a messy situation.
+<em>Methods in Ecology and Evolution</em>, <b>4</b>: 1047–1058.
+&lt;doi:10.1111/2041-210X.12106&gt;
+</p>
+<p>Solymos, P., Matsuoka, S. M., Cumming, S. G., Stralberg, D., Fontaine, P.,
+Schmiegelow, F. K. A., Song, S. J., and Bayne, E. M., 2018.
+Evaluating time-removal models for estimating availability of boreal birds
+during point-count surveys: sample size requirements and model complexity.
+<em>Condor</em>, <b>120</b>: 765–786.
+&lt;doi:10.1650/CONDOR-18-32.1&gt;
+</p>
+<p>Yip, D. A., Bayne, E. M., Solymos, P., Campbell, J.,
+and Proppe, J. D., 2017.
+Sound attenuation in forested and roadside environments:
+implications for avian point count surveys.
+<em>Condor</em>, <b>119</b>: 73–84.
+&lt;doi:10.1650/CONDOR-16-93.1&gt;
+</p>
+
+
+<h3>See Also</h3>
+
+<p>Plotting functions:
+<code>plot.bsims_landscape</code>
+</p>
+<p>Getter functions:
+<code>get_nests</code>,
+<code>get_events</code>,
+<code>get_detections</code>,
+<code>get_abundance</code>,
+<code>get_density</code>
+<code>get_table</code>
+</p>
+<p>Shiny apps:
+<code>run_app</code>
+</p>
+<p><code>acceptreject</code>,
+<code>events</code>,
+<code>estimate</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">phi &lt;- 0.5
+tau &lt;- 1:3
+dur &lt;- 10
+rbr &lt;- c(0.5, 1, 1.5, Inf)
+tbr &lt;- c(3, 5, 10)
+(l &lt;- bsims_init(10, 0.5, 1))
+(p &lt;- bsims_populate(l, 1))
+(a &lt;- bsims_animate(p, vocal_rate=phi, duration=dur))
+(o &lt;- bsims_detect(a, tau=tau))
+(x &lt;- bsims_transcribe(o, tint=tbr, rint=rbr))
+
+plot(x)
+get_table(x, "removal")
+get_table(x, "visits")
+
+head(get_events(a))
+plot(get_events(a))
+
+head(get_detections(o))
+plot(get_detections(o), "time")
+plot(get_detections(o), "distance")
+
+## wrapper function for all the bsims_* layers
+b &lt;- bsims_all(road=1, density=0.5, tint=tbr, rint=rbr)
+## alternatively: supply a list
+#settings &lt;- list(road=1, density=0.5, tint=tbr, rint=rbr)
+#b &lt;- bsims_all(settings)
+b$settings()
+b$new()
+bb &lt;- b$replicate(3)
+lapply(bb, get_table)
+
+
+## parallel simulations
+library(parallel)
+b &lt;- bsims_all(density=0.5)
+B &lt;- 4  # number of runs
+nc &lt;- 2 # number of cores
+## sequential
+system.time(bb &lt;- b$replicate(B, cl=NULL))
+## parallel clusters
+cl &lt;- makeCluster(nc)
+## note: loading the package is optional
+system.time(clusterEvalQ(cl, library(bSims)))
+system.time(bb &lt;- b$replicate(B, cl=cl))
+stopCluster(cl)
+## parallel forking
+if (.Platform$OS.type != "windows") {
+  system.time(bb &lt;- b$replicate(B, cl=nc))
+}
+
+</code></pre>
+
+
+</div>

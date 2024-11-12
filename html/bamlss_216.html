@@ -1,0 +1,171 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>surv_transform</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>
+Survival Model Transformer Function
+</h2>
+
+<h3>Description</h3>
+
+<p>This function takes a <code>bamlss.frame</code> and computes design matrices of model terms
+based on a time grid for time-dependent structured additive predictors in a survival context.
+Note that this transformer function is usually used internally by function <code>bamlss</code>
+and is the default transformer function using the <code>cox_bamlss</code> family object.
+</p>
+<p>The time grid design matrices can be used to construct the full structured additive predictor
+for each time point. This way it is possible to solve the integrals that are part of, e.g.,
+a Newton-Raphson updating scheme, numerically.
+</p>
+<p>See the example section on how to extract the time grid design matrices.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">surv_transform(x, y, data, family,
+  subdivisions = 100, timedependent = "lambda",
+  timevar = NULL, idvar = NULL, is.cox = FALSE,
+  alpha = 0.1, ...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>The <code>x</code> list, as returned from function
+<code>bamlss.frame</code> and transformed by function <code>surv_transform</code>,
+holding all model matrices and other information that is used for
+fitting the model.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>y</code></td>
+<td>
+<p>The model response, as returned from function <code>bamlss.frame</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+<p>The data.frame that should be used for setting up all matrices.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>family</code></td>
+<td>
+<p>A <span class="pkg">bamlss</span> family object, see <code>family.bamlss</code>.
+In this case this is the <code>cox_bamlss</code> family object.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>subdivisions</code></td>
+<td>
+<p>How many time points should be created for each individual.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>timedependent</code></td>
+<td>
+<p>A character vector specifying the names of parameters in <code>x</code>
+that are time-dependent. Time grid design matrices are only computed for these parameters.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>timevar</code></td>
+<td>
+<p>A character specifying the name of the survival time variable in the
+data set.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>idvar</code></td>
+<td>
+<p>Depending on the type of data set, this is the name of the variable specifying
+identifier of individuals.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>is.cox</code></td>
+<td>
+<p>Should the <code>bamlss.frame</code> be set up for a Cox type survival model.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>alpha</code></td>
+<td>
+<p>A value for the intercept of a parameter names alpha. Typically the association
+parameter of a longitudinal and survival process in a joint model.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Arguments passed to function <code>bamlss.engine.setup</code>.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>A <code>bamlss.frame</code> including the time grid design matrices.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>cox_bamlss</code>, <code>opt_Cox</code>, <code>sam_Cox</code>,
+<code>simSurv</code>, <code>bamlss</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">library("survival")
+set.seed(111)
+
+## Simulate survival data.
+d &lt;- simSurv(n = 20)
+
+## Formula of the survival model, note
+## that the baseline is given in the first formula by s(time).
+f &lt;- list(
+  Surv(time, event) ~ s(time) + s(time, by = x3),
+  gamma ~ s(x1) + s(x2)
+)
+
+## Create the bamlss.frame.
+bf &lt;- bamlss.frame(f, family = "cox", data = d)
+
+## Lambda is the time-dependent parameter.
+print(bf)
+
+## Apply the transformer.
+bf &lt;- with(bf, surv_transform(x, y, data = model.frame,
+  family = family, is.cox = TRUE, subdivisions = 25))
+
+## Extract the time grid design matrix for term s(time).
+X &lt;- bf$x$lambda$smooth.construct[["s(time)"]]$fit.fun_timegrid(NULL)
+dim(X)
+
+## Compute fitted values for each time point.
+grid &lt;- attr(bf$y[[1]], "grid")
+gdim &lt;- c(length(grid), length(grid[[1]]))
+b &lt;- runif(ncol(X))
+fit &lt;- X %*% b
+fit &lt;- matrix(fit, nrow = gdim[1], ncol = gdim[2], byrow = TRUE)
+
+plot(as.vector(fit) ~ unlist(grid), type = "n",
+  xlab = "Survival time", ylab = "Effect")
+for(j in seq_along(grid)) {
+  lines(fit[j, ] ~ grid[[j]], lwd = 2, col = rgb(0.1, 0.1, 0.1, alpha = 0.3))
+  points(grid[[j]][gdim[2]], fit[j, gdim[2]], col = "red")
+}
+</code></pre>
+
+
+</div>

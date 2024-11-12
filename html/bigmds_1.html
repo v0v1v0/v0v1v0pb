@@ -1,0 +1,121 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>divide_conquer_mds</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Divide-and-conquer MDS</h2>
+
+<h3>Description</h3>
+
+<p>Roughly speaking, a large data set, <code>x</code>, of size <code class="reqn">n</code>
+is divided into parts, then classical MDS is performed over every part and,
+finally, the partial configurations are combined so that all the points lie
+on the same coordinate system with the aim to obtain a global MDS configuration.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">divide_conquer_mds(x, l, c_points, r, n_cores)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>A matrix with <code class="reqn">n</code> points (rows) and <code class="reqn">k</code> variables (columns).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>l</code></td>
+<td>
+<p>The size for which classical MDS can be computed efficiently
+(using <code>cmdscale</code> function). It means that if <code class="reqn">\bar{l}</code> is the limit
+size for which classical MDS is applicable, then <code>l</code><code class="reqn">\leq \bar{l}</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>c_points</code></td>
+<td>
+<p>Number of points used to align the MDS solutions obtained by the
+division of <code>x</code> into <code class="reqn">p</code> data subsets. Recommended value: <code>5·r</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>r</code></td>
+<td>
+<p>Number of principal coordinates to be extracted.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>n_cores</code></td>
+<td>
+<p>Number of cores wanted to use to run the algorithm.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The divide-and-conquer MDS starts dividing the <code class="reqn">n</code> points into
+<code class="reqn">p</code> partitions: the first partition contains <code>l</code> points and the others
+contain <code>l-c_points</code> points. Therefore, <code class="reqn">p = 1 + (n-</code><code>l)/(l-c_points)</code>.
+The partitions are created at random.
+</p>
+<p>Once the partitions are created, <code>c_points</code> different random
+points are taken from the first partition and concatenated to the other
+partitions After that, classical MDS is applied to each partition,
+with target low dimensional configuration <code>r</code>.
+</p>
+<p>Since all the partitions share <code>c_points</code>
+points with the first one, Procrustes can be applied in order to align all
+the configurations. Finally, all the configurations are
+concatenated in order to obtain a global MDS configuration.
+</p>
+
+
+<h3>Value</h3>
+
+<p>Returns a list containing the following elements:
+</p>
+
+<dl>
+<dt>points</dt>
+<dd>
+<p>A matrix that consists of <code class="reqn">n</code> points (rows)
+and <code>r</code> variables (columns) corresponding to the principal coordinates. Since
+a dimensionality reduction is performed, <code>r</code><code class="reqn">&lt;&lt;k</code></p>
+</dd>
+<dt>eigen</dt>
+<dd>
+<p>The first <code>r</code> largest eigenvalues:
+<code class="reqn">\bar{\lambda}_i, i \in  \{1, \dots, r\} </code>, where
+<code class="reqn">\bar{\lambda}_i = 1/p \sum_{j=1}^{p}\lambda_i^j/n_j</code>,
+being <code class="reqn">\lambda_i^j</code> the <code class="reqn">i-th</code> eigenvalue from partition <code class="reqn">j</code>
+and <code class="reqn">n_j</code> the size of the partition <code class="reqn">j</code>.</p>
+</dd>
+</dl>
+<h3>References</h3>
+
+<p>Delicado P. and C. Pachón-García (2021). <em>Multidimensional Scaling for Big Data</em>.
+<a href="https://arxiv.org/abs/2007.11919">https://arxiv.org/abs/2007.11919</a>.
+</p>
+<p>Borg, I. and P. Groenen (2005). <em>Modern Multidimensional Scaling: Theory and Applications</em>. Springer.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">set.seed(42)
+x &lt;- matrix(data = rnorm(4 * 10000), nrow = 10000) %*% diag(c(9, 4, 1, 1))
+mds &lt;- divide_conquer_mds(x = x, l = 200, c_points = 5 * 2, r = 2, n_cores = 1)
+head(mds$points)
+mds$eigen
+
+</code></pre>
+
+
+</div>

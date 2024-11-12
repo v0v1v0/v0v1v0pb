@@ -1,0 +1,365 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>bm_Tuning</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Tune models parameters</h2>
+
+<h3>Description</h3>
+
+<p>This internal <span class="pkg">biomod2</span> function allows to tune single model parameters and 
+select more efficient ones based on an evaluation metric.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">bm_Tuning(
+  model,
+  tuning.fun,
+  do.formula = FALSE,
+  do.stepAIC = FALSE,
+  bm.options,
+  bm.format,
+  calib.lines = NULL,
+  metric.eval = "TSS",
+  metric.AIC = "AIC",
+  weights = NULL,
+  ctrl.train = NULL,
+  params.train = list(ANN.size = c(2, 4, 6, 8), ANN.decay = c(0.001, 0.01, 0.05, 0.1),
+    ANN.bag = FALSE, FDA.degree = 1:2, FDA.nprune = 2:38, GAM.select = c(TRUE, FALSE),
+    GAM.method = c("GCV.Cp", "GACV.Cp", "REML", "P-REML", "ML", "P-ML"), GAM.span =
+    c(0.3, 0.5, 0.7), GAM.degree = 1, GBM.n.trees = c(500, 1000, 2500),
+    GBM.interaction.depth = seq(2, 8, by = 3), GBM.shrinkage = c(0.001, 0.01, 0.1),
+    GBM.n.minobsinnode = 10, MARS.degree = 1:2, MARS.nprune = 2:max(38, 2 *
+    ncol(bm.format@data.env.var) + 1), MAXENT.algorithm = "maxnet", 
+     MAXENT.parallel
+    = TRUE, RF.mtry = 1:min(10, ncol(bm.format@data.env.var)), SRE.quant = c(0, 0.0125,
+    0.025, 0.05, 0.1), XGBOOST.nrounds = 50, XGBOOST.max_depth = 1, XGBOOST.eta = c(0.3,
+    0.4), XGBOOST.gamma = 0, XGBOOST.colsample_bytree = c(0.6, 0.8),
+    XGBOOST.min_child_weight = 1, XGBOOST.subsample = 0.5)
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>model</code></td>
+<td>
+<p>a <code>character</code> corresponding to the  algorithm to be tuned, must be either 
+<code>ANN</code>, <code>CTA</code>, <code>FDA</code>, <code>GAM</code>, <code>GBM</code>, <code>GLM</code>, <code>MARS</code>, 
+<code>MAXENT</code>, <code>MAXNET</code>, <code>RF</code>, <code>SRE</code>, <code>XGBOOST</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>tuning.fun</code></td>
+<td>
+<p>a <code>character</code> corresponding to the model function name to be called 
+through <code>train</code> function for tuning parameters (see <code>ModelsTable</code> 
+dataset)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>do.formula</code></td>
+<td>
+<p>(<em>optional, default</em> <code>FALSE</code>) <br>
+A <code>logical</code> value defining whether formula is to be optimized or not</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>do.stepAIC</code></td>
+<td>
+<p>(<em>optional, default</em> <code>FALSE</code>) <br>
+A <code>logical</code> value defining whether variables selection is to be performed for 
+<code>GLM</code> and <code>GAM</code> models or not</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>bm.options</code></td>
+<td>
+<p>a <code>BIOMOD.options.default</code> or <code>BIOMOD.options.dataset</code> 
+object returned by the <code>bm_ModelingOptions</code> function</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>bm.format</code></td>
+<td>
+<p>a <code>BIOMOD.formated.data</code> or <code>BIOMOD.formated.data.PA</code> 
+object returned by the <code>BIOMOD_FormatingData</code> function</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>calib.lines</code></td>
+<td>
+<p>(<em>optional, default</em> <code>NULL</code>) <br>
+A <code>data.frame</code> object returned by <code>get_calib_lines</code> or 
+<code>bm_CrossValidation</code> functions</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>metric.eval</code></td>
+<td>
+<p>a <code>character</code> corresponding to the evaluation metric to be used, must 
+be either <code>AUC</code>, <code>Kappa</code> or <code>TSS</code> for <code>SRE</code> only ; <code>auc.val.avg</code>, 
+<code>auc.diff.avg</code>, <code>or.mtp.avg</code>, <code>or.10p.avg</code>, <code>AICc</code> for <code>MAXENT</code> only ; 
+<code>ROC</code> or <code>TSS</code> for all other models</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>metric.AIC</code></td>
+<td>
+<p>a <code>character</code> corresponding to the AIC metric to be used, must 
+be either <code>AIC</code> or <code>BIC</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>weights</code></td>
+<td>
+<p>(<em>optional, default</em> <code>NULL</code>) <br> 
+A <code>vector</code> of <code>numeric</code> values corresponding to observation weights (one per 
+observation, see Details)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ctrl.train</code></td>
+<td>
+<p>(<em>optional, default</em> <code>NULL</code>) <br> 
+A <code>trainControl</code> object</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>params.train</code></td>
+<td>
+<p>a <code>list</code> containing values of model parameters to be tested 
+(see Details)</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p><b>Concerning <code>ctrl.train</code> parameter :</b>
+</p>
+<p>Set by default to : <br></p>
+<p><code>ctrl.train &lt;- caret::trainControl(method = "repeatedcv", repeats = 3, number = 10,</code> <br><code>                                  summaryFunction = caret::twoClassSummary,</code> <br><code>                                  classProbs = TRUE, returnData = FALSE)</code> <br><br></p>
+<p><b>Concerning <code>params.train</code> parameter :</b>
+</p>
+<p>All elements of the <code>list</code> must have names matching <code>model.parameter_name</code> format, 
+<code>parameter_name</code> being one of the parameter of the <code>tuning.fun</code> function called by 
+<code>caret</code> package and that can be found through the <code>getModelInfo</code> 
+function.
+</p>
+<p>Currently, the available parameters to be tuned are the following :
+</p>
+
+<dl>
+<dt>ANN</dt>
+<dd>
+<p><code>size</code>, <code>decay</code>, <code>bag</code></p>
+</dd>
+<dt>CTA</dt>
+<dd>
+<p><code>maxdepth</code></p>
+</dd>
+<dt>FDA</dt>
+<dd>
+<p><code>degree</code>, <code>nprune</code></p>
+</dd>
+<dt>GAM.gam</dt>
+<dd>
+<p><code>span</code>, <code>degree</code></p>
+</dd>
+<dt>GAM.mgcv</dt>
+<dd>
+<p><code>select</code>, <code>method</code></p>
+</dd>
+<dt>GBM</dt>
+<dd>
+<p><code>n.trees</code>, <code>interaction.depth</code>, <code>shrinkage</code>, <code>n.minobsinnode</code></p>
+</dd>
+<dt>MARS</dt>
+<dd>
+<p><code>degree</code>, <code>nprune</code></p>
+</dd>
+<dt>MAXENT</dt>
+<dd>
+<p><code>algorithm</code>, <code>parallel</code></p>
+</dd>
+<dt>RF</dt>
+<dd>
+<p><code>mtry</code></p>
+</dd>
+<dt>SRE</dt>
+<dd>
+<p><code>quant</code></p>
+</dd>
+<dt>XGBOOST</dt>
+<dd>
+<p><code>nrounds</code>, <code>max_depth</code>, <code>eta</code>, <code>gamma</code>, 
+<code>colsampl_bytree</code>, <code>min_child_weight</code>, <code>subsample</code></p>
+</dd>
+</dl>
+<p>The <code>expand.grid</code> function is used to build a <code>matrix</code> containing all 
+combinations of parameters to be tested.
+</p>
+
+
+<h3>Value</h3>
+
+<p>A <code>BIOMOD.models.options</code> object (see <code>bm_ModelingOptions</code>) with 
+optimized parameters
+</p>
+
+
+<h3>Note</h3>
+
+
+<ul>
+<li>
+<p> No tuning for <code>GLM</code> and <code>MAXNET</code>
+</p>
+</li>
+<li> <p><code>MAXENT</code> is tuned through <code>ENMevaluate</code> function which is
+calling either :
+</p>
+
+<ul>
+<li>
+<p> maxnet (by defining <code>MAXENT.algorithm = 'maxnet'</code>) (<em>default</em>)
+</p>
+</li>
+<li>
+<p> Java version of Maxent defined in <span class="pkg">dismo</span> package (by defining 
+<code>MAXENT.algorithm = 'maxent.jar'</code>)
+</p>
+</li>
+</ul>
+</li>
+<li> <p><code>SRE</code> is tuned through <code>bm_SRE</code> function
+</p>
+</li>
+<li>
+<p> All other models are tuned through <code>train</code> function
+</p>
+</li>
+<li>
+<p> No optimization of formula for <code>MAXENT</code>, <code>MAXNET</code>, <code>SRE</code> and 
+<code>XGBOOST</code>
+</p>
+</li>
+<li>
+<p> No interaction included in formula for <code>CTA</code>
+</p>
+</li>
+<li>
+<p> Variables selection only for <code>GAM.gam</code> and <code>GLM</code>
+</p>
+</li>
+</ul>
+<h3>Author(s)</h3>
+
+<p>Frank Breiner, Maya Gueguen, Helene Blancheteau
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>trainControl</code>, <code>train</code>, 
+<code>ENMevaluate</code>, 
+<code>ModelsTable</code>, <code>BIOMOD.models.options</code>, 
+<code>bm_ModelingOptions</code>, <code>BIOMOD_Modeling</code>
+</p>
+<p>Other Secundary functions: 
+<code>bm_BinaryTransformation()</code>,
+<code>bm_CrossValidation()</code>,
+<code>bm_FindOptimStat()</code>,
+<code>bm_MakeFormula()</code>,
+<code>bm_ModelingOptions()</code>,
+<code>bm_PlotEvalBoxplot()</code>,
+<code>bm_PlotEvalMean()</code>,
+<code>bm_PlotRangeSize()</code>,
+<code>bm_PlotResponseCurves()</code>,
+<code>bm_PlotVarImpBoxplot()</code>,
+<code>bm_PseudoAbsences()</code>,
+<code>bm_RunModelsLoop()</code>,
+<code>bm_SRE()</code>,
+<code>bm_SampleBinaryVector()</code>,
+<code>bm_SampleFactorLevels()</code>,
+<code>bm_VariablesImportance()</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">library(terra)
+
+# Load species occurrences (6 species available)
+data(DataSpecies)
+head(DataSpecies)
+
+# Select the name of the studied species
+myRespName &lt;- 'GuloGulo'
+
+# Get corresponding presence/absence data
+myResp &lt;- as.numeric(DataSpecies[, myRespName])
+
+# Get corresponding XY coordinates
+myRespXY &lt;- DataSpecies[, c('X_WGS84', 'Y_WGS84')]
+
+# Load environmental variables extracted from BIOCLIM (bio_3, bio_4, bio_7, bio_11 &amp; bio_12)
+data(bioclim_current)
+myExpl &lt;- terra::rast(bioclim_current)
+
+
+
+# --------------------------------------------------------------- #
+# Format Data with true absences
+myBiomodData &lt;- BIOMOD_FormatingData(resp.var = myResp,
+                                     expl.var = myExpl,
+                                     resp.xy = myRespXY,
+                                     resp.name = myRespName)
+
+
+# --------------------------------------------------------------- #
+# List of all models currently available in `biomod2` (and their related package and function)
+# Some of them can be tuned through the `train` function of the `caret` package 
+# (and corresponding training function to be used is indicated)
+data(ModelsTable)
+ModelsTable
+
+allModels &lt;- c('ANN', 'CTA', 'FDA', 'GAM', 'GBM', 'GLM'
+               , 'MARS', 'MAXENT', 'MAXNET', 'RF', 'SRE', 'XGBOOST')
+
+# default parameters
+opt.d &lt;- bm_ModelingOptions(data.type = 'binary',
+                            models = allModels,
+                            strategy = 'default')
+                            
+# tune parameters for Random Forest model
+tuned.rf &lt;- bm_Tuning(model = 'RF',
+                      tuning.fun = 'rf', ## see in ModelsTable
+                      do.formula = FALSE,
+                      bm.options = opt.d@options$RF.binary.randomForest.randomForest,
+                      bm.format = myBiomodData)
+tuned.rf
+
+## Not run: 
+# tune parameters for GAM (from mgcv package) model
+tuned.gam &lt;- bm_Tuning(model = 'GAM',
+                       tuning.fun = 'gam', ## see in ModelsTable
+                       do.formula = TRUE,
+                       do.stepAIC = TRUE,
+                       bm.options = opt.d@options$GAM.binary.mgcv.gam,
+                       bm.format = myBiomodData)
+tuned.gam
+
+## End(Not run)                  
+
+
+
+</code></pre>
+
+
+</div>

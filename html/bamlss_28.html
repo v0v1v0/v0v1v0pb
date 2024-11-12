@@ -1,0 +1,502 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>opt_bfit</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>
+Fit BAMLSS with Backfitting
+</h2>
+
+<h3>Description</h3>
+
+<p>This optimizer function is a generic tool for fitting BAMLSS using a backfitting algorithm.
+The backfitting procedure is based on iteratively weighted least squares (IWLS) for finding
+posterior mode estimates, however, the updating methods for model terms can be more general, see
+the details section. In addition, the default IWLS updating scheme implements optimum smoothing
+variance selection based on information criteria using a stepwise approach.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">## Optimizer functions:
+opt_bfit(x, y, family, start = NULL, weights = NULL, offset = NULL,
+  update = "iwls", criterion = c("AICc", "BIC", "AIC"),
+  eps = .Machine$double.eps^0.25, maxit = 400,
+  outer = NULL, inner = FALSE, mgcv = FALSE,
+  verbose = TRUE, digits = 4, flush = TRUE,
+  nu = TRUE, stop.nu = NULL, ...)
+
+bfit(x, y, family, start = NULL, weights = NULL, offset = NULL,
+  update = "iwls", criterion = c("AICc", "BIC", "AIC"),
+  eps = .Machine$double.eps^0.25, maxit = 400,
+  outer = NULL, inner = FALSE, mgcv = FALSE,
+  verbose = TRUE, digits = 4, flush = TRUE,
+  nu = TRUE, stop.nu = NULL, ...)
+
+## Model term updating functions:
+bfit_iwls(x, family, y, eta, id, weights, criterion, ...)
+bfit_iwls_Matrix(x, family, y, eta, id, weights, criterion, ...)
+bfit_lm(x, family, y, eta, id, weights, criterion, ...)
+bfit_optim(x, family, y, eta, id, weights, criterion, ...)
+bfit_glmnet(x, family, y, eta, id, weights, criterion, ...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>For function <code>opt_bfit()</code> the <code>x</code> list, as returned from function
+<code>bamlss.frame</code>, holding all model matrices and other information that is used for
+fitting the model. For the updating functions an object as returned from function
+<code>smooth.construct</code> or <code>smoothCon</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>y</code></td>
+<td>
+<p>The model response, as returned from function <code>bamlss.frame</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>family</code></td>
+<td>
+<p>A <span class="pkg">bamlss</span> family object, see <code>family.bamlss</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>start</code></td>
+<td>
+<p>A named numeric vector containing possible starting values, the names are based on
+function <code>parameters</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>weights</code></td>
+<td>
+<p>Prior weights on the data, as returned from function <code>bamlss.frame</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>offset</code></td>
+<td>
+<p>Can be used to supply model offsets for use in fitting,
+returned from function <code>bamlss.frame</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>update</code></td>
+<td>
+<p>Sets the updating function for model terms, e.g. for a term <code>s(x)</code> in the model
+formula. Per default this is set to <code>"iwls"</code>, a character pointing to the set of updating
+functions, see above. Other options are <code>"optim"</code> and <code>"lm"</code> etc., however, this is
+more experimental and should not be set by the user. Another option is to pass a full updating
+function which should be used for each model term, the structure of updating functions is
+described in the details below. Model terms may also have different updating functions, see
+the example section implementing a new model term constructor for Gompertz growth curves
+using this feature.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>criterion</code></td>
+<td>
+<p>Set the information criterion that should be used, e.g., for smoothing
+variance selection. Options are the corrected AIC <code>"AICc"</code>, the <code>"BIC"</code> and
+<code>"AIC"</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>eps</code></td>
+<td>
+<p>The relative convergence tolerance of the backfitting algorithm.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>maxit</code></td>
+<td>
+<p>The maximum number of iterations for the backfitting algorithm</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>outer</code></td>
+<td>
+<p>Should the current working observations and weights be computed in one outer
+iteration, otherwise the working observations are computed anew for each model term
+updating step. The default will run one outer iteration first, afterwards model weights
+are computed for each term anew.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>inner</code></td>
+<td>
+<p>Should the model terms for one parameter of the modeled distribution be
+fully updated until convergence in an inner iteration, i.e., the algorithm waits until
+coefficients for the current distribution parameter do not change anymore before updating
+the next parameter.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>mgcv</code></td>
+<td>
+<p>Should the <span class="pkg">mgcv</span> <code>gam</code> function be used for computing updates
+in an <code>inner</code> iteration with working observations provided in an <code>outer</code> iteration.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>verbose</code></td>
+<td>
+<p>Print information during runtime of the algorithm.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>digits</code></td>
+<td>
+<p>Set the digits for printing when <code>verbose = TRUE</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>flush</code></td>
+<td>
+<p>use <code>flush.console</code> for displaying the current output in the console.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nu</code></td>
+<td>
+<p>Logical, numeric or <code>NULL</code>. Function <code>opt_bfit()</code> uses step length
+optimization of parameters when updating a model term, useful to encounter convergence problems
+of the algorithm. If <code>nu = TRUE</code> the step length parameter is optimized for each model term
+in each iteration of the backfitting algorithm. If <code>nu</code> is numeric, e.g. <code>nu = 1</code>,
+then <code>nu</code> is halfed until an improvement in the log-posterior is obtained or nu is
+smaller than <code>.Machine$double.eps</code>. If <code>nu = NULL</code>, no step length optimization
+is performed. Note, using very large data sets it is usually better to switch of
+step length optimization.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>stop.nu</code></td>
+<td>
+<p>Integer. Should step length reduction be stopped after <code>stop.nu</code> iterations
+of the backfitting algorithm?</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>eta</code></td>
+<td>
+<p>The current value of the predictors, provided as a named list, one list entry
+for each parameter. The names correspond to the parameter names in the family object,
+see <code>family.bamlss</code>. E.g., when using the <code>gaussian_bamlss</code> family
+object, the current values for the mean can be extracted by <code>eta\$mu</code> and for the
+standard deviation by <code>eta\$sigma</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>id</code></td>
+<td>
+<p>Character, the name of the current parameter for which the model term should
+be updated.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>For function <code>opt_bfit()</code>, arguments passed to function
+<code>bamlss.engine.setup</code>. For updating functions, within the dots argument the
+actual <code>iteration</code> number of the backfitting algorithm, the actual total number of
+equivalent degrees of freedom <code>edf</code> and vectors <code>z</code> and <code>hess</code>
+only if argument <code>outer = TRUE</code> are provided.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>This algorithm is based on iteratively weighted least squares (IWLS) for BAMLSS, i.e.,
+a Newton-Raphson or Fisher scoring algorithm is applied, similar to
+Rigby~and~Stasinopoulos~(2005). The algorithm utilizes the chain rule for computing derivatives of
+the log-posterior w.r.t. regression coefficients, therefore, to compute the working observations
+and weights only the derivatives of the log-likelihood w.r.t. the predictors are required.
+</p>
+<p>It is assumed that the provided <code>family</code> object holds functions for computing the first
+and second order derivatives of the log-likelihood w.r.t. the predictors. These Functions
+are provided within the named lists <code>"score"</code> and <code>"hess"</code> within the <code>family</code>
+object. See the documentation of <code>family.bamlss</code> and the code of the provided
+families, e.g. <code>gaussian_bamlss</code>, for examples of the required structure.
+</p>
+<p>The algorithm either updates each model term over all distributional parameters sequentially,
+or does a full update until convergence for model terms for one distributional parameter before
+updating the next parameter, see argument <code>inner</code>. Additionally, working observations and
+weights can be computed only once in an <code>outer</code> iteration.
+</p>
+<p>Starting values of regression coefficients and smoothing variances can be supplied, moreover,
+if a family object holds functions for initializing the distributional parameters, see also
+<code>family.bamlss</code>, starting values are based on the initialize functions.
+</p>
+<p>The default updating function for model terms is based on IWLS, which is assigned by function
+<code>bamlss.engine.setup</code>, however, special updating functions can be used.
+This is achieved by providing an updating function to argument
+<code>update</code>, which should be used for all model terms. Another option is to set the updating
+function within the <code>xt</code> argument of the <span class="pkg">mgcv</span> smooth term constructor functions, see
+e.g. function <code>s</code>. If the <code>xt</code> list then holds an element named <code>"update"</code>,
+which is a valid updating function, this updating function is used for the corresponding model
+term. This way it is possible to call different (special) updating functions for specific terms,
+e.g., that do not fit in the IWLS scheme. See the examples below. Note that this does not work if
+<code>mgcv = TRUE</code>, since the <code>gam</code> function assumes a strict linear
+representation of smooth terms.
+</p>
+<p>A model term updating function has the following arguments:
+</p>
+<p><code>update(x, family, y, eta, id, weights, criterion, ...)</code>
+</p>
+<p>Here <code>x</code> is an object as returned from function <code>smooth.construct</code>
+or <code>smoothCon</code>. The <code>x</code> object is preprocessed by function
+<code>bamlss.engine.setup</code>, i.e., an element called <code>"state"</code> is assigned. The state
+element represents the current state of the model term holding the current values of the
+parameters with corresponding fitted values, as well as equivalent degrees of freedom, see
+also the values that are returned by such functions below. The backfitting algorithm uses the
+state of a model term for generating updates of the parameters. Note that for special model
+terms the state list should already be provided within the call to the corresponding
+smooth constructor function, see the growth curve example below.
+</p>
+<p>In addition, for special model terms the fitted values may not be computed by a linear combination
+of the design matrix and the coefficients. Therefore, the <code>x</code> object should hold an element
+named <code>"fit.fun"</code> which is a function for computing the fitted values.
+See also <code>smooth.construct.bamlss.frame</code> and <code>predict.bamlss</code> that use
+this setup. The arguments of fitting functions are
+</p>
+<p><code>fit.fun(X, b, ...)</code>
+</p>
+<p>where <code>X</code> is the design matrix and <code>b</code> is the vector of coefficients. Hence, for
+usual IWLS updating the fitted values are computed by <code>X %*% b</code>. For special terms like
+nonlinear growth curves this may not be the case, see the example below. The fitting functions
+are assigned by <code>bamlss.engine.setup</code>, unless the function is already provided
+after calling the constructor function <code>smooth.construct</code> or
+<code>smoothCon</code>. Note that the dots argument is usually not needed by the user.
+</p>
+<p>The default updating function is <code>bfit_iwls()</code>. Function <code>bfit_iwls_Matrix()</code> uses the
+sparse matrix infrastructures of package <span class="pkg">Matrix</span>. The <span class="pkg">Matrix</span> package and
+<code>bfit_iwls_Matrix()</code> is used for model terms where
+the maximum number of non-zero entries in the design matrix is less than half of the total number
+of columns, if an additional argument <code>force.Matrix</code> is set to <code>TRUE</code> in the
+<code>opt_bfit()</code> call.
+</p>
+<p>The IWLS updating functions find optimum smoothing variances according to an information criterion
+using a stepwise approach, i.e., in each iteration and for each model term update the updating
+functions try to find a better smoothing variance to control the trade-off between over-smoothing
+and nonlinear functional estimation. The search interval is centered around the current state
+of the smoothing variances, hence, in each iteration only a slight improvement is achieved.
+This algorithm is based on Belitz~and~Lang~(2008) and can also be viewed as a boosting approach
+for optimization.
+</p>
+
+
+<h3>Value</h3>
+
+<p>For function <code>opt_bfit()</code> a list containing the following objects:
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>fitted.values</code></td>
+<td>
+<p>A named list of the fitted values of the modeled parameters
+of the selected distribution.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>parameters</code></td>
+<td>
+<p>The estimated set regression coefficients and smoothing variances.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>edf</code></td>
+<td>
+<p>The equivalent degrees of freedom used to fit the model.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>logLik</code></td>
+<td>
+<p>The value of the log-likelihood.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>logPost</code></td>
+<td>
+<p>The value of the log-posterior.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>IC</code></td>
+<td>
+<p>The value of the information criterion.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>converged</code></td>
+<td>
+<p>Logical, indicating convergence of the backfitting algorithm.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>For updating functions a list providing the current state</code></td>
+<td>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>fitted.values</code></td>
+<td>
+<p>The resulting fitted values after updating.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>parameters</code></td>
+<td>
+<p>The resulting named numeric vector of updated model term parameters.
+Coefficients should be named with <code>"b1"</code>, ..., <code>"bk"</code>, where <code>k</code> is
+the total number of coefficients. Smoothing variances should be named with
+<code>"tau21"</code>, ..., <code>"tau2m"</code>, where <code>m</code> is the total number of smoothing
+variances assigned to the model term.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>edf</code></td>
+<td>
+<p>The equivalent degrees of freedom used to produce the fitted values.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>hessian</code></td>
+<td>
+<p>Optional, the coefficient Hessian information</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>log.prior</code></td>
+<td>
+<p>Optional, the value of the log-prior of the model term.</p>
+</td>
+</tr>
+</table>
+<h3>References</h3>
+
+<p>Belitz C, Lang S (2008). Simultaneous Selection of Variables and Smoothing Parameters in
+Structured Additive Regression Models. <em>Computational Statistics &amp; Data Analysis</em>,
+<b>53</b>, pp 61-81.
+</p>
+<p>Umlauf N, Klein N, Zeileis A (2016). Bayesian Additive Models for Location
+Scale and Shape (and Beyond). <em>(to appear)</em>
+</p>
+<p>Rigby, R. A. and  Stasinopoulos D. M. (2005). Generalized additive models for location,
+scale and shape, (with discussion), <em>Appl. Statist.</em>, <b>54</b>, part 3, pp 507-554.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>bamlss</code>, <code>bamlss.frame</code>,
+<code>bamlss.engine.setup</code>, <code>set.starting.values</code>, <code>s2</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## Not run: ## Simulated data example illustrating
+## how to call the optimizer function.
+## This is done internally within
+## the setup of function bamlss().
+d &lt;- GAMart(n = 200)
+f &lt;- num ~ s(x1) + s(x2) + s(x3)
+bf &lt;- bamlss.frame(f, data = d, family = "gaussian")
+opt &lt;- with(bf, opt_bfit(x, y, family))
+print(str(opt))
+
+## Same with bamlss().
+b &lt;- bamlss(f, data = d, family = "gaussian", sampler = FALSE)
+plot(b)
+summary(b)
+
+## Use of different updating function.
+b &lt;- bamlss(f, data = d, family = "gaussian",
+  sampler = FALSE, update = bfit_lm)
+plot(b)
+
+## Use mgcv gam() function for updating.
+b &lt;- bamlss(f, data = d, family = "gaussian",
+  sampler = FALSE, mgcv = TRUE)
+plot(b)
+
+## Special smooth constructor including updating/sampler
+## function for nonlinear Gompertz curves.
+## Note: element special.npar is needed here since this
+##       function has 3 parameters but the design matrix only
+##       one column!
+smooth.construct.gc.smooth.spec &lt;- function(object, data, knots) 
+{
+  object$X &lt;- matrix(as.numeric(data[[object$term]]), ncol = 1)
+  center &lt;- if(!is.null(object$xt$center)) {
+    object$xt$center
+  } else TRUE
+  object$by.done &lt;- TRUE
+  if(object$by != "NA")
+    stop("by variables not supported!")
+  object$fit.fun &lt;- function(X, b, ...) {
+    f &lt;- b[1] * exp(-b[2] * exp(-b[3] * drop(X)))
+    if(center)
+      f &lt;- f - mean(f)
+    f
+  }
+  object$update &lt;- bfit_optim
+  object$propose &lt;- GMCMC_slice
+  object$prior &lt;- function(b) { sum(dnorm(b, sd = 1000, log = TRUE)) }
+  object$fixed &lt;- TRUE
+  object$state$parameters &lt;- c("b1" = 0, "b2" = 0.5, "b3" = 0.1)
+  object$state$fitted.values &lt;- rep(0, length(object$X))
+  object$state$edf &lt;- 3
+  object$special.npar &lt;- 3 ## Important!
+  class(object) &lt;- c("gc.smooth", "no.mgcv", "special")
+  object
+}
+
+## Work around for the "prediction matrix" of a growth curve.
+Predict.matrix.gc.smooth &lt;- function(object, data, knots) 
+{
+  X &lt;- matrix(as.numeric(data[[object$term]]), ncol = 1)
+  X
+}
+
+## Heteroscedastic growth curve data example.
+set.seed(111)
+
+d &lt;- data.frame("time" = 1:30)
+d$y &lt;- 2 + 1 / (1 + exp(0.5 * (15 - d$time))) +
+  rnorm(30, sd = exp(-3 + 2 * cos(d$time/30 * 6 - 3)))
+
+## Special model terms must be called with s2()!
+f &lt;- list(
+  y ~ s2(time, bs = "gc"),
+  sigma ~ s(time)
+)
+
+## Fit model with special model term.
+b &lt;- bamlss(f, data = d,
+  optimizer = opt_bfit, sampler = sam_GMCMC)
+
+## Plot the fitted curves.
+plot(b)
+
+## Predict with special model term.
+nd &lt;- data.frame("time" = seq(1, 30, length = 100))
+p &lt;- predict(b, newdata = nd, model = "mu", FUN = c95)
+plot(d, ylim = range(c(d$y, p)))
+matplot(nd$time, p, type = "l",
+  lty = c(2, 1, 2), col = "black", add = TRUE)
+
+## End(Not run)
+</code></pre>
+
+
+</div>

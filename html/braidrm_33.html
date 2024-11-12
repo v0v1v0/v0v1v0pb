@@ -1,0 +1,189 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>fitMusycModel</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>MuSyC Response Surface Fitting</h2>
+
+<h3>Description</h3>
+
+<p>Fits the Multidimensional Synergy of Combinations (MuSyC) model of combined
+action to the given data (Wooten <em>et al.</em> 2021).
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">fitMusycModel(
+  formula,
+  data,
+  variant = "standard",
+  weights = NULL,
+  direction = 0,
+  lower = NULL,
+  upper = NULL
+)
+
+## S3 method for class 'formula'
+fitMusycModel(
+  formula,
+  data,
+  variant = "standard",
+  weights = NULL,
+  direction = 0,
+  lower = NULL,
+  upper = NULL
+)
+
+## Default S3 method:
+fitMusycModel(
+  formula,
+  data,
+  variant = "standard",
+  weights = NULL,
+  direction = 0,
+  lower = NULL,
+  upper = NULL
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>formula</code></td>
+<td>
+<p>Either an object of class <code>formula</code> such as would be provided
+to a modeling function like <code>stats::lm()</code>, or a width-2 numeric array vector
+of concentration pairs (including 0 or Inf).  A formula should specify a
+single output as a function of two inputs, eg. <code>activity ~ conc1 + conc2</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+<p>If <code>forumula</code> is a symbolic formula, a data frame containing the
+specified values. If <code>formula</code> is a numeric array of concentrations, a
+numeric vector of response values, the same length as the number of rows of
+<code>formula</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>variant</code></td>
+<td>
+<p>String specifying which variant of the MuSyC model is to be
+fit to the data.  If "standard" (the default), all MuSyC parameters except
+<code>gamma12</code> and <code>gamma21</code> will be fit (these will be fixed at 1).  If
+"independent", the four individual dose-response parameters (<code>IDMA</code>, <code>IDMB</code>,
+<code>na</code>, and <code>nb</code>) and the four maximal effect parameters (<code>E0</code>, <code>EfA</code>, <code>EfB</code>
+and <code>Ef</code>) will be fit, while the four interaction parameters (<code>alpha12</code>,
+<code>alpha21</code>, <code>gamma12</code>, and <code>gamma12</code>) will all be fixed at 1.  If "full", the
+full twelve-parameter MuSyC vector will be fit.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>weights</code></td>
+<td>
+<p>An optional vector of weights the same length as <code>act</code>.  If
+<code>NULL</code> (the default), will be set to 1 for all measurements</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>direction</code></td>
+<td>
+<p>Determines the possible directionality of the BRAID
+model.  If 0 (the default) no additional constraints are placed on the
+parameters.  If greater than 0, the fitting will require that the maximal
+effects are all <em>greater</em> than or equal to the minimal effect.  If less
+than 0, the fitting will require that all maximal effect is <em>less</em> than or
+equal to the minimal effect.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>lower</code></td>
+<td>
+<p>An optional set of lower bounds on the fitted MuSyC response
+parameters.  Any values set to NA will be filled with default calculated
+bounds. May be length 4 (will be treated as a set of lower bounds on the
+minimal and maximal effect parameters only), length 8 (will be treated as
+lower bounds on the four individual dose response parameters and the four
+minimal and maximla effect parameters), the same length as the space of
+parameters being optimized (8 for "independent", 10 for "standard", or 12
+for "full"), or length 12.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>upper</code></td>
+<td>
+<p>An optional set of lower bounds on the fitted MuSyC response
+parameters.  Behaves the same as <code>lower</code>.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>An object of class <code>braidAltFit</code> with the following values:
+</p>
+
+<ul>
+<li> <p><code>concs</code>: The array of concentrations passed to the functions
+</p>
+</li>
+<li> <p><code>act</code>: The vector of measurements associated with the given dose pairs
+</p>
+</li>
+<li> <p><code>weights</code>: The vector of weights for the given measurements, set to 1 for
+all measurements by default
+</p>
+</li>
+<li> <p><code>method</code>: Specifying the alternate surface model being used (in this case
+"MuSyC")
+</p>
+</li>
+<li> <p><code>variant</code>: A string specifying which MuSyC variant was fit: "independent",
+"standard", or "full"
+</p>
+</li>
+<li> <p><code>coefficients</code>: A parameter vector of the appropriate length for <code>variant</code>
+specifying the best fit response surface
+</p>
+</li>
+<li> <p><code>fitted.values</code>: The predicted response surface value for the given dose
+pairs and best-fit response surface
+</p>
+</li>
+<li> <p><code>residuals</code>: The difference between the predicted and measured values for
+the given dose pairs, always equal to "measured minus predicted"
+</p>
+</li>
+<li> <p><code>direction</code>: The direction value passed to the function
+</p>
+</li>
+<li> <p><code>pbounds</code>': A 2-by-k array of bounds on the MuSyC parameters used in the
+parameter optimization
+</p>
+</li>
+</ul>
+<h3>References</h3>
+
+<p>Wooten, David J, Christian T Meyer, Alexander LR Lubbock, Vito Quaranta,
+and Carlos F Lopez. 2021. “MuSyC Is a Consensus Framework That Unifies
+Multi-Drug Synergy Metrics for Combinatorial Drug Discovery.”
+<em>Nature Communications</em> <strong>12</strong> (1): 4607.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">mfit1 &lt;- fitMusycModel(measure ~ concA + concB, synergisticExample)
+coef(mfit1)
+
+mfit2 &lt;- fitMusycModel(measure ~ concA + concB, oppositionalExample,
+                       variant = "independent")
+coef(mfit2)
+</code></pre>
+
+
+</div>

@@ -1,0 +1,401 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>brmsmargins</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Calculate Marginal Effects from 'brms' Models</h2>
+
+<h3>Description</h3>
+
+<p>This function is designed to help calculate marginal effects
+including average marginal effects (AMEs) from <code>brms</code> models.
+Arguments are labeled as <em>required</em> when it is required that the
+user directly specify the argument. Arguments are labeled as
+<em>optional</em> when either the argument is optional or there are
+sensible default values so that users do not typically need to specify
+the argument.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">brmsmargins(
+  object,
+  at = NULL,
+  wat = NULL,
+  add = NULL,
+  newdata = model.frame(object),
+  CI = 0.99,
+  CIType = "HDI",
+  contrasts = NULL,
+  ROPE = NULL,
+  MID = NULL,
+  subset = NULL,
+  dpar = NULL,
+  seed,
+  verbose = FALSE,
+  ...
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>object</code></td>
+<td>
+<p>A <em>required</em> argument specifying a fitted <code>brms</code> model object.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>at</code></td>
+<td>
+<p>An <em>optional</em> argument (but note, either <code>at</code> or <code>add</code> are
+<em>required</em>) specifying an object inheriting from data frame indicating
+the values to hold specific variables at when calculating average
+predictions. This is intended for AMEs from categorical variables.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>wat</code></td>
+<td>
+<p>An <em>optional</em> list with named elements including one element named,
+“ID” with a single character string, the name of the variable
+in the model frame that is the ID variable. Additionally,
+there should be one or more named elements, named after variables
+in the model (and specified in the <code>at</code> argument), that
+contain a <code>data.table</code> or <code>data.frame</code> with three
+variables: (1) the ID variable giving IDs, (2) the values
+specified for the variable in the <code>at</code> argument, and
+(3) the actual values to be substituted for each ID.
+<code>wat</code> cannot be non null unless <code>at</code> also is non null.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>add</code></td>
+<td>
+<p>An <em>optional</em> argument (but note, either <code>at</code> or <code>add</code> are
+<em>required</em>) specifying an object inheriting from data frame indicating
+the values to add to specific variables at when calculating average
+predictions. This is intended for AMEs for continuous variables.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>newdata</code></td>
+<td>
+<p>An <em>optional</em> argument specifying an object inheriting
+from data frame indicating the baseline values to use for predictions and AMEs.
+It uses a sensible default: the model frame from the <code>brms</code>
+model object passed on the <code>object</code> argument.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>CI</code></td>
+<td>
+<p>An <em>optional</em> argument with a numeric value specifying the width
+of the credible interval. Defaults to <code>0.99</code>. This default is arbitrary,
+but is purposefully higher than the common <code>0.95</code> to encourage science
+with greater acknowledgment of uncertainty or larger sample sizes (ideally).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>CIType</code></td>
+<td>
+<p>An <em>optional</em> argument, a character string specifying the
+type of credible interval (e.g., highest density interval). It is passed down to
+<code>bsummary</code> which in turn passes it to
+<code>ci</code>. Defaults to “HDI”.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>contrasts</code></td>
+<td>
+<p>An <em>optional</em> argument specifying a contrast matrix.
+The posterior predictions matrix
+is post multiplied by the contrast matrix, so they must be conformable.
+The posterior predictions matrix has a separate column for each row in the
+<code>at</code> or <code>add</code> object, so the contrast matrix should have the same
+number of rows. It can have multiple columns, if you desire multiple specific
+contrasts.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ROPE</code></td>
+<td>
+<p>An <em>optional</em> argument, that can either be left as <code>NULL</code>,
+the default, or a numeric vector of length 2, specifying the
+lower and upper thresholds for the
+Region of Practical Equivalence (ROPE).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>MID</code></td>
+<td>
+<p>An <em>optional</em> argument, that can either left as <code>NULL</code>,
+the default, or a numeric vector of length 2, specifying the
+lower and upper thresholds for a
+Minimally Important Difference (MID). Unlike the ROPE, percentages for
+the MID are calculated as at or exceeding the bounds specified by this
+argument, whereas the ROPE is the percentage of the posterior at or inside
+the bounds specified.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>subset</code></td>
+<td>
+<p>An <em>optional</em> argument, a character string that is a
+valid <code>R</code> expression used to subset the dataset passed in <code>newdata</code>,
+prior to analysis. Defaults to <code>NULL</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>dpar</code></td>
+<td>
+<p>An <em>optional</em> argument giving the parameter passed on to the <code>dpar</code>
+argument of <code>fitted()</code> in brms. Defaults to <code>NULL</code>,
+indicating the mean or location parameter typically.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>seed</code></td>
+<td>
+<p>An <em>optional</em> argument that controls whether (and if so what) random seed
+to use. This does not matter when using fixed effects only. However,
+when using Monte Carlo integration to integrate out random effects from
+mixed effects models, it is critical if you are looking at a continuous
+marginal effect with some small offset value as otherwise the
+Monte Carlo error from one set of predictions to another may exceed
+the true predicted difference.
+If <code>seed</code> is left missing, the default, than a single, random integer
+between +\- 1e7 is chosen and used to set the seed before each
+prediction. If manually chosen (recommended for reproducibility),
+the seed should either be a single value, in which case this single
+value is used to set the seed before each prediction.
+Alternately, it can be a vector of seeds with either the same length
+as the number of rows in <code>at</code> or <code>add</code>, whichever was specified.
+This is probably generally not what you want, as it means that even for
+the same input data, you would get slightly different predictions
+(when integrating out random effects) due to Monte Carlo variation.
+Finally, rather than being missing, you can explicitly set
+<code>seed = NULL</code>, if you do not want any seed to be set.
+This would be fine, for instance, when only using fixed effects,
+or if you know what you are doing and intend that behavior when
+integrating out random effects.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>verbose</code></td>
+<td>
+<p>An <em>optional</em> argument, a logical value whether to print
+more verbose messages. Defaults to <code>FALSE</code> which is quieter. Set to
+<code>TRUE</code> for more messages to be printed where relevant.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>An <em>optional</em> argument, additional arguments passed on to
+<code>prediction</code>. In particular, the <code>effects</code> argument of <code>prediction()</code>
+is important for mixed effects models to control how random effects
+are treated in the predictions, which subsequently changes the
+marginal effect estimates.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The main parts required for the function are a fitted model object,
+(via the <code>object</code> argument) a dataset to be used for prediction,
+(via the <code>newdata</code> argument which defaults to the model frame),
+and a dataset passed to either <code>at</code> or <code>add</code>.
+The steps are as follows:
+</p>
+
+<ol>
+<li>
+<p> Check that the function inputs (model object, data, etc.) are valid.
+</p>
+</li>
+<li>
+<p> Take the dataset from the <code>newdata</code> argument and either
+add the values from the first row of <code>add</code> or replace the values
+using the first row of <code>at</code>. Only variables specified in
+<code>at</code> or <code>add</code> are modified. Other variables are left as is.
+</p>
+</li>
+<li>
+<p> Use the <code>fitted()</code> function to generate predictions based on
+this modified dataset. If <code>effects</code> is set to “fixedonly”
+(meaning only generate predictions using fixed effects)
+or to “includeRE”
+(meaning generate predictions using fixed and random effects),
+then predictions are generated entirely using the <code>fitted()</code>
+function and are, typically back transformed to the response scale.
+For mixed effects models with fixed and random effects where
+<code>effects</code> is set to “integrateoutRE”, then <code>fitted()</code>
+is only used to generate predictions using the fixed effects on the linear
+scale. For each prediction generated, the random effects are integrated out
+by drawing <code>k</code> random samples from the model assumed random effect(s)
+distribution. These are added to the fixed effects predictions,
+back transformed, and then averaged over all <code>k</code> random samples to
+perform numerical Monte Carlo integration.
+</p>
+</li>
+<li>
+<p> All the predictions for each posterior draw, after any back transformation
+has been applied, are averaged, resulting in one, marginal value for each
+posterior draw. These are marginal predictions. They are average marginal
+predictions if averaging over the sample dataset, or may be marginal predictions
+at the means, if the initial input dataset used mean values, etc.
+</p>
+</li>
+<li>
+<p> Steps two to four are repeated for each row of <code>at</code> or <code>add</code>.
+Results are combined into a matrix where the columns are different
+rows from <code>at</code> or <code>add</code> and the rows are different posterior
+draws.
+</p>
+</li>
+<li>
+<p> If contrasts were specified, using a contrast matrix, the
+marginal prediction matrix is post multiplied by the contrast matrix.
+Depending on the choice(s) of <code>add</code> or <code>at</code> and the
+values in the contrast matrix, these can then be
+average marginal effects (AMEs) by using numerical integration
+(<code>add</code> with 0 and a very close to 0 value) or
+discrete difference (<code>at</code> with say 0 and 1 as values)
+for a given predictor(s).
+</p>
+</li>
+<li>
+<p> The marginal predictions and the contrasts, if specified are
+summarized.
+</p>
+</li>
+</ol>
+<p>Although <code>brmsmargins()</code> is focused on helping to calculate
+marginal effects, it can also be used to generate marginal predictions,
+and indeed these marginal predictions are the foundation of any
+marginal effect estimates. Through manipulating the input data,
+<code>at</code> or <code>add</code> and the contrast matrix, other types of estimates
+averaged or weighting results in specific ways are also possible.
+</p>
+
+
+<h3>Value</h3>
+
+<p>A list with four elements.
+</p>
+
+<ul>
+<li>
+<p><code>Posterior</code>Posterior distribution of all predictions. These predictions default to fixed effects only, but by specifying options to <code>prediction()</code> they can include random effects or be predictions integrating out random effects.
+</p>
+</li>
+<li>
+<p><code>Summary</code>A summary of the predictions.
+</p>
+</li>
+<li>
+<p><code>Contrasts</code>Posterior distribution of all contrasts, if a contrast matrix was specified.
+</p>
+</li>
+<li>
+<p><code>ContrastSummary</code>A summary of the posterior distribution of all contrasts, if specified
+</p>
+</li>
+</ul>
+<h3>References</h3>
+
+<p>Pavlou, M., Ambler, G., Seaman, S., &amp; Omar, R. Z. (2015)
+<a href="https://doi.org/10.1186/s12874-015-0046-6">doi:10.1186/s12874-015-0046-6</a>
+“A note on obtaining correct marginal predictions from a random intercepts model for binary outcomes”
+and
+Skrondal, A., &amp; Rabe-Hesketh, S. (2009)
+<a href="https://doi.org/10.1111/j.1467-985X.2009.00587.x">doi:10.1111/j.1467-985X.2009.00587.x</a>
+“Prediction in multilevel generalized linear models”
+and
+Norton EC, Dowd BE, Maciejewski ML. (2019)
+<a href="https://doi.org/10.1001/jama.2019.1954">doi:10.1001/jama.2019.1954</a>
+“Marginal Effects—Quantifying the Effect of Changes in Risk Factors in Logistic Regression Models”
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## Not run: 
+#### Testing ####
+## sample data and logistic model with brms
+set.seed(1234)
+Tx &lt;- rep(0:1, each = 50)
+ybin &lt;- c(rep(0:1, c(40,10)), rep(0:1, c(10,40)))
+logitd &lt;- data.frame(Tx = Tx, ybin = ybin)
+logitd$x &lt;- rnorm(100, mean = logitd$ybin, sd = 2)
+
+mbin &lt;- brms::brm(ybin ~ Tx + x, data = logitd, family = brms::bernoulli())
+
+summary(mbin)
+
+## now check AME for Tx
+tmp &lt;- brmsmargins(
+  object = mbin,
+  at = data.table::data.table(Tx = 0:1),
+  contrasts = matrix(c(-1, 1), nrow = 2),
+  ROPE = c(-.05, +.05),
+  MID = c(-.10, +.10))
+
+tmp$Summary
+tmp$ContrastSummary ## Tx AME
+
+
+## now check AME for Tx with bootstrapping the AME population
+tmpalt &lt;- brmsmargins(
+  object = mbin,
+  at = data.table::data.table(Tx = 0:1),
+  contrasts = matrix(c(-1, 1), nrow = 2),
+  ROPE = c(-.05, +.05),
+  MID = c(-.10, +.10),
+  resample = 100L)
+
+tmpalt$Summary
+tmpalt$ContrastSummary ## Tx AME
+
+## now check AME for continuous predictor, x
+## use .01 as an approximation for first derivative
+## 1 / .01 in the contrast matrix to get back to a one unit change metric
+tmp2 &lt;- brmsmargins(
+  object = mbin,
+  add = data.table::data.table(x = c(0, .01)),
+  contrasts = matrix(c(-1/.01, 1/.01), nrow = 2),
+  ROPE = c(-.05, +.05),
+  MID = c(-.10, +.10))
+
+tmp2$ContrastSummary ## x AME
+
+if (FALSE) {
+  library(lme4)
+  data(sleepstudy)
+  fit &lt;- brms::brm(Reaction ~ 1 + Days + (1 + Days | Subject),
+             data = sleepstudy,
+             cores = 4)
+
+  summary(fit, prob = 0.99)
+
+  tmp &lt;- brmsmargins(
+    object = fit,
+    at = data.table::data.table(Days = 0:1),
+    contrasts = matrix(c(-1, 1), nrow = 2),
+    ROPE = c(-.05, +.05),
+    MID = c(-.10, +.10), CIType = "ETI", effects = "integrateoutRE", k = 5L)
+
+  tmp$Summary
+  tmp$ContrastSummary
+  }
+
+## End(Not run)
+</code></pre>
+
+
+</div>

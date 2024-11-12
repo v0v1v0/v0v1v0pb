@@ -1,0 +1,240 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>partialPlot</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Partial plot analysis</h2>
+
+<h3>Description</h3>
+
+<p>Partial dependence plot of x against adjusted predicted y.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">partialPlot(object,
+            M = NULL,
+            xvar.names,
+            tm.unq,
+            xvar.unq = NULL,
+            npts = 25,
+            subset,
+            prob.class = FALSE,
+            conditional.xvars = NULL,
+            conditional.values = NULL,
+            plot.it = FALSE,
+            Variable_Factor = FALSE,
+            path_saveplot = NULL,
+            Verbose = TRUE,
+            useCVflag = FALSE,
+            ...)</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>object</code></td>
+<td>
+<p>A boosting object of class <code>(boostmtree, grow)</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>M</code></td>
+<td>
+<p>Fixed value for the boosting step number. If NULL, then use Mopt
+if it is available from the object, else use M</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>xvar.names</code></td>
+<td>
+<p>Names of the x-variables to be used.  By default,
+all variables are plotted.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>tm.unq</code></td>
+<td>
+<p>Unique time points used for the plots of x against y.  By default,
+the deciles of the observed time values are used.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>xvar.unq</code></td>
+<td>
+<p>Unique values used for the partial plot. Default is NULL in which case
+unique values are obtained uniformaly based on the range of variable. Values must
+be provided using list with same length as lenght of <code>xvar.names</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>npts</code></td>
+<td>
+<p>Maximum number of points used for x.  Reduce this value if
+plots are slow.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>subset</code></td>
+<td>
+<p>Vector indicating which rows of the x-data to be used for the
+analysis.  The default is to use the entire data.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>prob.class</code></td>
+<td>
+<p>In case of ordinal response, use class probability rather than cumulative probability.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>conditional.xvars</code></td>
+<td>
+<p>Vector of character values indicating names of the x-variables
+to be used for further conditioning (adjusting) the predicted y values. Variable names
+should be different from <code>xvar.names</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>conditional.values</code></td>
+<td>
+<p>Vector of values taken by the variables from <code>conditional.xvars</code>.
+The length of the vector should be same as the length of the vector for <code>conditional.xvars</code>, which means only one value per conditional variable.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>plot.it</code></td>
+<td>
+<p>Should plots be displayed?</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Variable_Factor</code></td>
+<td>
+<p>Default is FALSE. Use TRUE if the variable specified
+in <code>xvar.names</code> is a factor.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>path_saveplot</code></td>
+<td>
+<p>Provide the location where plot should be saved. By default the plot will be saved at temporary folder.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Verbose</code></td>
+<td>
+<p>Display the path where the plot is saved?</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>useCVflag</code></td>
+<td>
+<p>Should the predicted value be based on the estimate derived from oob sample?</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Further arguments passed to or from other methods.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>Partial dependence plot (Friedman, 2001) of x values specified by
+<code>xvar.names</code> against the adjusted predicted y-values over a set
+of time points specified by <code>tm.unq</code>.  Analysis can be restricted to
+a subset of the data using <code>subset</code>. Further conditioning can be
+imposed using <code>conditional.xvars</code>.
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Hemant Ishwaran, Amol Pande and Udaya B. Kogalur
+</p>
+
+
+<h3>References</h3>
+
+<p>Friedman J.H. Greedy function approximation: a gradient
+boosting machine, <em>Ann. of Statist.</em>, 5:1189-1232, 2001.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## Not run: 
+##------------------------------------------------------------
+## Synthetic example (Response is continuous)
+## high correlation, quadratic time with quadratic interaction
+##-------------------------------------------------------------
+#simulate the data
+dta &lt;- simLong(n = 50, N = 5, rho =.80, model = 2,family = "Continuous")$dtaL
+
+#basic boosting call
+boost.grow &lt;- boostmtree(dta$features, dta$time, dta$id, dta$y,family = "Continuous",M = 300)
+
+#plot results
+#x1 has a linear main effect
+#x2 is quadratic with quadratic time trend
+pp.obj &lt;- partialPlot(object = boost.grow, xvar.names = "x1",plot.it = TRUE)
+pp.obj &lt;- partialPlot(object = boost.grow, xvar.names = "x2",plot.it = TRUE)
+
+#partial plot using "x2" as the conditional variable
+pp.obj &lt;- partialPlot(object = boost.grow, xvar.names = "x1",
+                      conditional.xvar = "x2", conditional.values = 1,plot.it = TRUE)
+pp.obj &lt;- partialPlot(object = boost.grow, xvar.names = "x1",
+                      conditional.xvar = "x2", conditional.values = 2,plot.it = TRUE)
+
+##------------------------------------------------------------
+## Synthetic example (Response is binary)
+## high correlation, quadratic time with quadratic interaction
+##-------------------------------------------------------------
+#simulate the data
+dta &lt;- simLong(n = 50, N = 5, rho =.80, model = 2,family = "Binary")$dtaL
+
+#basic boosting call
+boost.grow &lt;- boostmtree(dta$features, dta$time, dta$id, dta$y,family = "Binary",M = 300)
+
+#plot results
+#x1 has a linear main effect
+#x2 is quadratic with quadratic time trend
+pp.obj &lt;- partialPlot(object = boost.grow, xvar.names = "x1",plot.it = TRUE)
+pp.obj &lt;- partialPlot(object = boost.grow, xvar.names = "x2",plot.it = TRUE)
+
+##----------------------------------------------------------------------------
+## spirometry data
+##----------------------------------------------------------------------------
+data(spirometry, package = "boostmtree")
+
+#boosting call: cubic B-splines with 15 knots
+spr.obj &lt;- boostmtree(spirometry$features, spirometry$time, spirometry$id, spirometry$y,
+            family = "Continuous",M = 300, nu = .025, nknots = 15)
+
+#partial plot of double-lung group at 5 years
+dltx &lt;- partialPlot(object = spr.obj, xvar.names = "AGE",
+                    tm.unq = 5, subset=spr.obj$x$DOUBLE==1,plot.it = TRUE)
+
+#partial plot of single-lung group at 5 years
+sltx &lt;- partialPlot(object = spr.obj, xvar.names = "AGE",
+                    tm.unq = 5, subset=spr.obj$x$DOUBLE==0,plot.it = TRUE)
+
+#combine the two plots: we use lowess smoothed values
+dltx &lt;- dltx$l.obj[[1]]
+sltx &lt;- sltx$l.obj[[1]]
+plot(range(c(dltx[, 1], sltx[, 1])), range(c(dltx[, -1], sltx[, -1])),
+     xlab = "age", ylab = "predicted y (adjusted)", type = "n")
+lines(dltx[, 1], dltx[, -1], lty = 1, lwd = 2, col = "red")
+lines(sltx[, 1], sltx[, -1], lty = 1, lwd = 2, col = "blue")
+legend("topright", legend = c("DLTx", "SLTx"), lty = 1, fill = c(2,4))
+
+## End(Not run)
+</code></pre>
+
+
+</div>

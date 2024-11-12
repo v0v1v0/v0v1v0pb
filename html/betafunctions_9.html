@@ -1,0 +1,149 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>Beta.tp.fit</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Estimate Beta true-score distribution based on observed-score raw-moments and the effective test length.</h2>
+
+<h3>Description</h3>
+
+<p>Estimator for the Beta true-score distribution shape-parameters from the observed-score distribution and Livingston and Lewis' effective test length. Returns a list with entries representing the lower- and upper shape parameters (l and u), and the shape parameters (alpha and beta) of the four-parameters beta distribution, and the effective test length.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">Beta.tp.fit(
+  x,
+  min,
+  max,
+  etl = NULL,
+  reliability = NULL,
+  true.model = "4P",
+  failsafe = FALSE,
+  l = 0,
+  u = 1,
+  output = "parameters"
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>Vector of observed-scores.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>min</code></td>
+<td>
+<p>The minimum possible score to attain on the test.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>max</code></td>
+<td>
+<p>The maximum possible score to attain on the test.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>etl</code></td>
+<td>
+<p>The value of Livingston and Lewis' effective test length. See <code>?ETL()</code>. Not necessary to specify if reliability is supplied to the <code>reliability</code> argument.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>reliability</code></td>
+<td>
+<p>Optional specification of the test-score reliability coefficient. If specified, overrides the input of the <code>etl</code> argument.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>true.model</code></td>
+<td>
+<p>The type of Beta distribution which is to be fit to the moments of the true-score distribution. Options are <code>"4P"</code> and <code>"2P"</code>, where <code>"4P"</code> refers to the four-parameter (with the same mean, variance, skewness, and kurtosis), and <code>"2P"</code> the two-parameter solution where both location-parameters are specified (with the same mean and variance).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>failsafe</code></td>
+<td>
+<p>Logical. Whether to revert to a fail-safe two-parameter solution should the four-parameter solution contain invalid parameter estimates.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>l</code></td>
+<td>
+<p>If <code>failsafe = TRUE</code> or <code>true.model = "2P"</code>: The lower-bound of the Beta distribution. Default is 0 (i.e., the lower-bound of the Standard, two-parameter Beta distribution).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>u</code></td>
+<td>
+<p>If <code>failsafe = TRUE</code> or <code>true.model = "2P"</code>: The upper-bound of the Beta distribution. Default is 1 (i.e., the upper-bound of the Standard, two-parameter Beta distribution).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>output</code></td>
+<td>
+<p>Option to specify true-score distribution moments as output if the value of the output argument does not equal <code>"parameters"</code>.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>A list with the parameter values of a four-parameter Beta distribution. "l" is the lower location-parameter, "u" the upper location-parameter, "alpha" the first shape-parameter, "beta" the second shape-parameter, and "etl" the effective test length.
+</p>
+
+
+<h3>References</h3>
+
+<p>Hanson, B. A. (1991). Method of Moments Estimates for the Four-Parameter Beta Compound Binomial Model and the Calculation of Classification Consistency Indexes. American College Testing Research Report Series. Retrieved from https://files.eric.ed.gov/fulltext/ED344945.pdf
+</p>
+<p>Lord, F. M. (1965). A strong true-score theory, with applications. Psychometrika. 30(3). pp. 239–270. doi: 10.1007/BF02289490
+</p>
+<p>Rogosa, D. &amp;  Finkelman, M. (2004). How Accurate Are the STAR Scores for Individual Students? An Interpretive Guide. Retrieved from http://statweb.stanford.edu/~rag/accguide/guide04.pdf
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R"># Generate some fictional data. Say 1000 individuals take a 100-item test
+# where all items are equally difficult, and the true-score distribution
+# is a four-parameter Beta distribution with location parameters l = 0.25,
+# u = 0.75, alpha = 5, and beta = 3:
+set.seed(12)
+testdata &lt;- rbinom(1000, 100, rBeta.4P(1000, 0.25, 0.75, 5, 3))
+
+# Since this test contains items which are all equally difficult, the true
+# effective test length (etl) is the actual test length. I.e., etl = 100.
+# To estimate the four-parameter Beta distribution parameters underlying
+# the draws from the binomial distribution:
+Beta.tp.fit(testdata, 0, 100, 100)
+
+# Imagine a case where the fitting procedure produces an impermissible
+# estimate (e.g., l &lt; 0 or u &gt; 1).
+set.seed(1234)
+testdata &lt;- rbinom(1000, 50, rBeta.4P(1000, 0.25, 0.75, 5, 3))
+Beta.tp.fit(testdata, 0, 50, 50)
+
+# This example produced an l-value estimate less than 0. One way of
+# dealing with such an occurrence is to revert to a two-parameter
+# model, specifying the l and u parameters and estimating the
+# alpha and beta parameters necessary to produce a Beta distribution
+# with the same mean and variance as the estimated true-score distribution.
+
+# Suppose you have good theoretical reasons to fix the l parameter at a
+# value of 0.25 (e.g., the test is composed of multiple-choice questions
+# with four response-options, resulting in a 25% chance of guessing the
+# correct answer). The l-parameter could be specified to this theoretically
+# justified value, and the u-parameter could be specified to be equal to the
+# estimate above (u = 0.7256552) as such:
+Beta.tp.fit(testdata, 0, 50, 50, true.model = "2P", l = 0.25, u = 0.7256552)
+</code></pre>
+
+
+</div>

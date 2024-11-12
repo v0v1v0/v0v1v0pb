@@ -1,0 +1,176 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>getGoDecisions</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>getGoDecisions</h2>
+
+<h3>Description</h3>
+
+<p>This function applies decision rules to the analyzed trials.
+The resulting <code>decision_list</code> can be further processed with
+<code>getGoProbabilities</code> or
+<code>continueRecruitment</code>.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">getGoDecisions(
+  analyses_list,
+  cohort_names,
+  evidence_levels,
+  boundary_rules,
+  overall_min_gos = 1
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>analyses_list</code></td>
+<td>
+<p>An object of class <code>analysis_list</code>,
+as created with <code>performAnalyses</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>cohort_names</code></td>
+<td>
+<p>A vector of strings with the names of the cohorts, e.g.
+<code>c('p_1', 'p_2')</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>evidence_levels</code></td>
+<td>
+<p>A vector of numerics in <code>(0, 1)</code> for the
+posterior probability thresholds for the cohorts.
+Will be recycled to match the number of methods in the <code>analyses_list</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>boundary_rules</code></td>
+<td>
+<p>A quote of a vector for the boundary rules,
+<code>quote(c(...))</code>, see details.
+The number of decisions to be taken must match the number of cohorts.
+Will be recycled to match the number of methods in the <code>analyses_list</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>overall_min_gos</code></td>
+<td>
+<p>A positive integer for the minimum number of
+cohort-wise go decisions required for an overall go decision
+Default: <code>1</code></p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>This function applies decision rules of the following type to the
+outcomes of (simulated) basket trials with binary endpoints:
+</p>
+<p style="text-align: center;"><code class="reqn">P(p_j|data &gt; p_{B,j}) &gt; \gamma,</code>
+</p>
+
+<p>where <code class="reqn">p_j|data</code> is the posterior response rate of cohort <code class="reqn">j</code>,
+<code class="reqn">p_{B,j}</code> is the response rate boundary of cohort <code class="reqn">j</code>,
+and <code class="reqn">\gamma</code> is the evidence level.
+This rule can equivalently be written as </p>
+<p style="text-align: center;"><code class="reqn">q_{1-\gamma,j} &gt; p_{B,j},</code>
+</p>
+
+<p>where <code class="reqn">q_{1-\gamma,j}</code> is the <code class="reqn">1-\gamma</code>-quantile of the posterior
+response rate of cohort <code class="reqn">j</code>.
+</p>
+<p>The arguments <code>cohort_names</code> and <code>evidence_levels</code> determine
+<code class="reqn">q_{1-\gamma,j}</code>, where the entries of <code>cohort_names</code> and
+<code>evidence_levels</code> are matched corresponding to their order.
+</p>
+<p>The argument <code>boundary_rules</code> provides the rules that describe what
+should happen with  the posterior quantiles <code class="reqn">q_{1-\gamma,j}</code>.
+The first posterior quantile determined by the first items of
+<code>cohort_names</code> and <code>evidence_levels</code> is referred to as <code>x[1]</code>,
+the second as <code>x[2]</code>, etc.
+Using the <code>quote(c(...))</code>-notation,
+many different rules can be implemented.
+A decision rule for only one cohort would be
+<code>boundary_rules = quote(c(x[1] &gt; 0.1))</code>,
+<code>cohort_names = 'p_1'</code>, and <code>evidence_levels = 0.5</code>,
+which implements the rule <code class="reqn">P(p_1|data &gt; 0.1) &gt; 0.5</code>.
+The number of decisions to be taken must match the number of cohorts, i.e.
+for each cohort there must be a decision rule in the vector separated by a comma.
+See the example section for a decision rule for more than one cohort and
+the example of <code>negateGoDecisions</code>
+for the implementation of a more complex decision rule.
+</p>
+
+
+<h3>Value</h3>
+
+<p>An object of class <code>decision_list</code>
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Stephan Wojciekowski
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>performAnalyses</code>
+<code>getGoProbabilities</code>
+<code>negateGoDecisions</code>
+<code>continueRecruitment</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">scenarios_list &lt;- simulateScenarios(
+  n_subjects_list     = list(c(10, 20, 30)),
+  response_rates_list = list(c(0.1, 0.1, 0.9)),
+  n_trials            = 10)
+
+analyses_list &lt;- performAnalyses(
+  scenario_list      = scenarios_list,
+  target_rates       = rep(0.5, 3),
+  n_mcmc_iterations  = 100)
+
+## Decision rule for more than one cohort
+decisions_list &lt;- getGoDecisions(
+  analyses_list   = analyses_list,
+  cohort_names    = c("p_1", "p_2", "p_3"),
+  evidence_levels = c(0.5, 0.5, 0.8),
+  boundary_rules  = quote(c(x[1] &gt; 0.7, x[2] &lt; 0.3, x[3] &lt; 0.6)))
+
+## Decision rule for only two of the three cohorts
+decisions_list &lt;- getGoDecisions(
+  analyses_list   = analyses_list,
+  cohort_names    = c("p_1", "p_3"),
+  evidence_levels = c(0.5, 0.8),
+  boundary_rules  = quote(c(x[1] &gt; 0.7, TRUE, x[3] &lt; 0.6)),
+  overall_min_gos = 2L)
+
+## Different decision rules for each method
+## This works the same way for the different evidence_levels
+decisions_list &lt;- getGoDecisions(
+  analyses_list   = analyses_list,
+  cohort_names    = c("p_1", "p_2", "p_3"),
+  evidence_levels = c(0.5, 0.5, 0.8),
+  boundary_rules  = list(quote(c(x[1] &gt; 0.1, x[2] &lt; 0.5, x[3] &lt; 0.1)),  # "berry"
+                         quote(c(x[1] &gt; 0.2, x[2] &lt; 0.4, x[3] &lt; 0.2)),  # "exnex"
+                         quote(c(x[1] &gt; 0.3, x[2] &lt; 0.3, x[3] &lt; 0.3)),  # "exnex_adj"
+                         quote(c(x[1] &gt; 0.4, x[2] &lt; 0.2, x[3] &lt; 0.4)),  # "pooled"
+                         quote(c(x[1] &gt; 0.5, x[2] &lt; 0.1, x[3] &lt; 0.5)))) # "stratified"
+</code></pre>
+
+
+</div>

@@ -1,0 +1,125 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>post_normal_sur</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Posterior Draw from a Normal Distribution</h2>
+
+<h3>Description</h3>
+
+<p>Produces a draw of coefficients from a normal posterior density for
+a model with seemingly unrelated regresssions (SUR).
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">post_normal_sur(y, z, sigma_i, a_prior, v_i_prior, svd = FALSE)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>y</code></td>
+<td>
+<p>a <code class="reqn">K \times T</code> matrix of endogenous variables.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>z</code></td>
+<td>
+<p>a <code class="reqn">KT \times M</code> matrix of explanatory variables.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>sigma_i</code></td>
+<td>
+<p>the inverse of the constant <code class="reqn">K \times K</code> error variance-covariance matrix.
+For time varying variance-covariance matrics a <code class="reqn">KT \times K</code> can be provided.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>a_prior</code></td>
+<td>
+<p>a <code class="reqn">M x 1</code> numeric vector of prior means.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>v_i_prior</code></td>
+<td>
+<p>the inverse of the <code class="reqn">M x M</code> prior covariance matrix.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>svd</code></td>
+<td>
+<p>logical. If <code>TRUE</code> the singular value decomposition is used to determine
+the root of the posterior covariance matrix. Default is <code>FALSE</code> which means
+that the eigenvalue decomposition is used.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The function produces a posterior draw of the coefficient vector <code class="reqn">a</code> for the model
+</p>
+<p style="text-align: center;"><code class="reqn">y_{t} = Z_{t} a + u_{t},</code>
+</p>
+
+<p>where <code class="reqn">u_t \sim N(0, \Sigma_{t})</code>.
+<code class="reqn">y_t</code> is a K-dimensional vector of endogenous variables and
+<code class="reqn">Z_t = z_t^{\prime} \otimes I_K</code> is a <code class="reqn">K \times KM</code> matrix of regressors with
+<code class="reqn">z_t</code> as a vector of regressors.
+</p>
+<p>For a given prior mean vector <code class="reqn">\underline{a}</code> and prior covariance matrix <code class="reqn">\underline{V}</code>
+the posterior covariance matrix is obtained by
+</p>
+<p style="text-align: center;"><code class="reqn">\overline{V} = \left[ \underline{V}^{-1} + \sum_{t=1}^{T} Z_{t}^{\prime} \Sigma_{t}^{-1} Z_{t} \right]^{-1}</code>
+</p>
+
+<p>and the posterior mean by
+</p>
+<p style="text-align: center;"><code class="reqn">\overline{a} = \overline{V} \left[ \underline{V}^{-1} \underline{a} + \sum_{t=1}^{T} Z_{t}^{\prime} \Sigma_{t}^{-1} y_{t}  \right].</code>
+</p>
+
+
+
+<h3>Value</h3>
+
+<p>A vector.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+# Load data
+data("e1")
+data &lt;- diff(log(e1))
+
+# Generate model data
+temp &lt;- gen_var(data, p = 2, deterministic = "const")
+y &lt;- t(temp$data$Y)
+z &lt;- temp$data$SUR
+k &lt;- nrow(y)
+tt &lt;- ncol(y)
+m &lt;- ncol(z)
+
+# Priors
+a_mu_prior &lt;- matrix(0, m)
+a_v_i_prior &lt;- diag(0.1, m)
+
+# Initial value of inverse Sigma
+sigma_i &lt;- solve(tcrossprod(y) / tt)
+
+# Draw parameters
+a &lt;- post_normal_sur(y = y, z = z, sigma_i = sigma_i,
+                     a_prior = a_mu_prior, v_i_prior = a_v_i_prior)
+
+</code></pre>
+
+
+</div>

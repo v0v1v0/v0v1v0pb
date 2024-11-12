@@ -1,0 +1,173 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>betatree</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Beta Regression Trees</h2>
+
+<h3>Description</h3>
+
+<p>Fit beta regression trees via model-based recursive partitioning.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">betatree(formula, partition,
+  data, subset = NULL, na.action = na.omit, weights, offset, cluster,
+  link = "logit", link.phi = "log", control = betareg.control(),
+  ...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>formula</code></td>
+<td>
+<p>symbolic description of the model of type <code>y ~ x</code>
+or <code>y ~ x | z</code>, specifying the variables influencing mean
+and precision of <code>y</code>, respectively. For details see <code>betareg</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>partition</code></td>
+<td>
+<p>symbolic description of the partitioning variables,
+e.g., <code>~ p1 + p2</code>. The argument <code>partition</code> can be omitted
+if <code>formula</code> is a three-part formula of type <code>y ~ x | z | p1 + p2</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>data, subset, na.action, weights, offset, cluster</code></td>
+<td>
+<p>arguments controlling
+data/model processing passed to <code>mob</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>link</code></td>
+<td>
+<p>character specification of the link function in
+the mean model (mu). Currently, <code>"logit"</code>, <code>"probit"</code>,
+<code>"cloglog"</code>, <code>"cauchit"</code>, <code>"log"</code>, <code>"loglog"</code> are supported.
+Alternatively, an object of class <code>"link-glm"</code> can be supplied.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>link.phi</code></td>
+<td>
+<p>character specification of the link function in
+the precision model (phi). Currently, <code>"identity"</code>,
+<code>"log"</code>, <code>"sqrt"</code> are supported.
+Alternatively, an object of class <code>"link-glm"</code> can be supplied.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>control</code></td>
+<td>
+<p>a list of control arguments for the beta regression specified via
+<code>betareg.control</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>further control arguments for the recursive partitioning
+passed to <code>mob_control</code>.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>Beta regression trees are an application of model-based recursive partitioning
+(implemented in <code>mob</code>, see Zeileis et al. 2008) to
+beta regression (implemented in <code>betareg</code>, see Cribari-Neto
+and Zeileis 2010). See also Grün at al. (2012) for more details.
+</p>
+<p>Various methods are provided for <code>"betatree"</code> objects, most of them
+inherit their behavior from <code>"mob"</code> objects (e.g., <code>print</code>, <code>summary</code>,
+<code>coef</code>, etc.). The <code>plot</code> method employs the <code>node_bivplot</code>
+panel-generating function.
+</p>
+
+
+<h3>Value</h3>
+
+<p><code>betatree()</code> returns an object of S3 class <code>"betatree"</code> which
+inherits from <code>"modelparty"</code>.
+</p>
+
+
+<h3>References</h3>
+
+<p>Cribari-Neto F, Zeileis A (2010). Beta Regression in R.
+<em>Journal of Statistical Software</em>, <b>34</b>(2), 1–24.
+<a href="https://doi.org/10.18637/jss.v034.i02">doi:10.18637/jss.v034.i02</a>
+</p>
+<p>Grün B, Kosmidis I, Zeileis A (2012).
+Extended Beta Regression in R: Shaken, Stirred, Mixed, and Partitioned.
+<em>Journal of Statistical Software</em>, <b>48</b>(11), 1–25.
+<a href="https://doi.org/10.18637/jss.v048.i11">doi:10.18637/jss.v048.i11</a>
+</p>
+<p>Zeileis A, Hothorn T, Hornik K (2008).
+Model-Based Recursive Partitioning.
+<em>Journal of Computational and Graphical Statistics</em>, 
+<b>17</b>(2), 492–514.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>betareg</code>, <code>betareg.fit</code>, <code>mob</code></p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">options(digits = 4)
+suppressWarnings(RNGversion("3.5.0"))
+
+## data with two groups of dyslexic and non-dyslexic children
+data("ReadingSkills", package = "betareg")
+## additional random noise (not associated with reading scores)
+set.seed(1071)
+ReadingSkills$x1 &lt;- rnorm(nrow(ReadingSkills))
+ReadingSkills$x2 &lt;- runif(nrow(ReadingSkills))
+ReadingSkills$x3 &lt;- factor(rnorm(nrow(ReadingSkills)) &gt; 0)
+
+## fit beta regression tree: in each node
+##   - accurcay's mean and precision depends on iq
+##   - partitioning is done by dyslexia and the noise variables x1, x2, x3
+## only dyslexia is correctly selected for splitting
+bt &lt;- betatree(accuracy ~ iq | iq, ~ dyslexia + x1 + x2 + x3,
+  data = ReadingSkills, minsize = 10)
+plot(bt)
+
+## inspect result
+coef(bt)
+if(require("strucchange")) sctest(bt)
+## IGNORE_RDIFF_BEGIN
+summary(bt, node = 2)
+summary(bt, node = 3)
+## IGNORE_RDIFF_END
+
+## add a numerical variable with relevant information for splitting
+ReadingSkills$x4 &lt;- rnorm(nrow(ReadingSkills), c(-1.5, 1.5)[ReadingSkills$dyslexia])
+
+bt2 &lt;- betatree(accuracy ~ iq | iq, ~ x1 + x2 + x3 + x4,
+  data = ReadingSkills, minsize = 10)
+plot(bt2)
+
+## inspect result
+coef(bt2)
+if(require("strucchange")) sctest(bt2)
+## IGNORE_RDIFF_BEGIN
+summary(bt2, node = 2)
+summary(bt2, node = 3)
+## IGNORE_RDIFF_END
+</code></pre>
+
+
+</div>

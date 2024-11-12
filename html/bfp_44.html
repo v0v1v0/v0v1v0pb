@@ -1,0 +1,103 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>rshrinkage</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Sample from the model-specific posterior of the shrinkage factor t = g / (1 + g)</h2>
+
+<h3>Description</h3>
+
+<p>Sample from the model-specific posterior of the shrinkage factor t = g
+/ (1 + g), using inverse sampling. This function is internal only
+because the arguments are not very user-friendly.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">rshrinkage(n=1, R2, nObs, p, alpha)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>n</code></td>
+<td>
+<p>number of samples (default: 1)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>R2</code></td>
+<td>
+<p>coefficient of determination in the model</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nObs</code></td>
+<td>
+<p>number of observations used to fit the model</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>p</code></td>
+<td>
+<p>number of design matrix columns without counting the
+intercept</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>alpha</code></td>
+<td>
+<p>used hyperparameter for hyper-g prior</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p><code>n</code> posterior shrinkage factor samples
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Daniel Saban\'es Bov\'e</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## construct a BayesMfp object
+set.seed(29)
+nObs &lt;- 15
+
+x1 &lt;- rnorm (n=nObs)
+x2 &lt;- rbinom (n=nObs, size=20, prob=0.5) 
+x3 &lt;- rexp (n=nObs)
+
+y &lt;- rt (n=nObs, df=2)
+
+test &lt;- BayesMfp (y ~ bfp (x2, max = 3) + bfp(x3, max=3), nModels = 200, method="exhaustive")
+
+## get the best found model
+map &lt;- test[[1]]
+
+## produce many samples from the shrinkage factor
+samples &lt;- bfp:::rshrinkage(n=1e+5,
+			    R2=map$R2,
+		            nObs=nObs,
+			    p=length(unlist(map$powers)),
+			    alpha=4)
+hist(samples,
+     nclass=50, prob=TRUE)
+
+## compare the mean with the analytical mean
+abline(v=c(sampled &lt;- mean(samples),
+	   true &lt;- map$postExpectedShrinkage),
+       col=c(1, 2))
+stopifnot(abs(sampled - true) &lt; 0.0001)
+</code></pre>
+
+
+</div>

@@ -1,0 +1,172 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>bb_optimize</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Black-Box Optimization</h2>
+
+<h3>Description</h3>
+
+<p>This function optimizes a function or Objective with a given method.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">bb_optimize(
+  x,
+  method = "random_search",
+  max_evals = 1000,
+  max_time = NULL,
+  ...
+)
+
+## S3 method for class ''function''
+bb_optimize(
+  x,
+  method = "random_search",
+  max_evals = 1000,
+  max_time = NULL,
+  lower = NULL,
+  upper = NULL,
+  maximize = FALSE,
+  ...
+)
+
+## S3 method for class 'Objective'
+bb_optimize(
+  x,
+  method = "random_search",
+  max_evals = 1000,
+  max_time = NULL,
+  search_space = NULL,
+  ...
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>(<code>function</code> | Objective).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>method</code></td>
+<td>
+<p>(<code>character(1)</code> | Optimizer)<br>
+Key to retrieve optimizer from mlr_optimizers dictionary or Optimizer.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>max_evals</code></td>
+<td>
+<p>(<code>integer(1)</code>)<br>
+Number of allowed evaluations.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>max_time</code></td>
+<td>
+<p>(<code>integer(1)</code>)<br>
+Maximum allowed time in seconds.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>(named <code>list()</code>)<br>
+Named arguments passed to objective function. Ignored if Objective is
+optimized.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>lower</code></td>
+<td>
+<p>(<code>numeric()</code>)<br>
+Lower bounds on the parameters. If named, names are used to create the
+domain.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>upper</code></td>
+<td>
+<p>(<code>numeric()</code>)<br>
+Upper bounds on the parameters.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>maximize</code></td>
+<td>
+<p>(<code>logical()</code>)<br>
+Logical vector used to create the codomain e.g. c(TRUE, FALSE) -&gt; ps(y1 = p_dbl(tags = "maximize"), y2 = pd_dbl(tags = "minimize")).
+If named, names are used to create the codomain.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>search_space</code></td>
+<td>
+<p>(paradox::ParamSet).</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p><code>list</code> of
+</p>
+
+<ul>
+<li> <p><code>"par"</code> - Best found parameters
+</p>
+</li>
+<li> <p><code>"value"</code> - Optimal outcome
+</p>
+</li>
+<li> <p><code>"instance"</code> - OptimInstanceBatchSingleCrit | OptimInstanceBatchMultiCrit
+</p>
+</li>
+</ul>
+<h3>Note</h3>
+
+<p>If both <code>max_evals</code> and <code>max_time</code> are <code>NULL</code>, TerminatorNone is used. This
+is useful if the Optimizer can terminate itself. If both are given,
+TerminatorCombo is created and the optimization stops if the time or
+evaluation budget is exhausted.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R"># function and bounds
+fun = function(xs) {
+  -(xs[[1]] - 2)^2 - (xs[[2]] + 3)^2 + 10
+}
+
+bb_optimize(fun, lower = c(-10, -5), upper = c(10, 5), max_evals = 10)
+
+# function and constant
+fun = function(xs, c) {
+  -(xs[[1]] - 2)^2 - (xs[[2]] + 3)^2 + c
+}
+
+bb_optimize(fun, lower = c(-10, -5), upper = c(10, 5), max_evals = 10, c = 1)
+
+# objective
+fun = function(xs) {
+  c(z = -(xs[[1]] - 2)^2 - (xs[[2]] + 3)^2 + 10)
+}
+
+# define domain and codomain using a `ParamSet` from paradox
+domain = ps(x1 = p_dbl(-10, 10), x2 = p_dbl(-5, 5))
+codomain = ps(z = p_dbl(tags = "minimize"))
+objective = ObjectiveRFun$new(fun, domain, codomain)
+
+bb_optimize(objective, method = "random_search", max_evals = 10)
+</code></pre>
+
+
+</div>

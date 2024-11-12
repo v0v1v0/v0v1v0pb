@@ -1,0 +1,349 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>predict.brokenstick</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Predict from a <code>brokenstick</code> model</h2>
+
+<h3>Description</h3>
+
+<p>The predictions from a broken stick model coincide with the
+group-conditional means of the random effects. This function takes
+an object of class <code>brokenstick</code> and returns predictions
+in one of several formats. The user can calculate predictions
+for new persons, i.e., for persons who are not part of
+the fitted model, through the <code>x</code> and <code>y</code> arguments.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">## S3 method for class 'brokenstick'
+predict(
+  object,
+  newdata = NULL,
+  ...,
+  x = NULL,
+  y = NULL,
+  group = NULL,
+  hide = c("right", "left", "boundary", "internal", "none"),
+  shape = c("long", "wide", "vector"),
+  include_data = TRUE,
+  strip_data = TRUE,
+  whatknots = "all"
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>object</code></td>
+<td>
+<p>A <code>brokenstick</code> object.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>newdata</code></td>
+<td>
+<p>Optional. A data frame in which to look for variables with
+which to predict. The training data are used if omitted and
+if <code>object$light</code> is <code>FALSE</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Not used, but required for extensibility.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>Optional. A numeric vector with values of the predictor. It could
+also be the special keyword <code>x = "knots"</code> replaces <code>x</code> by the
+positions of the knots.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>y</code></td>
+<td>
+<p>Optional. A numeric vector with measurements.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>group</code></td>
+<td>
+<p>A vector with group identifications</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>hide</code></td>
+<td>
+<p>Should output for knots be hidden in get, print, summary and plot
+functions? Can be <code>"left"</code>, <code>"right"</code>, <code>"boundary"</code>, <code>"internal"</code> or <code>"none"</code>.
+The default is <code>"right"</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>shape</code></td>
+<td>
+<p>A string: <code>"long"</code> (default), <code>"wide"</code> or <code>"vector"</code>
+specifying the shape of the return value. Note that use of <code>"wide"</code>
+with many unique values in <code>x</code> creates an unwieldy, large
+and sparse matrix.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>include_data</code></td>
+<td>
+<p>A logical indicating whether the observed data
+from <code>object$data</code> and <code>newdata</code> should be included into the
+return value. The default is <code>TRUE</code>. Use <code>include_data = FALSE</code> to
+keep only added data points (e.g. knots or observed data specified
+by <code>x</code> and <code>y</code>). Setting <code>include_data = FALSE</code> is useful in
+combination with <code>shape = "wide"</code> to avoid the warning
+<code style="white-space: pre;">⁠Values from '.pred' are not uniquely identified.⁠</code> For convenience,
+in the special case <code>x = "knots"</code> the function overwrites
+<code>include_data</code> to <code>FALSE</code> to evade observed ages to show up in the
+wide matrix.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>strip_data</code></td>
+<td>
+<p>Deprecated. Use <code>include_data</code> instead.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>whatknots</code></td>
+<td>
+<p>Deprecated. Use <code>hide</code> instead.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The function <code>predict()</code> calculates predictions for every row in
+<code>newdata</code>. If the user specifies no <code>newdata</code> argument, then the
+function sets <code>newdata</code> equal to the training data (<code>object$data</code>
+if <code>object$light</code> is <code>FALSE</code>). For a light object without a
+<code>newdata</code> argument, the function throws the warning
+"Argument 'newdata' is required for a light brokenstick object." and
+returns <code>NULL</code>.
+</p>
+<p>It is possible to tailor the behaviour of <code>predict()</code> through the
+<code>x</code>, <code>y</code> and <code>group</code> arguments. What exactly happens depends on
+which of these arguments is specified:
+</p>
+
+<ol>
+<li>
+<p> If the user specifies <code>x</code>, but no <code>y</code> and <code>group</code>, the function
+returns - for every group in <code>newdata</code> - predictions at the
+specified <code>x</code> values. This method will use the data from <code>newdata</code>.
+</p>
+</li>
+<li>
+<p> If the user specifies <code>x</code> and <code>y</code> but no <code>group</code>, the function
+forms a hypothetical new group with the <code>x</code> and <code>y</code> values. This
+method uses no information from <code>newdata</code>, and also works for
+a light <code>brokenstick</code> object.
+</p>
+</li>
+<li>
+<p> If the user specifies <code>group</code>, but no <code>x</code> or <code>y</code>, the function
+searches for the relevant data in <code>newdata</code> and limits its
+predictions to those groups. This is useful if the user needs
+a prediction for only one or a few groups. This does not work for
+a light <code>brokenstick</code> object.
+</p>
+</li>
+<li>
+<p> If the user specifies <code>x</code> and <code>group</code>, but no <code>y</code>, the function
+will create new values for <code>x</code> in each <code>group</code>, search for the relevant
+data in <code>newdata</code> and provide predictions at values of <code>x</code> in those
+groups.
+</p>
+</li>
+<li>
+<p> If the user specifies <code>x</code>, <code>y</code> and <code>group</code>, the function
+assumes that these vectors contain additional data on top on what is
+already available in <code>newdata</code>. The lengths of <code>x</code>,
+<code>y</code> and <code>group</code> must match.
+For a light <code>brokenstick</code> object, case effectively becomes
+case 6. See below.
+</p>
+</li>
+<li>
+<p> As case 5, but now without <code>newdata</code> available. All data are
+specified through <code>x</code>, <code>y</code> and <code>group</code> and form a data frame.
+Matching to <code>newdata</code> is attempted, but as long as group id's are
+different from the training sample effectively new cases will be
+made.
+</p>
+</li>
+</ol>
+<h3>Value</h3>
+
+<p>If <code>shape == "long"</code> a long <code>data.frame</code> of predictions. If <code>x</code>, <code>y</code> and <code>group</code>
+are not specified, the number of rows in the data frame is guaranteed to
+be the same as the number of rows in <code>newdata</code>.
+</p>
+<p>If <code>shape == "wide"</code> a wide <code>data.frame</code> of predictions, one record per group. Note
+that this format could be inefficient if observations times vary between
+subjects.
+</p>
+<p>If <code>shape == "vector"</code> a vector of predicted values, of all x-values and groups.
+</p>
+<p>If the function finds no data, it throws a warnings and returns <code>NULL</code>.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">library("dplyr")
+
+# -- Data
+
+train &lt;- smocc_200[1:1198, ]
+test &lt;- smocc_200[1199:1940, ]
+## Not run: 
+# -- Fit model
+
+fit &lt;- brokenstick(hgt_z ~ age | id, data = train, knots = 0:2, seed = 1)
+fit_light &lt;- brokenstick(hgt_z ~ age | id,
+  data = train, knots = 0:2,
+  light = TRUE, seed = 1
+)
+
+# -- Predict, standard cases
+
+# Use train data, return column with predictions
+pred &lt;- predict(fit)
+identical(nrow(train), nrow(pred))
+
+# Predict without newdata, not possible for light object
+predict(fit_light)
+
+# Use test data
+pred &lt;- predict(fit, newdata = test)
+identical(nrow(test), nrow(pred))
+
+# Predict, same but using newdata with the light object
+pred_light &lt;- predict(fit_light, newdata = test)
+identical(pred, pred_light)
+
+
+# -- Predict, special cases
+
+
+# -- Case 1: x, -y, -group
+
+# Case 1: x as "knots", standard estimates, train sample (n = 124)
+z &lt;- predict(fit, x = "knots", shape = "wide")
+head(z, 3)
+
+# Case 1: x as values, linearly interpolated, train sample (n = 124)
+z &lt;- predict(fit, x = c(0.5, 1, 1.5), shape = "wide", include_data = FALSE)
+head(z, 3)
+
+# Case 1: x as values, linearly interpolated, test sample (n = 76)
+z &lt;- predict(fit, test, x = c(0.5, 1, 1.5), shape = "wide", include_data = FALSE)
+head(z, 3)
+
+# Case 1: x, not possible for light object
+z &lt;- predict(fit_light, x = "knots")
+
+# -- Case 2: x, y, -group
+
+# Case 2: form one new group with id = 0
+predict(fit, x = "knots", y = c(1, 1, 0.5, 0), shape = "wide")
+
+# Case 2: works also for a light object
+predict(fit_light, x = "knots", y = c(1, 1, 0.5, 0), shape = "wide")
+
+
+# -- Case 3: -x, -y, group
+
+# Case 3: Predict at observed age for subset of groups, training sample
+pred &lt;- predict(fit, group = c(10001, 10005, 10022))
+head(pred, 3)
+
+# Case 3: Of course, we cannot do this for light objects
+pred_light &lt;- predict(fit_light, group = c(10001, 10005, 10022))
+
+# Case 3: We can use another sample. Note there is no child 999
+pred &lt;- predict(fit, test, group = c(11045, 11120, 999))
+tail(pred, 3)
+
+# Case 3: Works also for a light object
+pred_light &lt;- predict(fit_light, test, group = c(11045, 11120, 999))
+identical(pred, pred_light)
+
+# -- Case 4: x, -y, group
+
+# Case 4: Predict at specified x, only in selected groups, train sample
+pred &lt;- predict(fit, x = c(0.5, 1, 1.25), group = c(10001, 10005, 10022),
+        include_data = FALSE)
+pred
+
+# Case 4: Same, but include observed data and sort
+pred_all &lt;- predict(fit,
+  x = c(0.5, 1, 1.25), group = c(10001, 10005, 10022)) %&gt;%
+  dplyr::arrange(id, age)
+
+# Case 4: Applies also to test sample
+pred &lt;- predict(fit, test, x = c(0.5, 1, 1.25), group = c(11045, 11120, 999),
+ include_data = FALSE)
+pred
+
+# Case 4: Works also with light object
+pred_light &lt;- predict(fit_light, test, x = c(0.5, 1, 1.25),
+  group = c(11045, 11120, 999), include_data = FALSE)
+identical(pred_light, pred)
+
+# -- Case 5: x, y, group
+
+# Case 5: Add new data to training sample, and refreshes broken stick
+# estimate at age x.
+# Note that novel child (not in train) 999 has one data point
+predict(fit,
+  x = c(0.9, 0.9, 0.9), y = c(1, 1, 1),
+  group = c(10001, 10005, 999), include_data = FALSE)
+
+# Case 5: Same, but now for test sample. Novel child 899 has two data points
+predict(fit, test,
+  x = c(0.5, 0.9, 0.6, 0.9),
+  y = c(0, 0.5, 0.5, 0.6), group = c(11045, 11120, 899, 899),
+  include_data = FALSE)
+
+# Case 5: Also works for light object
+predict(fit_light, test,
+  x = c(0.5, 0.9, 0.6, 0.9),
+  y = c(0, 0.5, 0.5, 0.6), group = c(11045, 11120, 899, 899),
+  include_data = FALSE)
+
+
+# -- Case 6: As Case 5, but without previous data
+
+# Case 6: Same call as last, but now without newdata = test
+# All children are de facto novel as they do not occur in the training
+# or test samples.
+# Note: Predictions for 11045 and 11120 differ from prediction in Case 5.
+predict(fit,
+  x = c(0.5, 0.9, 0.6, 0.9),
+  y = c(0, 0.5, 0.5, 0.6), group = c(11045, 11120, 899, 899))
+
+# This also work for the light brokenstick object
+predict(fit_light,
+  x = c(0.5, 0.9, 0.6, 0.9),
+  y = c(0, 0.5, 0.5, 0.6), group = c(11045, 11120, 899, 899))
+
+## End(Not run)
+</code></pre>
+
+
+</div>

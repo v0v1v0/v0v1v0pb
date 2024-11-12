@@ -1,0 +1,185 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>predict.recurbart</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Predicting new observations with a previously fitted BART model</h2>
+
+<h3>Description</h3>
+
+<p>BART is a Bayesian “sum-of-trees” model.<br>
+For a numeric response <code class="reqn">y</code>, we have
+<code class="reqn">y = f(x) + \epsilon</code>,
+where <code class="reqn">\epsilon \sim N(0,\sigma^2)</code>.<br></p>
+<p><code class="reqn">f</code> is the sum of many tree models.
+The goal is to have very flexible inference for the uknown
+function <code class="reqn">f</code>.
+</p>
+<p>In the spirit of “ensemble models”,
+each tree is constrained by a prior to be a weak learner
+so that it contributes a
+small amount to the overall fit.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">## S3 method for class 'recurbart'
+predict(object, newdata, mc.cores=1, openmp=(mc.cores.openmp()&gt;0), ...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>object</code></td>
+<td>
+
+<p><code>object</code> returned from previous BART fit with <code>recur.bart</code>
+or <code>mc.recur.bart</code>.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>newdata</code></td>
+<td>
+
+<p>Matrix of covariates to predict the distribution of <code class="reqn">t</code>.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>mc.cores</code></td>
+<td>
+
+<p>Number of threads to utilize.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>openmp</code></td>
+<td>
+
+<p>Logical value dictating whether OpenMP is utilized for parallel
+processing.  Of course, this depends on whether OpenMP is available
+on your system which, by default, is verified with <code>mc.cores.openmp</code>.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+
+<p>Other arguments which will be passed on to <code>pwbart</code>.
+</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>BART is an Bayesian MCMC method.
+At each MCMC interation, we produce a draw from the joint posterior
+<code class="reqn">(f,\sigma) | (x,y)</code> in the numeric <code class="reqn">y</code> case
+and just <code class="reqn">f</code> in the binary <code class="reqn">y</code> case.
+</p>
+<p>Thus, unlike a lot of other modelling methods in R, we do not produce a single model object
+from which fits and summaries may be extracted.  The output consists of values
+<code class="reqn">f^*(x)</code> (and <code class="reqn">\sigma^*</code> in the numeric case) where * denotes a particular draw.
+The <code class="reqn">x</code> is either a row from the training data (x.train) or the test data (x.test).
+</p>
+
+
+<h3>Value</h3>
+
+<p>Returns an object of type <code>recurbart</code> with predictions corresponding to <code>newdata</code>.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>recur.bart</code>, <code>mc.recur.bart</code>, <code>recur.pwbart</code>, <code>mc.recur.pwbart</code>, <code>mc.cores.openmp</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## load 20 percent random sample
+data(xdm20.train)
+data(xdm20.test)
+data(ydm20.train)
+
+##test BART with token run to ensure installation works
+## with current technology even a token run will violate CRAN policy
+## set.seed(99)
+## post &lt;- recur.bart(x.train=xdm20.train, y.train=ydm20.train,
+##                    nskip=1, ndpost=1, keepevery=1)
+
+## Not run: 
+set.seed(99)
+post &lt;- recur.bart(x.train=xdm20.train, y.train=ydm20.train)
+## larger data sets can take some time so, if parallel processing
+## is available, submit this statement instead
+## post &lt;- mc.recur.bart(x.train=xdm20.train, y.train=ydm20.train,
+##                      mc.cores=8, seed=99)
+
+require(rpart)
+require(rpart.plot)
+
+dss &lt;- rpart(post$yhat.train.mean~xdm20.train)
+
+rpart.plot(dss)
+## for the 20 percent sample, notice that the top splits
+## involve cci_pvd and n
+## for the full data set, notice that all splits
+## involve ca, cci_pud, cci_pvd, ins270 and n
+## (except one at the bottom involving a small group)
+
+## compare patients treated with insulin (ins270=1) vs
+## not treated with insulin (ins270=0)
+N.train &lt;- 50
+N.test &lt;- 50
+K &lt;- post$K ## 798 unique time points
+
+## only testing set, i.e., remove training set
+xdm20.test. &lt;- xdm20.test[N.train*K+(1:(N.test*K)), ]
+xdm20.test. &lt;- rbind(xdm20.test., xdm20.test.)
+xdm20.test.[ , 'ins270'] &lt;- rep(0:1, each=N.test*K)
+
+## multiple threads will be utilized if available
+pred &lt;- predict(post, xdm20.test., mc.cores=8)
+
+## create Friedman's partial dependence function for the
+## intensity/hazard by time and ins270
+NK.test &lt;- N.test*K
+M &lt;- nrow(pred$haz.test) ## number of MCMC samples, typically 1000
+
+RI &lt;- matrix(0, M, K)
+
+for(i in 1:N.test)
+    RI &lt;- RI+(pred$haz.test[ , (N.test+i-1)*K+1:K]/
+              pred$haz.test[ , (i-1)*K+1:K])/N.test
+
+RI.lo &lt;- apply(RI, 2, quantile, probs=0.025)
+RI.mu &lt;- apply(RI, 2, mean)
+RI.hi &lt;- apply(RI, 2, quantile, probs=0.975)
+
+plot(post$times, RI.hi, type='l', lty=2, log='y',
+     ylim=c(min(RI.lo, 1/RI.hi), max(1/RI.lo, RI.hi)),
+     xlab='t', ylab='RI(t, x)',
+     sub='insulin(ins270=1) vs. no insulin(ins270=0)',
+     main='Relative intensity of hospital admissions for diabetics')
+lines(post$times, RI.mu)
+lines(post$times, RI.lo, lty=2)
+lines(post$times, rep(1, K), col='darkgray')
+
+## RI for insulin therapy seems fairly constant with time
+mean(RI.mu)
+
+
+## End(Not run)
+</code></pre>
+
+
+</div>

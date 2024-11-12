@@ -1,0 +1,204 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>basket</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Create a Basket Trial Analysis</h2>
+
+<h3>Description</h3>
+
+<p>This function creates an analysis modeling the exchangeability
+and distribution characteristics of cohorts in a basket trial, where
+a single therapy is given to multiple cohorts. The model is based on the
+multi-source exchangeability model. This is a generalization of the
+Bayesian hierarchical model and it accomodates multiple sets of latent
+factors shared combinations of cohorts.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">basket(
+  responses,
+  size,
+  name,
+  p0 = 0.15,
+  shape1 = 0.5,
+  shape2 = 0.5,
+  prior = diag(length(responses))/2 + matrix(0.5, nrow = length(responses), ncol =
+    length(responses)),
+  hpd_alpha = 0.05,
+  alternative = "greater",
+  call = NULL,
+  cluster_function = cluster_membership,
+  method = c("mcmc", "lmem", "exact"),
+  mcmc_iter = 2e+05,
+  mcmc_burnin = 50000,
+  initial_mem = round(prior - 0.001),
+  cluster_analysis = FALSE,
+  seed = get_seed()
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>responses</code></td>
+<td>
+<p>the number of responses in each basket.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>size</code></td>
+<td>
+<p>the size of each basket.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>name</code></td>
+<td>
+<p>the name of each basket.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>p0</code></td>
+<td>
+<p>the null response rate for the poster probability calculation.
+(default 0.15)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>shape1</code></td>
+<td>
+<p>the first shape parameter(s) for the prior of each basket.
+(default 0.5)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>shape2</code></td>
+<td>
+<p>the second shape parameter(s) for the prior of each basket.
+(default 0.5)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>prior</code></td>
+<td>
+<p>the matrix giving the prior inclusion probability
+for each pair of baskets. The default is on on the main diagonal and 0.5
+elsewhere.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>hpd_alpha</code></td>
+<td>
+<p>the highest posterior density trial significance.
+(default 0.05)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>alternative</code></td>
+<td>
+<p>the alternative case definition (default "greater").</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>call</code></td>
+<td>
+<p>the call of the function. (default NULL)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>cluster_function</code></td>
+<td>
+<p>a function to cluster baskets.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>method</code></td>
+<td>
+<p>"mcmc", "lmem" (local MEM),  or "exact". See details for an 
+explanation.
+(default "mcmc")</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>mcmc_iter</code></td>
+<td>
+<p>if the method is "mcmc" then this spcifies the number of
+mcmc iterations. Otherwise, it is ignored. (default 200000)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>mcmc_burnin</code></td>
+<td>
+<p>if the method is "mcmc" then this specifies the number of
+burn-in iterations. (default 50000)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>initial_mem</code></td>
+<td>
+<p>if the method is "mcmc" then this spcifies the initial
+MEM matrix. Otherwise, it is ignored.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>cluster_analysis</code></td>
+<td>
+<p>if the cluster analysis is conducted.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>seed</code></td>
+<td>
+<p>the random seed for the mcmc calculations. By default this is
+.Random.seed. If this value is not initialized, then it is first initialized
+with Sys.time() and then returned.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The model may be fit using an exact calculation via
+mcmc, or a local version of MEM. The first conducts posterior inference 
+through the entire set of
+exchangeability relationships in the sample domain. This approach is
+computationally feasible only when the number of cohorts is relatively
+small. As a rule of thumb this option should be used with a maximum of
+20 cohorts.  By default, the second(mcmc) is used and it is based on
+the Metropolis algorithm and it extends the model's implementation to
+larger collections of subpopulations. The algorithm initiates with a
+burn-in period (see mcmc_burnin), which are discarded from the analysis.
+The third is based on a recent paper by Wei et al. The calculation
+is computationally efficient and tends to borrow to a lesser extent
+than other implemented methods.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+# 3 baskets, each with enrollement size 5
+trial_sizes &lt;- rep(5, 3)
+
+# The response rates for the baskets.
+resp_rate &lt;- 0.15
+
+# The trials: a column of the number of responses and a column of the
+# the size of each trial.
+trials &lt;- data.frame(
+  responses = rbinom(trial_sizes, trial_sizes, resp_rate),
+  size = trial_sizes,
+  name = letters[1:3]
+)
+
+summary(basket(trials$responses, trials$size, trials$name))
+
+</code></pre>
+
+
+</div>

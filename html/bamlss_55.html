@@ -1,0 +1,267 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>family.bamlss</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>
+Distribution Families in <span class="pkg">bamlss</span>
+</h2>
+
+<h3>Description</h3>
+
+<p>Family objects in <span class="pkg">bamlss</span> specify the information that is needed for using (different)
+model fitting engines, e.g., the parameter names and corresponding link functions, the
+density function, derivatives of the log-likelihood w.r.t. the predictors, and so
+forth. The optimizer or sampler functions that are called by <code>bamlss</code> must know how
+much information is needed to interpret the model since the family objects are simply
+passed through. Family objects are also used for computing post-modeling statistics, e.g., for
+residual diagnostics or random number generation. See the details and examples.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">## Family objects in bamlss:
+ALD_bamlss(..., tau = 0.5, eps = 0.01)
+beta_bamlss(...)
+binomial_bamlss(link = "logit", ...)
+cnorm_bamlss(...)
+cox_bamlss(...)
+dw_bamlss(...)
+DGP_bamlss(...)
+dirichlet_bamlss(...)
+ELF_bamlss(..., tau = 0.5)
+gaussian_bamlss(...)
+gaussian2_bamlss(...)
+Gaussian_bamlss(...)
+gamma_bamlss(...)
+logNN_bamlss(...)
+multinomial_bamlss(...)
+mvnorm_bamlss(k = 2, ...)
+mvnormAR1_bamlss(k = 2, ...)
+poisson_bamlss(...)
+gpareto_bamlss(...)
+glogis_bamlss(...)
+AR1_bamlss(...)
+beta1_bamlss(ar.start, ...)
+nbinom_bamlss(...)
+ztnbinom_bamlss(...)
+lognormal_bamlss(...)
+weibull_bamlss(...)
+Sichel_bamlss(...)
+GEV_bamlss(...)
+gumbel_bamlss(...)
+mix_bamlss(f1, f2, ...)
+ZANBI_bamlss(...)
+
+## Extractor functions:
+## S3 method for class 'bamlss'
+family(object, ...)
+## S3 method for class 'bamlss.frame'
+family(object, ...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>object</code></td>
+<td>
+<p>An object of class <code>"bamlss"</code> or <code>"bamlss.frame"</code>, see function
+<code>bamlss</code> and <code>bamlss.frame</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>k</code></td>
+<td>
+<p>The dimension of the multivariate normal. Note, if <code>k = 1</code> function
+<code>gaussian_bamlss()</code> is called.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ar.start</code></td>
+<td>
+<p>Logical vector of length equal to the number of rows of the full data set
+used for modeling. Must hold entries <code>TRUE</code> indicating the start of a time series of
+a section. If <code>ar.start = NULL</code> lagged residuals are computed by simple shifting.
+See also <code>bam</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>link</code></td>
+<td>
+<p>Possible link functions.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>tau</code></td>
+<td>
+<p>The quantile the should be fitted.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>eps</code></td>
+<td>
+<p>Constant to be used for the approximation of the absolute function.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>f1, f2</code></td>
+<td>
+<p>A family of class <code>"gamlss.family"</code>, see package <span class="pkg">gamlss.dist</span>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Arguments passed to functions that are called within the family object.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The following lists the minimum requirements on a <span class="pkg">bamlss</span> family object to be used with
+<code>bamlss</code> and <code>bamlss.frame</code>:
+</p>
+
+<ul>
+<li>
+<p> The family object must return a <code>list</code> of class <code>"family.bamlss"</code>.
+</p>
+</li>
+<li>
+<p> The object must contain the family name as a character string. 
+</p>
+</li>
+<li>
+<p> The object must contain the names of the parameters as a character string, as well as
+the corresponding link functions as character string.
+</p>
+</li>
+</ul>
+<p>For most optimizer and sampling functions at least the density function, including a <code>log</code>
+argument, should be provided.
+When using generic model fitting engines like <code>opt_bfit</code> or <code>sam_GMCMC</code>, as
+well as for computing post-modeling statistics with function <code>samplestats</code>, and others,
+it is assumed that the density function in a family object has the following arguments:
+</p>
+<p><code>d(y, par, log = FALSE, ...)</code>
+</p>
+<p>where argument <code>y</code> is the response (possibly a matrix) and <code>par</code> is a named list
+holding the evaluated parameters of the distribution, e.g., using a normal distribution <code>par</code>
+has two elements, one for the mean <code>par$mu</code> and one for the standard deviation
+<code>par$sigma</code>. The dots argument is for passing special internally used objects, depending
+on the type of model this feature is usually not needed.
+</p>
+<p>Similarly, for derivative based algorithms, e.g. using iteratively weighted least squares
+(IWLS, see function <code>opt_bfit</code>, the family object holds derivative functions evaluating
+derivatives of the log-likelihood w.r.t. the predictors (or expectations of derivatives).
+For each parameter, these functions also hold the following arguments:
+</p>
+<p><code>score(y, par, ...)</code>
+</p>
+<p>for computing the first derivative of the log-likelihood w.r.t. a predictor and
+</p>
+<p><code>hess(y, par, ...)</code>
+</p>
+<p>for computing the negative second derivatives. Within the family object these functions
+are organized in a named list, see the examples below.
+</p>
+<p>In addition, for the cumulative distribution function (<code>p(y, par, ...)</code>), for the quantile
+function (<code>q(y, par, ...)</code>) or for creating random numbers (<code>r(n, par, ...)</code>) the same
+structure is assumed. See, e.g., the code of function <code>gaussian.bamlss()</code>.
+</p>
+<p>Some model fitting engines can initialize the distributional parameters which oftentimes
+leads to much faster convergence. The initialize functions are again organized within a named list,
+one entry for each parameter, similar to the <code>score</code> and <code>hess</code> functions, e.g.,
+see the code of family object <code>gaussian.bamlss</code>.
+</p>
+<p>Using function <code>bamlss</code>, <code>residuals.bamlss</code> and
+<code>predict.bamlss</code> the family objects may
+also specify the <code>transform()</code>er, <code>optimizer()</code>, <code>sampler()</code>,
+<code>samplestats()</code>, <code>results()</code>, <code>residuals()</code> and <code>predict()</code> function that
+should be used with this family. See for example the setup of <code>cox_bamlss</code>.
+</p>
+<p>For using specialized estimation engines like <code>sam_JAGS</code> it is recommended to supply
+any extra arguments needed by those engines with an additional list entry within the family
+object, e.g., using <code>gaussian_bamlss()</code> with <code>sam_JAGS</code> the family objects holds
+special details in an element named <code>"bugs"</code>.
+</p>
+<p>The examples below illustrate this setup. See also the code of the <span class="pkg">bamlss</span> family
+functions.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>bamlss</code>, <code>bamlss.frame</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## New family object for the normal distribution,
+## can be used by function opt_bfit() and sam_GMCMC().
+normal_bamlss &lt;- function(...) {
+  f &lt;- list(
+    "family" = "normal",
+    "names" = c("mu", "sigma"),
+    "links" = c("identity", "log"),
+    "d" = function(y, par, log = FALSE) {
+      dnorm(y, mean = par$mu, sd = par$sigma, log = log)
+    },
+    "score" = list(
+      "mu" = function(y, par, ...) {
+        drop((y - par$mu) / (par$sigma^2))
+      },
+      "sigma" = function(y, par, ...) {
+        drop(-1 + (y - par$mu)^2 / (par$sigma^2))
+      }
+    ),
+    "hess" = list(
+      "mu" = function(y, par, ...) {
+        drop(1 / (par$sigma^2))
+      },
+      "sigma" = function(y, par, ...) { 
+        rep(2, length(y))
+      }
+    )
+  )
+  class(f) &lt;- "family.bamlss"
+  return(f)
+}
+
+## Not run: ## Test on simulated data.
+d &lt;- GAMart()
+b &lt;- bamlss(num ~ s(x1) + s(x2) + s(x3),
+  data = d, family = "normal")
+plot(b)
+
+## Compute the log-likelihood using the family object.
+f &lt;- family(b)
+sum(f$d(y = d$num, par = f$map2par(fitted(b)), log = TRUE))
+
+## For using JAGS() more details are needed.
+norm4JAGS_bamlss &lt;- function(...) {
+  f &lt;- normal_bamlss()
+  f$bugs &lt;- list(
+    "dist" = "dnorm",
+    "eta" = BUGSeta,
+    "model" = BUGSmodel,
+    "reparam" = c(sigma = "1 / sqrt(sigma)")
+  )
+  return(f)
+}
+
+## Now with opt_bfit() and sam_JAGS().
+b &lt;- bamlss(num ~ s(x1) + s(x2) + s(x3), data = d,
+  optimizer = opt_bfit, sampler = sam_JAGS, family = "norm4JAGS")
+plot(b)
+
+## End(Not run)
+</code></pre>
+
+
+</div>

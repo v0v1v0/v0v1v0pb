@@ -1,0 +1,99 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>check_prior</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Check if Prior is Informative</h2>
+
+<h3>Description</h3>
+
+<p>Performs a simple test to check whether the prior is informative to the
+posterior. This idea, and the accompanying heuristics, were discussed in
+<em>Gelman et al. 2017</em>.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">check_prior(model, method = "gelman", simulate_priors = TRUE, ...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>model</code></td>
+<td>
+<p>A <code>stanreg</code>, <code>stanfit</code>, <code>brmsfit</code>, <code>blavaan</code>, or <code>MCMCglmm</code> object.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>method</code></td>
+<td>
+<p>Can be <code>"gelman"</code> or <code>"lakeland"</code>. For the
+<code>"gelman"</code> method, if the SD of the posterior is more than 0.1 times
+the SD of the prior, then the prior is considered as informative. For the
+<code>"lakeland"</code> method, the prior is considered as informative if the
+posterior falls within the <code style="white-space: pre;">⁠95%⁠</code> HDI of the prior.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>simulate_priors</code></td>
+<td>
+<p>Should prior distributions be simulated using
+<code>simulate_prior()</code> (default; faster) or sampled via
+<code>unupdate()</code> (slower, more accurate).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Currently not used.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>A data frame with two columns: The parameter names and the quality
+of the prior (which might be <code>"informative"</code>, <code>"uninformative"</code>)
+or <code>"not determinable"</code> if the prior distribution could not be
+determined).
+</p>
+
+
+<h3>References</h3>
+
+<p>Gelman, A., Simpson, D., and Betancourt, M. (2017). The Prior Can Often Only
+Be Understood in the Context of the Likelihood. Entropy, 19(10), 555.
+<a href="https://doi.org/10.3390/e19100555">doi:10.3390/e19100555</a>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+
+library(bayestestR)
+model &lt;- rstanarm::stan_glm(mpg ~ wt + am, data = mtcars, chains = 1, refresh = 0)
+check_prior(model, method = "gelman")
+check_prior(model, method = "lakeland")
+
+# An extreme example where both methods diverge:
+model &lt;- rstanarm::stan_glm(mpg ~ wt,
+  data = mtcars[1:3, ],
+  prior = normal(-3.3, 1, FALSE),
+  prior_intercept = normal(0, 1000, FALSE),
+  refresh = 0
+)
+check_prior(model, method = "gelman")
+check_prior(model, method = "lakeland")
+# can provide visual confirmation to the Lakeland method
+plot(si(model, verbose = FALSE))
+
+
+</code></pre>
+
+
+</div>

@@ -1,0 +1,193 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>findJobs</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Find and Filter Jobs</h2>
+
+<h3>Description</h3>
+
+<p>These functions are used to find and filter jobs, depending on either their parameters (<code>findJobs</code> and
+<code>findExperiments</code>), their tags (<code>findTagged</code>), or their computational status (all other functions,
+see <code>getStatus</code> for an overview).
+</p>
+<p>Note that <code>findQueued</code>, <code>findRunning</code>, <code>findOnSystem</code> and <code>findExpired</code> are somewhat heuristic
+and may report misleading results, depending on the state of the system and the <code>ClusterFunctions</code> implementation.
+</p>
+<p>See <code>JoinTables</code> for convenient set operations (unions, intersects, differences) on tables with job ids.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">findJobs(expr, ids = NULL, reg = getDefaultRegistry())
+
+findExperiments(
+  ids = NULL,
+  prob.name = NA_character_,
+  prob.pattern = NA_character_,
+  algo.name = NA_character_,
+  algo.pattern = NA_character_,
+  prob.pars,
+  algo.pars,
+  repls = NULL,
+  reg = getDefaultRegistry()
+)
+
+findSubmitted(ids = NULL, reg = getDefaultRegistry())
+
+findNotSubmitted(ids = NULL, reg = getDefaultRegistry())
+
+findStarted(ids = NULL, reg = getDefaultRegistry())
+
+findNotStarted(ids = NULL, reg = getDefaultRegistry())
+
+findDone(ids = NULL, reg = getDefaultRegistry())
+
+findNotDone(ids = NULL, reg = getDefaultRegistry())
+
+findErrors(ids = NULL, reg = getDefaultRegistry())
+
+findOnSystem(ids = NULL, reg = getDefaultRegistry())
+
+findRunning(ids = NULL, reg = getDefaultRegistry())
+
+findQueued(ids = NULL, reg = getDefaultRegistry())
+
+findExpired(ids = NULL, reg = getDefaultRegistry())
+
+findTagged(tags = character(0L), ids = NULL, reg = getDefaultRegistry())
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>expr</code></td>
+<td>
+<p>[<code>expression</code>]<br>
+Predicate expression evaluated in the job parameters.
+Jobs for which <code>expr</code> evaluates to <code>TRUE</code> are returned.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ids</code></td>
+<td>
+<p>[<code>data.frame</code> or <code>integer</code>]<br>
+A <code>data.frame</code> (or <code>data.table</code>)
+with a column named “job.id”.
+Alternatively, you may also pass a vector of integerish job ids.
+If not set, defaults to all jobs.
+Invalid ids are ignored.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>reg</code></td>
+<td>
+<p>[<code>Registry</code>]<br>
+Registry. If not explicitly passed, uses the default registry (see <code>setDefaultRegistry</code>).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>prob.name</code></td>
+<td>
+<p>[<code>character</code>]<br>
+Exact name of the problem (no substring matching).
+If not provided, all problems are matched.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>prob.pattern</code></td>
+<td>
+<p>[<code>character</code>]<br>
+Regular expression pattern to match problem names.
+If not provided, all problems are matched.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>algo.name</code></td>
+<td>
+<p>[<code>character</code>]<br>
+Exact name of the problem (no substring matching).
+If not provided, all algorithms are matched.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>algo.pattern</code></td>
+<td>
+<p>[<code>character</code>]<br>
+Regular expression pattern to match algorithm names.
+If not provided, all algorithms are matched.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>prob.pars</code></td>
+<td>
+<p>[<code>expression</code>]<br>
+Predicate expression evaluated in the problem parameters.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>algo.pars</code></td>
+<td>
+<p>[<code>expression</code>]<br>
+Predicate expression evaluated in the algorithm parameters.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>repls</code></td>
+<td>
+<p>[<code>integer</code>]<br>
+Whitelist of replication numbers. If not provided, all replications are matched.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>tags</code></td>
+<td>
+<p>[<code>character</code>]<br>
+Return jobs which are tagged with any of the tags provided.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>[<code>data.table</code>] with column “job.id” containing matched jobs.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>getStatus</code> <code>JoinTables</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+tmp = makeRegistry(file.dir = NA, make.default = FALSE)
+batchMap(identity, i = 1:3, reg = tmp)
+ids = findNotSubmitted(reg = tmp)
+
+# get all jobs:
+findJobs(reg = tmp)
+
+# filter for jobs with parameter i &gt;= 2
+findJobs(i &gt;= 2, reg = tmp)
+
+# filter on the computational status
+findSubmitted(reg = tmp)
+findNotDone(reg = tmp)
+
+# filter on tags
+addJobTags(2:3, "my_tag", reg = tmp)
+findTagged(tags = "my_tag", reg = tmp)
+
+# combine filter functions using joins
+# -&gt; jobs which are not done and not tagged (using an anti-join):
+ajoin(findNotDone(reg = tmp), findTagged("my_tag", reg = tmp))
+</code></pre>
+
+
+</div>

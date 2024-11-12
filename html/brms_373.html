@@ -1,0 +1,100 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>read_csv_as_stanfit</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Read CmdStan CSV files as a brms-formatted stanfit object</h2>
+
+<h3>Description</h3>
+
+<p><code>read_csv_as_stanfit</code> is used internally to read CmdStan CSV files into a
+<code>stanfit</code> object that is consistent with the structure of the fit slot of a
+brmsfit object.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">read_csv_as_stanfit(
+  files,
+  variables = NULL,
+  sampler_diagnostics = NULL,
+  model = NULL,
+  exclude = "",
+  algorithm = "sampling"
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>files</code></td>
+<td>
+<p>Character vector of CSV files names where draws are stored.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>variables</code></td>
+<td>
+<p>Character vector of variables to extract from the CSV files.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>sampler_diagnostics</code></td>
+<td>
+<p>Character vector of sampler diagnostics to extract.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>model</code></td>
+<td>
+<p>A compiled cmdstanr model object (optional). Provide this argument
+if you want to allow updating the model without recompilation.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>exclude</code></td>
+<td>
+<p>Character vector of variables to exclude from the stanfit. Only
+used when <code>variables</code> is also specified.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>algorithm</code></td>
+<td>
+<p>The algorithm with which the model was fitted.
+See <code>brm</code> for details.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>A stanfit object consistent with the structure of the <code>fit</code>
+slot of a brmsfit object.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## Not run: 
+# fit a model manually via cmdstanr
+scode &lt;- stancode(count ~ Trt, data = epilepsy)
+sdata &lt;- standata(count ~ Trt, data = epilepsy)
+mod &lt;- cmdstanr::cmdstan_model(cmdstanr::write_stan_file(scode))
+stanfit &lt;- mod$sample(data = sdata)
+
+# feed the Stan model back into brms
+fit &lt;- brm(count ~ Trt, data = epilepsy, empty = TRUE, backend = 'cmdstanr')
+fit$fit &lt;- read_csv_as_stanfit(stanfit$output_files(), model = mod)
+fit &lt;- rename_pars(fit)
+summary(fit)
+
+## End(Not run)
+
+</code></pre>
+
+
+</div>

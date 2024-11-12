@@ -1,0 +1,216 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>gibbs_bspline</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Metropolis-within-Gibbs sampler for spectral inference of a stationary time series using a B-spline prior</h2>
+
+<h3>Description</h3>
+
+<p>This function updates the B-spline prior using the Whittle likelihood and obtains samples from the pseudo-posterior to infer the spectral density of a stationary time series.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">gibbs_bspline(data, Ntotal, burnin, thin = 1, k.theta = 0.01, MG = 1,
+  G0.alpha = 1, G0.beta = 1, LG = 20, MH = 1, H0.alpha = 1,
+  H0.beta = 1, LH = 20, tau.alpha = 0.001, tau.beta = 0.001,
+  kmax = 100, k1 = 20, degree = 3)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+<p>numeric vector</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Ntotal</code></td>
+<td>
+<p>total number of iterations to run the Markov chain</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>burnin</code></td>
+<td>
+<p>number of initial iterations to be discarded</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>thin</code></td>
+<td>
+<p>thinning number (post-processing)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>k.theta</code></td>
+<td>
+<p>prior parameter for number of B-spline densities k (proportional to exp(-k.theta*k^2)) in mixture</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>MG</code></td>
+<td>
+<p>Dirichlet process base measure constant for weights of B-spline densities in mixture (&gt; 0)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>G0.alpha, G0.beta</code></td>
+<td>
+<p>parameters of Beta base measure of Dirichlet process for weights of B-spline densities in mixture (default is Uniform[0, 1])</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>LG</code></td>
+<td>
+<p>truncation parameter of Dirichlet process in stick breaking representation for weights of B-spline densities</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>MH</code></td>
+<td>
+<p>Dirichlet process base measure constant for knot placements of B-spline densities (&gt; 0)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>H0.alpha, H0.beta</code></td>
+<td>
+<p>parameters of Beta base measure of Dirichlet process for knot placements of B-spline densities (default is Uniform[0, 1])</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>LH</code></td>
+<td>
+<p>truncation parameter of Dirichlet process in stick breaking representation for knot placements of B-spline densities</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>tau.alpha, tau.beta</code></td>
+<td>
+<p>prior parameters for tau (Inverse-Gamma)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>kmax</code></td>
+<td>
+<p>upper bound for number of B-spline densities in mixture</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>k1</code></td>
+<td>
+<p>starting value for k.  If <code>k1</code> = NA then a random starting value between <code>degree</code> + 2 and <code>kmax</code> is selected</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>degree</code></td>
+<td>
+<p>positive integer specifying the degree of the B-spline densities (default is 3)</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The function <code>gibbs_bspline</code> is an implementation of the (serial version of the) MCMC algorithm presented in Edwards et al. (2018).  This algorithm uses a nonparametric B-spline prior to estimate the spectral density of a stationary time series and can be considered a generalisation of the algorithm of Choudhuri et al. (2004), which used the Bernstein polynomial prior.  A Dirichlet process prior is used to find the weights for the B-spline densities used in the finite mixture and a seperate and independent Dirichlet process prior used to place knots.  The algorithm therefore allows for a data-driven choice of the number of knots/mixtures and their locations.
+</p>
+
+
+<h3>Value</h3>
+
+<p>A list with S3 class 'psd' containing the following components:
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>psd.median,psd.mean</code></td>
+<td>
+<p>psd estimates: (pointwise) posterior median and mean</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>psd.p05,psd.p95</code></td>
+<td>
+<p>90% pointwise credibility interval</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>psd.u05,psd.u95</code></td>
+<td>
+<p>90% uniform credibility interval</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>k,tau,V,Z,U,X</code></td>
+<td>
+<p>posterior traces of model parameters</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>knots.trace</code></td>
+<td>
+<p>trace of knot placements</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ll.trace</code></td>
+<td>
+<p>trace of log likelihood</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>pdgrm</code></td>
+<td>
+<p>periodogram</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>n</code></td>
+<td>
+<p>integer length of input time series</p>
+</td>
+</tr>
+</table>
+<h3>References</h3>
+
+<p>Edwards, M. C., Meyer, R., and Christensen, N. (2018), Bayesian nonparametric spectral density estimation using B-spline priors, <em>Statistics and Computing</em>, &lt;https://doi.org/10.1007/s11222-017-9796-9&gt;.
+</p>
+<p>Choudhuri, N., Ghosal, S., and Roy, A. (2004), Bayesian estimation of the spectral density of a time series, <em>Journal of the American Statistical Association</em>, 99(468):1050–1059.
+</p>
+
+
+<h3>See Also</h3>
+
+<p>plot.psd
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## Not run: 
+
+set.seed(123456)
+
+# Generate AR(1) data with rho = 0.9
+n = 128
+data = arima.sim(n, model = list(ar = 0.9))
+data = data - mean(data)
+
+# Run MCMC (may take some time)
+mcmc = gibbs_bspline(data, 10000, 5000)
+
+require(beyondWhittle)  # For psd_arma() function
+freq = 2 * pi / n * (1:(n / 2 + 1) - 1)[-c(1, n / 2 + 1)]  # Remove first and last frequency
+psd.true = psd_arma(freq, ar = 0.9, ma = numeric(0), sigma2 = 1)  # True PSD
+plot(mcmc)  # Plot log PSD (see documentation of plot.psd)
+lines(freq, log(psd.true), col = 2, lty = 3, lwd = 2)  # Overlay true PSD
+
+## End(Not run)
+</code></pre>
+
+
+</div>

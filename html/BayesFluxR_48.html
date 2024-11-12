@@ -1,0 +1,69 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>vi.get_samples</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Draw samples form a variational family.</h2>
+
+<h3>Description</h3>
+
+<p>Draw samples form a variational family.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">vi.get_samples(vi, n = 1)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>vi</code></td>
+<td>
+<p>obtained using <code>bayes_by_backprop</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>n</code></td>
+<td>
+<p>number of samples</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>a matrix whose columns are draws from the variational posterior
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## Not run: 
+  ## Needs previous call to `BayesFluxR_setup` which is time
+  ## consuming and requires Julia and BayesFlux.jl
+  BayesFluxR_setup(installJulia=TRUE, seed=123)
+  net &lt;- Chain(RNN(5, 1))
+  like &lt;- likelihood.seqtoone_normal(net, Gamma(2.0, 0.5))
+  prior &lt;- prior.gaussian(net, 0.5)
+  init &lt;- initialise.allsame(Normal(0, 0.5), like, prior)
+  data &lt;- matrix(rnorm(10*1000), ncol = 10)
+  # Choosing sequences of length 10 and predicting one period ahead
+  tensor &lt;- tensor_embed_mat(data, 10+1)
+  x &lt;- tensor[1:10, , , drop = FALSE]
+  # Last value in each sequence is the target value
+  y &lt;- tensor[11,,]
+  bnn &lt;- BNN(x, y, like, prior, init)
+  vi &lt;- bayes_by_backprop(bnn, 100, 100)
+  vi_samples &lt;- vi.get_samples(vi, n = 1000)
+  pp &lt;- posterior_predictive(bnn, vi_samples)
+
+## End(Not run)
+
+</code></pre>
+
+
+</div>

@@ -1,0 +1,153 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>pnbd.mcmc.DrawParameters</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Pareto/NBD (HB) Parameter Draws</h2>
+
+<h3>Description</h3>
+
+<p>Returns draws from the posterior distributions of the Pareto/NBD (HB)
+parameters, on cohort as well as on customer level.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">pnbd.mcmc.DrawParameters(
+  cal.cbs,
+  mcmc = 2500,
+  burnin = 500,
+  thin = 50,
+  chains = 2,
+  mc.cores = NULL,
+  use_data_augmentation = TRUE,
+  param_init = NULL,
+  trace = 100
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>cal.cbs</code></td>
+<td>
+<p>Calibration period customer-by-sufficient-statistic (CBS)
+data.frame. It must contain a row for each customer, and columns <code>x</code>
+for frequency, <code>t.x</code> for recency and <code>T.cal</code> for the total time
+observed. A correct format can be easily generated based on the complete
+event log of a customer cohort with <code>elog2cbs</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>mcmc</code></td>
+<td>
+<p>Number of MCMC steps.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>burnin</code></td>
+<td>
+<p>Number of initial MCMC steps which are discarded.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>thin</code></td>
+<td>
+<p>Only every <code>thin</code>-th MCMC step will be returned.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>chains</code></td>
+<td>
+<p>Number of MCMC chains to be run.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>mc.cores</code></td>
+<td>
+<p>Number of cores to use in parallel (Unix only). Defaults to <code>min(chains, detectCores())</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>use_data_augmentation</code></td>
+<td>
+<p>deprecated</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>param_init</code></td>
+<td>
+<p>List of start values for cohort-level parameters.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>trace</code></td>
+<td>
+<p>Print logging statement every <code>trace</code>-th iteration. Not available for <code>mc.cores &gt; 1</code>.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>See <code>demo('pareto-ggg')</code> for how to apply this model.
+</p>
+
+
+<h3>Value</h3>
+
+<p>2-element list:
+</p>
+
+<ul>
+<li>
+<p><code>level_1 </code>list of <code>mcmc.list</code>s, one for each customer, with draws for customer-level parameters <code>lambda</code>, <code>tau</code>, <code>z</code>, <code>mu</code>
+</p>
+</li>
+<li>
+<p><code>level_2 </code><code>mcmc.list</code>, with draws for cohort-level parameters <code>r</code>, <code>alpha</code>, <code>s</code>, <code>beta</code>
+</p>
+</li>
+</ul>
+<h3>References</h3>
+
+<p>Ma, S. H., &amp; Liu, J. L. (2007, August). The MCMC approach for
+solving the Pareto/NBD model and possible extensions. In Third
+international conference on natural computation (ICNC 2007) (Vol. 2, pp.
+505-512). IEEE. doi: <a href="https://doi.org/10.1109/ICNC.2007.728">10.1109/ICNC.2007.728</a>
+</p>
+<p>Abe, M. (2009). "Counting your customers" one by one: A
+hierarchical Bayes extension to the Pareto/NBD model. Marketing Science,
+28(3), 541-553. doi: <a href="https://doi.org/10.1287/mksc.1090.0502">10.1287/mksc.1090.0502</a>
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>pnbd.GenerateData </code> <code>mcmc.DrawFutureTransactions </code> <code>mcmc.PAlive </code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">data("groceryElog")
+cbs &lt;- elog2cbs(groceryElog, T.cal = "2006-12-31")
+param.draws &lt;- pnbd.mcmc.DrawParameters(cbs,
+  mcmc = 100, burnin = 50, thin = 10, chains = 1) # short MCMC to run demo fast
+
+# cohort-level parameter draws
+as.matrix(param.draws$level_2)
+# customer-level parameter draws for customer with ID '4'
+as.matrix(param.draws$level_1[["4"]])
+
+# estimate future transactions
+xstar.draws &lt;- mcmc.DrawFutureTransactions(cbs, param.draws, cbs$T.star)
+xstar.est &lt;- apply(xstar.draws, 2, mean)
+head(xstar.est)
+</code></pre>
+
+
+</div>

@@ -1,0 +1,134 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>bm_print</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Print bitmap objects</h2>
+
+<h3>Description</h3>
+
+<p><code>bm_print()</code> prints a representation of the bitmap object to the terminal while
+<code>bm_format()</code> returns just the character vector without printing it.
+They are wrappers around <code>as_bm_bitmap()</code> / <code>as_bm_pixmap()</code> and
+<code>format.bm_bitmap()</code> / <code>format.bm_pixmap()</code>.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">bm_print(x, ...)
+
+bm_format(x, ...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>A bitmap object that can be cast by <code>as_bm_pixmap()</code> to a <code>bm_pixmap()</code> object.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Passed to <code>format.bm_pixmap()</code> or <code>format.bm_bitmap()</code> depending on the class of <code>x</code>.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>A character vector of the string representation (<code>bm_print()</code> returns this invisibly).
+As a side effect <code>bm_print()</code> prints out the string representation to the terminal.
+</p>
+
+
+<h3>Fonts and terminal settings</h3>
+
+<p>Printing bitmaps/pixmaps may or may not look great
+in your terminal depending on a variety of factors:
+</p>
+
+<ul>
+<li>
+<p> The terminal should support the Unicode - UTF-8 encoding.
+We use <code>cli::is_utf8_output()</code> to guess Unicode support
+which in turn looks at <code>getOption("cli.unicode")</code> and <code>l10n_info()</code>.
+</p>
+</li>
+<li>
+<p> The terminal should support ANSI sequences and if it does
+it should support many colors.
+</p>
+
+<ul><li>
+<p> We use <code>cli::num_ansi_colors()</code> to detect number of colors supported.
+<code>num_ansi_colors()</code> detection algorithm is complicated but it first looks at
+<code>getOption("cli.num_colors")</code>.
+</p>
+</li></ul>
+<ul><li>
+<p> If <code>cli::num_ansi_colors()</code> equals 16777216 then your terminal
+supports 24-bit ANSI colors.
+</p>
+</li></ul>
+<ul><li>
+<p> If using the Windows Command Prompt window you may need to enable
+ANSI sequences support by doing <code style="white-space: pre;">⁠REG ADD HKCU\CONSOLE /f /v VirtualTerminalLevel /t REG_DWORD /d 1⁠</code>
+from the command-line or running <code>regedit</code> (Registry Editor) and go to
+<code style="white-space: pre;">⁠Computer\HKEY_CURRENT_USER\Console⁠</code> and set <code>VirtualTerminalLevel</code> to <code>1</code>.
+</p>
+</li></ul>
+</li>
+<li>
+<p> The font used by the terminal should be a monoscale font that supports the
+<a href="https://en.wikipedia.org/wiki/Block_Elements">Block Elements</a> Unicode block.
+</p>
+</li>
+<li>
+<p> The terminal text settings should have a cell spacing around 1.00 times width and 1.00 times height.
+For terminals configured by CSS styles this means a <code>line-height</code> of around <code>1.0</code>.
+</p>
+</li>
+</ul>
+<h3>See Also</h3>
+
+<p><code>.S3method()</code> to register this as the print method for a non-bittermelon bitmap class.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">font_file &lt;- system.file("fonts/spleen/spleen-8x16.hex.gz", package = "bittermelon")
+font &lt;- read_hex(font_file)
+capital_r &lt;- as_bm_bitmap("R", font = font)
+bm_print(capital_r)
+
+corn_r &lt;- as.raster(farming_crops_16x16()$corn$portrait)
+if (cli::is_utf8_output() &amp;&amp; cli::num_ansi_colors() &gt;= 256L) {
+  bm_print(corn_r, compress = "v") 
+}
+
+if (requireNamespace("magick", quietly = TRUE) &amp;&amp;
+    cli::is_utf8_output() &amp;&amp; 
+    cli::num_ansi_colors() &gt; 256L) {
+  rose_mi &lt;- magick::image_read("rose:")
+  bm_print(rose_mi, compress = "v") 
+}
+
+## Not run: # Change other bitmap classes' `print()` to use `bm_print()` instead
+  options(bittermelon.compress = "vertical",
+          bittermelon.downscale = requireNamespace("magick", quietly = TRUE))
+  for (cl in c("glyph_bitmap", "magick-image", "nativeRaster", "pixeltrix",
+               "pixmapGrey", "pixmapIndexed", "pixmapRGB", "raster")) {
+    .S3method("print", cl, bittermelon::bm_print)
+  }
+
+## End(Not run)
+</code></pre>
+
+
+</div>

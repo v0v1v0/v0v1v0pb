@@ -1,0 +1,153 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>emmeans-brms-helpers</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Support Functions for <span class="pkg">emmeans</span>
+</h2>
+
+<h3>Description</h3>
+
+<p>Functions required for compatibility of <span class="pkg">brms</span> with <span class="pkg">emmeans</span>.
+Users are not required to call these functions themselves. Instead,
+they will be called automatically by the <code>emmeans</code> function
+of the <span class="pkg">emmeans</span> package.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">recover_data.brmsfit(
+  object,
+  data,
+  resp = NULL,
+  dpar = NULL,
+  nlpar = NULL,
+  re_formula = NA,
+  epred = FALSE,
+  ...
+)
+
+emm_basis.brmsfit(
+  object,
+  trms,
+  xlev,
+  grid,
+  vcov.,
+  resp = NULL,
+  dpar = NULL,
+  nlpar = NULL,
+  re_formula = NA,
+  epred = FALSE,
+  ...
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>object</code></td>
+<td>
+<p>An object of class <code>brmsfit</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>data, trms, xlev, grid, vcov.</code></td>
+<td>
+<p>Arguments required by <span class="pkg">emmeans</span>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>resp</code></td>
+<td>
+<p>Optional names of response variables. If specified, predictions
+are performed only for the specified response variables.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>dpar</code></td>
+<td>
+<p>Optional name of a predicted distributional parameter.
+If specified, expected predictions of this parameters are returned.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nlpar</code></td>
+<td>
+<p>Optional name of a predicted non-linear parameter.
+If specified, expected predictions of this parameters are returned.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>re_formula</code></td>
+<td>
+<p>Optional formula containing group-level effects to be
+considered in the prediction. If <code>NULL</code>, include all group-level
+effects; if <code>NA</code> (default), include no group-level effects.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>epred</code></td>
+<td>
+<p>Logical. If <code>TRUE</code> compute predictions of
+the posterior predictive distribution's mean
+(see <code>posterior_epred.brmsfit</code>) while ignoring
+arguments <code>dpar</code> and <code>nlpar</code>. Defaults to <code>FALSE</code>.
+If you have specified a response transformation within the formula,
+you need to set <code>epred</code> to <code>TRUE</code> for <span class="pkg">emmeans</span> to
+detect this transformation.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Additional arguments passed to <span class="pkg">emmeans</span>.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>In order to ensure compatibility of most <span class="pkg">brms</span> models with
+<span class="pkg">emmeans</span>, predictions are not generated 'manually' via a design matrix
+and coefficient vector, but rather via <code>posterior_linpred.brmsfit</code>.
+This appears to generally work well, but note that it produces an '.@linfct'
+slot that contains the computed predictions as columns instead of the
+coefficients.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## Not run: 
+fit1 &lt;- brm(time | cens(censored) ~ age * sex + disease + (1|patient),
+            data = kidney, family = lognormal())
+summary(fit1)
+
+# summarize via 'emmeans'
+library(emmeans)
+rg &lt;- ref_grid(fit1)
+em &lt;- emmeans(rg, "disease")
+summary(em, point.est = mean)
+
+# obtain estimates for the posterior predictive distribution's mean
+epred &lt;- emmeans(fit1, "disease", epred = TRUE)
+summary(epred, point.est = mean)
+
+
+# model with transformed response variable
+fit2 &lt;- brm(log(mpg) ~ factor(cyl), data = mtcars)
+summary(fit2)
+
+# results will be on the log scale by default
+emmeans(fit2, ~ cyl)
+# log transform is detected and can be adjusted automatically
+emmeans(fit2, ~ cyl, epred = TRUE, type = "response")
+
+## End(Not run)
+</code></pre>
+
+
+</div>

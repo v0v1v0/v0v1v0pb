@@ -1,0 +1,127 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>biwt.est</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>A function to compute Tukey's biweight mean vector and covariance matrix</h2>
+
+<h3>Description</h3>
+
+<p>Compute a multivariate location and scale estimate based on Tukey's biweight weight function. </p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">biwt.est(x, r=.2, med.init=covMcd(x))
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p> a <code class="reqn">2 x n</code> matrix or data frame (<code class="reqn">n</code> is the number of measurements)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>r</code></td>
+<td>
+<p> breakdown (<code class="reqn">k/n</code> where <code class="reqn">k</code> is the largest number of measurements that can be replaced with arbitrarily large values while keeping the estimates bounded).  Default is r=.2. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>med.init</code></td>
+<td>
+<p> a (robust) initial estimate of the center and shape of the data.  The format is a list with components center and cov (as in the output of covMcd from the rrcov library).  Default is the minimum covariance determinant (MCD) on the data. </p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>A robust measure of center and shape is computed using Tukey's biweight M-estimator.  The biweight estimates are essentially weighted means and covariances where the weights are calculated based on the distance of each measurement to the data center with respect to the shape of the data.  The estimates should be computed pair-by-pair because the weights should depend only on the pairwise relationship at hand and not the relationship between all the observations globally.
+</p>
+
+
+<h3>Value</h3>
+
+<p>A list with components:
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>biwt.mu</code></td>
+<td>
+<p>the final estimate of center</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>biwt.sig</code></td>
+<td>
+<p>the final estimate of shape</p>
+</td>
+</tr>
+</table>
+<h3>Note</h3>
+
+<p>If there is too much missing data or if the initialization is not accurate, the function will compute the MCD for a given pair of observations before computing the biweight correlation (regardless of the initial settings given in the call to the function).
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Jo Hardin <a href="mailto:jo.hardin@pomona.edu">jo.hardin@pomona.edu</a> </p>
+
+
+<h3>References</h3>
+
+<p> Hardin, J., Mitani, A., Hicks, L., VanKoten, B.; <b>A Robust Measure of Correlation Between Two Genes on a Microarray</b>, <em>BMC Bioinformatics</em>, <b>8</b>:220; 2007.   </p>
+
+
+<h3>See Also</h3>
+
+ <p><code>biwt.cor</code></p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+
+samp.data &lt;- t(mvrnorm(30,mu=c(0,0),Sigma=matrix(c(1,.75,.75,1),ncol=2)))
+
+samp.bw &lt;- biwt.est(samp.data)
+samp.bw
+
+samp.bw.var1 &lt;- samp.bw$biwt.sig[1,1]
+samp.bw.var2 &lt;- samp.bw$biwt.sig[2,2]
+samp.bw.cov &lt;- samp.bw$biwt.sig[1,2]
+
+samp.bw.cor &lt;- samp.bw.cov / sqrt(samp.bw.var1 * samp.bw.var2)
+samp.bw.cor
+
+# or:
+
+samp.bw.cor &lt;- samp.bw$biwt.sig[1,2] / 
+	sqrt(samp.bw$biwt.sig[1,1]*samp.bw$biwt.sig[2,2])
+samp.bw.cor
+
+##############
+# to speed up the calculations, use the median/mad for the initialization:
+##############
+
+samp.init &lt;- list()
+	samp.init$cov &lt;- diag(apply(samp.data,1,mad,na.rm=TRUE))
+	samp.init$center &lt;- apply(samp.data,1,median,na.rm=TRUE)
+
+samp.init
+
+samp.bw &lt;- biwt.est(samp.data,med.init = samp.init)
+samp.bw.cor &lt;- samp.bw$biwt.sig[1,2] / 
+	sqrt(samp.bw$biwt.sig[1,1]*samp.bw$biwt.sig[2,2])
+samp.bw.cor
+
+</code></pre>
+
+
+</div>

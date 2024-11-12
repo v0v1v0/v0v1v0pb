@@ -1,0 +1,156 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>tidy_add_header_rows</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Add header rows variables with several terms</h2>
+
+<h3>Description</h3>
+
+<p>For variables with several terms (usually categorical variables but
+could also be the case of continuous variables with polynomial terms
+or splines), <code>tidy_add_header_rows()</code> will add an additional row
+per variable, where <code>label</code> will be equal to <code>var_label</code>.
+These additional rows could be identified with <code>header_row</code> column.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">tidy_add_header_rows(
+  x,
+  show_single_row = NULL,
+  model = tidy_get_model(x),
+  quiet = FALSE,
+  strict = FALSE
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>(<code>data.frame</code>)<br>
+A tidy tibble as produced by <code style="white-space: pre;">⁠tidy_*()⁠</code> functions.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>show_single_row</code></td>
+<td>
+<p>(<code>tidy-select</code>)<br>
+Names of dichotomous variables that should be displayed on a single row.
+See also <code>all_dichotomous()</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>model</code></td>
+<td>
+<p>(a model object, e.g. <code>glm</code>)<br>
+The corresponding model, if not attached to <code>x</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>quiet</code></td>
+<td>
+<p>(<code>logical</code>)<br>
+Whether <code>broom.helpers</code> should not return a message when requested output
+cannot be generated. Default is <code>FALSE</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>strict</code></td>
+<td>
+<p>(<code>logical</code>)<br>
+Whether <code>broom.helpers</code> should return an error
+when requested output cannot be generated. Default is <code>FALSE</code>.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The <code>show_single_row</code> argument allows to specify a list
+of dichotomous variables that should be displayed on a single row
+instead of two rows.
+</p>
+<p>The added <code>header_row</code> column will be equal to:
+</p>
+
+<ul>
+<li> <p><code>TRUE</code> for an header row;
+</p>
+</li>
+<li> <p><code>FALSE</code> for a normal row of a variable with an header row;
+</p>
+</li>
+<li> <p><code>NA</code> for variables without an header row.
+</p>
+</li>
+</ul>
+<p>If the <code>label</code> column is not yet available in <code>x</code>,
+<code>tidy_add_term_labels()</code> will be automatically applied.
+</p>
+
+
+<h3>See Also</h3>
+
+<p>Other tidy_helpers: 
+<code>tidy_add_coefficients_type()</code>,
+<code>tidy_add_contrasts()</code>,
+<code>tidy_add_estimate_to_reference_rows()</code>,
+<code>tidy_add_n()</code>,
+<code>tidy_add_pairwise_contrasts()</code>,
+<code>tidy_add_reference_rows()</code>,
+<code>tidy_add_term_labels()</code>,
+<code>tidy_add_variable_labels()</code>,
+<code>tidy_attach_model()</code>,
+<code>tidy_disambiguate_terms()</code>,
+<code>tidy_identify_variables()</code>,
+<code>tidy_plus_plus()</code>,
+<code>tidy_remove_intercept()</code>,
+<code>tidy_select_variables()</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+if (.assert_package("gtsummary", boolean = TRUE)) {
+  df &lt;- Titanic |&gt;
+    dplyr::as_tibble() |&gt;
+    dplyr::mutate(Survived = factor(Survived, c("No", "Yes")))
+
+  res &lt;-
+    glm(
+      Survived ~ Class + Age + Sex,
+      data = df, weights = df$n, family = binomial,
+      contrasts = list(Age = contr.sum, Class = "contr.SAS")
+    ) |&gt;
+    tidy_and_attach() |&gt;
+    tidy_add_variable_labels(labels = list(Class = "Custom label for Class")) |&gt;
+    tidy_add_reference_rows()
+  res |&gt; tidy_add_header_rows()
+  res |&gt; tidy_add_header_rows(show_single_row = all_dichotomous())
+
+  glm(
+    response ~ stage + grade * trt,
+    gtsummary::trial,
+    family = binomial,
+    contrasts = list(
+      stage = contr.treatment(4, base = 3),
+      grade = contr.treatment(3, base = 2),
+      trt = contr.treatment(2, base = 2)
+    )
+  ) |&gt;
+    tidy_and_attach() |&gt;
+    tidy_add_reference_rows() |&gt;
+    tidy_add_header_rows()
+}
+
+</code></pre>
+
+
+</div>

@@ -1,0 +1,154 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>setBAMMpriors</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Set BAMM Priors</h2>
+
+<h3>Description</h3>
+
+<p>Set priors for <code>BAMM</code> analysis.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">setBAMMpriors(
+  phy,
+  total.taxa = NULL,
+  traits = NULL,
+  outfile = "myPriors.txt",
+  Nmax = 1000,
+  suppressWarning = FALSE
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>phy</code></td>
+<td>
+<p>An object of class <code>phylo</code>, e.g., the phylogenetic tree
+you will analyze with <code>BAMM</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>total.taxa</code></td>
+<td>
+<p>If doing speciation-extinction analysis, the total
+number of taxa in your clade. If your tree contains all taxa in the
+clade (100% sampling), then leave this as <code>NULL</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>traits</code></td>
+<td>
+<p>A filename where the trait data (<code>BAMM</code> format) are
+stored, or a numeric vector named according to the tips in <code>phy</code>.
+Leave <code>NULL</code> if doing a speciation-extinction analysis.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>outfile</code></td>
+<td>
+<p>Filename for outputting the sample priors block. If
+<code>NULL</code>, then a vector is returned instead.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Nmax</code></td>
+<td>
+<p>If analyzing a very large tree for phenotypic evolution, uses
+only this many taxa to estimate priors for your dataset. Avoid matrix
+inversion issues with large numbers of tips.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>suppressWarning</code></td>
+<td>
+<p>Logical. If <code>TRUE</code>, then the warning about
+setting the Poisson rate prior is suppressed. Only applies if
+<code>outfile = NULL</code>.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>This is a "quick and dirty" tool for identifying approximately
+acceptable priors for a <code>BAMM</code> analysis. We have found that
+choice of prior can have a substantial impact on <code>BAMM</code> analyses.
+It is difficult to simply set a default prior that applies across
+datasets, because users often have trees with branch lengths in very
+different units (e.g., numbers of substitutions versus millions of
+years). Hence, without some careful attention, you can inadvertently
+specify some very bad prior distributions. This function is designed
+to at least put you in the right ballpark for decent prior
+distributions, but there are no guarantees that these are most
+appropriate for your data.
+</p>
+<p>The general rules applied here are: 
+</p>
+<p>For the <code>lambdaInitPrior</code>, we estimate the speciation rate of the
+data under a pure birth model. We then set this prior to give an
+exponential distribution with a mean five times greater than this
+computed pure birth speciation estimate.
+</p>
+<p>The <code>lambdaShiftPrior</code> is the standard deviation of the normal
+prior on the exponential change parameter k. We set the prior
+distribution based on the age of the root of the tree. We set the
+standard deviation of this distribution such that 2 standard
+deviations give a parameter that will yield a 90% decline in the
+initial speciation rate between the root of the tree and the tips.
+The basic model is lambda(t) = lambda_0 * exp(k * t). This is a
+straightforward calculation: let x = -log(0.1) / TMAX, where TMAX is
+the age of the tree. Then set the standard deviation equal to (x / 2).
+</p>
+<p>We set <code>muInitPrior</code> equal to <code>lambdaInitPrior</code>.  
+</p>
+<p>For trait evolution, we first compute the maximum likelihood estimate
+of the variance of a Brownian motion process of trait evolution. The
+prior <code>betaInitPrior</code> is then set to an exponential distribution
+with a mean 5 times greater than this value (similar to what is done
+for lambda and mu, above).  
+</p>
+<p>This function generates an output file containing a prior parameters
+block that can be pasted directly into the priors section of your
+<code>BAMM</code> control file.
+</p>
+
+
+<h3>Value</h3>
+
+<p>The function does not return anything. It simply performs some
+calculations and writes formatted output to a file. However, if
+<code>outfile = NULL</code>, then a named vector is returned.
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Dan Rabosky
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R"># for diversification analyses
+data(whales)
+setBAMMpriors(phy = whales, total.taxa = 89, outfile = NULL)
+
+# for trait analyses
+data("primates")
+data("mass.primates")
+
+## create a named vector of trait values
+mass &lt;- setNames(mass.primates[,2], mass.primates[,1])
+
+setBAMMpriors(phy = primates, traits = mass, outfile = NULL)
+</code></pre>
+
+
+</div>

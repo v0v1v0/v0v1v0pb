@@ -1,0 +1,539 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>OTC1</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Find the optimal testing configuration for group testing algorithms
+that use a single-disease assay</h2>
+
+<h3>Description</h3>
+
+<p>Find the optimal testing configuration (OTC) using
+non-informative and informative hierarchical and array-based group testing
+algorithms. Single-disease assays are used at each stage of the algorithms.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">OTC1(
+  algorithm,
+  p = NULL,
+  probabilities = NULL,
+  Se = 0.99,
+  Sp = 0.99,
+  group.sz,
+  obj.fn = "ET",
+  weights = NULL,
+  alpha = 2,
+  trace = TRUE,
+  print.time = TRUE,
+  ...
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>algorithm</code></td>
+<td>
+<p>character string defining the group testing algorithm to
+be used. Non-informative testing options include two-stage hierarchical
+("<kbd>D2</kbd>"), three-stage hierarchical ("<kbd>D3</kbd>"), square array testing
+without master pooling ("<kbd>A2</kbd>"), and square array testing with master
+pooling ("<kbd>A2M</kbd>"). Informative testing options include two-stage
+hierarchical ("<kbd>ID2</kbd>"), three-stage hierarchical ("<kbd>ID3</kbd>"), and
+square array testing without master pooling ("<kbd>IA2</kbd>").</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>p</code></td>
+<td>
+<p>overall probability of disease that will be used to generate a
+vector/matrix of individual probabilities. For non-informative algorithms,
+a homogeneous set of probabilities will be used. For informative
+algorithms, the <code>expectOrderBeta</code> function will be used to
+generate a heterogeneous set of probabilities. Further details are given
+under 'Details'. Either <kbd>p</kbd> or <kbd>probabilities</kbd> should be specified,
+but not both.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>probabilities</code></td>
+<td>
+<p>a vector of individual probabilities, which is
+homogeneous for non-informative testing algorithms and heterogeneous for
+informative testing algorithms. Either  <kbd>p</kbd> or <kbd>probabilities</kbd>
+should be specified, but not both.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Se</code></td>
+<td>
+<p>a vector of sensitivity values, where one value is given for each
+stage of testing (in order). If a single value is provided, sensitivity
+values are assumed to be equal to this value for all stages of testing.
+Further details are given under 'Details'.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Sp</code></td>
+<td>
+<p>a vector of specificity values, where one value is given for each
+stage of testing (in order). If a single value is provided, specificity
+values are assumed to be equal to this value for all stages of testing.
+Further details are given under 'Details'.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>group.sz</code></td>
+<td>
+<p>a single group size or range of group sizes for which to
+calculate operating characteristics and/or find the OTC. The details of
+group size specification are given under 'Details'.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>obj.fn</code></td>
+<td>
+<p>a list of objective functions which are minimized to find the
+OTC. The expected number of tests per individual, "<kbd>ET</kbd>", will always
+be calculated. Additional options include "<kbd>MAR</kbd>"
+(the expected number of tests divided by the expected number of correct
+classifications, described in Malinovsky et al. (2016)), and "<kbd>GR</kbd>"
+(a linear combination of the expected number of tests, the number of
+misclassified negatives, and the number of misclassified positives,
+described in Graff &amp; Roeloffs (1972)). See Hitt et al. (2019) for
+additional details. The first objective function specified in this list
+will be used to determine the results for the top configurations.
+Further details are given under 'Details'.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>weights</code></td>
+<td>
+<p>a matrix of up to six sets of weights for the GR function.
+Each set of weights is specified by a row of the matrix.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>alpha</code></td>
+<td>
+<p>a shape parameter for the betadistribution that specifies the
+degree of heterogeneity for the generated probability vector (for
+informative testing only).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>trace</code></td>
+<td>
+<p>a logical value indicating whether the progress of
+calculations should be printed for each initial group size provided by
+the user. The default is <kbd>TRUE</kbd>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>print.time</code></td>
+<td>
+<p>a logical value indicating whether the length of time
+for calculations should be printed. The default is <kbd>TRUE</kbd>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>arguments to be passed to the <code>expectOrderBeta</code>
+function, which generates a vector of probabilities for informative testing
+algorithms. Further details are given under 'Details'.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>This function finds the OTC for group testing algorithms
+with an assay that tests for one disease and computes the associated
+operating characteristics, as described in Hitt et al. (2019).
+</p>
+<p>Available algorithms include two- and three-stage hierarchical testing and
+array testing with and without master pooling. Both non-informative and
+informative group testing settings are allowed for each algorithm, except
+informative array testing with master pooling is unavailable because this
+method has not appeared in the group testing literature. Operating
+characteristics calculated are expected number of tests, pooling
+sensitivity, pooling specificity, pooling positive predictive value, and
+pooling negative predictive value for each individual.
+</p>
+<p>For informative algorithms where the <kbd>p</kbd> argument is specified, the
+expected value of order statistics from a beta distribution are found.
+These values are used to represent disease risk probabilities for each
+individual to be tested. The beta distribution has two parameters: a mean
+parameter <kbd>p</kbd> (overall disease prevalence) and a shape parameter
+<kbd>alpha</kbd> (heterogeneity level). Depending on the specified <kbd>p</kbd>,
+<kbd>alpha</kbd>, and overall group size, simulation may be necessary to
+generate the vector of individual probabilities. This is done using
+<code>expectOrderBeta</code> and requires the user to set a seed to
+reproduce results.
+</p>
+<p>Informative two-stage hierarchical (Dorfman) testing is implemented via
+the pool-specific optimal Dorfman (PSOD) method described in McMahan et al.
+(2012a), where the greedy algorithm proposed for PSOD is replaced by
+considering all possible testing configurations. Informative array testing
+is implemented via the gradient method (the most efficient array design),
+where higher-risk individuals are grouped in the left-most columns of the
+array. For additional details on the gradient arrangement method for
+informative array testing, see McMahan et al. (2012b).
+</p>
+<p>The sensitivity/specificity values are allowed to vary across stages of
+testing. For hierarchical testing, a different sensitivity/specificity
+value may be used for each stage of testing. For array testing, a different
+sensitivity/specificity value may be used for master pool testing (if
+included), row/column testing, and individual testing. The values must be
+specified in order of the testing performed. For example, values are
+specified as (stage 1, stage 2, stage 3) for three-stage hierarchical
+testing or (master pool testing, row/column testing, individual testing)
+for array testing with master pooling. A single sensitivity/specificity
+value may be specified instead. In this situation, sensitivity/specificity
+values for all stages are assumed to be equal.
+</p>
+<p>The value(s) specified by <kbd>group.sz</kbd> represent the initial (stage 1)
+group size for hierarchical testing and the row/column size for array
+testing. For informative two-stage hierarchical testing, the <kbd>group.sz</kbd>
+specified represents the block size used in the pool-specific optimal
+Dorfman (PSOD) method, where the initial group (block) is not tested. For
+more details on informative two-stage hierarchical testing implemented via
+the PSOD method, see Hitt et al. (2019) and McMahan et al. (2012a).
+</p>
+<p>If a single value is provided for <kbd>group.sz</kbd> with array testing or
+non-informative two-stage hierarchical testing, operating characteristics
+will be calculated and no optimization will be performed. If a single value
+is provided for <kbd>group.sz</kbd> with three-stage hierarchical or informative
+two-stage hierarchical, the OTC will be found over all possible
+configurations. If a range of group sizes is specified, the OTC will be
+found over all group sizes.
+</p>
+<p>In addition to the OTC, operating characteristics for some of the other
+configurations corresponding to each initial group size provided by the
+user will be displayed. These additional configurations are only determined
+for whichever objective function ("ET", "MAR", or "GR") is specified first
+in the function call. If "GR" is the objective function listed first, the
+first set of corresponding weights will be used. For algorithms where there
+is only one configuration for each initial group size (non-informative
+two-stage hierarchical and all array testing algorithms), results for each
+initial group size are provided. For algorithms where there is more than
+one possible configuration for each initial group size (informative
+two-stage hierarchical and all three-stage hierarchical algorithms), two
+sets of configurations are provided: 1) the best configuration for each
+initial group size, and 2) the top 10 configurations for each initial group
+size provided by the user. If a single value is provided for <kbd>group.sz</kbd>
+with array testing or non-informative two-stage hierarchical testing,
+operating characteristics will not be provided for configurations other
+than that specified by the user. Results are sorted by the value of the
+objective function per individual, <kbd>value</kbd>.
+</p>
+<p>The displayed overall pooling sensitivity, pooling specificity, pooling
+positive predictive value, and pooling negative predictive value are
+weighted averages of the corresponding individual accuracy measures for all
+individuals within the initial group (or block) for a hierarchical
+algorithm, or within the entire array for an array-based algorithm.
+Expressions for these averages are provided in the Supplementary
+Material for Hitt et al. (2019). These expressions are based on accuracy
+definitions given by Altman and Bland (1994a, 1994b). Individual
+accuracy measures can be calculated using the
+<code>operatingCharacteristics1</code> (<code>opChar1</code>) function.
+</p>
+<p>The <kbd>OTC1</kbd> function accepts additional arguments, namely <kbd>num.sim</kbd>,
+to be passed to the <code>expectOrderBeta</code> function, which generates
+a vector of probabilities for informative group testing algorithms. The
+<kbd>num.sim</kbd> argument specifies the number of simulations from the beta
+distribution when simulation is used. By default, 10,000 simulations are
+used.
+</p>
+
+
+<h3>Value</h3>
+
+<p>A list containing:
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>algorithm</code></td>
+<td>
+<p>the group testing algorithm used for calculations.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>prob</code></td>
+<td>
+<p>the probability of disease or the vector of individual
+probabilities, as specified by the user.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>alpha</code></td>
+<td>
+<p>level of heterogeneity for the generated probability vector
+(for informative testing only).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Se</code></td>
+<td>
+<p>the vector of sensitivity values for each stage of testing.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Sp</code></td>
+<td>
+<p>the vector of specificity values for each stage of testing.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>opt.ET, opt.MAR, opt.GR</code></td>
+<td>
+<p>a list of results for each
+objective function specified by the user, containing:
+</p>
+
+<dl>
+<dt>OTC</dt>
+<dd>
+<p>a list specifying elements of the optimal testing configuration,
+which may include:
+</p>
+
+<dl>
+<dt>Stage1</dt>
+<dd>
+<p>group size for the first stage of hierarchical testing, if
+applicable.</p>
+</dd>
+<dt>Stage2</dt>
+<dd>
+<p>group sizes for the second stage of hierarchical testing, if
+applicable.</p>
+</dd>
+<dt>Block.sz</dt>
+<dd>
+<p>the block size/initial group size for informative Dorfman
+testing, which is not tested.</p>
+</dd>
+<dt>pool.szs</dt>
+<dd>
+<p>group sizes for the first stage of testing for informative
+Dorfman testing.</p>
+</dd>
+<dt>Array.dim</dt>
+<dd>
+<p>the row/column size for array testing.</p>
+</dd>
+<dt>Array.sz</dt>
+<dd>
+<p>the overall array size for array testing (the square of the
+row/column size).</p>
+</dd>
+</dl>
+</dd>
+<dt>p.vec</dt>
+<dd>
+<p>the sorted vector of individual probabilities, if applicable.</p>
+</dd>
+<dt>p.mat</dt>
+<dd>
+<p>the sorted matrix of individual probabilities in gradient
+arrangement, if applicable. Further details are given under 'Details'.</p>
+</dd>
+<dt>ET</dt>
+<dd>
+<p>the expected testing expenditure to decode all individuals in the
+algorithm; this includes all individuals in all groups for hierarchical
+algorithms or in the entire array for array testing.</p>
+</dd>
+<dt>value</dt>
+<dd>
+<p>the value of the objective function per individual.</p>
+</dd>
+<dt>Accuracy</dt>
+<dd>
+<p>a matrix of overall accuracy measures for the
+algorithm. The columns correspond to the pooling sensitivity,
+pooling specificity, pooling positive predictive value, and
+pooling negative predictive value for the overall algorithm.
+Further details are given under 'Details'.</p>
+</dd>
+</dl>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Configs</code></td>
+<td>
+<p>a data frame containing results for the best configuration
+for each initial group size provided by the user. The columns correspond to
+the initial group size, configuration (if applicable), overall array size
+(if applicable), expected number of tests, value of the objective function
+per individual, pooling sensitivity, pooling specificity, pooling positive
+predictive value, and pooling negative predictive value. No results are
+displayed if a single <kbd>group.sz</kbd> is provided. Further details are given
+under 'Details'.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Top.Configs</code></td>
+<td>
+<p>a data frame containing results for the top overall
+configurations across all initial group sizes provided by the user. The
+columns correspond to the initial group size, configuration,
+expected number of tests, value of the objective function per individual,
+pooling sensitivity, pooling specificity, pooling positive predictive
+value, and pooling negative predictive value. No results are displayed for
+non-informative two-stage hierarchical testing or for array testing
+algorithms. Further details are given under 'Details'.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>group.sz</code></td>
+<td>
+<p>Initial group (or block) sizes examined to find the OTC.</p>
+</td>
+</tr>
+</table>
+<h3>Note</h3>
+
+<p>This function returns the pooling positive and negative
+predictive values for all individuals even though these measures are
+diagnostic specific; e.g., the pooling positive predictive value should
+only be considered for those individuals who have tested positive.
+</p>
+<p>Additionally, only stage dependent sensitivity and specificity values are
+allowed within the program (no group within stage dependent values are
+allowed). See Bilder et al. (2019) for additional information.
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Brianna D. Hitt
+</p>
+
+
+<h3>References</h3>
+
+<p>Altman, D., Bland, J. (1994).
+“Diagnostic tests 1: Sensitivity and specificity.”
+<em>BMJ</em>, <b>308</b>, 1552.
+</p>
+<p>Altman, D., Bland, J. (1994).
+“Diagnostic tests 2: Predictive values.”
+<em>BMJ</em>, <b>309</b>, 102.
+</p>
+<p>Bilder, C., Tebbs, J., McMahan, C. (2019).
+“Informative group testing for multiplex assays.”
+<em>Biometrics</em>, <b>75</b>, 278–288.
+</p>
+<p>Graff, L., Roeloffs, R. (1972).
+“Group testing in the presence of test error; an extension of the Dorfman procedure.”
+<em>Technometrics</em>, <b>14</b>, 113–122.
+</p>
+<p>Hitt, B., Bilder, C., Tebbs, J., McMahan, C. (2019).
+“The objective function controversy for group testing: Much ado about nothing?”
+<em>Statistics in Medicine</em>, <b>38</b>, 4912–4923.
+</p>
+<p>Malinovsky, Y., Albert, P., Roy, A. (2016).
+“Reader reaction: A note on the evaluation of group testing algorithms in the presence of misclassification.”
+<em>Biometrics</em>, <b>72</b>, 299–302.
+</p>
+<p>McMahan, C., Tebbs, J., Bilder, C. (2012a).
+“Informative Dorfman Screening.”
+<em>Biometrics</em>, <b>68</b>, 287–296.
+</p>
+<p>McMahan, C., Tebbs, J., Bilder, C. (2012b).
+“Two-Dimensional Informative Array Testing.”
+<em>Biometrics</em>, <b>68</b>, 793–804.
+</p>
+
+
+<h3>See Also</h3>
+
+<p>Other OTC functions: 
+<code>OTC2()</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R"># Find the OTC for non-informative
+#   two-stage hierarchical (Dorfman) testing.
+OTC1(algorithm = "D2", p = 0.05, Se = 0.99, Sp = 0.99,
+     group.sz = 2:100, obj.fn = "ET",
+     trace = TRUE, print.time = TRUE)
+
+# Find the OTC for informative two-stage hierarchical
+#   (Dorfman) testing.
+# A vector of individual probabilities is generated using
+#   the expected value of order statistics from a beta
+#   distribution with p = 0.01 and a heterogeneity level
+#   of alpha = 0.5.
+set.seed(52613)
+OTC1(algorithm = "ID2", p = 0.01, Se = 0.95, Sp = 0.95,
+     group.sz = 50, obj.fn = c("ET", "MAR", "GR"),
+     weights = matrix(data = c(1, 1, 10, 10, 0.5, 0.5),
+     nrow = 3, ncol = 2, byrow = TRUE), alpha = 0.5,
+     trace = FALSE, print.time = TRUE, num.sim = 10000)
+
+# Find the OTC over all possible testing configurations
+#   for non-informative three-stage hierarchical testing
+#   with a specified group size.
+OTC1(algorithm = "D3", p = 0.001, Se = 0.95, Sp = 0.95,
+     group.sz = 18, obj.fn = "ET",
+     trace = FALSE, print.time = FALSE)
+
+# Find the OTC for non-informative three-stage
+#   hierarchical testing.
+OTC1(algorithm = "D3", p = 0.06, Se = 0.90, Sp = 0.90,
+     group.sz = 3:30, obj.fn = c("ET", "MAR", "GR"),
+     weights = matrix(data = c(1, 1, 10, 10, 100, 100),
+     nrow = 3, ncol = 2, byrow = TRUE))
+
+# Find the OTC over all possible configurations
+#   for informative three-stage hierarchical testing
+#   with a specified group size and a heterogeneous
+#   vector of probabilities.
+set.seed(1234)
+OTC1(algorithm = "ID3",
+     probabilities = c(0.012, 0.014, 0.011,
+                       0.012, 0.010, 0.015),
+     Se = 0.99, Sp = 0.99, group.sz = 6,
+     obj.fn = "ET",
+     alpha = 0.5, num.sim = 5000, trace = FALSE)
+
+# Calculate the operating characteristics for
+#   non-informative array testing without master pooling
+#   with a specified array size.
+OTC1(algorithm = "A2", p = 0.005, Se = 0.95, Sp = 0.95,
+     group.sz = 8, obj.fn = "ET", trace = FALSE)
+
+# Find the OTC for informative array testing without
+#   master pooling.
+# A vector of individual probabilities is generated using
+#   the expected value of order statistics from a beta
+#   distribution with p = 0.03 and a heterogeneity level
+#   of alpha = 2. The probabilities are then arranged in
+#   a matrix using the gradient method.
+set.seed(1002)
+OTC1(algorithm = "IA2", p = 0.03, Se = 0.95, Sp = 0.95,
+     group.sz = 2:20, obj.fn = c("ET", "MAR", "GR"),
+     weights = matrix(data = c(1, 1, 10, 10, 100, 100),
+                      nrow = 3, ncol = 2, byrow = TRUE),
+     alpha = 2)
+
+# Find the OTC for non-informative array testing
+#   with master pooling. The calculations may not
+#   be completed instantaneously.
+OTC1(algorithm = "A2M", p = 0.04, Se = 0.90, Sp = 0.90,
+     group.sz = 2:20, obj.fn = "ET")
+</code></pre>
+
+
+</div>

@@ -1,0 +1,98 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>axe-ranger</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Axing an ranger.</h2>
+
+<h3>Description</h3>
+
+<p>ranger objects are created from the <span class="pkg">ranger</span> package, which is
+used as a means to quickly train random forests. The package supports
+ensembles of classification, regression, survival and probability
+prediction trees. Given the reliance of post processing functions on
+the model object, like <code>importance_pvalues</code> and <code>treeInfo</code>,
+on the first class listed, the <code>butcher_ranger</code> class is not
+appended.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">## S3 method for class 'ranger'
+axe_call(x, verbose = FALSE, ...)
+
+## S3 method for class 'ranger'
+axe_fitted(x, verbose = FALSE, ...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>A model object.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>verbose</code></td>
+<td>
+<p>Print information each time an axe method is executed.
+Notes how much memory is released and what functions are
+disabled. Default is <code>FALSE</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Any additional arguments related to axing.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>Axed ranger object.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+# Load libraries
+library(parsnip)
+library(rsample)
+library(ranger)
+
+# Load data
+set.seed(1234)
+split &lt;- initial_split(iris, prop = 9/10)
+iris_train &lt;- training(split)
+
+# Create model and fit
+ranger_fit &lt;- rand_forest(mode = "classification",
+                          mtry = 2,
+                          trees = 20,
+                          min_n = 3) %&gt;%
+  set_engine("ranger") %&gt;%
+  fit(Species ~ ., data = iris_train)
+
+out &lt;- butcher(ranger_fit, verbose = TRUE)
+
+# Another ranger object
+wrapped_ranger &lt;- function() {
+  n &lt;- 100
+  p &lt;- 400
+  dat &lt;- data.frame(y = factor(rbinom(n, 1, .5)), replicate(p, runif(n)))
+  fit &lt;- ranger(y ~ ., dat, importance = "impurity_corrected")
+  return(fit)
+}
+
+cleaned_ranger &lt;- axe_fitted(wrapped_ranger(), verbose = TRUE)
+
+</code></pre>
+
+
+</div>

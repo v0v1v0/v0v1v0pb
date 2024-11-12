@@ -1,0 +1,173 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>bboost</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Bootstrap Boosting</h2>
+
+<h3>Description</h3>
+
+<p>Wrapper function for applying bootstrap estimation using gradient boosting.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">## Bootstrap boosting.
+bboost(..., data, type = 1, cores = 1,
+  n = 2, prob = 0.623, fmstop = NULL,
+  trace = TRUE, drop = FALSE, replace = FALSE)
+
+## Plotting function.
+bboost_plot(object, col = NULL)
+
+## Predict method.
+## S3 method for class 'bboost'
+predict(object, newdata, ..., cores = 1, pfun = NULL)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Arguments passed to <code>bamlss</code> and <code>predict.bamlss</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+<p>The data frame to be used for modeling.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>type</code></td>
+<td>
+<p>Type of algorithm, <code>type = 1</code> uses all observations and samples with
+replacement, <code>type = 2</code> uses only a fraction specified in <code>prob</code> and samples
+with replacement.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>cores</code></td>
+<td>
+<p>The number of cores to be used.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>n</code></td>
+<td>
+<p>The number of bootstrap iterations.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>prob</code></td>
+<td>
+<p>The fraction that should be used to fit the model in each bootstrap iteration.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>fmstop</code></td>
+<td>
+<p>The function that should return the optimum stopping iteration. The function must
+have two arguments: (1) the <code>model</code> end (2) the <code>data</code>. The function must return
+a list with two named arguments: (1) <code>"mstop"</code> the optimum stopping iteration and (2)
+a vector of the objective criterion that should be evaluated by the hold out sample data during
+each bootstrap iteration. See the examples.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>trace</code></td>
+<td>
+<p>Prints out the current state of the bootstrap algorithm.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>drop</code></td>
+<td>
+<p>Should only the best set of parameters be saved?</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>replace</code></td>
+<td>
+<p>Sampling with replacement, or sampling <code>ceiling(nobs * prob)</code>
+rows of the data for fitting the <code>n</code> models.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>object</code></td>
+<td>
+<p>The <code>"bboost"</code> object used for prediction and plotting.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>col</code></td>
+<td>
+<p>The color that should be used for plotting.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>newdata</code></td>
+<td>
+<p>The data frame predictions should be made for.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>pfun</code></td>
+<td>
+<p>The prediction function that should be used, for example <code>predictn</code> could
+be used, too. Note that this is experimental.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>A list of <code>bamlss</code> objects.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>bamlss</code>, <code>boost</code>, <code>lasso</code>, <code>BayesX</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## Not run: ## Simulate data.
+set.seed(123)
+d &lt;- GAMart()
+
+## Estimate model.
+f &lt;- num ~ s(x1) + s(x2) + s(x3) + s(lon,lat)
+
+## Function for evaluation of hold out sample
+## criterion to find the optimum mstop.
+fmstop &lt;- function(model, data) {
+  p &lt;- predict(model, newdata = data, model = "mu")
+  mse &lt;- NULL
+  for(i in 1:nrow(model$parameters))
+    mse &lt;- c(mse, mean((data$num - p[, i])^2))
+  list("MSE" = mse, "mstop" = which.min(mse))
+}
+
+## Bootstrap boosted models.
+b &lt;- bboost(f, data = d, n = 50, cores = 3, fmstop = fmstop)
+
+## Plot hold out sample MSE.
+bboost_plot(b)
+
+## Predict for each bootstrap sample.
+nd &lt;- data.frame("x2" = seq(0, 1, length = 100))
+p &lt;- predict(b, newdata = nd, model = "mu", term = "x2")
+plot2d(p ~ x2, data = nd)
+
+## End(Not run)
+</code></pre>
+
+
+</div>

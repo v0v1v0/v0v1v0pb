@@ -1,0 +1,327 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>rDPGibbs</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2> Density Estimation with Dirichlet Process Prior and Normal Base </h2>
+
+<h3>Description</h3>
+
+<p><code>rDPGibbs</code> implements a Gibbs Sampler to draw from the posterior for a normal mixture problem with a Dirichlet Process prior. A natural conjugate base prior is used along with priors on the hyper parameters of this distribution. One interpretation of this model is as a normal mixture with a random number of components that can grow with the sample size.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">rDPGibbs(Prior, Data, Mcmc)</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>Data </code></td>
+<td>
+<p>list(y)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Prior</code></td>
+<td>
+<p>list(Prioralpha, lambda_hyper)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Mcmc </code></td>
+<td>
+<p>list(R, keep, nprint, maxuniq, SCALE, gridsize)</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+
+
+<h4>Model and Priors</h4>
+
+<p><code class="reqn">y_i</code> <code class="reqn">\sim</code> <code class="reqn">N(\mu_i, \Sigma_i)</code>
+</p>
+<p><code class="reqn">\theta_i=(\mu_i,\Sigma_i)</code> <code class="reqn">\sim</code> <code class="reqn">DP(G_0(\lambda),alpha)</code><br></p>
+<p><code class="reqn">G_0(\lambda):</code><br><code class="reqn">\mu_i | \Sigma_i</code> <code class="reqn">\sim</code> <code class="reqn">N(0,\Sigma_i (x) a^{-1})</code><br><code class="reqn">\Sigma_i</code> <code class="reqn">\sim</code> <code class="reqn">IW(nu,nu*v*I)</code>
+</p>
+<p><code class="reqn">\lambda(a,nu,v):</code><br><code class="reqn">a</code> <code class="reqn">\sim</code> uniform on grid[alim[1], alimb[2]]<br><code class="reqn">nu</code> <code class="reqn">\sim</code> uniform on grid[dim(data)-1 + exp(nulim[1]), dim(data)-1 + exp(nulim[2])]<br><code class="reqn">v</code> <code class="reqn">\sim</code> uniform on grid[vlim[1], vlim[2]]
+</p>
+<p><code class="reqn">alpha</code> <code class="reqn">\sim</code> <code class="reqn">(1-(\alpha-alphamin)/(alphamax-alphamin))^{power}</code> <br><code class="reqn">alpha</code> = alphamin then expected number of components = <code>Istarmin</code> <br><code class="reqn">alpha</code> = alphamax then expected number of components = <code>Istarmax</code> 
+</p>
+<p>We parameterize the prior on <code class="reqn">\Sigma_i</code> such that <code class="reqn">mode(\Sigma)= nu/(nu+2) vI</code>. The support of nu enforces valid IW density; <code class="reqn">nulim[1] &gt; 0</code>
+</p>
+<p>We use the structure for <code>nmix</code> that is compatible with the <code>bayesm</code> routines for finite mixtures of normals. This allows us to use the same summary and plotting methods.  
+</p>
+<p>The default choices of <code>alim</code>, <code>nulim</code>, and <code>vlim</code> determine the location and approximate size of candidate "atoms" or possible normal components. The defaults are sensible given that we scale the data.  Without scaling, you want to insure that <code>alim</code> is set for a wide enough range of values (remember a is a precision parameter) and the <code>v</code> is big enough to propose <code>Sigma</code> matrices wide enough to cover the data range.  
+</p>
+<p>A careful analyst should look at the posterior distribution of <code>a</code>, <code>nu</code>, <code>v</code> to make sure that the support is set correctly in <code>alim</code>, <code>nulim</code>, <code>vlim</code>.  In other words, if we see the posterior bunched up at one end of these support ranges, we should widen the range and rerun.  
+</p>
+<p>If you want to force the procedure to use many small atoms, then set <code>nulim</code> to consider only large values and set <code>vlim</code> to consider only small scaling constants. Set <code>Istarmax</code> to a large number.  This will create a very "lumpy" density estimate somewhat like the classical Kernel density estimates. Of course, this is not advised if you have a prior belief that densities are relatively smooth.
+</p>
+
+
+
+<h4>Argument Details</h4>
+
+<p><em><code>Data  = list(y)</code></em>
+</p>
+
+<table><tr>
+<td style="text-align: left;">
+    <code>y: </code> </td>
+<td style="text-align: left;"> <code class="reqn">n x k</code> matrix of observations on <code class="reqn">k</code> dimensional data
+    </td>
+</tr></table>
+<p><em><code>Prior = list(Prioralpha, lambda_hyper)</code> [optional]</em>
+</p>
+
+<table>
+<tr>
+<td style="text-align: left;">
+    <code>Prioralpha:  </code> </td>
+<td style="text-align: left;"> <code>list(Istarmin, Istarmax, power)</code> </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+      <code>$Istarmin:  </code> </td>
+<td style="text-align: left;"> is expected number of components at lower bound of support of alpha (def: 1) </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+      <code>$Istarmax:  </code> </td>
+<td style="text-align: left;"> is expected number of components at upper bound of support of alpha (def: <code>min(50, 0.1*nrow(y))</code>) </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+      <code>$power:     </code> </td>
+<td style="text-align: left;"> is the power parameter for alpha prior (def: 0.8) </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+    <code>lambda_hyper:</code> </td>
+<td style="text-align: left;"> <code>list(alim, nulim, vlim)</code> </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+      <code>$alim:      </code> </td>
+<td style="text-align: left;"> defines support of a distribution (def: <code>c(0.01, 10)</code>) </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+      <code>$nulim:     </code> </td>
+<td style="text-align: left;"> defines support of nu distribution (def: <code>c(0.01, 3)</code>) </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+      <code>$vlim:      </code> </td>
+<td style="text-align: left;"> defines support of v distribution (def: <code>c(0.1, 4)</code>)
+    </td>
+</tr>
+</table>
+<p><em><code>Mcmc  = list(R, keep, nprint, maxuniq, SCALE, gridsize)</code> [only <code>R</code> required]</em>
+</p>
+
+<table>
+<tr>
+<td style="text-align: left;">
+   <code>R:        </code> </td>
+<td style="text-align: left;"> number of MCMC draws </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+   <code>keep:     </code> </td>
+<td style="text-align: left;"> MCMC thinning parameter -- keep every <code>keep</code>th draw (def: 1) </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+   <code>nprint:   </code> </td>
+<td style="text-align: left;"> print the estimated time remaining for every <code>nprint</code>'th draw (def: 100, set to 0 for no print) </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+   <code>maxuniq:  </code> </td>
+<td style="text-align: left;"> storage constraint on the number of unique components (def: 200) </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+   <code>SCALE:    </code> </td>
+<td style="text-align: left;"> should data be scaled by mean,std deviation before posterior draws (def: <code>TRUE</code>) </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+   <code>gridsize: </code> </td>
+<td style="text-align: left;"> number of discrete points for hyperparameter priors (def: 20)
+    </td>
+</tr>
+</table>
+<h4>
+<code>nmix</code> Details</h4>
+
+<p><code>nmix</code> is a list with 3 components. Several functions in the <code>bayesm</code> package that involve a Dirichlet Process or mixture-of-normals return <code>nmix</code>. Across these functions, a common structure is used for <code>nmix</code> in order to utilize generic summary and plotting functions. 
+</p>
+
+<table>
+<tr>
+<td style="text-align: left;">
+  <code>probdraw:</code> </td>
+<td style="text-align: left;"> <code class="reqn">ncomp x R/keep</code> matrix that reports the probability that each draw came from a particular component </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+  <code>zdraw:   </code> </td>
+<td style="text-align: left;"> <code class="reqn">R/keep x nobs</code> matrix that indicates which component each draw is assigned to </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+  <code>compdraw:</code> </td>
+<td style="text-align: left;"> A list of <code class="reqn">R/keep</code> lists of <code class="reqn">ncomp</code> lists. Each of the inner-most lists has 2 elemens: a vector of draws for <code>mu</code> and a matrix of draws for the Cholesky root of <code>Sigma</code>.
+  </td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>A list containing:
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>nmix      </code></td>
+<td>
+<p> a list containing: <code>probdraw</code>, <code>zdraw</code>, <code>compdraw</code> (see “<code>nmix</code> Details” section)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>alphadraw </code></td>
+<td>
+ <p><code class="reqn">R/keep x 1</code> vector of alpha draws</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nudraw    </code></td>
+<td>
+ <p><code class="reqn">R/keep x 1</code> vector of nu draws</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>adraw     </code></td>
+<td>
+ <p><code class="reqn">R/keep x 1</code> vector of a draws</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>vdraw     </code></td>
+<td>
+ <p><code class="reqn">R/keep x 1</code> vector of v draws</p>
+</td>
+</tr>
+</table>
+<h3>Author(s)</h3>
+
+<p>Peter Rossi, Anderson School, UCLA, <a href="mailto:perossichi@gmail.com">perossichi@gmail.com</a>.</p>
+
+
+<h3>See Also</h3>
+
+ <p><code>rnmixGibbs</code>, <code>rmixture</code>, <code>rmixGibbs</code>, 
+<code>eMixMargDen</code>, <code>momMix</code>, <code>mixDen</code>, <code>mixDenBi</code></p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">if(nchar(Sys.getenv("LONG_TEST")) != 0) {R=2000} else {R=10}
+set.seed(66)
+
+## simulate univariate data from Chi-Sq
+
+N = 200
+chisqdf = 8
+y1 = as.matrix(rchisq(N,df=chisqdf))
+
+## set arguments for rDPGibbs
+
+Data1 = list(y=y1)
+Prioralpha = list(Istarmin=1, Istarmax=10, power=0.8)
+Prior1 = list(Prioralpha=Prioralpha)
+Mcmc = list(R=R, keep=1, maxuniq=200)
+
+out1 = rDPGibbs(Prior=Prior1, Data=Data1, Mcmc=Mcmc)
+
+if(0){
+  ## plotting examples
+  rgi = c(0,20)
+  grid = matrix(seq(from=rgi[1],to=rgi[2],length.out=50), ncol=1)
+  deltax = (rgi[2]-rgi[1]) / nrow(grid)
+  plot(out1$nmix, Grid=grid, Data=y1)
+  
+  ## plot true density with historgram
+  plot(range(grid[,1]), 1.5*range(dchisq(grid[,1],df=chisqdf)),
+       type="n", xlab=paste("Chisq ; ",N," obs",sep=""), ylab="")
+  hist(y1, xlim=rgi, freq=FALSE, col="yellow", breaks=20, add=TRUE)
+  lines(grid[,1], dchisq(grid[,1],df=chisqdf) / (sum(dchisq(grid[,1],df=chisqdf))*deltax),
+        col="blue", lwd=2)
+}
+
+## simulate bivariate data from the  "Banana" distribution (Meng and Barnard) 
+
+banana = function(A, B, C1, C2, N, keep=10, init=10) { 
+  R = init*keep + N*keep
+  x1 = x2 = 0
+  bimat = matrix(double(2*N), ncol=2)
+  for (r in 1:R) { 
+    x1 = rnorm(1,mean=(B*x2+C1) / (A*(x2^2)+1), sd=sqrt(1/(A*(x2^2)+1)))
+    x2 = rnorm(1,mean=(B*x2+C2) / (A*(x1^2)+1), sd=sqrt(1/(A*(x1^2)+1)))
+    if (r&gt;init*keep &amp;&amp; r%%keep==0) {
+      mkeep = r/keep
+      bimat[mkeep-init,] = c(x1,x2)
+    } 
+  }
+  return(bimat)
+}
+
+set.seed(66)
+nvar2 = 2
+A = 0.5
+B = 0
+C1 = C2 = 3
+y2 = banana(A=A, B=B, C1=C1, C2=C2, 1000)
+
+Data2 = list(y=y2)
+Prioralpha = list(Istarmin=1, Istarmax=10, power=0.8)
+Prior2 = list(Prioralpha=Prioralpha)
+Mcmc = list(R=R, keep=1, maxuniq=200)
+
+out2 = rDPGibbs(Prior=Prior2, Data=Data2, Mcmc=Mcmc)
+
+
+if(0){
+  ## plotting examples
+  
+  rx1 = range(y2[,1])
+  rx2 = range(y2[,2])
+  x1 = seq(from=rx1[1], to=rx1[2], length.out=50)
+  x2 = seq(from=rx2[1], to=rx2[2], length.out=50)
+  grid = cbind(x1,x2)
+  plot(out2$nmix, Grid=grid, Data=y2)
+  
+  ## plot true bivariate density
+  tden = matrix(double(50*50), ncol=50)
+  for (i in 1:50) { 
+  for (j in 1:50) {
+        tden[i,j] = exp(-0.5*(A*(x1[i]^2)*(x2[j]^2) + 
+                    (x1[i]^2) + (x2[j]^2) - 2*B*x1[i]*x2[j] - 
+                    2*C1*x1[i] - 2*C2*x2[j]))
+  }}
+  tden = tden / sum(tden)
+  image(x1, x2, tden, col=terrain.colors(100), xlab="", ylab="")
+  contour(x1, x2, tden, add=TRUE, drawlabels=FALSE)
+  title("True Density")
+}
+</code></pre>
+
+
+</div>

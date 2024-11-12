@@ -1,0 +1,144 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>configure_model</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Generic S3 method for configuring the model to be fit by brms</h2>
+
+<h3>Description</h3>
+
+<p>Called by bmm() to automatically construct the model
+formula, family objects and default priors for the model specified by the
+user. It will call the appropriate configure_model.* functions based on the
+list of classes defined in the .model_* functions. Currently, we have a
+method only for the last class listed in the .model_* functions. This is to
+keep model configuration as simple as possible. In the future we may add
+shared methods for classes of models that share the same configuration.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">configure_model(model, data, formula)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>model</code></td>
+<td>
+<p>A model list object returned from check_model()</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+<p>The user supplied data.frame containing the data to be checked</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>formula</code></td>
+<td>
+<p>The user supplied formula</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>A bare bones configure_model.* method should look like this:
+</p>
+<div class="sourceCode r"><pre>configure_model.newmodel &lt;- function(model, data, formula) {
+
+   # preprocessing - e.g. extract arguments from data check, construct new variables
+   &lt;preprocessing code&gt;
+
+   # construct the formula
+   formula &lt;- bmf2bf(formula, model)
+
+   # construct the family
+   family &lt;- &lt;code for new family&gt;
+
+   # construct the default prior
+   prior &lt;- &lt;code for new prior&gt;
+
+   # return the list
+   nlist(formula, data, family, prior)
+}
+</pre></div>
+
+
+<h3>Value</h3>
+
+<p>A named list containing at minimum the following elements:
+</p>
+
+<ul>
+<li>
+<p> formula: An object of class <code>brmsformula</code>. The constructed model formula
+</p>
+</li>
+<li>
+<p> data: the user supplied data.frame, preprocessed by check_data
+</p>
+</li>
+<li>
+<p> family: the brms family object
+</p>
+</li>
+<li>
+<p> prior: the brms prior object
+</p>
+</li>
+<li>
+<p> stanvars: (optional) An object of class <code>stanvars</code> (for custom families).
+See <code>brms::custom_family()</code> for more details.
+</p>
+</li>
+</ul>
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+configure_model.mixture3p &lt;- function(model, data, formula) {
+  # retrieve arguments from the data check
+  max_set_size &lt;- attr(data, "max_set_size")
+  lure_idx &lt;- attr(data, "lure_idx_vars")
+  nt_features &lt;- model$other_vars$nt_features
+  set_size_var &lt;- model$other_vars$set_size
+
+  # construct initial brms formula
+  formula &lt;- bmf2bf(model, formula) +
+    brms::lf(kappa2 ~ 1) +
+    brms::lf(mu2 ~ 1) +
+    brms::nlf(theta1 ~ thetat) +
+    brms::nlf(kappa1 ~ kappa)
+
+  # additional internal terms for the mixture model formula
+  kappa_nts &lt;- paste0("kappa", 3:(max_set_size + 1))
+  theta_nts &lt;- paste0("theta", 3:(max_set_size + 1))
+  mu_nts &lt;- paste0("mu", 3:(max_set_size + 1))
+
+  for (i in 1:(max_set_size - 1)) {
+    formula &lt;- formula +
+      glue_nlf("{kappa_nts[i]} ~ kappa") +
+      glue_nlf(
+        "{theta_nts[i]} ~ {lure_idx[i]} * (thetant + log(inv_ss)) + ",
+        "(1 - {lure_idx[i]}) * (-100)"
+      ) +
+      glue_nlf("{mu_nts[i]} ~ {nt_features[i]}")
+  }
+
+  # define mixture family
+  vm_list &lt;- lapply(1:(max_set_size + 1), function(x) brms::von_mises(link = "identity"))
+  vm_list$order &lt;- "none"
+  formula$family &lt;- brms::do_call(brms::mixture, vm_list)
+
+  nlist(formula, data)
+}
+
+</code></pre>
+
+
+</div>

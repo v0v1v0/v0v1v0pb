@@ -1,0 +1,148 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>big_parallelize</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Split-parApply-Combine</h2>
+
+<h3>Description</h3>
+
+<p>A Split-Apply-Combine strategy to parallelize the evaluation of a function.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">big_parallelize(
+  X,
+  p.FUN,
+  p.combine = NULL,
+  ind = cols_along(X),
+  ncores = nb_cores(),
+  ...
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>X</code></td>
+<td>
+<p>An object of class FBM.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>p.FUN</code></td>
+<td>
+<p>The function to be applied to each subset matrix.
+It must take a Filebacked Big Matrix as first argument and
+<code>ind</code>, a vector of indices, which are used to split the data.
+For example, if you want to apply a function to <code>X[ind.row, ind.col]</code>,
+you may use <code>X[ind.row, ind.col[ind]]</code> in <code>a.FUN</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>p.combine</code></td>
+<td>
+<p>Function to combine the results with <code>do.call</code>.
+This function should accept multiple arguments (<code>...</code>). For example, you
+can use <code>c</code>, <code>cbind</code>, <code>rbind</code>. This package also provides function <code>plus</code>
+to add multiple arguments together. The default is <code>NULL</code>, in which case
+the results are not combined and are returned as a list, each element being
+the result of a block.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ind</code></td>
+<td>
+<p>Initial vector of subsetting indices.
+Default is the vector of all column indices.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ncores</code></td>
+<td>
+<p>Number of cores used. Default doesn't use parallelism.
+You may use nb_cores.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Extra arguments to be passed to <code>p.FUN</code>.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>This function splits indices in parts, then apply a given function to each
+part and finally combine the results.
+</p>
+
+
+<h3>Value</h3>
+
+<p>Return a list of <code>ncores</code> elements, each element being the result of
+one of the cores, computed on a block. The elements of this list are then
+combined with <code>do.call(p.combine, .)</code> if <code>p.combined</code> is given.
+</p>
+
+
+<h3>See Also</h3>
+
+<p>big_apply bigparallelr::split_parapply
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## Not run:  # CRAN is super slow when parallelism.
+  X &lt;- big_attachExtdata()
+
+  ### Computation on all the matrix
+  true &lt;- big_colstats(X)
+
+  big_colstats_sub &lt;- function(X, ind) {
+    big_colstats(X, ind.col = ind)
+  }
+  # 1. the computation is split along all the columns
+  # 2. for each part the computation is done, using `big_colstats`
+  # 3. the results (data.frames) are combined via `rbind`.
+  test &lt;- big_parallelize(X, p.FUN = big_colstats_sub,
+                          p.combine = 'rbind', ncores = 2)
+  all.equal(test, true)
+
+  ### Computation on a part of the matrix
+  n &lt;- nrow(X)
+  m &lt;- ncol(X)
+  rows &lt;- sort(sample(n, n/2)) # sort to provide some locality in accesses
+  cols &lt;- sort(sample(m, m/2)) # idem
+
+  true2 &lt;- big_colstats(X, ind.row = rows, ind.col = cols)
+
+  big_colstats_sub2 &lt;- function(X, ind, rows, cols) {
+    big_colstats(X, ind.row = rows, ind.col = cols[ind])
+  }
+  # This doesn't work because, by default, the computation is spread
+  # along all columns. We must explictly specify the `ind` parameter.
+  tryCatch(big_parallelize(X, p.FUN = big_colstats_sub2,
+                           p.combine = 'rbind', ncores = 2,
+                           rows = rows, cols = cols),
+           error = function(e) message(e))
+
+  # This now works, using `ind = seq_along(cols)`.
+  test2 &lt;- big_parallelize(X, p.FUN = big_colstats_sub2,
+                           p.combine = 'rbind', ncores = 2,
+                           ind = seq_along(cols),
+                           rows = rows, cols = cols)
+  all.equal(test2, true2)
+
+
+## End(Not run)
+</code></pre>
+
+
+</div>

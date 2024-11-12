@@ -1,0 +1,402 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>bigspline</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>
+Fits Smoothing Spline
+</h2>
+
+<h3>Description</h3>
+
+<p>Given a real-valued response vector <code class="reqn">\mathbf{y}=\{y_{i}\}_{n\times1}</code> and a real-valued predictor vector <code class="reqn">\mathbf{x}=\{x_{i}\}_{n\times 1}</code> with <code class="reqn">a \leq x_{i} \leq b \ \forall i</code>, a smoothing spline model has the form </p>
+<p style="text-align: center;"><code class="reqn">y_{i}=\eta(x_{i})+e_{i}</code>
+</p>
+<p> where <code class="reqn">y_{i}</code> is the <code class="reqn">i</code>-th observation's respone, <code class="reqn">x_{i}</code> is the <code class="reqn">i</code>-th observation's predictor, <code class="reqn">\eta</code> is an unknown smooth function relating the response and predictor, and <code class="reqn">e_{i}\sim\mathrm{N}(0,\sigma^{2})</code> is iid Gaussian error.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">bigspline(x,y,type="cub",nknots=30,rparm=0.01,xmin=min(x),
+          xmax=max(x),alpha=1,lambdas=NULL,se.fit=FALSE,
+          rseed=1234,knotcheck=TRUE)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+
+<p>Predictor vector.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>y</code></td>
+<td>
+
+<p>Response vector. Must be same length as <code>x</code>.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>type</code></td>
+<td>
+
+<p>Type of spline for <code>x</code>. Options include <code>type="lin"</code> for linear, <code>type="cub"</code> for cubic, <code>type="cub0"</code> for different cubic, and <code>type="per"</code> for cubic periodic. See Spline Types section.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nknots</code></td>
+<td>
+
+<p>Scalar giving maximum number of knots to bin-sample. Use more knots for more jagged functions.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>rparm</code></td>
+<td>
+
+<p>Rounding parameter for <code>x</code>. Use <code>rparm=NA</code> to fit unrounded solution. Rounding parameter must be in interval (0,1].
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>xmin</code></td>
+<td>
+
+<p>Minimum <code>x</code> value (i.e., <code class="reqn">a</code>). Used to transform data to interval [0,1].
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>xmax</code></td>
+<td>
+
+<p>Maximum <code>x</code> value (i.e., <code class="reqn">b</code>). Used to transform data to interval [0,1].
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>alpha</code></td>
+<td>
+
+<p>Manual tuning parameter for GCV score. Using <code>alpha=1</code> gives unbaised esitmate. Using a larger alpha enforces a smoother estimate.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>lambdas</code></td>
+<td>
+
+<p>Vector of global smoothing parameters to try. Default estimates smoothing parameter that minimizes GCV score.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>se.fit</code></td>
+<td>
+
+<p>Logical indicating if the standard errors of fitted values should be estimated. 
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>rseed</code></td>
+<td>
+
+<p>Random seed. Input to <code>set.seed</code> to reproduce same knots when refitting same model. Use <code>rseed=NULL</code> to generate a different sample of knots each time.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>knotcheck</code></td>
+<td>
+
+<p>If <code>TRUE</code>, only unique knots are used (for stability).  
+</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>To estimate <code class="reqn">\eta</code> I minimize the penalized least-squares functional </p>
+<p style="text-align: center;"><code class="reqn">\frac{1}{n}\sum_{i=1}^{n}(y_{i}-\eta(x_{i}))^{2}+\lambda \int [\ddot{\eta}(x)]^2 dx</code>
+</p>
+<p> where <code class="reqn">\ddot{\eta}</code> denotes the second derivative of <code class="reqn">\eta</code> and <code class="reqn">\lambda\geq0</code> is a smoothing parameter that controls the trade-off between fitting and smoothing the data. 
+</p>
+<p>Default use of the function estimates <code class="reqn">\lambda</code> by minimizing the GCV score: </p>
+<p style="text-align: center;"><code class="reqn">\mbox{GCV}(\lambda) = \frac{n\|(\mathbf{I}_{n}-\mathbf{S}_{\lambda})\mathbf{y}\|^{2}}{[n-\mathrm{tr}(\mathbf{S}_{\lambda})]^2}</code>
+</p>
+<p> where <code class="reqn">\mathbf{I}_{n}</code> is the identity matrix and <code class="reqn">\mathbf{S}_{\lambda}</code> is the smoothing matrix (see Computational Details).
+</p>
+<p>Using the rounding parameter input <code>rparm</code> can greatly speed-up and stabilize the fitting for large samples. When <code>rparm</code> is used, the spline is fit to a set of unique data points after rounding; the unique points are determined using the efficient algorithm described in Helwig (2013). For typical cases, I recommend using <code>rparm=0.01</code>, but smaller rounding parameters (e,g., <code>rparm=0.001</code>) may be needed for particularly jagged functions (or when <code>x</code> has outliers). 
+</p>
+
+
+<h3>Value</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>fitted.values</code></td>
+<td>
+<p>Vector of fitted values corresponding to the original data points in <code>x</code> (if <code>rparm=NA</code>) or the rounded data points in <code>xunique</code> (if <code>rparm</code> is used).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>se.fit</code></td>
+<td>
+<p>Vector of standard errors of <code>fitted.values</code> (if input <code>se.fit=TRUE)</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>Predictor vector (same as input).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>y</code></td>
+<td>
+<p>Response vector (same as input).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>type</code></td>
+<td>
+<p>Type of spline that was used.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>xunique</code></td>
+<td>
+<p>Unique elements of <code>x</code> after rounding (if <code>rparm</code> is used).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>yunique</code></td>
+<td>
+<p>Mean of <code>y</code> for unique elements of <code>x</code> after rounding (if <code>rparm</code> is used).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>funique</code></td>
+<td>
+<p>Vector giving frequency of each element of <code>xunique</code> (if <code>rparm</code> is used).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>sigma</code></td>
+<td>
+<p>Estimated error standard deviation, i.e., <code class="reqn">\hat{\sigma}</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ndf</code></td>
+<td>
+<p>Data frame with two elements: <code>n</code> is total sample size, and <code>df</code> is effective degrees of freedom of fit model (trace of smoothing matrix).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>info</code></td>
+<td>
+<p>Model fit information: vector containing the GCV, multiple R-squared, AIC, and BIC of fit model (assuming Gaussian error).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>xrng</code></td>
+<td>
+<p>Predictor range: <code>xrng=c(xmin,xmax)</code>. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>myknots</code></td>
+<td>
+<p>Bin-sampled spline knots used for fit.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>rparm</code></td>
+<td>
+<p>Rounding parameter for <code>x</code> (same as input).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>lambda</code></td>
+<td>
+<p>Optimal smoothing parameter.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>coef</code></td>
+<td>
+<p>Spline basis function coefficients.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>coef.csqrt</code></td>
+<td>
+<p>Matrix square-root of covariace matrix of <code>coef</code>. Use <code>tcrossprod(coef.csqrt)</code> to get covariance matrix of <code>coef</code>.</p>
+</td>
+</tr>
+</table>
+<h3>Warnings </h3>
+
+<p>Cubic and cubic periodic splines transform the predictor to the interval [0,1] before fitting. So input <code>xmin</code> must be less than or equal to <code>min(x)</code>, and input <code>xmax</code> must be greater than or equal to <code>max(x)</code>.
+</p>
+<p>When using rounding parameters, output <code>fitted.values</code> corresponds to unique rounded predictor scores in output <code>xunique</code>. Use <code>predict.bigspline</code> function to get fitted values for full <code>y</code> vector.
+</p>
+
+
+<h3>Computational Details </h3>
+
+<p>According to smoothing spline theory, the function <code class="reqn">\eta</code> can be approximated as </p>
+<p style="text-align: center;"><code class="reqn">\eta(x) = d_{0} + d_{1}\phi_{1}(x) + \sum_{h=1}^{q}c_{h}\rho(x,x_{h}^{*})</code>
+</p>
+<p> where the <code class="reqn">\phi_{1}</code>  is a linear function, <code class="reqn">\rho</code> is the reproducing kernel of the contrast (nonlinear) space, and <code class="reqn">\{x_{h}^{*}\}_{h=1}^{q}</code> are the selected spline knots.
+</p>
+<p>This implies that the penalized least-squares functional can be rewritten as </p>
+<p style="text-align: center;"><code class="reqn"> \|\mathbf{y} - \mathbf{K}\mathbf{d} - \mathbf{J}\mathbf{c}\|^{2} + n\lambda\mathbf{c}'\mathbf{Q}\mathbf{c} </code>
+</p>
+
+<p>where <code class="reqn">\mathbf{K}=\{\phi(x_{i})\}_{n \times 2}</code> is the null space basis function matrix, <code class="reqn">\mathbf{J}=\{\rho(x_{i},x_{h}^{*})\}_{n \times q}</code> is the contrast space basis funciton matrix, <code class="reqn">\mathbf{Q}=\{\rho(x_{g}^{*},x_{h}^{*})\}_{q \times q}</code> is the penalty matrix, and <code class="reqn">\mathbf{d}=(d_{0},d_{1})'</code> and <code class="reqn">\mathbf{c}=(c_{1},\ldots,c_{q})'</code> are the unknown basis function coefficients.
+</p>
+<p>Given the smoothing parameter <code class="reqn">\lambda</code>, the optimal basis function coefficients have the form 
+</p>
+<p style="text-align: center;"><code class="reqn"> \left(\begin{array}{cc} \hat{\mathbf{d}} \\ \hat{\mathbf{c}} \end{array}\right) =
+\left(\begin{array}{cc} \mathbf{K'K} &amp; \mathbf{K}'\mathbf{J} \\
+ \mathbf{J}'\mathbf{K} &amp; \mathbf{J}'\mathbf{J} + n\lambda\mathbf{Q} \end{array}\right)^{\dagger} \left(\begin{array}{c} \mathbf{K}' \\ \mathbf{J}' \end{array}\right)\mathbf{y} </code>
+</p>
+
+<p>where <code class="reqn">(\cdot)^{\dagger}</code> denotes the pseudoinverse of the input matrix.
+</p>
+<p>Given the optimal coefficients, the fitted values are given by <code class="reqn">\hat{\mathbf{y}} = \mathbf{K}\hat{\mathbf{d}}+\mathbf{J}\hat{\mathbf{c}} = \mathbf{S}_{\lambda}\mathbf{y}</code>, where </p>
+<p style="text-align: center;"><code class="reqn"> \mathbf{S}_{\lambda} = \left(\begin{array}{cc} \mathbf{K} &amp; \mathbf{J} \end{array}\right)
+\left(\begin{array}{cc} \mathbf{K'K} &amp; \mathbf{K}'\mathbf{J} \\
+ \mathbf{J}'\mathbf{K} &amp; \mathbf{J}'\mathbf{J} + n\lambda\mathbf{Q} \end{array}\right)^{\dagger} \left(\begin{array}{c} \mathbf{K}' \\ \mathbf{J}' \end{array}\right) </code>
+</p>
+
+<p>is the smoothing matrix, which depends on <code class="reqn">\lambda</code>.
+</p>
+
+
+<h3>Spline Types </h3>
+
+<p>For a linear spline (<code>type="lin"</code>) with <code class="reqn">x \in [0,1]</code>, the needed functions are 
+</p>
+<p style="text-align: center;"><code class="reqn"> \phi_{1}(x) = 0 \qquad \mbox{and} \qquad \rho(x,z) = k_{1}(x)k_{1}(z)+k_{2}(|x-z|)</code>
+</p>
+<p> where <code class="reqn">k_{1}(x)=x-0.5</code>, <code class="reqn">k_{2}(x)=\frac{1}{2}\left(k_{1}^{2}(x) - \frac{1}{12} \right)</code>; in this case <code class="reqn">\mathbf{K}=\mathbf{1}_{n}</code> and <code class="reqn">\mathbf{d}=d_{0}</code>.
+</p>
+<p>For a cubic spline (<code>type="cub"</code>) with <code class="reqn">x \in [0,1]</code>, the needed functions are 
+</p>
+<p style="text-align: center;"><code class="reqn"> \phi_{1}(x) = k_{1}(x) \qquad \mbox{and} \qquad \rho(x,z) =  k_{2}(x)k_{2}(z)-k_{4}(|x-z|)</code>
+</p>
+<p> where <code class="reqn">k_{1}</code> and <code class="reqn">k_{2}</code> are defined above, and <code class="reqn">k_{4}(x)=\frac{1}{24}\left(k_{1}^{4}(x) - \frac{k_{1}^{2}(x)}{2} + \frac{7}{240} \right)</code>. 
+</p>
+<p>For a different cubic spline (<code>type="cub0"</code>) with <code class="reqn">x \in [0,1]</code>, the needed functions are </p>
+<p style="text-align: center;"><code class="reqn"> \phi_{1}(x) = x \qquad \mbox{and} \qquad \rho(x,z) = (x \wedge z)^2[3(x \vee z) - (x \wedge z)]/6</code>
+</p>
+
+<p>where <code class="reqn">(x \wedge z) = \min(x,z)</code> and <code class="reqn">(x \vee z) = \max(x,z)</code>. 
+</p>
+<p>Note that <code>type="cub"</code> and <code>type="cub0"</code> use different definitions of the averaging operator in the null space. The overall spline estimates should be the same (up to approximation accuracy), but the null and constrast space effect functions will differ (see <code>predict.bigspline</code>). See Helwig (2013) and Gu (2013) for a further discussion of polynomial splines.  
+</p>
+<p>For a periodic cubic spline (<code>type="per"</code>) with <code class="reqn">x \in [0,1]</code>, the needed functions are 
+</p>
+<p style="text-align: center;"><code class="reqn"> \phi_{1}(x) = 0 \qquad \mbox{and} \qquad \rho(x,z) = -k_{4}(|x-z|)</code>
+</p>
+<p> where <code class="reqn">k_{4}(x)</code> is defined as it was for <code>type="cub"</code>; in this case <code class="reqn">\mathbf{K}=\mathbf{1}_{n}</code> and <code class="reqn">\mathbf{d}=d_{0}</code>.
+</p>
+
+
+<h3>Note</h3>
+
+<p>The spline is estimated using penalized least-squares, which does not require the Gaussian error assumption. However, the spline inference information (e.g., standard errors and fit information) requires the Gaussian error assumption.
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Nathaniel E. Helwig &lt;helwig@umn.edu&gt;
+</p>
+
+
+<h3>References</h3>
+
+<p>Gu, C. (2013). <em>Smoothing spline ANOVA models, 2nd edition</em>. New York: Springer.
+</p>
+<p>Helwig, N. E. (2013). <em>Fast and stable smoothing spline analysis of variance models for large samples with applications to electroencephalography data analysis</em>. Unpublished doctoral dissertation. University of Illinois at Urbana-Champaign.
+</p>
+<p>Helwig, N. E. and Ma, P. (2015). Fast and stable multiple smoothing parameter selection in smoothing spline analysis of variance models with large samples. <em>Journal of Computational and Graphical Statistics, 24</em>, 715-732.
+</p>
+<p>Helwig, N. E. and Ma, P. (2016). Smoothing spline ANOVA for super-large samples: Scalable computation via rounding parameters. <em>Statistics and Its Interface, 9</em>, 433-444.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+##########   EXAMPLE 1   ##########
+
+# define relatively smooth function
+set.seed(773)
+myfun &lt;- function(x){ sin(2*pi*x) }
+x &lt;- runif(10^6)
+y &lt;- myfun(x) + rnorm(10^6)
+
+# linear, cubic, different cubic, and periodic splines
+linmod &lt;- bigspline(x,y,type="lin")
+linmod
+cubmod &lt;- bigspline(x,y)
+cubmod
+cub0mod &lt;- bigspline(x,y,type="cub0")
+cub0mod
+permod &lt;- bigspline(x,y,type="per")
+permod
+
+
+##########   EXAMPLE 2   ##########
+
+# define more jagged function
+set.seed(773)
+myfun &lt;- function(x){ 2*x + cos(4*pi*x) }
+x &lt;- runif(10^6)*4
+y &lt;- myfun(x) + rnorm(10^6)
+
+# try different numbers of knots
+r1mod &lt;- bigspline(x,y,nknots=20)
+crossprod( myfun(r1mod$xunique) - r1mod$fitted )/length(r1mod$fitted)
+r2mod &lt;- bigspline(x,y,nknots=30)
+crossprod( myfun(r2mod$xunique) - r2mod$fitted )/length(r2mod$fitted)
+r3mod &lt;- bigspline(x,y,nknots=40)
+crossprod( myfun(r3mod$xunique) - r3mod$fitted )/length(r3mod$fitted)
+
+
+##########   EXAMPLE 3   ##########
+
+# define more jagged function
+set.seed(773)
+myfun &lt;- function(x){ 2*x + cos(4*pi*x) }
+x &lt;- runif(10^6)*4
+y &lt;- myfun(x) + rnorm(10^6)
+
+# try different rounding parameters
+r1mod &lt;- bigspline(x,y,rparm=0.05)
+crossprod( myfun(r1mod$xunique) - r1mod$fitted )/length(r1mod$fitted)
+r2mod &lt;- bigspline(x,y,rparm=0.02)
+crossprod( myfun(r2mod$xunique) - r2mod$fitted )/length(r2mod$fitted)
+r3mod &lt;- bigspline(x,y,rparm=0.01)
+crossprod( myfun(r3mod$xunique) - r3mod$fitted )/length(r3mod$fitted)
+
+</code></pre>
+
+
+</div>

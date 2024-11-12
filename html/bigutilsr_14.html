@@ -1,0 +1,91 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>pca_OADP_proj</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>OADP projection</h2>
+
+<h3>Description</h3>
+
+<p>Online Augmentation, Decomposition, and Procrustes (OADP) projection of
+PC loadings onto some study data <code>X</code>.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">pca_OADP_proj(X, loadings, sval)
+
+pca_OADP_proj2(XV, X_norm, sval)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>X</code></td>
+<td>
+<p>Data to get PC loadings into.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>loadings</code></td>
+<td>
+<p>PC loadings of the reference PCA to project.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>sval</code></td>
+<td>
+<p>Singular values of the reference PCA (sqrt of the eigen values).
+Only the <code>ncol(loadings)</code> first ones will be used.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>XV</code></td>
+<td>
+<p><code>X %*% loadings</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>X_norm</code></td>
+<td>
+<p>Vector of sums of squared rows (e.g. <code>rowSums(X^2)</code>).</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+
+<ul><li> <p><code>pca_OADP_proj()</code>: A list with the simple projection <code>X %*% loadings</code>
+and the projection based on OADP.
+</p>
+</li></ul>
+<ul><li> <p><code>pca_OADP_proj2()</code>: The projection based on OADP only
+(a matrix of same size of <code>XV</code>).
+</p>
+</li></ul>
+<h3>Examples</h3>
+
+<pre><code class="language-R">X &lt;- readRDS(system.file("testdata", "three-pops.rds", package = "bigutilsr"))
+N &lt;- 400; M &lt;- ncol(X)
+ind &lt;- sample(nrow(X), N)
+
+# Compute SVD using one part of samples
+svd &lt;- svds(X[ind, ], k = 5)
+U &lt;- sweep(svd$u, 2, svd$d, '*')
+col &lt;- 2:3
+plot(U[, col])
+points(cbind(0, 0), pch = 8, col = "green", cex = 2)
+
+# Projecting other samples
+proj &lt;- pca_OADP_proj(X = X[-ind, ], loadings = svd$v, sval = svd$d)
+points(proj$simple_proj[, col], col = "red", pch = 20)     # shrunk towards 0
+points(proj$OADP_proj[, col], col = "blue", pch = 20)      # unshrunk
+
+</code></pre>
+
+
+</div>

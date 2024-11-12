@@ -1,0 +1,198 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>orderNorm</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Calculate and perform Ordered Quantile normalizing transformation</h2>
+
+<h3>Description</h3>
+
+<p>The Ordered Quantile (ORQ) normalization transformation,
+<code>orderNorm()</code>, is a rank-based procedure by which the values of a
+vector are mapped to their percentile, which is then mapped to the same
+percentile of the normal distribution. Without the presence of ties, this
+essentially guarantees that the transformation leads to a uniform
+distribution.
+</p>
+<p>The transformation is: </p>
+<p style="text-align: center;"><code class="reqn">g(x) = \Phi ^ {-1} ((rank(x) - .5) /
+  (length(x)))</code>
+</p>
+
+<p>Where <code class="reqn">\Phi</code> refers to the standard normal cdf, rank(x) refers to each
+observation's rank, and length(x) refers to the number of observations.
+</p>
+<p>By itself, this method is certainly not new; the earliest mention of it
+that I could find is in a 1947 paper by Bartlett (see references). This
+formula was outlined explicitly in Van der Waerden, and expounded upon in
+Beasley (2009). However there is a key difference to this version of it, as
+explained below.
+</p>
+<p>Using linear interpolation between these percentiles, the ORQ normalization
+becomes a 1-1 transformation that can be applied to new data. However,
+outside of the observed domain of x, it is unclear how to extrapolate the
+transformation. In the ORQ normalization procedure, a binomial glm with a
+logit link is used on the ranks in order to extrapolate beyond the bounds
+of the original domain of x. The inverse normal CDF is then applied to
+these extrapolated predictions in order to extrapolate the transformation.
+This mitigates the influence of heavy-tailed distributions while preserving
+the 1-1 nature of the transformation. The extrapolation will provide a
+warning unless warn = FALSE.) However, we found that the extrapolation was
+able to perform very well even on data as heavy-tailed as a Cauchy
+distribution (paper to be published).
+</p>
+<p>The fit used to perform the extrapolation uses a default of 10000
+observations (or length(x) if that is less). This added approximation
+improves the scalability, both computationally and in terms of memory used.
+Do not set this value to be too low (e.g. &lt;100), as there is no benefit to
+doing so. Increase if your test data set is large relative to 10000 and/or 
+if you are worried about losing signal in the extremes of the range.
+</p>
+<p>This transformation can be performed on new data and inverted via the
+<code>predict</code> function.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">orderNorm(x, n_logit_fit = min(length(x), 10000), ..., warn = TRUE)
+
+## S3 method for class 'orderNorm'
+predict(object, newdata = NULL, inverse = FALSE, warn = TRUE, ...)
+
+## S3 method for class 'orderNorm'
+print(x, ...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>A vector to normalize</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>n_logit_fit</code></td>
+<td>
+<p>Number of points used to fit logit approximation</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>additional arguments</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>warn</code></td>
+<td>
+<p>transforms outside observed range or ties will yield warning</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>object</code></td>
+<td>
+<p>an object of class 'orderNorm'</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>newdata</code></td>
+<td>
+<p>a vector of data to be (reverse) transformed</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>inverse</code></td>
+<td>
+<p>if TRUE, performs reverse transformation</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>A list of class <code>orderNorm</code> with elements
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>x.t</code></td>
+<td>
+<p>transformed original data</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>original data</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>n</code></td>
+<td>
+<p>number of nonmissing observations</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ties_status</code></td>
+<td>
+<p>indicator if
+ties are present</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>fit</code></td>
+<td>
+<p>fit to be used for extrapolation, if needed</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>norm_stat</code></td>
+<td>
+<p>Pearson's P / degrees of freedom</p>
+</td>
+</tr>
+</table>
+<p>The <code>predict</code> function returns the numeric value of the transformation
+performed on new data, and allows for the inverse transformation as well.
+</p>
+
+
+<h3>References</h3>
+
+<p>Bartlett, M. S. "The Use of Transformations." Biometrics, vol. 3, no. 1,
+1947, pp. 39-52. JSTOR www.jstor.org/stable/3001536.
+</p>
+<p>Van der Waerden BL. Order tests for the two-sample problem and their power.
+1952;55:453-458. Ser A.
+</p>
+<p>Beasley TM, Erickson S, Allison DB. Rank-based inverse normal transformations
+are increasingly used, but are they merited? Behav. Genet. 2009;39(5):
+580-595. pmid:19526352
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>boxcox</code>, <code>lambert</code>,
+<code>bestNormalize</code>, <code>yeojohnson</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+x &lt;- rgamma(100, 1, 1)
+
+orderNorm_obj &lt;- orderNorm(x)
+orderNorm_obj
+p &lt;- predict(orderNorm_obj)
+x2 &lt;- predict(orderNorm_obj, newdata = p, inverse = TRUE)
+
+all.equal(x2, x)
+</code></pre>
+
+
+</div>

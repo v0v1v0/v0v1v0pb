@@ -1,0 +1,169 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>bq_table_download</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Download table data</h2>
+
+<h3>Description</h3>
+
+<p>This retrieves rows in chunks of <code>page_size</code>. It is most suitable for results
+of smaller queries (&lt;100 MB, say). For larger queries, it is better to
+export the results to a CSV file stored on google cloud and use the
+bq command line tool to download locally.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">bq_table_download(
+  x,
+  n_max = Inf,
+  page_size = NULL,
+  start_index = 0L,
+  max_connections = 6L,
+  quiet = NA,
+  bigint = c("integer", "integer64", "numeric", "character"),
+  max_results = deprecated()
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>A bq_table</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>n_max</code></td>
+<td>
+<p>Maximum number of results to retrieve. Use <code>Inf</code> to retrieve all
+rows.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>page_size</code></td>
+<td>
+<p>The number of rows requested per chunk. It is recommended to
+leave this unspecified until you have evidence that the <code>page_size</code>
+selected automatically by <code>bq_table_download()</code> is problematic.
+</p>
+<p>When <code>page_size = NULL</code> bigrquery determines a conservative, natural chunk
+size empirically. If you specify the <code>page_size</code>, it is important that each
+chunk fits on one page, i.e. that the requested row limit is low enough to
+prevent the API from paginating based on response size.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>start_index</code></td>
+<td>
+<p>Starting row index (zero-based).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>max_connections</code></td>
+<td>
+<p>Number of maximum simultaneous connections to
+BigQuery servers.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>quiet</code></td>
+<td>
+<p>If <code>FALSE</code>, displays progress bar; if <code>TRUE</code> is silent;
+if <code>NA</code> picks based on whether or not you're in an interactive context.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>bigint</code></td>
+<td>
+<p>The R type that BigQuery's 64-bit integer types should be
+mapped to. The default is <code>"integer"</code>, which returns R's <code>integer</code> type,
+but results in <code>NA</code> for values above/below +/- 2147483647. <code>"integer64"</code>
+returns a bit64::integer64, which allows the full range of 64 bit
+integers.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>max_results</code></td>
+<td>
+<p><a href="https://lifecycle.r-lib.org/articles/stages.html#deprecated"><img src="../help/figures/lifecycle-deprecated.svg" alt="[Deprecated]"></a> Deprecated. Please use
+<code>n_max</code> instead.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>Because data retrieval may generate list-columns and the <code>data.frame</code>
+print method can have problems with list-columns, this method returns
+a tibble. If you need a <code>data.frame</code>, coerce the results with
+<code>as.data.frame()</code>.
+</p>
+
+
+<h3>Complex data</h3>
+
+<p>bigrquery will retrieve nested and repeated columns in to list-columns
+as follows:
+</p>
+
+<ul>
+<li>
+<p> Repeated values (arrays) will become a list-column of vectors.
+</p>
+</li>
+<li>
+<p> Records will become list-columns of named lists.
+</p>
+</li>
+<li>
+<p> Repeated records will become list-columns of data frames.
+</p>
+</li>
+</ul>
+<h3>Larger datasets</h3>
+
+<p>In my timings, this code takes around 1 minute per 100 MB of data.
+If you need to download considerably more than this, I recommend:
+</p>
+
+<ul>
+<li>
+<p> Export a <code>.csv</code> file to Cloud Storage using <code>bq_table_save()</code>.
+</p>
+</li>
+<li>
+<p> Use the <code>gsutil</code> command line utility to download it.
+</p>
+</li>
+<li>
+<p> Read the csv file into R with <code>readr::read_csv()</code> or <code>data.table::fread()</code>.
+</p>
+</li>
+</ul>
+<p>Unfortunately you can not export nested or repeated formats into CSV, and
+the formats that BigQuery supports (arvn and ndjson) that allow for
+nested/repeated values, are not well supported in R.
+</p>
+
+
+<h3>Google BigQuery API documentation</h3>
+
+
+<ul><li> <p><a href="https://cloud.google.com/bigquery/docs/reference/rest/v2/tabledata/list">list</a>
+</p>
+</li></ul>
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+df &lt;- bq_table_download("publicdata.samples.natality", n_max = 35000)
+
+</code></pre>
+
+
+</div>

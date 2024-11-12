@@ -1,0 +1,112 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>stdranef</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Extract standard deviation of "random" effects from an <code>MCMCglmm</code> object</h2>
+
+<h3>Description</h3>
+
+<p>Function designed to extract the standard deviation of the
+random effects from an <code>MCMCglmm</code> model object.
+Note that this is not the same as the posterior distribution of
+(co)variance matrices. It is based on the posterior distribution
+of the random effects. This also means it requires <code>pr=TRUE</code>
+to be set in the model for the information to be saved. Can optionally
+return standard deviation of random effects after back transforming to
+the response metric. Currently probabilities, but only for ordinal family
+models (<code>family="ordinal"</code>).
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">stdranef(object, which, type = c("lp", "response"), ...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>object</code></td>
+<td>
+<p>An <code>MCMCglmm</code> model object to extract the effects from</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>which</code></td>
+<td>
+<p>A list of random effects to extract or their numeric positions
+If there are two numbers in a list, effects are simulataneous.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>type</code></td>
+<td>
+<p>A character string indicating whether to calculate the standard
+deviation on the linear predictor metric, ‘lp’ or
+response, ‘response’.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Not currently used.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>A list of class postMCMCglmmRE with means (<code>M</code>) and individual estimates (<code>Data</code>)
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## Not run: 
+  # a simple MCMCglmm model
+  data(PlodiaPO)
+  PlodiaPO &lt;- within(PlodiaPO, {
+    PO2 &lt;- cut(PO, quantile(PO, c(0, .33, .66, 1)))
+    plate &lt;- factor(plate)
+  })
+
+  m &lt;- MCMCglmm(PO2 ~ 1, random = ~ FSfamily + plate,
+    family = "ordinal", data = PlodiaPO,
+    prior = list(
+      R = list(V = 1, fix = 1),
+      G = list(
+        G1 = list(V = 1, nu = .002),
+        G2 = list(V = 1, nu = .002)
+      )
+    ), verbose=FALSE, thin=1, pr=TRUE)
+
+  # summary of the model
+  summary(m)
+
+  # examples of extracting standard deviations of
+  # different random effects on the linear predictor metric
+  # or after transformation to probabilities (only for ordinal)
+  stdranef(m, which = list(1), type = "lp")
+  stdranef(m, which = list(2), type = "lp")
+  stdranef(m, which = list(1, 2, c(1, 2)), type = "lp")
+  stdranef(m, type = "lp")
+
+  ## error because no 3rd random effect
+  #stdranef(m, which = list(1, 2, 3), type = "lp")
+
+  stdranef(m, which = list("FSfamily", "plate"), type = "lp")
+
+  # mean standard deviations on the probability metric
+  # also the full distributions, if desired in the Data slot.
+  res &lt;- stdranef(m, type = "response")
+  res$M # means
+  hist(res$Data$FSfamily[, 1]) # histogram
+
+## End(Not run)
+</code></pre>
+
+
+</div>

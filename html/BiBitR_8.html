@@ -1,0 +1,175 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>bibit_columnextension</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Column Extension Procedure</h2>
+
+<h3>Description</h3>
+
+<p>Function which accepts result from <code>bibit</code>, <code>bibit2</code> or <code>bibit3</code> and will (re-)apply the column extension procedure. This means if the result already contained extended biclusters that these will be deleted.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">bibit_columnextension(result, matrix, arff_row_col = NULL, BC = NULL,
+  extend_columns = "naive", extend_mincol = 1, extend_limitcol = 1,
+  extend_noise = 1, extend_contained = FALSE)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>result</code></td>
+<td>
+<p>Result from <code>bibit</code>, <code>bibit2</code> or <code>bibit3</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>matrix</code></td>
+<td>
+<p>The binary input matrix.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>arff_row_col</code></td>
+<td>
+<p>The same file directories (with the same limitations) as given in <code>bibit</code>, <code>bibit2</code> or <code>bibit3</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>BC</code></td>
+<td>
+<p>A numeric/integer vector of BC's which should be extended. Different behaviour for the 3 types of input results:
+</p>
+
+<dl>
+<dt><code>bibit</code></dt>
+<dd>
+<p><code>BC</code> directly takes the corresponding biclusters from the result and extends them. (e.g. <code>BC=c(1,10)</code> is then remapped to <code>c("BC1","BC1_Ext1","BC2","BC2_Ext1") in the new output</code>)</p>
+</dd>
+<dt><code>bibit2</code></dt>
+<dd>
+<p><code>BC</code> corresponds with the original non-extended biclusters from the <code>bibit2</code> result. These original biclusters are selected and extended. (e.g. <code>BC=c(1,10)</code> selects biclusters <code>c("BC1","BC10")</code> which are then remapped to <code>c("BC1","BC1_Ext1","BC2","BC2_Ext1") in the new output</code>)</p>
+</dd> 
+<dt><code>bibit3</code></dt>
+<dd>
+<p><code>BC</code> corresponds with the biclusters when combining the FULLPATTERN and SUBPATTERN result together. For example choosing <code>BC=1</code> would only select the 1 FULLPATTERN bicluster for each pattern and try to extend it. (e.g. <code>BC=c(1,10)</code> selects biclusters 1 and 10 from the combined fullpattern and subpattern result (meaning the full pattern BC and the 9th subpattern BC) which are then remapped to <code>c("BC1","BC1_Ext1","BC2","BC2_Ext1") in the new output</code>) </p>
+</dd>
+</dl>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>extend_columns</code></td>
+<td>
+<p><em>Column Extension Parameter</em><br> Can be one of the following: <code>"naive"</code> or <code>"recursive"</code> which will apply either a naive or recursive column extension procedure. (See Details Section for more information.)
+<br> Based on the extension, additional biclusters will be created in the Biclust object which can be seen in the column and row names of the <code>RowxNumber</code> and <code>NumberxCol</code> slots (<code>"_Ext"</code> suffix).
+<br> The <code>info</code> slot will also contain some additional information. Inside this slot, <code>BC.Extended</code> contains info on which original biclusters were extended, how many columns were added, and in how many extra extended biclusters this resulted.
+<br><br><strong>Warning:</strong> Using a percentage-based <code>extend_noise</code> in combination with the recursive procedure will result in a large amount of biclusters and increase the computation time a lot. Depending on the data when using recursive in combination with a noise percentage, it is advised to keep it reasonable small (e.g. 10%). Another remedy is to sufficiently increase the <code>extend_limitcol</code> either as a percentage or integer to limit the candidates of columns.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>extend_mincol</code></td>
+<td>
+<p><em>Column Extension Parameter</em><br> A minimum number of columns that a bicluster should be able to be extended with before saving the result. (Default=1)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>extend_limitcol</code></td>
+<td>
+<p><em>Column Extension Parameter</em><br> The number (<code>extend_limitcol&gt;=1</code>) or percentage (<code>0&lt;extend_limitcol&lt;1</code>) of 1's that a column (subsetted on the BC rows) should at least contain for it to be a candidate to be added to the bicluster as an extension. (Default=1) (Increase this parameter if the recursive extension takes too long. Limiting the pool of candidates will decrease computation time, but restrict the results more.)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>extend_noise</code></td>
+<td>
+<p><em>Column Extension Parameter</em><br> The maximum allowed noise (in each row) when extending the columns of the bicluster. Can take the same as the <code>noise</code> parameter.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>extend_contained</code></td>
+<td>
+<p><em>Column Extension Parameter</em><br> Logical value if extended results should be checked if they contain each other (and deleted if this is the case). Default = <code>FALSE</code>. This can be a lengthy procedure for a large amount of biclusters (&gt;1000).</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>A Biclust S4 Class object or bibit3 S3 list Class object
+</p>
+
+
+<h3>Details - Column Extension</h3>
+
+<p>An optional procedure which can be applied <em>after</em> applying the BiBit algorithm (with noise) is called <em>Column Extension</em>. 
+The procedure will add extra columns to a BiBit bicluster, keeping into account the allowed <code>extend_noise</code> level in each row.
+The primary goal is to, after applying BiBit with noise, to also try and add some noise to the 2 initial 'perfect' rows.
+Other parameters like <code>extend_mincol</code> and <code>extend_limitcol</code> can also further restrict which extensions should be discovered.
+<br> This procedure can be done either <em>naively</em> (fast) or <em>recursively</em> (more slow and thorough) with the <code>extend_columns</code> parameter.
+</p>
+
+<dl>
+<dt><code>"naive"</code></dt>
+<dd>
+<p>Subsetting on the bicluster rows, the column candidates are ordered based on the most 1's in a column. Afterwards, in this order, each column is sequentially checked and added when the resulted BC is still within row noise levels.
+<br> This has 2 major consequences:
+</p>
+
+<ul>
+<li>
+<p>If 2 columns are identical, the first in the dataset is added, while the second isn't (depending on the noise level allowed per row).
+</p>
+</li>
+<li>
+<p>If 2 non-identical columns are viable to be added (correct row noise), the column with the most 1's is added. Afterwards the second column might not be viable anymore.
+</p>
+</li>
+</ul>
+<p>Note that using this method will always result in a maximum of 1 extended bicluster per original bicluster.
+</p>
+</dd>
+<dt><code>"recursive"</code></dt>
+<dd>
+<p>Conditioning the group of candidates for the allowed row noise level, each possible/allowed combination of adding columns to the bicluster is checked. Only the resulted biclusters with the highest number of extra columns are saved.
+Of course this could result in multiple extensions for 1 bicluster if there are multiple 'maximum added columns' results.
+</p>
+</dd>
+</dl>
+<p><em>Note:</em> These procedures are followed by a fast check if the extensions resulted in any duplicate biclusters. If so, these are deleted from the final result.
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Ewoud De Troyer
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## Not run: 
+
+set.seed(1)
+data &lt;- matrix(sample(c(0,1),100*100,replace=TRUE,prob=c(0.9,0.1)),nrow=100,ncol=100)
+data[1:10,1:10] &lt;- 1 # BC1
+data[11:20,11:20] &lt;- 1 # BC2
+data[21:30,21:30] &lt;- 1 # BC3
+data &lt;- data[sample(1:nrow(data),nrow(data)),sample(1:ncol(data),ncol(data))]
+
+result &lt;- bibit2(data,minr=5,minc=5,noise=0.1,extend_columns = "recursive",
+              extend_mincol=1,extend_limitcol=1)
+result
+result2 &lt;- bibit_columnextension(result=out,matrix=data,arff_row_col=NULL,BC=c(1,10),
+                              extend_columns="recursive",extend_mincol=1,
+                              extend_limitcol=1,extend_noise=2,extend_contained=FALSE)
+result2
+
+## End(Not run)
+</code></pre>
+
+
+</div>

@@ -1,0 +1,269 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>BGLR</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Bayesian Generalized Linear Regression</h2>
+
+<h3>Description</h3>
+
+<p>The BGLR (‘Bayesian Generalized Linear Regression’) function
+fits various types of parametric and semi-parametric Bayesian regressions to continuos 
+(censored or not), binary and ordinal outcomes.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">  BGLR(y, response_type = "gaussian", a=NULL, b=NULL,ETA = NULL, nIter = 1500,
+       burnIn = 500, thin = 5, saveAt = "", S0 = NULL, 
+       df0 =5, R2 = 0.5, weights = NULL,
+       verbose = TRUE, rmExistingFiles = TRUE, groups=NULL)
+
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>y</code></td>
+<td>
+<p>(numeric, <code class="reqn">n</code>) the data-vector (NAs allowed).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>response_type</code></td>
+<td>
+<p>(string) admits values <code>"gaussian"</code> or <code>"ordinal"</code>. The Gaussian outcome may be censored or not (see below). 
+If <code>response_type="gaussian"</code>, <code>y</code> should be coercible to numeric. If <code>response_type="ordinal"</code>, <code>y</code>
+should be coercible to character, and the order of the outcomes is determined based on the
+alphanumeric order <code>(0&lt;1&lt;2..&lt;a&lt;b..)</code>. For ordinal traits the probit link is used.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>a,b</code></td>
+<td>
+<p>(numeric, <code class="reqn">n</code>) only requiered for censored outcomes, <code>a</code> and <code>b</code> are vectors specifying lower and 
+upper bounds for censored observations, respectively. The default value, for non-censored and ordinal 
+outcomes, is <code>NULL</code> (see details).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ETA</code></td>
+<td>
+<p> (list) This is a two-level list used to specify the regression function (or linear predictor). By default the linear predictor 
+(the conditional expectation function in case of Gaussian outcomes) includes only an intercept.
+Regression on covariates and other types of random effects are specified in this two-level list. For instance:
+</p>
+<pre>
+ETA=list(list(X=W, model="FIXED"), 
+              list(X=Z,model="BL"), 
+              list(K=G,model="RKHS")),
+</pre> 
+<p>specifies that the linear predictor should include: an intercept (included by default) plus a linear regression on W with regression 
+coefficients treated as fixed effects (i.e., flat prior), plus regression on Z, with regression coefficients modeled as in the 
+Bayesian Lasso of Park and Casella (2008) plus and a random effect with co-variance structure G.
+</p>
+<p>For linear regressions the following options are implemented: FIXED (Flat prior), BRR (Gaussian prior), BayesA (scaled-t prior), BL (Double-Exponential prior), 
+BayesB (two component mixture prior with a point of mass at zero and a scaled-t slab), BayesC (two component mixture prior with a point of
+mass at zero and a Gaussian slab). In linear regressions X can be the incidence matrix for effects or a formula (e.g. <code>~factor(sex) + age</code>)
+in which case the incidence matrix is created internally using the <code>model.matrix</code> function of R. For Gaussian processes (RKHS) a co-variance matrix
+(K) must be provided. Further details about the models implemented in BGLR see the vignettes in the package. 
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>weights</code></td>
+<td>
+<p>(numeric, <code class="reqn">n</code>) a vector of weights, may be <code>NULL</code>. If weights is not <code>NULL</code>, the 
+residual variance of each data-point is set to be proportional to the inverse of the squared-weight. Only
+used with Gaussian outcomes.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nIter,burnIn, thin</code></td>
+<td>
+<p>(integer) the number of iterations, burn-in and thinning.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>saveAt</code></td>
+<td>
+<p>(string) this may include a path and a pre-fix that will be added to the name of the files that are saved as the program runs.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>S0, df0</code></td>
+<td>
+<p> (numeric) The scale parameter for the scaled inverse-chi squared prior assigned to the residual variance, only used with Gaussian outcomes. 
+In the parameterization of the scaled-inverse chi square in BGLR the expected values is <code>S0/(df0-2)</code>. The default value for the 
+df parameter is 5. If the scale is not specified a value is calculated so that the prior mode of the residual 
+variance  equals <code>var(y)*R2</code> (see below). For further details see the vignettes in the package.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>R2</code></td>
+<td>
+<p>(numeric, <code>0&lt;R2&lt;1</code>) The proportion of variance that one expects, a priori, to be explained by the regression. Only used if 
+the hyper-parameters are not specified; if that is the case, internaly, hyper-paramters are set so that the prior modes are consistent with the 
+variance partition specified by R2 and the prior distribution is relatively flat at the mode. For 
+further details see the vignettes in the package.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>verbose</code></td>
+<td>
+<p>(logical) if TRUE the iteration history is printed, default TRUE.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>rmExistingFiles</code></td>
+<td>
+<p>(logical) if TRUE removes existing output files from previous runs, default TRUE.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>groups</code></td>
+<td>
+<p>(factor) a vector of the same length of y that associates observations with groups, each group will have an associated variance component for the error term.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>BGLR implements a Gibbs sampler for a Bayesian regresion model. The linear predictor (or regression function)
+includes an intercept (introduced by default) plus a number of user-specified regression components (X) and 
+random effects (u), that is:
+</p>
+η=1μ + X<sub>1</sub>β<sub>1</sub>+...+X<sub>p</sub>β<sub>p</sub>+u<sub>1</sub>+...+u<sub>q</sub><p>The components of the linear predictor are specified in the argument ETA (see above). 
+The user can specify as many linear terms as desired, and for each component the user can choose the 
+prior density to be assigned. The distribution of the response is modeled as a function of the 
+linear predictor.
+</p>
+<p>For Gaussian outcomes, the linear predictor is the conditional expectation, and censoring is allowed. For censored data points the actual response value (<code class="reqn">y_i</code>)
+is missing, and the entries of the vectors a and b (see above) give the lower an upper vound for <code class="reqn">y_i</code>. The
+following table shows the configuration of the triplet (y, a, b) for un-censored, right-censored, 
+left-censored and interval censored.
+</p>
+
+<table>
+<tr>
+<td style="text-align: left;">
+                     </td>
+<td style="text-align: center;"> a             </td>
+<td style="text-align: center;"> y          </td>
+<td style="text-align: center;"> b  </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+   Un-censored       </td>
+<td style="text-align: center;"> NULL          </td>
+<td style="text-align: center;"> <code class="reqn">y_i</code>  </td>
+<td style="text-align: center;"> NULL </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+   Right censored    </td>
+<td style="text-align: center;"> <code class="reqn">a_i</code>     </td>
+<td style="text-align: center;"> NA         </td>
+<td style="text-align: center;"> <code class="reqn">\infty</code> </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+   Left censored     </td>
+<td style="text-align: center;"> <code class="reqn">-\infty</code> </td>
+<td style="text-align: center;"> NA         </td>
+<td style="text-align: center;"> <code class="reqn">b_i</code> </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+   Interval censored </td>
+<td style="text-align: center;"> <code class="reqn">a_i</code>     </td>
+<td style="text-align: center;"> NA         </td>
+<td style="text-align: center;"> <code class="reqn">b_i</code>
+ </td>
+</tr>
+</table>
+<p>Internally, censoring is dealt with as a missing data problem.
+</p>
+<p><em>Ordinal outcomes</em> are modelled using the probit link, implemented via data augmentation. 
+In this case the linear predictor becomes the mean of the underlying liability variable which is 
+normal with mean equal to the linear predictor and variance equal to one. In case of only two classes 
+(binary outcome) the threshold is set equal to zero, for more than two classess thresholds are estimated 
+from the data. Further details about this approach can be found in Albert and Chib (1993).
+</p>
+
+
+<h3>Value</h3>
+
+<p>A list with estimated posterior means, estimated posterior standard deviations, and the parameters used to fit the model.
+See the vignettes in the package for further details.
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Gustavo de los Campos, Paulino Perez Rodriguez,
+</p>
+
+
+<h3>References</h3>
+
+<p>Albert J,. S. Chib. 1993. Bayesian Analysis of Binary and Polychotomus Response Data. <em>JASA</em>, <b>88</b>: 669-679.
+</p>
+<p>de los Campos G., H. Naya, D. Gianola, J. Crossa, A. Legarra, E. Manfredi, K. Weigel and J. Cotes. 2009.
+Predicting Quantitative Traits with Regression Models for Dense Molecular Markers and Pedigree. <em>Genetics</em> <b>182</b>: 375-385.
+</p>
+<p>de los Campos, G., D. Gianola, G. J. M., Rosa, K. A., Weigel, and J. Crossa. 2010.  Semi-parametric genomic-enabled prediction of genetic values using 
+reproducing kernel Hilbert spaces methods. <em>Genetics Research</em>, <b>92</b>:295-308.
+</p>
+<p>Park T. and G. Casella. 2008. The Bayesian LASSO. <em>Journal of the American Statistical Association</em> <b>103</b>: 681-686.
+</p>
+<p>Spiegelhalter, D.J., N.G. Best, B.P. Carlin and A. van der Linde. 2002. Bayesian measures of model complexity and 
+fit (with discussion). <em>Journal of the Royal Statistical Society</em>, Series B (Statistical Methodology) <b>64</b> (4): 583-639.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+## Not run: 
+#Demos
+library(BGLR)
+
+#BayesA
+demo(BA)
+
+#BayesB
+demo(BB)
+
+#Bayesian LASSO
+demo(BL)
+
+#Bayesian Ridge Regression
+demo(BRR)
+
+#BayesCpi
+demo(BayesCpi)
+
+#RKHS
+demo(RKHS)
+
+#Binary traits
+demo(Bernoulli)
+
+#Ordinal traits
+demo(ordinal)
+
+#Censored traits
+demo(censored)
+
+
+## End(Not run)
+
+</code></pre>
+
+
+</div>

@@ -1,0 +1,103 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>getMomentsAndMomentCI</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Calculate bootstrap moments and moment-based confidence intervals for the PCs.</h2>
+
+<h3>Description</h3>
+
+<p>Let <code class="reqn">K</code> be the number of PCs of interest, let <code class="reqn">B</code> be the number of bootstrap samples, and let <code class="reqn">p</code> be the number of measurements per subject, also known as the dimension of the sample. In general, we use <code class="reqn">k</code> to refer to the principal component (PC) index, where <code class="reqn">k=1,2,...K</code>, and use <code class="reqn">b</code> to refer to the bootstrap index, where <code class="reqn">b=1,2,...B</code>.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">getMomentsAndMomentCI(AsByK, V, K = length(AsByK), verbose = FALSE)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>AsByK</code></td>
+<td>
+<p>a list of the bootstrap PC matrices. This list should be indexed by <code class="reqn">k</code>, with the <code class="reqn">k^{th}</code> element of the lsit containing a <code class="reqn">b</code> by <code class="reqn">p</code> matrix of results for the <code class="reqn">k^{th}</code> PC, across bootstrap samples.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>V</code></td>
+<td>
+<p>a (<code class="reqn">p</code> by <code class="reqn">n</code>) matrix containing the coordinate vectors for the matrices within the <code>AsByK</code> list, where <code class="reqn">n</code> is sample size and <code class="reqn">p</code> is sample dimension. Generally for bootstrap PCA, <code>AsByK</code> should contain the PCs for the bootstrap scores, and <code>V</code> should be the matrix of PCs from the original sample. The argument <code>V</code> may also be a <code>ff</code> object.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>K</code></td>
+<td>
+<p>the number of leading PCs for which moments and confidence intervals should be obtained.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>verbose</code></td>
+<td>
+<p>setting to <code>TRUE</code> will cause the function to print its progress in calculating the bootstrap variance for each PC.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>a list containing
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>EVs</code></td>
+<td>
+<p>a list containing element-wise bootstrap means for each of the <code>K</code> fitted PCs, indexed by <code>k</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>varVs</code></td>
+<td>
+<p>a list containing element-wise bootstrap variances for each of the <code>K</code> fitted PCs, indexed by <code>k</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>sdVs</code></td>
+<td>
+<p>a list containing element-wise bootstrap standard errors for each of the <code>K</code> fitted PCs, indexed by <code>k</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>momentCI</code></td>
+<td>
+<p>a list of (<code class="reqn">p</code> by <code class="reqn">2</code>) matrices, indexed by <code>k</code>, where <code>momentCI[[k]][j,]</code> is the pointwise moment-based CI for the <code class="reqn">j^{th}</code> element of the <code class="reqn">k^{th}</code> PC.</p>
+</td>
+</tr>
+</table>
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+#use small n, small B, for a quick illustration
+set.seed(0)
+Y&lt;-simEEG(n=100, centered=TRUE, wide=TRUE) 
+svdY&lt;-fastSVD(Y)
+V&lt;-svdY$v #right singular vectors of the wide matrix Y
+DUt&lt;- tcrossprod(diag(svdY$d),svdY$u)
+bInds&lt;-genBootIndeces(B=50,n=dim(DUt)[2])
+bootSVD_LD_output&lt;-bootSVD_LD(DUt=DUt,bInds=bInds,K=3,verbose=interactive())
+
+AsByB&lt;-bootSVD_LD_output$As
+AsByK&lt;-reindexMatricesByK(AsByB)
+moments&lt;-getMomentsAndMomentCI(AsByK,V,verbose=interactive())
+plot(V[,1],type='l',ylim=c(-.1,.1),main='Original PC1, with CI in blue')
+matlines(moments$momentCI[[1]],col='blue',lty=1)
+
+#Can also use this function to get moments for low dimensional
+#vectors A^b[,k], by setting V to the identity matrix.
+moments_A&lt;- getMomentsAndMomentCI(As=AsByK,V=diag(ncol(AsByK[[1]])))
+</code></pre>
+
+
+</div>

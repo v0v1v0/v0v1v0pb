@@ -1,0 +1,230 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>beam_profile_overlap</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Calculate overlap between a vertical profile ('vp') and the vertical
+radiation profile emitted by the radar</h2>
+
+<h3>Description</h3>
+
+<p>Calculates the distribution overlap between a vertical profile ('vp') and the
+vertical radiation profile of a set of emitted radar beams at various
+elevation angles as given by beam_profile.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">beam_profile_overlap(
+  vp,
+  elev,
+  distance,
+  antenna,
+  zlim = c(0, 4000),
+  noise_floor = -Inf,
+  noise_floor_ref_range = 1,
+  steps = 500,
+  quantity = "dens",
+  normalize = TRUE,
+  beam_angle = 1,
+  k = 4/3,
+  lat,
+  re = 6378,
+  rp = 6357
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>vp</code></td>
+<td>
+<p>A <code>vp</code> object.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>elev</code></td>
+<td>
+<p>Numeric vector. Beam elevation(s), in degrees.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>distance</code></td>
+<td>
+<p>Numeric. The distance(s) from the radar along sea level (down
+range) for which to calculate the overlap, in m.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>antenna</code></td>
+<td>
+<p>Numeric. Radar antenna height, in m. Default to antenna height
+in <code>vp</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>zlim</code></td>
+<td>
+<p>Numeric vector of length two. Altitude range, in m</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>noise_floor</code></td>
+<td>
+<p>Numeric. The system noise floor in dBZ. The total system
+noise expressed as the reflectivity factor it would represent at a distance
+<code>noise_floor_ref_range</code> from the radar. NOT YET IMPLEMENTED</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>noise_floor_ref_range</code></td>
+<td>
+<p>Numeric. The reference distance from the radar
+at which <code>noise_floor</code> is expressed. NOT YET IMPLEMENTED.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>steps</code></td>
+<td>
+<p>Numeric. Number of integration steps over altitude range <code>zlim</code>,
+defining altitude grid size used for numeric integration.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>quantity</code></td>
+<td>
+<p>Character. Profile quantity (<code>dens</code> or <code>eta</code>) to use for the
+altitude distribution.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>normalize</code></td>
+<td>
+<p>Logical. If <code>TRUE</code>, normalize the radiation coverage pattern
+over the altitude range specified by <code>zlim</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>beam_angle</code></td>
+<td>
+<p>Numeric. Beam opening angle in degrees, typically the
+angle between the half-power (-3 dB) points of the main lobe.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>k</code></td>
+<td>
+<p>Numeric. Standard refraction coefficient.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>lat</code></td>
+<td>
+<p>Numeric. Radar latitude. Defaults to latitude in <code>vp</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>re</code></td>
+<td>
+<p>Numeric. Earth equatorial radius, in km.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>rp</code></td>
+<td>
+<p>Numeric. Earth polar radius, in km.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>This function also calculates the <code>overlap</code> quantity in the output of
+integrate_to_ppi.
+</p>
+<p>Overlap is calculated as the <a href="https://en.wikipedia.org/wiki/Bhattacharyya_distance">Bhattacharyya coefficient</a> (i.e.
+distribution overlap) between the (normalized) vertical profile (<code>vp</code>) and
+the (normalized) radiation coverage pattern as calculated by
+<code>beam_profile()</code>. In the calculation of this overlap metric, <code>NA</code> and <code>NaN</code>
+values in the profile quantity specified by <code>quantity</code> are replaced with
+zeros.
+</p>
+<p>The current implementation does not (yet) take into account the system noise
+floor when calculating the overlap.
+</p>
+<p>In the ODIM data model the attribute <code style="white-space: pre;">⁠/how/NEZ⁠</code> or <code style="white-space: pre;">⁠/how/NEZH⁠</code> specifies the
+system noise floor (the Noise Equivalent Z or noise equivalent reflectivity
+factor. the H refers to the horizontal channel of a dual-polarization radar).
+In addition, the attribute <code style="white-space: pre;">⁠/how/LOG⁠</code> gives "security distance above mean
+noise level (dB) threshold value". This is equivalent to the log receiver
+signal-to-noise ratio, i.e. the dB above the noise floor for the signal
+processor to report a valid reflectivity value. We recommend using <code>NEZH + LOG</code> for <code>noise_floor</code>, as this is the effective noise floor of the system
+below which no data will be reported by the radar signal processor.
+</p>
+<p>Typical values are <code>NEZH</code> = -45 to -50 dBZ at 1 km from the radar. <code>LOG</code> is
+typically around 1 dB.
+</p>
+<p>Need to evaluate beam by beam the returned signal relative to a uniform beam
+filling of at least <code>NEZH + LOG</code> If returned signal is lower, the gate is
+below noise level.
+</p>
+
+
+<h3>Value</h3>
+
+<p>A data.frame with columns <code>distance</code> and <code>overlap</code>.
+</p>
+
+
+<h3>See Also</h3>
+
+
+<ul>
+<li> <p><code>beam_height()</code>
+</p>
+</li>
+<li> <p><code>beam_width()</code>
+</p>
+</li>
+<li> <p><code>beam_profile()</code>
+</p>
+</li>
+</ul>
+<p>Other beam_functions: 
+<code>beam_distance()</code>,
+<code>beam_height()</code>,
+<code>beam_profile()</code>,
+<code>beam_range()</code>,
+<code>beam_width()</code>,
+<code>gaussian_beam_profile()</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R"># Read the polar volume example file
+pvolfile &lt;- system.file("extdata", "volume.h5", package = "bioRad")
+
+# Read the corresponding vertical profile example
+pvol &lt;- read_pvolfile(pvolfile)
+
+# let us use this example vertical profile:
+data(example_vp)
+example_vp
+
+# Calculate overlap between vertical profile of birds and the vertical
+# radiation profile emitted by the radar
+bpo &lt;- beam_profile_overlap(
+  example_vp,
+  get_elevation_angles(pvol), seq(0, 100000, 1000)
+)
+
+# Plot the calculated overlap:
+plot(bpo)
+</code></pre>
+
+
+</div>

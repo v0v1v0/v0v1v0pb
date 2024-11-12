@@ -1,0 +1,170 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>estimates</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Estimation of Block-Basu Bivariate Pareto (BBBVPA) distribution</h2>
+
+<h3>Description</h3>
+
+<p>Parameters estimation of BBBVPA distribution.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">estimates(
+  I,
+  s1.int,
+  s2.int,
+  a0.int,
+  a1.int,
+  a2.int,
+  tol.est = 1e-05,
+  MxIter.no = 2000,
+  rate = 1e-04,
+  condition = "log.L"
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>I</code></td>
+<td>
+<p>bivariate observations.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>s1.int</code></td>
+<td>
+<p>initial choice of <code class="reqn">\sigma_1</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>s2.int</code></td>
+<td>
+<p>initial choice of <code class="reqn">\sigma_2</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>a0.int</code></td>
+<td>
+<p>initial choice of <code class="reqn">\alpha_0</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>a1.int</code></td>
+<td>
+<p>initial choice of <code class="reqn">\alpha_1</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>a2.int</code></td>
+<td>
+<p>initial choice of <code class="reqn">\alpha_2</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>tol.est</code></td>
+<td>
+<p>convergence tolerance, <code>0.00001</code> (default).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>MxIter.no</code></td>
+<td>
+<p>maximum number of iterations, <code>2000</code> (default).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>rate</code></td>
+<td>
+<p>step size or learning rate for gradient descent, <code>0.0001</code> (default).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>condition</code></td>
+<td>
+<p>convergence criterion, <code>"log.L"</code> (default) and <code>"p.logL"</code>.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>object of class "<code>bbbvpa</code>", a list consisting of
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>mu1, mu2, sigma1, sigma2, alpha0, alpha1, alpha2, iter.no</code></td>
+<td>
+<p>estimates  of parameters and number of iteration.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>data </code></td>
+<td>
+<p>the supplied data <code>I</code>.</p>
+</td>
+</tr>
+</table>
+<h3>Author(s)</h3>
+
+<p>Biplab Paul &lt;paul.biplab497@gmail.com&gt; and Arabin Kumar Dey &lt;arabin@iitg.ac.in&gt;
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+# Read data
+data(precipitation)
+data &lt;- as.vector(precipitation[,2])
+data[is.na(data)]&lt;-0
+n &lt;- length(data)
+# Construct the three-dimensional data set
+data3d &lt;- function(data){
+ u &lt;- 12
+ Y &lt;- c()
+ indx &lt;- indx1 &lt;- indx2 &lt;- indx3 &lt;- 0
+ r &lt;- 5
+ i &lt;- 2
+ while(i &lt; n){
+   i &lt;- i + 1
+   if(data[i] &gt; u || sum(data[(i-1):i]) &gt; u || sum(data[(i-2):i]) &gt; u){
+     if(data[i] &gt; u){imax &lt;- i}
+     if(sum(data[(i-1):i]) &gt; u){imax &lt;- i - 3 + which(data[(i-1):i] == max(data[(i-1):i]))[1]}
+     if(sum(data[(i-2):i]) &gt; u){imax &lt;- i - 3 + which(data[(i-2):i] == max(data[(i-2):i]))[1]}
+     if(max(indx) &gt; (imax-r)){
+       cluster &lt;- data[(max(indx)+3):(imax+r)]
+     } else{
+       cluster &lt;- data[(imax-r):(imax+r)]
+     }
+     cluster2 &lt;- sapply(c(1:(length(cluster)-1)), function(j) sum(cluster[j:(j+1)]))
+     cluster3 &lt;- sapply(c(1:(length(cluster)-2)), function(j) sum(cluster[j:(j+2)]))
+     indx1 &lt;- append(indx1,imax-r-1+which(cluster==max(cluster))[1])
+     indx2 &lt;- append(indx2,imax-r-1+which(cluster2==max(cluster2)))
+     indx3 &lt;- append(indx3,imax-r-1+which(cluster3==max(cluster3)))
+     Y &lt;- rbind(Y, c(max(cluster),max(cluster2),max(cluster3)))
+     indx &lt;- append(indx,imax)
+     i &lt;- i + r
+   }
+ }
+ return(Y)
+}
+I &lt;- data3d(data)[,c(1,3)]
+iniz &lt;- intliz(I)
+iniz
+est &lt;- estimates(I, iniz[1], iniz[2], iniz[3], iniz[4], iniz[5])
+est[-9]
+param.boot(I, iniz[1], iniz[2], iniz[3], iniz[4], iniz[5])
+conf.intv(est)
+
+
+</code></pre>
+
+
+</div>

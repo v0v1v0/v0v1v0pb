@@ -1,0 +1,140 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>coupling_entity</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Creating Coupling Networks at Entity Level</h2>
+
+<h3>Description</h3>
+
+<p>This function creates the edges of a network of entities from a direct citations data frame (i.e. documents citing references).
+Entities could be authors, affiliations, journals, <em>etc</em>. Consequently, coupling links are calculated using the coupling angle measure
+(like <code>biblio_coupling()</code>) or the coupling strength measure (like <code>coupling_strength()</code>. But it also takes into account the fact that
+an entity can cite several times a reference, and considers that citing 10 times a ref is more significant that citing it only once (see <a href="#details">details</a>).
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">coupling_entity(
+  dt,
+  source,
+  ref,
+  entity,
+  weight_threshold = 1,
+  output_in_character = FALSE,
+  method = c("coupling_strength", "coupling_angle")
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>dt</code></td>
+<td>
+<p>The table with citing and cited documents.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>source</code></td>
+<td>
+<p>The column name of the source identifiers, that is the documents that are citing.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ref</code></td>
+<td>
+<p>The column name of the cited references identifiers.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>entity</code></td>
+<td>
+<p>The column name of the entity (authors, journals, institutions) that are citing.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>weight_threshold</code></td>
+<td>
+<p>Corresponds to the value of the non-normalized weights of edges. The function just keeps the edges
+that have a non-normalized weight superior to the <code>weight_threshold</code>. In other words, if you set the
+parameter to 2, the function keeps only the edges between nodes that share at least two references
+in common in their bibliography. In a large bibliographic coupling network,
+you can consider for instance that sharing only one reference is not sufficient/significant
+for two entities (above all when large entities like journals and institutions) to be linked together.
+This parameter could also be modified to avoid creating intractable networks with too many edges.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>output_in_character</code></td>
+<td>
+<p>If TRUE, the function ends by transforming the <code>from</code> and <code>to</code> columns in character, to make the
+creation of a <a href="https://tidygraph.data-imaginist.com/index.html">tidygraph</a> network easier.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>method</code></td>
+<td>
+<p>Choose the method you want to use for calculating the edges weights: either <code>"coupling_strength"</code> like in the
+<code>coupling_strength()</code> function, or <code>"coupling_angle"</code> like in the <code>biblio_coupling()</code> function.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>Coupling links are calculated depending of the number of references two authors (or any entity) share,
+taking into account the minimum number of times two authors are citing each references.
+For instance, if two entities share a reference in common, the first one citing it twice (in other words, citing it in two different articles),
+the second one three times, the function takes two as the minimum value. In addition to the features of the coupling strength measure (see <code>coupling_strength()</code>)
+or the coupling angle measure (see <code>biblio_coupling()</code>), it means that, if two entities share two reference in common, if the first reference is cited
+at least four times by the two entities, whereas the second reference is cited at least only once, the first reference contributes more to the edge weight than
+the second reference. This use of minimum shared reference for entities coupling comes from Zhao and Strotmann (2008). It looks like
+this for the coupling strength:
+</p>
+<p style="text-align: center;"><code class="reqn">\frac{1}{L(A)}.\frac{1}{L(A)}\sum_{j} Min(C_{Aj},C_{Bj}).(log({\frac{N}{freq(R_{j})}}))</code>
+</p>
+
+<p>with <code class="reqn">C_{Aj}</code> and <code class="reqn">C_{Bj}</code> the number of time documents A and B cite the reference j.
+</p>
+
+
+<h3>Value</h3>
+
+<p>A data.table with the entity identifiers in <code>from</code> and <code>to</code> columns, with the coupling strength or coupling angle measures in
+another column, as well as the method used. It also keeps a copy of <code>from</code> and <code>to</code> in the <code>Source</code> and <code>Target</code> columns. This is useful is you
+are using the tidygraph package then, where <code>from</code> and <code>to</code> values are modified when creating a graph.
+</p>
+
+
+<h3>References</h3>
+
+<p>Zhao D, Strotmann A (2008).
+“Author Bibliographic Coupling: Another Approach to Citation-Based Author Knowledge Network Analysis.”
+<em>Proceedings of the American Society for Information Science and Technology</em>, <b>45</b>(1), 1–10.
+<a href="https://asistdl.onlinelibrary.wiley.com/doi/full/10.1002/meet.2008.1450450292">https://asistdl.onlinelibrary.wiley.com/doi/full/10.1002/meet.2008.1450450292</a>.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">library(biblionetwork)
+Ref_stagflation$Citing_ItemID_Ref &lt;- as.character(Ref_stagflation$Citing_ItemID_Ref)
+# merging the references data with the citing author information in Nodes_stagflation
+entity_citations &lt;- merge(Ref_stagflation,
+                          Nodes_stagflation,
+                          by.x = "Citing_ItemID_Ref",
+                          by.y = "ItemID_Ref")
+
+coupling_entity(entity_citations,
+                source = "Citing_ItemID_Ref",
+                ref = "ItemID_Ref",
+                entity = "Author.y",
+                method = "coupling_angle")
+
+</code></pre>
+
+
+</div>

@@ -1,0 +1,184 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>irf.bvar</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Impulse Response Function</h2>
+
+<h3>Description</h3>
+
+<p>Computes the impulse response coefficients of an object of class <code>"bvar"</code> for
+<code>n.ahead</code> steps.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">## S3 method for class 'bvar'
+irf(
+  x,
+  impulse = NULL,
+  response = NULL,
+  n.ahead = 5,
+  ci = 0.95,
+  shock = 1,
+  type = "feir",
+  cumulative = FALSE,
+  keep_draws = FALSE,
+  period = NULL,
+  ...
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>an object of class <code>"bvar"</code>, usually, a result of a call to
+<code>bvar</code> or <code>bvec_to_bvar</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>impulse</code></td>
+<td>
+<p>name of the impulse variable.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>response</code></td>
+<td>
+<p>name of the response variable.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>n.ahead</code></td>
+<td>
+<p>number of steps ahead.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ci</code></td>
+<td>
+<p>a numeric between 0 and 1 specifying the probability mass covered by the
+credible intervals. Defaults to 0.95.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>shock</code></td>
+<td>
+<p>size of the shock.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>type</code></td>
+<td>
+<p>type of the impulse response. Possible choices are forecast error <code>"feir"</code>
+(default), orthogonalised <code>"oir"</code>, structural <code>"sir"</code>, generalised <code>"gir"</code>,
+and structural generalised <code>"sgir"</code> impulse responses.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>cumulative</code></td>
+<td>
+<p>logical specifying whether a cumulative IRF should be calculated.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>keep_draws</code></td>
+<td>
+<p>logical specifying whether the function should return all draws of
+the posterior impulse response function. Defaults to <code>FALSE</code> so that
+the median and the credible intervals of the posterior draws are returned.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>period</code></td>
+<td>
+<p>integer. Index of the period, for which the IR should be generated.
+Only used for TVP or SV models. Default is <code>NULL</code>, so that the posterior draws of the last time period
+are used.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>further arguments passed to or from other methods.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The function produces different types of impulse responses for the VAR model
+</p>
+<p style="text-align: center;"><code class="reqn">A_0 y_t = \sum_{i = 1}^{p} A_{i} y_{t-i} + u_t,</code>
+</p>
+
+<p>with <code class="reqn">u_t \sim N(0, \Sigma)</code>.
+</p>
+<p>Forecast error impulse responses <code class="reqn">\Phi_i</code> are obtained by recursions
+</p>
+<p style="text-align: center;"><code class="reqn">\Phi_i = \sum_{j = 1}^{i} \Phi_{i-j} A_j,   i = 1, 2,...,h</code>
+</p>
+
+<p>with <code class="reqn">\Phi_0 = I_K</code>.
+</p>
+<p>Orthogonalised impulse responses <code class="reqn">\Theta^o_i</code> are calculated as <code class="reqn">\Theta^o_i = \Phi_i P</code>,
+where P is the lower triangular Choleski decomposition of <code class="reqn">\Sigma</code>.
+</p>
+<p>Structural impulse responses <code class="reqn">\Theta^s_i</code> are calculated as <code class="reqn">\Theta^s_i = \Phi_i A_0^{-1}</code>.
+</p>
+<p>(Structural) Generalised impulse responses for variable <code class="reqn">j</code>, i.e. <code class="reqn">\Theta^g_ji</code> are calculated as
+<code class="reqn">\Theta^g_{ji} = \sigma_{jj}^{-1/2} \Phi_i A_0^{-1} \Sigma e_j</code>, where <code class="reqn">\sigma_{jj}</code> is the variance
+of the <code class="reqn">j^{th}</code> diagonal element of <code class="reqn">\Sigma</code> and <code class="reqn">e_i</code> is a selection vector containing
+one in its <code class="reqn">j^{th}</code> element and zero otherwise. If the <code>"bvar"</code> object does not contain draws
+of <code class="reqn">A_0</code>, it is assumed to be an identity matrix.
+</p>
+
+
+<h3>Value</h3>
+
+<p>A time-series object of class <code>"bvarirf"</code> and if <code>keep_draws = TRUE</code> a simple matrix.
+</p>
+
+
+<h3>References</h3>
+
+<p>Lütkepohl, H. (2006). <em>New introduction to multiple time series analysis</em> (2nd ed.). Berlin: Springer.
+</p>
+<p>Pesaran, H. H., Shin, Y. (1998). Generalized impulse response analysis in linear multivariate models. <em>Economics Letters, 58</em>, 17-29.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+# Load data
+data("e1")
+e1 &lt;- diff(log(e1)) * 100
+
+# Generate model data
+model &lt;- gen_var(e1, p = 2, deterministic = 2,
+                 iterations = 100, burnin = 10)
+# Chosen number of iterations and burnin should be much higher.
+
+# Add prior specifications
+model &lt;- add_priors(model)
+
+# Obtain posterior draws
+object &lt;- draw_posterior(model)
+
+# Obtain IR
+ir &lt;- irf(object, impulse = "invest", response = "cons")
+
+# Plot IR
+plot(ir)
+
+
+</code></pre>
+
+
+</div>

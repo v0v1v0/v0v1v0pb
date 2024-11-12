@@ -1,0 +1,178 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>bundle.keras.engine.training.Model</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Bundle a <code>keras</code> object</h2>
+
+<h3>Description</h3>
+
+<p>Bundling a model prepares it to be saved to a file and later
+restored for prediction in a new R session. See the 'Value' section for
+more information on bundles and their usage.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">## S3 method for class 'keras.engine.training.Model'
+bundle(x, ...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>An object returned from modeling functions in the
+keras package.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Not used in this bundler and included for compatibility with
+the generic only. Additional arguments passed to this method will return
+an error.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>This bundler does not currently support custom keras extensions,
+such as use of a <code>keras::new_layer_class()</code> or custom metric function.
+In such situations, consider using <code>keras::with_custom_object_scope()</code>.
+</p>
+
+
+<h3>Value</h3>
+
+<p>A bundle object with subclass <code>bundled_keras</code>.
+</p>
+<p>Bundles are a list subclass with two components:
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>object</code></td>
+<td>
+<p>An R object. Gives the output of native serialization
+methods from the model-supplying package, sometimes with additional
+classes or attributes that aid portability. This is often
+a raw object.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>situate</code></td>
+<td>
+<p>A function. The <code>situate()</code> function is defined when
+<code>bundle()</code> is called, though is a loose analogue of an <code>unbundle()</code> S3
+method for that object. Since the function is defined on <code>bundle()</code>, it
+has access to references and dependency information that can
+be saved alongside the <code>object</code> component. Calling <code>unbundle()</code> on a
+bundled object <code>x</code> calls <code>x$situate(x$object)</code>, returning the
+unserialized version of <code>object</code>. <code>situate()</code> will also restore needed
+references, such as server instances and environmental variables.</p>
+</td>
+</tr>
+</table>
+<p>Bundles are R objects that represent a "standalone" version of their
+analogous model object. Thus, bundles are ready for saving to a file; saving
+with <code>base::saveRDS()</code> is our recommended serialization strategy for bundles,
+unless documented otherwise for a specific method.
+</p>
+<p>To restore the original model object <code>x</code> in a new environment, load its
+bundle with <code>base::readRDS()</code> and run <code>unbundle()</code> on it. The output
+of <code>unbundle()</code> is a model object that is ready to <code>predict()</code> on new data,
+and other restored functionality (like plotting or summarizing) is supported
+as a side effect only.
+</p>
+<p>The bundle package wraps native serialization methods from model-supplying
+packages. Between versions, those model-supplying packages may change their
+native serialization methods, possibly introducing problems with re-loading
+objects serialized with previous package versions. The bundle package does
+not provide checks for these sorts of changes, and ought to be used in
+conjunction with tooling for managing and monitoring model environments
+like vetiver or renv.
+</p>
+<p>See <code>vignette("bundle")</code> for more information on bundling and its motivation.
+</p>
+
+
+<h3>See Also</h3>
+
+<p>This method wraps <code>keras::save_model_tf()</code> and
+<code>keras::load_model_tf()</code>.
+</p>
+<p>Other bundlers: 
+<code>bundle.H2OAutoML()</code>,
+<code>bundle.luz_module_fitted()</code>,
+<code>bundle.model_fit()</code>,
+<code>bundle.model_stack()</code>,
+<code>bundle.recipe()</code>,
+<code>bundle.step_umap()</code>,
+<code>bundle.train()</code>,
+<code>bundle.workflow()</code>,
+<code>bundle.xgb.Booster()</code>,
+<code>bundle()</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+# fit model and bundle ------------------------------------------------
+library(keras)
+
+set.seed(1)
+
+mnist &lt;- dataset_mnist()
+x_train &lt;- mnist$train$x
+y_train &lt;- mnist$train$y
+x_test &lt;- mnist$test$x
+y_test &lt;- mnist$test$y
+
+x_train &lt;- array_reshape(x_train, c(nrow(x_train), 784))
+x_test &lt;- array_reshape(x_test, c(nrow(x_test), 784))
+
+x_train &lt;- x_train / 255
+x_test &lt;- x_test / 255
+
+y_train &lt;- to_categorical(y_train, 10)
+y_test &lt;- to_categorical(y_test, 10)
+
+mod &lt;- keras_model_sequential()
+
+mod %&gt;%
+  layer_dense(units = 128, activation = 'relu', input_shape = c(784)) %&gt;%
+  layer_dropout(rate = 0.4) %&gt;%
+  layer_dense(units = 64, activation = 'relu') %&gt;%
+  layer_dropout(rate = 0.3) %&gt;%
+  layer_dense(units = 10, activation = 'softmax')
+
+mod %&gt;% compile(
+  loss = 'categorical_crossentropy',
+  optimizer = optimizer_rmsprop(),
+  metrics = c('accuracy')
+)
+
+mod %&gt;% fit(
+  x_train, y_train,
+  epochs = 5, batch_size = 128,
+  validation_split = 0.2,
+  verbose = 0
+)
+
+mod_bundle &lt;- bundle(mod)
+
+# then, after saveRDS + readRDS or passing to a new session ----------
+mod_unbundled &lt;- unbundle(mod_bundle)
+
+predict(mod_unbundled, x_test)
+
+</code></pre>
+
+
+</div>

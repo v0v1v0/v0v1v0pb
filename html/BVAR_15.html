@@ -1,0 +1,94 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>bv_priors</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Prior settings</h2>
+
+<h3>Description</h3>
+
+<p>Function to provide priors and their parameters to <code>bvar</code>. Used
+for adjusting the parameters treated as hyperparameters, the Minnesota prior
+and adding various dummy priors through the ellipsis parameter.
+Note that treating <code class="reqn">\psi</code> (<em>psi</em>) as a hyperparameter in a
+model with many variables may lead to very low acceptance rates and thus
+hinder convergence.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">bv_priors(hyper = "auto", mn = bv_mn(), ...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>hyper</code></td>
+<td>
+<p>Character vector. Used to specify the parameters to be treated
+as hyperparameters. May also be set to <code>"auto"</code> or <code>"full"</code> for
+an automatic / full subset. Other allowed values are the Minnesota prior's
+parameters <code>"lambda"</code>, <code>"alpha"</code> and <code>"psi"</code> as well as the
+names of additional dummy priors included via <em>...</em>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>mn</code></td>
+<td>
+<p>List of class <code>"bv_minnesota"</code>. Options for the Minnesota
+prior, set via <code>bv_mn</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Optional lists of class <code>bv_dummy</code> with options for
+dummy priors. <b>Must be assigned a name in the function call</b>. Created
+with <code>bv_dummy</code>.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>Returns a named list of class <code>bv_priors</code> with options for
+<code>bvar</code>.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>bv_mn</code>; <code>bv_dummy</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R"># Extend the hyperparameters to the full Minnesota prior
+bv_priors(hyper = c("lambda", "alpha", "psi"))
+# Alternatively
+# bv_priors("full")
+
+# Add a dummy prior via `bv_dummy()`
+
+# Re-create the single-unit-root prior
+add_sur &lt;- function(Y, lags, par) {
+  sur &lt;- if(lags == 1) {Y[1, ] / par} else {
+    colMeans(Y[1:lags, ]) / par
+  }
+  Y_sur &lt;- sur
+  X_sur &lt;- c(1 / par, rep(sur, lags))
+
+  return(list("Y" = Y_sur, "X" = X_sur))
+}
+sur &lt;- bv_dummy(mode = 1, sd = 1, min = 0.0001, max = 50, fun = add_sur)
+
+# Add the new prior
+bv_priors(hyper = "auto", sur = sur)
+</code></pre>
+
+
+</div>

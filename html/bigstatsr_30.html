@@ -1,0 +1,194 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>big_SVD</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Partial SVD</h2>
+
+<h3>Description</h3>
+
+<p>An algorithm for partial SVD (or PCA) of a Filebacked Big Matrix through the
+eigen decomposition of the covariance between variables (primal)
+or observations (dual). <strong>Use this algorithm only if there is one dimension
+that is much smaller than the other. Otherwise use big_randomSVD.</strong>
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">big_SVD(
+  X,
+  fun.scaling = big_scale(center = FALSE, scale = FALSE),
+  ind.row = rows_along(X),
+  ind.col = cols_along(X),
+  k = 10,
+  block.size = block_size(nrow(X))
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>X</code></td>
+<td>
+<p>An object of class FBM.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>fun.scaling</code></td>
+<td>
+<p>A function with parameters <code>X</code>, <code>ind.row</code> and <code>ind.col</code>,
+and that returns a data.frame with <code style="white-space: pre;">⁠$center⁠</code> and <code style="white-space: pre;">⁠$scale⁠</code> for the columns
+corresponding to <code>ind.col</code>, to scale each of their elements such as followed:
+</p>
+<p style="text-align: center;"><code class="reqn">\frac{X_{i,j} - center_j}{scale_j}.</code>
+</p>
+<p> Default doesn't use any scaling.
+You can also provide your own <code>center</code> and <code>scale</code> by using <code>as_scaling_fun()</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ind.row</code></td>
+<td>
+<p>An optional vector of the row indices that are used.
+If not specified, all rows are used. <strong>Don't use negative indices.</strong></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ind.col</code></td>
+<td>
+<p>An optional vector of the column indices that are used.
+If not specified, all columns are used. <strong>Don't use negative indices.</strong></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>k</code></td>
+<td>
+<p>Number of singular vectors/values to compute. Default is <code>10</code>.
+<strong>This algorithm should be used to compute only a few singular vectors/values.</strong>
+If more is needed, have a look at https://stackoverflow.com/a/46380540/6103040.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>block.size</code></td>
+<td>
+<p>Maximum number of columns read at once.
+Default uses block_size.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>To get <code class="reqn">X = U \cdot D \cdot V^T</code>,
+</p>
+
+<ul>
+<li>
+<p> if the number of observations is small, this function computes
+<code class="reqn">K_(2) = X \cdot X^T \approx U \cdot D^2 \cdot U^T</code> and then
+<code class="reqn">V = X^T \cdot U \cdot D^{-1}</code>,
+</p>
+</li>
+<li>
+<p> if the number of variable is small, this function computes
+<code class="reqn">K_(1) = X^T \cdot X \approx V \cdot D^2 \cdot V^T</code> and then
+<code class="reqn">U = X \cdot V \cdot D^{-1}</code>,
+</p>
+</li>
+<li>
+<p> if both dimensions are large, use big_randomSVD instead.
+</p>
+</li>
+</ul>
+<h3>Value</h3>
+
+<p>A named list (an S3 class "big_SVD") of
+</p>
+
+<ul>
+<li> <p><code>d</code>, the singular values,
+</p>
+</li>
+<li> <p><code>u</code>, the left singular vectors,
+</p>
+</li>
+<li> <p><code>v</code>, the right singular vectors,
+</p>
+</li>
+<li> <p><code>center</code>, the centering vector,
+</p>
+</li>
+<li> <p><code>scale</code>, the scaling vector.
+</p>
+</li>
+</ul>
+<p>Note that to obtain the Principal Components, you must use
+predict on the result. See examples.
+</p>
+
+
+<h3>Matrix parallelization</h3>
+
+<p>Large matrix computations are made block-wise and won't be parallelized
+in order to not have to reduce the size of these blocks. Instead, you can use
+the <a href="https://forum.posit.co/t/intel-mkl-integration-to-r-on-windows/176071">MKL</a>
+or OpenBLAS in order to accelerate these block matrix computations.
+You can control the number of cores used by these optimized matrix libraries
+with <code>bigparallelr::set_blas_ncores()</code>.
+</p>
+
+
+<h3>See Also</h3>
+
+<p>prcomp
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">set.seed(1)
+
+X &lt;- big_attachExtdata()
+n &lt;- nrow(X)
+
+# Using only half of the data
+ind &lt;- sort(sample(n, n/2))
+
+test &lt;- big_SVD(X, fun.scaling = big_scale(), ind.row = ind)
+str(test)
+plot(test$u)
+
+pca &lt;- prcomp(X[ind, ], center = TRUE, scale. = TRUE)
+
+# same scaling
+all.equal(test$center, pca$center)
+all.equal(test$scale,  pca$scale)
+
+# scores and loadings are the same or opposite
+# except for last eigenvalue which is equal to 0
+# due to centering of columns
+scores &lt;- test$u %*% diag(test$d)
+class(test)
+scores2 &lt;- predict(test) # use this function to predict scores
+all.equal(scores, scores2)
+dim(scores)
+dim(pca$x)
+tail(pca$sdev)
+plot(scores2, pca$x[, 1:ncol(scores2)])
+plot(test$v[1:100, ], pca$rotation[1:100, 1:ncol(scores2)])
+
+# projecting on new data
+X2 &lt;- sweep(sweep(X[-ind, ], 2, test$center, '-'), 2, test$scale, '/')
+scores.test &lt;- X2 %*% test$v
+ind2 &lt;- setdiff(rows_along(X), ind)
+scores.test2 &lt;- predict(test, X, ind.row = ind2) # use this
+all.equal(scores.test, scores.test2)
+scores.test3 &lt;- predict(pca, X[-ind, ])
+plot(scores.test2, scores.test3[, 1:ncol(scores.test2)])
+</code></pre>
+
+
+</div>

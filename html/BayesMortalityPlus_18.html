@@ -1,0 +1,107 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>hp_mix</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>HP: Model mixture</h2>
+
+<h3>Description</h3>
+
+<p>This function mixes the fitted mortality table of the HP model with another mortality
+table provided by the user.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">hp_mix (fit, mu_post, weights = NULL, mix_age,
+ x0_prior, x0_post, max_age)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>fit</code></td>
+<td>
+<p>Object of the class 'HP' fitted by the hp() function.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>mu_post</code></td>
+<td>
+<p>Vector with mortality rates considered in the mix.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>weights</code></td>
+<td>
+<p>Positive vector specifying the weights considered in the mix.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>mix_age</code></td>
+<td>
+<p>Positive vector specifying the age range in the mixture.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>x0_prior</code></td>
+<td>
+<p>Non-negative number indicating the initial age of the fitted HP model.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>x0_post</code></td>
+<td>
+<p>Non-negative number indicating the initial age of the mortality table provided by the user.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>max_age</code></td>
+<td>
+<p>Positive number indicating the final age in the mixture.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>Return the posterior distribution for qx.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## Importing mortality data from the USA available on the Human Mortality Database (HMD):
+data(USA)
+
+## Selecting the exposure and death count of the 2010 and 2013 male populations ranging
+## from 0 to 90 years old
+USA2010 = USA[USA$Year == 2010,]
+x = 0:90
+Ex = USA2010$Ex.Male[x+1]
+Dx = USA2010$Dx.Male[x+1]
+
+USA2013 = USA[USA$Year == 2013,]
+Ex2 = USA2013$Ex.Male[x+1]
+Dx2 = USA2013$Dx.Male[x+1]
+
+## Fitting HP model for 2010 data and calculating the mortality rates of 2013
+fit = hp(x = x, Ex = Ex, Dx = Dx,
+         M = 1000, bn = 0, thin = 10)
+tx_2013 = 1 - exp(-Dx2/Ex2)
+
+## Mixing fitted model and mortality rates of 2013:
+mix &lt;- hp_mix(fit, tx_2013, x0_prior = 0, x0_post = 0, mix_age = c(50,90),
+              max_age = 90)
+
+## Obtaining the new estimated mortality table (after mixture):
+qx_mix&lt;- apply(mix$qx, 2, median, na.rm = TRUE)
+qx_mix
+
+</code></pre>
+
+
+</div>

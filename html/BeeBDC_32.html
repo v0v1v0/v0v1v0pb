@@ -1,0 +1,162 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>jbd_CfC_chunker</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Get country names from coordinates</h2>
+
+<h3>Description</h3>
+
+<p>Because the <code>bdc::bdc_country_from_coordinates()</code> function is very RAM-intensive, this wrapper
+allows a user to specify chunk-sizes and only analyse a small portion of the occurrence data at a
+time. The prefix jbd_ is used to highlight the difference between this function and the original
+<code>bdc::bdc_country_from_coordinates()</code>.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">jbd_CfC_chunker(
+  data = NULL,
+  lat = "decimalLatitude",
+  lon = "decimalLongitude",
+  country = "country",
+  stepSize = 1e+06,
+  chunkStart = 1,
+  scale = "medium",
+  path = tempdir(),
+  mc.cores = 1
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+<p>A data frame or tibble. Occurrence records to use as input.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>lat</code></td>
+<td>
+<p>Character. The name of the column to use as latitude. Default = "decimalLatitude".</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>lon</code></td>
+<td>
+<p>Character. The name of the column to use as longitude. Default = "decimalLongitude".</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>country</code></td>
+<td>
+<p>Character. The name of the column containing country names. Default = "country.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>stepSize</code></td>
+<td>
+<p>Numeric. The number of occurrences to process in each chunk. Default = 1000000.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>chunkStart</code></td>
+<td>
+<p>Numeric. The chunk number to start from. This can be &gt; 1 when you need to
+restart the function from a certain chunk. For example, can be used if R failed unexpectedly.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>scale</code></td>
+<td>
+<p>Passed to rnaturalearth's ne_countries().
+Scale of map to return, one of 110, 50, 10 or 'small', 'medium', 'large'. Default = "large".</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>path</code></td>
+<td>
+<p>Character. The directory path to a folder in which to save the running countrylist
+csv file.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>mc.cores</code></td>
+<td>
+<p>Numeric. If &gt; 1, the function will run in parallel
+using mclapply using the number of cores specified. If = 1 then it will be run using a serial
+loop. NOTE: Windows machines must use a value of 1 (see ?parallel::mclapply). Additionally,
+be aware that each thread can use large chunks of memory.
+Default = 1.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>A data frame containing database_ids and a country column
+that needs to be re-merged with the data input.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">if(requireNamespace("rnaturalearthdata")){
+library("dplyr")
+data(beesFlagged)
+HomePath = tempdir()
+# Tibble of common issues in country names and their replacements
+commonProblems &lt;- dplyr::tibble(problem = c('U.S.A.', 'US','USA','usa','UNITED STATES',
+'United States','U.S.A','MX','CA','Bras.','Braz.','Brasil','CNMI','USA TERRITORY: PUERTO RICO'),
+                                 fix = c('United States of America','United States of America',
+                                 'United States of America','United States of America',
+                                 'United States of America','United States of America',
+                                 'United States of America','Mexico','Canada','Brazil','Brazil',
+                                 'Brazil','Northern Mariana Islands','Puerto Rico'))
+                                 
+beesFlagged &lt;- beesFlagged %&gt;%
+      # Replace a name to test
+   dplyr::mutate(country = stringr::str_replace_all(country, "Brazil", "Brasil"))
+
+beesFlagged_out &lt;- countryNameCleanR(
+  data = beesFlagged,
+  commonProblems = commonProblems)
+
+suppressWarnings(
+  countryOutput &lt;- jbd_CfC_chunker(data = beesFlagged_out,
+                                   lat = "decimalLatitude",
+                                   lon = "decimalLongitude",
+                                   country = "country",
+                                   # How many rows to process at a time
+                                   stepSize = 1000000,
+                                   # Start row
+                                   chunkStart = 1,
+                                   path = HomePath,
+                                   scale = "medium"),
+  classes = "warning")
+
+
+# Left join these datasets
+beesFlagged_out &lt;- left_join(beesFlagged_out, countryOutput, by = "database_id")  %&gt;% 
+  # merge the two country name columns into the "country" column
+  dplyr::mutate(country = dplyr::coalesce(country.x, country.y)) %&gt;%
+  # remove the now redundant country columns 
+  dplyr::select(!c(country.x, country.y)) %&gt;%
+  # put the column back 
+  dplyr::relocate(country) %&gt;% 
+  # Remove duplicates if they arose!
+  dplyr::distinct()
+
+# Remove illegal characters
+beesFlagged_out$country &lt;- beesFlagged_out$country %&gt;%
+  stringr::str_replace(., pattern = paste("\\[", "\\]", "\\?",
+                                          sep=  "|"), replacement = "")
+} # END if require
+</code></pre>
+
+
+</div>

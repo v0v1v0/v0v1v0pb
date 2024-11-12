@@ -1,0 +1,112 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>order_integration</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Determine Order of Integration</h2>
+
+<h3>Description</h3>
+
+<p>Determines the order of integration for each time series in a dataset via a sequence of unit root tests, and differences the data accordingly to eliminate stochastic trends.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">order_integration(data, max_order = 2, method = "boot_ur", level = 0.05,
+  plot_orders = FALSE, data_name = NULL, ...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+<p>A (<code class="reqn">T</code>x<code class="reqn">N</code>)-matrix of <code class="reqn">N</code> time series with <code class="reqn">T</code> observations. Data may also be in a time series format (e.g. <code>ts</code>, <code>zoo</code> or <code>xts</code>) or data frame.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>max_order</code></td>
+<td>
+<p>The maximum order of integration of the time series. Default is 2.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>method</code></td>
+<td>
+<p>The unit root tests to be used in the procedure. For multiple time series the options are "boot_ur", "boot_sqt" and "boot_fdr", with "boot_ur" the default. For single time series the options are "adf", boot_adf", "boot_union" and "boot_ur", with the latter the default.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>level</code></td>
+<td>
+<p>Desired significance level of the unit root test. Default is 0.05.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>plot_orders</code></td>
+<td>
+<p>Logical indicator whether the resulting orders of integration should be plotted. Default is <code>FALSE</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>data_name</code></td>
+<td>
+<p>Optional name for the data, to be used in the output. The default uses the name of the 'data' argument.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Optional arguments passed to the chosen unit root test function.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The function follows the approach laid out in Smeekes and Wijler (2020), where all series is differenced <code class="reqn">d-1</code> times, where <code class="reqn">d</code> is the specified maximum order, and these differenced series are tested for unit roots. The series for which the unit root null is not rejected, are classified as <code class="reqn">I(d)</code> and removed from consideration. The remaining series are integrated, and tested for unit roots again, leading to a classification of <code class="reqn">I(d-1)</code> series if the null is not rejected. This is continued until a non-rejection is observed for all time series, or the series are integrated back to their original level. The series for which the null hypothesis is rejected in the final stage are classified as <code class="reqn">I(0)</code>.
+</p>
+<p>Care must be taken when using <code>boot_sqt</code> when the argument <code>steps</code> is given as a sequence of integers. As at each step series are removed, one may end up with fewer series to test than indicated in <code>steps</code>. While integers larger than the number of series will automatically be removed - along with a warning - by the test, it is recommend to set <code>steps</code> in the form of quantiles.
+</p>
+<p>Plotting the orders of integration requires the <code>ggplot2</code> package to be installed; plot will be skipped and a warning is given if not. For plots the function <code>plot_order_integration</code> is called. The user may prefer to set <code>plot_orders = FALSE</code> and call this function directly using the returned value of <code>order_int</code> in order to have more control over plot settings and save the plot object.
+</p>
+
+
+<h3>Value</h3>
+
+<p>An object of class <code>"bootUR", "order_integration"</code> with the following components
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>order_int</code></td>
+<td>
+<p>A vector with the found orders of integration of each time series.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>diff_data</code></td>
+<td>
+<p>The appropriately differenced data according to <code>order_int</code> in the same format as the original data.</p>
+</td>
+</tr>
+</table>
+<h3>References</h3>
+
+<p>Smeekes, S. and Wilms, I. (2023). bootUR: An R Package for Bootstrap Unit Root Tests. <em>Journal of Statistical Software</em>, 106(12), 1-39.
+</p>
+<p>Smeekes, S. and Wijler, E. (2020). Unit roots and cointegration. In P. Fuleky (Ed.) <em>Macroeconomic Forecasting in the Era of Big Data</em>, Chapter 17, pp. 541-584. <em>Advanced Studies in Theoretical and Applied Econometrics</em>, vol. 52. Springer.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R"># Use "boot_ur" to determine the order of GDP_BE and GDP_DE
+orders_tseries &lt;- order_integration(MacroTS[, 1:2], method = "boot_ur", B = 199,
+do_parallel = FALSE, show_progress = FALSE)
+</code></pre>
+
+
+</div>

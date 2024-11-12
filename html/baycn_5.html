@@ -1,0 +1,169 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>mse</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>mse</h2>
+
+<h3>Description</h3>
+
+<p>Calculates either the edge-wise or whole graph MSE. If more than one data set
+is input the mean and standard deviation of the MSE will be calculated.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">mse(posterior, expected, adjMatrix, type = "emse")
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>posterior</code></td>
+<td>
+<p>A list of baycn objects or posterior probability adjacency
+matrices. Each element in posterior can also be a list. For example, if
+multiple data sets were generated under the same simulation scheme and baycn
+was run on each data set, the input list could be a list containing the
+output from each run of baycn. In this scenario the mean and standard
+deviation of of the edgewise or whole graph MSE would be output.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>expected</code></td>
+<td>
+<p>The expected edge state probabilities for each edge. This
+must be a matrix with the expected probability for the three edge states
+across the columns and each edge down the rows.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>adjMatrix</code></td>
+<td>
+<p>This is only required if the input to posterior is a
+posterior probability adjacency matrix (for example, output from the BiDAG or
+structmcmc pacakges). This matrix will be used to convert the posterior
+probability adjacency matrix to an edge state matrix. Only the edges in
+adjMatrix will be converted to the edge state matrix. To consider all
+possible edges use a fully connected adjacency matrix.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>type</code></td>
+<td>
+<p>A character string indicating the type of MSE to be calculated.
+The two options are 'emse' - edge-wise MSE or 'gmse' - whole graph MSE.</p>
+</td>
+</tr>
+</table>
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+set.seed(3)
+
+# Generate data from topology M2.
+data_m2 &lt;- simdata(graph = 'm2_ge',
+                   N = 200,
+                   b0 = 0,
+                   ss = 1,
+                   s = 1)
+
+# Adjacency matrix for topology M2
+am_m2 &lt;- matrix(c(0, 1, 1,
+                  0, 0, 1,
+                  0, 0, 0),
+                byrow = TRUE,
+                nrow = 3)
+
+# Run baycn on the data from topology M2.
+baycn_m2 &lt;- mhEdge(data = data_m2,
+                   adjMatrix = am_m2,
+                   prior = c(0.05,
+                             0.05,
+                             0.9),
+                   nCPh = 0,
+                   nGV = 0,
+                   pmr = FALSE,
+                   iterations = 1000,
+                   burnIn = 0.2,
+                   thinTo = 500,
+                   progress = FALSE)
+
+# Expected probabilities for topology M2.
+ep_m2 &lt;- matrix(c(1, 0, 0,
+                  0, 0, 1,
+                  0, 1, 0),
+                byrow = TRUE,
+                ncol = 3)
+
+# Calculate the edgewise MSE.
+emse_m2 &lt;- mse(posterior = list(baycn_m2),
+               expected = ep_m2,
+               type = 'emse')
+
+
+# When a list with two levels is passed posterior the mean and standard
+# deviation of the MSE is returned. Below is an example demonstrating this
+# feature.
+
+# Adjacency matrix for topology M2
+am_m2 &lt;- matrix(c(0, 1, 1,
+                  0, 0, 1,
+                  0, 0, 0),
+                byrow = TRUE,
+                nrow = 3)
+
+# Create a list to hold multiple M2 data sets.
+data_m2 &lt;- vector(mode = 'list',
+                  length = 5)
+
+# Create a list to hold the output from baycn.
+baycn_m2 &lt;- vector(mode = 'list',
+                   length = 5)
+
+for (e in 1:5) {
+
+  # Generate data for topology M2.
+  data_m2[[e]] &lt;- simdata(graph = 'm2_ge',
+                          N = 200,
+                          b0 = 0,
+                          ss = 1,
+                          s = 1)
+
+  # Run baycn on the data simulated for topology M2.
+  baycn_m2[[e]] &lt;- mhEdge(data = data_m2[[e]],
+                          adjMatrix = am_m2,
+                          prior = c(0.05,
+                                    0.05,
+                                    0.9),
+                          nCPh = 0,
+                          nGV = 0,
+                          pmr = FALSE,
+                          iterations = 1000,
+                          burnIn = 0.2,
+                          thinTo = 500,
+                          progress = FALSE)
+}
+
+# Expected probabilities for topology M2.
+ep_m2 &lt;- matrix(c(1, 0, 0,
+                  0, 0, 1,
+                  0, 1, 0),
+                byrow = TRUE,
+                ncol = 3)
+
+# Calculate the edgewise MSE
+emse_m2 &lt;- mse(posterior = list(baycn_m2),
+               expected = ep_m2,
+               type = 'emse')
+
+
+
+</code></pre>
+
+
+</div>

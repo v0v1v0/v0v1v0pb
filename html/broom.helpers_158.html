@@ -1,0 +1,146 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>tidy_add_reference_rows</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Add references rows for categorical variables</h2>
+
+<h3>Description</h3>
+
+<p>For categorical variables with a treatment contrast
+(<code>stats::contr.treatment()</code>), a SAS contrast (<code>stats::contr.SAS()</code>)
+a sum contrast (<code>stats::contr.sum()</code>), or successive differences contrast
+(<code>MASS::contr.sdif()</code>) add a reference row.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">tidy_add_reference_rows(
+  x,
+  no_reference_row = NULL,
+  model = tidy_get_model(x),
+  quiet = FALSE
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>(<code>data.frame</code>)<br>
+A tidy tibble as produced by <code style="white-space: pre;">⁠tidy_*()⁠</code> functions.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>no_reference_row</code></td>
+<td>
+<p>(<code>tidy-select</code>)<br>
+Variables for those no reference row should be added.
+See also <code>all_categorical()</code> and <code>all_dichotomous()</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>model</code></td>
+<td>
+<p>(a model object, e.g. <code>glm</code>)<br>
+The corresponding model, if not attached to <code>x</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>quiet</code></td>
+<td>
+<p>(<code>logical</code>)<br>
+Whether <code>broom.helpers</code> should not return a message when requested output
+cannot be generated. Default is <code>FALSE</code>.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The added <code>reference_row</code> column will be equal to:
+</p>
+
+<ul>
+<li> <p><code>TRUE</code> for a reference row;
+</p>
+</li>
+<li> <p><code>FALSE</code> for a normal row of a variable with a reference row;
+</p>
+</li>
+<li> <p><code>NA</code> for variables without a reference row.
+</p>
+</li>
+</ul>
+<p>If the <code>contrasts</code> column is not yet available in <code>x</code>,
+<code>tidy_add_contrasts()</code> will be automatically applied.
+</p>
+<p><code>tidy_add_reference_rows()</code> will not populate the label
+of the reference term. It is therefore better to apply
+<code>tidy_add_term_labels()</code> after <code>tidy_add_reference_rows()</code>
+rather than before. Similarly, it is better to apply
+<code>tidy_add_reference_rows()</code> before <code>tidy_add_n()</code>.
+</p>
+
+
+<h3>See Also</h3>
+
+<p>Other tidy_helpers: 
+<code>tidy_add_coefficients_type()</code>,
+<code>tidy_add_contrasts()</code>,
+<code>tidy_add_estimate_to_reference_rows()</code>,
+<code>tidy_add_header_rows()</code>,
+<code>tidy_add_n()</code>,
+<code>tidy_add_pairwise_contrasts()</code>,
+<code>tidy_add_term_labels()</code>,
+<code>tidy_add_variable_labels()</code>,
+<code>tidy_attach_model()</code>,
+<code>tidy_disambiguate_terms()</code>,
+<code>tidy_identify_variables()</code>,
+<code>tidy_plus_plus()</code>,
+<code>tidy_remove_intercept()</code>,
+<code>tidy_select_variables()</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+if (.assert_package("gtsummary", boolean = TRUE)) {
+  df &lt;- Titanic |&gt;
+    dplyr::as_tibble() |&gt;
+    dplyr::mutate(Survived = factor(Survived, c("No", "Yes")))
+
+  res &lt;-
+    glm(
+      Survived ~ Class + Age + Sex,
+      data = df, weights = df$n, family = binomial,
+      contrasts = list(Age = contr.sum, Class = "contr.SAS")
+    ) |&gt;
+    tidy_and_attach()
+  res |&gt; tidy_add_reference_rows()
+  res |&gt; tidy_add_reference_rows(no_reference_row = all_dichotomous())
+  res |&gt; tidy_add_reference_rows(no_reference_row = "Class")
+
+  glm(
+    response ~ stage + grade * trt,
+    gtsummary::trial,
+    family = binomial,
+    contrasts = list(
+      stage = contr.treatment(4, base = 3),
+      grade = contr.treatment(3, base = 2),
+      trt = contr.treatment(2, base = 2)
+    )
+  ) |&gt;
+    tidy_and_attach() |&gt;
+    tidy_add_reference_rows()
+}
+
+</code></pre>
+
+
+</div>

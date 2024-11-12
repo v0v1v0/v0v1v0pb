@@ -1,0 +1,176 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>nearfine</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Minimum-distance near-fine matching.</h2>
+
+<h3>Description</h3>
+
+<p>The program finds an optimal near-fine match given a distance structure with from node (treated), to node (control), and distance between each pair.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">nearfine(z, fine, dist, dat, ncontrol=1, penalty=1000, max.cost=penalty/10,
+nearexPenalty=max.cost, subX=NULL)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>z</code></td>
+<td>
+<p> A vector whose ith coordinate is 1 for a treated unit and is 0 for a control. Must have treated subjects (z=1) before controls (z=0).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>fine</code></td>
+<td>
+<p> A vector of with length(z)=length(fine) giving the nominal levels
+that are to be nearly-finely balanced.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>dist</code></td>
+<td>
+<p> A distance list with the starting node (treated subjec), ending
+node (control), the distance between them and whether nearexact is needed for each pair.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>dat</code></td>
+<td>
+<p> A data frame with length(z) rows.  One output of the program is
+a data frame with some of the rows of dat for the matched sample, together
+with additional columns describing the match.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ncontrol</code></td>
+<td>
+<p> A positive integer giving the number of controls to be
+matched to each treated subject.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>penalty</code></td>
+<td>
+<p> A numeric penalty imposed for each violation of fine balance.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>max.cost</code></td>
+<td>
+<p> The maximum cost for the each pair of treated and control
+while rounding the cost. 2 times it is the cost for nearexact matching</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nearexPenalty</code></td>
+<td>
+<p> The penalty for a mismatch on nearexact. If it is a number, then use the same penalty for all nearexact variables. Otherwise, it should be a vector of length the same as number of nearexact variables, indicating the penalty for mismatch on each nearexact variable. The larger nearexPenalty is, the more priorty the variable get in near-exact match.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>subX</code></td>
+<td>
+<p> If a subset matching is required, the variable that the subset matching is based on. That is, for each level of subX, extra treated will be discarded in order to have the number of matched treated subjects being the minimum size of treated and control groups. If exact matching on a variable x is desired and discarding extra treated is fine if there are more treated than controls for a certain level k, set exact=x, subX=x.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The match minimizes the total distance between treated subjects and their matched controls subject to a near-fine balance constraint imposed as a penalty on imbalances.
+</p>
+<p>The distance list only includes pairs closed based on the caliper, i.e. some edges are removed from the network. Because of this, the match may be infeasible. This is reported in feasible.
+</p>
+<p>For discussion of networks for fine-balance, see Rosenbaum (1989, Section 3) and Rosenbaum (2010).
+</p>
+<p>For near-fine balannce balance, see Yang et al. (2012).
+</p>
+<p>You MUST install and load the optmatch package to use nearfine().
+</p>
+
+
+<h3>Value</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>feasible</code></td>
+<td>
+<p> feasible=1 if the match is feasible or feasible=0 if the match
+is infeasible.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>timeinrelax</code></td>
+<td>
+<p> Time in RELAX IV spent computing the minimum cost flow.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>timeinnet</code></td>
+<td>
+<p> Time in constructing the network.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>timeinmatch</code></td>
+<td>
+<p> Time in constructing the matched dataset.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>d</code></td>
+<td>
+<p> The matched sample. Selected rows of dat. The first column indicates which matched set the subject belongs to.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>number</code></td>
+<td>
+<p> Number of edges between the treated subjects and controls in the reduced network.</p>
+</td>
+</tr>
+</table>
+<h3>References</h3>
+
+<p>Bertsekas, D. P. and Tseng, P. (1988) The relax codes for linear minimum cost
+network flow problems. Annals of Operations Research, 13, 125-190.  Fortran
+and C code: http://www.mit.edu/~dimitrib/home.html.  Available in R via the
+optmatch package.
+</p>
+<p>Rosenbaum, P.R. (1989) Optimal matching in observational studies. Journal of
+the American Statistical Association, 84, 1024-1032.
+</p>
+<p>Rosenbaum, P. R. (2010) Design of Observational Studies.  New York: Springer.
+</p>
+<p>Yang, D., Small, D. S., Silber, J. H., and Rosenbaum, P. R. (2012) Optimal
+matching with minimal deviation from fine balance in a study of obesity and
+surgical outcomes.  Biometrics, 68, 628-636.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## Not run: 
+# To run this example, you must load the optmatch package.
+data(nh0506)
+attach(nh0506)
+X&lt;-cbind(female,age,black,hispanic,education,povertyr)
+dist&lt;-smahal(z,propens,X,0.2)
+fine&lt;-education
+m&lt;-nearfine(z,fine,dist,nh0506)
+head(m$d)
+detach(nh0506)
+
+## End(Not run)
+</code></pre>
+
+
+</div>

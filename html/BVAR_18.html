@@ -1,0 +1,136 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>bv_dummy</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Dummy prior settings</h2>
+
+<h3>Description</h3>
+
+<p>Allows the creation of dummy observation priors for <code>bv_priors</code>.
+See the Details section for information on common dummy priors.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">bv_dummy(mode = 1, sd = 1, min = 0.0001, max = 5, fun)
+
+bv_soc(mode = 1, sd = 1, min = 0.0001, max = 50)
+
+bv_sur(mode = 1, sd = 1, min = 0.0001, max = 50)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>mode, sd</code></td>
+<td>
+<p>Numeric scalar. Mode / standard deviation of the
+parameter. Note that the <em>mode</em> of <em>psi</em> is set automatically by
+default, and would need to be provided as vector.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>min, max</code></td>
+<td>
+<p>Numeric scalar. Minimum / maximum allowed value. Note that
+for <em>psi</em> these are set automatically or need to provided as vectors.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>fun</code></td>
+<td>
+<p>Function taking <em>Y</em>, <em>lags</em> and the prior's parameter
+<em>par</em> to generate and return a named list with elements <em>X</em> and
+<em>Y</em> (numeric matrices).</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>Dummy priors are often used to "reduce the importance of the deterministic
+component implied by VARs estimated conditioning on the initial
+observations" (Giannone, Lenza and Primiceri, 2015, p. 440).
+One such prior is the sum-of-coefficients (SOC) prior, which imposes the
+notion that a no-change forecast is optimal at the beginning of a time
+series. Its key parameter <code class="reqn">\mu</code> controls the tightness - i.e. for
+low values the model is pulled towards a form with as many unit roots as
+variables and no cointegration.
+Another such prior is the single-unit-root (SUR) prior, that allows for
+cointegration relationships in the data. It pushes variables either towards
+their unconditional mean or towards the presence of at least one unit root.
+These priors are implemented via Theil mixed estimation, i.e. by adding
+dummy-observations on top of the data matrix. They are available via the
+functions <code>bv_soc</code> and <code>bv_sur</code>.
+</p>
+
+
+<h3>Value</h3>
+
+<p>Returns a named list of class <code>bv_dummy</code> for
+<code>bv_priors</code>.
+</p>
+
+
+<h3>Functions</h3>
+
+
+<ul>
+<li> <p><code>bv_soc()</code>: Sum-of-coefficients dummy prior
+</p>
+</li>
+<li> <p><code>bv_sur()</code>: Single-unit-root dummy prior
+</p>
+</li>
+</ul>
+<h3>References</h3>
+
+<p>Giannone, D. and Lenza, M. and Primiceri, G. E. (2015) Prior Selection for
+Vector Autoregressions. <em>The Review of Economics and Statistics</em>,
+<b>97:2</b>, 436-451, <a href="https://doi.org/10.1162/REST_a_00483">doi:10.1162/REST_a_00483</a>.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>bv_priors</code>; <code>bv_minnesota</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R"># Create a sum-of-coefficients prior
+add_soc &lt;- function(Y, lags, par) {
+  soc &lt;- if(lags == 1) {diag(Y[1, ]) / par} else {
+    diag(colMeans(Y[1:lags, ])) / par
+  }
+  Y_soc &lt;- soc
+  X_soc &lt;- cbind(rep(0, ncol(Y)), matrix(rep(soc, lags), nrow = ncol(Y)))
+
+  return(list("Y" = Y_soc, "X" = X_soc))
+}
+soc &lt;- bv_dummy(mode = 1, sd = 1, min = 0.0001, max = 50, fun = add_soc)
+
+# Create a single-unit-root prior
+add_sur &lt;- function(Y, lags, par) {
+  sur &lt;- if(lags == 1) {Y[1, ] / par} else {
+    colMeans(Y[1:lags, ]) / par
+  }
+  Y_sur &lt;- sur
+  X_sur &lt;- c(1 / par, rep(sur, lags))
+
+  return(list("Y" = Y_sur, "X" = X_sur))
+}
+
+sur &lt;- bv_dummy(mode = 1, sd = 1, min = 0.0001, max = 50, fun = add_sur)
+
+# Add the new custom dummy priors
+bv_priors(hyper = "auto", soc = soc, sur = sur)
+</code></pre>
+
+
+</div>

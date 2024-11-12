@@ -1,0 +1,114 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>preprocess.data</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Prepare data frame for analysis</h2>
+
+<h3>Description</h3>
+
+<p>Prepare data frame for analysis
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">preprocess.data(
+  data,
+  infected_in = c("Wuhan", "Outside"),
+  symptom_impute = FALSE
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+<p>A data frame</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>infected_in</code></td>
+<td>
+<p>Either "Wuhan" or "Outside"</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>symptom_impute</code></td>
+<td>
+<p>Whether to use initial medical visit and confirmation to impute missing symptom onset.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>A summary of the procedures:
+</p>
+
+<ol>
+<li>
+<p> Convert all dates to number of days since 1-Dec-2019.
+</p>
+</li>
+<li>
+<p> Separates data into those returned from Wuhan and those infected outside of wuhan.
+</p>
+</li>
+<li>
+<p> Restrict to cases with a known symptom onset date.
+</p>
+</li>
+<li>
+<p> Parse column 'Infected' into two columns: Infected_first and Infected_last.
+</p>
+</li>
+<li>
+<p> For all cases, set Infected_first to 1 if it is missing.
+</p>
+</li>
+<li>
+<p> For outside cases, set Infected_last to be no later than symptom onset.
+</p>
+</li>
+<li>
+<p> For Wuhan-exported cases, set Infected_last to no later than symptom onset and end of Wuhan stay.
+</p>
+</li>
+</ol>
+<h3>Value</h3>
+
+<p>A data frame
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Nianqiao Ju &lt;nju@g.harvard.edu&gt;, Qingyuan Zhao &lt;qyzhao@statslab.cam.ac.uk&gt;
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+data(covid19_data)
+head(data &lt;- preprocess.data(covid19_data))
+
+ ## This is how the wuhan_exported data frame is created
+data &lt;- subset(data, Symptom &lt; Inf)
+data &lt;- subset(data, Arrived &lt;= 54)
+data$Location &lt;- do.call(rbind, strsplit(as.character(data$Case), "-"))[, 1]
+wuhan_exported &lt;- data.frame(Location = data$Location,
+                             B = data$Begin_Wuhan,
+                             E = data$End_Wuhan,
+                             S = data$Symptom)
+## devtools::use_data(wuhan_exported)
+
+
+</code></pre>
+
+
+</div>

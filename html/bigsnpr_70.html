@@ -1,0 +1,152 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>snp_manhattan</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Manhattan plot</h2>
+
+<h3>Description</h3>
+
+<p>Creates a manhattan plot.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">snp_manhattan(
+  gwas,
+  infos.chr,
+  infos.pos,
+  colors = c("black", "grey60"),
+  dist.sep.chrs = 1e+07,
+  ind.highlight = integer(0),
+  col.highlight = "red",
+  labels = NULL,
+  npoints = NULL,
+  coeff = 1
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>gwas</code></td>
+<td>
+<p>A <code>mhtest</code> object with the p-values associated with each SNP.
+Typically, the output of bigstatsr::big_univLinReg, bigstatsr::big_univLogReg
+or snp_pcadapt.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>infos.chr</code></td>
+<td>
+<p>Vector of integers specifying each SNP's chromosome.<br>
+Typically <code style="white-space: pre;">⁠&lt;bigSNP&gt;$map$chromosome⁠</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>infos.pos</code></td>
+<td>
+<p>Vector of integers specifying the physical position
+on a chromosome (in base pairs) of each SNP.<br>
+Typically <code style="white-space: pre;">⁠&lt;bigSNP&gt;$map$physical.pos⁠</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>colors</code></td>
+<td>
+<p>Colors used for each chromosome (they are recycled).
+Default is an alternation of black and gray.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>dist.sep.chrs</code></td>
+<td>
+<p>"Physical" distance that separates two chromosomes.
+Default is 10 Mbp.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ind.highlight</code></td>
+<td>
+<p>Indices of SNPs you want to highlight (of interest).
+Default doesn't highlight any SNPs.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>col.highlight</code></td>
+<td>
+<p>Color used for highlighting SNPs. Default uses red.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>labels</code></td>
+<td>
+<p>Labels of the x axis. Default uses the number of the
+chromosome there are in <code>infos.chr</code>(<code>sort(unique(infos.chr))</code>). This may be
+useful to restrict the number of labels so that they are not overlapping.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>npoints</code></td>
+<td>
+<p>Number of points to keep (ranked by p-value) in order to get
+a lighter object (and plot). Default doesn't cut anything.
+If used, the resulting object will have an attribute called <code>subset</code>
+giving the indices of the kept points.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>coeff</code></td>
+<td>
+<p>Relative size of text. Default is <code>1</code>.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>If you don't have information of chromosome and position, you should simply
+use <code>plot</code> instead.
+</p>
+
+
+<h3>Value</h3>
+
+<p>A <code>ggplot2</code> object. You can plot it using the <code>print</code> method.
+You can modify it as you wish by adding layers. You might want to read
+<a href="https://r4ds.had.co.nz/data-visualisation.html">this chapter</a>
+to get more familiar with the package <strong>ggplot2</strong>.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">set.seed(9)
+
+test &lt;- snp_attachExtdata()
+G &lt;- test$genotypes
+y &lt;- rnorm(nrow(G))
+
+gwas &lt;- big_univLinReg(G, y)
+
+snp_qq(gwas)
+gwas_gc &lt;- snp_gc(gwas) # this modifies `attr(gwas_gc, "transfo")`
+snp_qq(gwas_gc)
+
+# The next plot should be prettier with a real dataset
+snp_manhattan(gwas_gc,
+              infos.chr = test$map$chromosome,
+              infos.pos = test$map$physical.pos) +
+  ggplot2::geom_hline(yintercept = -log10(5e-8), linetype = 2, color = "red")
+
+p &lt;- snp_qq(gwas_gc) +
+  ggplot2::aes(text = asPlotlyText(test$map)) +
+  ggplot2::labs(subtitle = NULL, x = "Expected -log10(p)", y = "Observed -log10(p)")
+## Not run: plotly::ggplotly(p, tooltip = "text")
+</code></pre>
+
+
+</div>

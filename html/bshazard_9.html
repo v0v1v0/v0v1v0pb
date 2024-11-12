@@ -1,0 +1,169 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>plot.bshazard</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>
+Plot Method for 'bshazard' </h2>
+
+<h3>Description</h3>
+
+<p>A plot of hazard rate is produced. The overall option allows to plot an hazard rate for each covariate value (assuming proportional hazard). </p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">## S3 method for class 'bshazard'
+plot(x, conf.int = T, overall = T, col = 1, lwd = 1, lty = 1, xlab = "Time", 
+ylab = "Hazard rate",border=NA,col.fill="lightgrey",...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+
+<p>the result of a call to the bshazard function. 
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>conf.int</code></td>
+<td>
+
+<p>Determines whether confidence intervals will be plotted. The default is to do so if there is only 1 curve, i.e., no strata. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>overall</code></td>
+<td>
+
+<p>Determines whether an overall curve is plotted (default overall=T) or a curve for each covariate value in the data (overall=F). 
+It works only if there are covariates. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>col</code></td>
+<td>
+
+<p>a vector of integers specifying colors for each curve. The default value is 1. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>lwd</code></td>
+<td>
+
+<p>a vector of integers specifying line width for each curve. The default value is 1. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>lty</code></td>
+<td>
+
+<p>a vector of integers specifying line types for each curve. The default value is 1.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>xlab</code></td>
+<td>
+
+<p>label given to the x-axis. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ylab</code></td>
+<td>
+
+<p>label given to the y-axis. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>border</code></td>
+<td>
+
+<p>the color to draw the border. The deafult value is NA.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>col.fill</code></td>
+<td>
+
+<p>the color for filling the polygon. The default is lightgrey.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+	
+<p>other arguments that will be passed forward to the underlying plot method, such as xlab or ylab.
+</p>
+</td>
+</tr>
+</table>
+<h3>See Also</h3>
+
+<p>bshazard,summary.bshazard,print.bshazard</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">fit&lt;-bshazard(Surv(time, status==2) ~ 1,data=lung)
+plot(fit)
+
+
+#Example to graphically evaluate the Markov assumpion in an illness-death model
+### data simulated under EXTENDED SEMI-MARKOV model
+set.seed(123)
+n  &lt;- 500
+beta&lt;-log(3)
+R  &lt;- runif(n, min = 0, max =2)
+cat &lt;- cut(R, breaks = seq(0,2,0.5), labels = seq(1,4,1))
+T12  &lt;- 1/0.2*( (-log(runif(n, min = 0, max = 1))) / (exp(beta*R)))**(1/0.6)
+C  &lt;- runif(n, min =0, max = 10)
+T12obs &lt;- pmin(T12, C)
+status  &lt;- ifelse(T12obs &lt; C, 1, 0)
+T012obs &lt;- R+T12obs
+#R: simulated time to illness
+#cat: time to illness categorised in 4 classes
+#T12obs:  time from illness to death or censoring
+#T012obs: time from origin to death or censoring
+#status: indicator of death (1=death,0=censoring)
+
+# Hazard estimate in the Clock Reset scale (time from illness) by time to illness class
+fit &lt;- bshazard(Surv(T12obs[cat == 1],status[cat==1]) ~ 1)
+plot(fit,conf.int=FALSE,xlab='Time since illness',xlim=c(0,5),ylim=c(0,10),lwd=2,col=rainbow(1))
+for(i in 2:4) {
+  fit &lt;- bshazard(Surv(T12obs[cat == i],status[cat==i]) ~ 1)
+  lines(fit$time, fit$hazard, type = 'l', lwd = 2, col = rainbow(4)[i])
+}
+legend("top",title="Time to illness",c("&lt;=0.5","0.5-|1","1-|1.5","1.5-|2"),col=c(rainbow(4)),lwd =2)
+
+# Hazard estimate in the Clock Forward scale (time from origin) by time to illness class
+fit &lt;- bshazard(Surv(R[cat == 1],T012obs[cat == 1],status[cat==1]) ~ 1)
+plot(fit,conf.int=FALSE,xlab='Time since origin',xlim=c(0,5),ylim=c(0,10),lwd=2,col=rainbow(1))
+for(i in 2:4) {
+  fit &lt;- bshazard(Surv(R[cat == i],T012obs[cat == i],status[cat==i]) ~ 1)
+  lines(fit$time, fit$hazard, type = 'l', lwd = 2, col = rainbow(4)[i])
+}
+legend("top",title="Time to illness",c("&lt;=0.5","0.5-|1","1-|1.5","1.5-|2"),col=c(rainbow(4)),lwd =2)
+
+#Alternatively an adjusted estimate can be performed, assuming proportionl hazard 
+# this computation can be time consuming!
+## Not run: fit.adj &lt;- bshazard(Surv(T12obs,status) ~ cat )
+plot(fit.adj,overall=FALSE, xlab = 'Time since illness',col=rainbow(4),lwd=2, xlim = c(0,5), 
+ylim = c(0,10))
+legend("top",title="Time to illness",c("&lt;=0.5","0.5-|1","1-|1.5","1.5-|2"),col=c(rainbow(4)),lwd =2)
+## End(Not run)
+
+### A more general setting with examples of Markov assumption evaluation can be found 
+### in Bernasconi et al. Stat in Med 2016
+
+</code></pre>
+
+
+</div>

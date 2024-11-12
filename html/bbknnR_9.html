@@ -1,0 +1,290 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>RunBBKNN</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Perform batch balanced KNN</h2>
+
+<h3>Description</h3>
+
+<p>Batch balanced KNN, altering the KNN procedure to identify each cell’s top 
+neighbours in each batch separately instead of the entire cell pool with no 
+accounting for batch. The nearest neighbours for each batch are then merged 
+to create a final list of neighbours for the cell. Aligns batches in a quick 
+and lightweight manner.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">RunBBKNN(object, ...)
+
+## Default S3 method:
+RunBBKNN(
+  object,
+  batch_list,
+  n_pcs = 50L,
+  neighbors_within_batch = 3L,
+  trim = NULL,
+  approx = TRUE,
+  use_annoy = TRUE,
+  annoy_n_trees = 10L,
+  pynndescent_n_neighbors = 30L,
+  pynndescent_random_state = 0L,
+  use_faiss = TRUE,
+  metric = "euclidean",
+  set_op_mix_ratio = 1,
+  local_connectivity = 1,
+  seed = 42,
+  verbose = TRUE,
+  ...
+)
+
+## S3 method for class 'Seurat'
+RunBBKNN(
+  object,
+  batch_key,
+  assay = NULL,
+  reduction = "pca",
+  n_pcs = 50L,
+  graph_name = "bbknn",
+  set_op_mix_ratio = 1,
+  local_connectivity = 1,
+  run_TSNE = TRUE,
+  TSNE_name = "tsne",
+  TSNE_key = "tSNE_",
+  run_UMAP = TRUE,
+  UMAP_name = "umap",
+  UMAP_key = "UMAP_",
+  min_dist = 0.3,
+  spread = 1,
+  seed = 42,
+  verbose = TRUE,
+  ...
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>object</code></td>
+<td>
+<p>An object</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Arguments passed to other methods</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>batch_list</code></td>
+<td>
+<p>A character vector with the same length as nrow(pca)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>n_pcs</code></td>
+<td>
+<p>Number of dimensions to use. Default is 50.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>neighbors_within_batch</code></td>
+<td>
+<p>How many top neighbours to report for each 
+batch; total number of neighbours in the initial k-nearest-neighbours 
+computation will be this number times the number of batches. This then serves 
+as the basis for the construction of a symmetrical matrix of connectivities.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>trim</code></td>
+<td>
+<p>Trim the neighbours of each cell to these many top 
+connectivities. May help with population independence and improve the 
+tidiness of clustering. The lower the value the more independent the 
+individual populations, at the cost of more conserved batch effect. Default 
+is 10 times neighbors_within_batch times the number of batches. Set to 0 to 
+skip.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>approx</code></td>
+<td>
+<p>If TRUE, use approximate neighbour finding - RcppAnnoy or 
+pyNNDescent. This results in a quicker run time for large datasets while also 
+potentially increasing the degree of batch correction.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>use_annoy</code></td>
+<td>
+<p>Only used when approx = TRUE. If TRUE, will use RcppAnnoy 
+for neighbour finding. If FALSE, will use pyNNDescent instead.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>annoy_n_trees</code></td>
+<td>
+<p>Only used with annoy neighbour identification. The 
+number of trees to construct in the annoy forest. More trees give higher 
+precision when querying, at the cost of increased run time and resource 
+intensity.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>pynndescent_n_neighbors</code></td>
+<td>
+<p>Only used with pyNNDescent neighbour 
+identification. The number of neighbours to include in the approximate 
+neighbour graph. More neighbours give higher precision when querying, at the 
+cost of increased run time and resource intensity.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>pynndescent_random_state</code></td>
+<td>
+<p>Only used with pyNNDescent neighbour 
+identification. The RNG seed to use when creating the graph.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>use_faiss</code></td>
+<td>
+<p>If approx = FALSE and the metric is "euclidean", use the 
+faiss package to compute nearest neighbours if installed. This improves 
+performance at a minor cost to numerical precision as faiss operates on 
+float32.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>metric</code></td>
+<td>
+<p>What distance metric to use. The options depend on the choice 
+of neighbour algorithm. "euclidean", the default, is always available.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>set_op_mix_ratio</code></td>
+<td>
+<p>Pass to 'set_op_mix_ratio' parameter for 
+<code>umap</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>local_connectivity</code></td>
+<td>
+<p>Pass to 'local_connectivity' parameter for 
+<code>umap</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>seed</code></td>
+<td>
+<p>Set a random seed. By default, sets the seed to 42. Setting 
+<code>NULL</code> will not set a seed.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>verbose</code></td>
+<td>
+<p>Whether or not to print output to the console</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>batch_key</code></td>
+<td>
+<p>Column name in meta.data discriminating between your 
+batches.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>assay</code></td>
+<td>
+<p>used to construct Graph.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>reduction</code></td>
+<td>
+<p>Which dimensional reduction to use for the BBKNN input. 
+Default is PCA</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>graph_name</code></td>
+<td>
+<p>Name of the generated BBKNN graph. Default is bbknn.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>run_TSNE</code></td>
+<td>
+<p>Whether or not to run t-SNE based on BBKNN results.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>TSNE_name</code></td>
+<td>
+<p>Name to store t-SNE dimensional reduction.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>TSNE_key</code></td>
+<td>
+<p>Specifies the string before the number of the t-SNE dimension 
+names. tSNE by default.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>run_UMAP</code></td>
+<td>
+<p>Whether or not to run UMAP based on BBKNN results.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>UMAP_name</code></td>
+<td>
+<p>Name to store UMAP dimensional reduction.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>UMAP_key</code></td>
+<td>
+<p>Specifies the string before the number of the UMAP dimension 
+names. tSNE by default.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>min_dist</code></td>
+<td>
+<p>Pass to 'min_dist' parameter for <code>umap</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>spread</code></td>
+<td>
+<p>Pass to 'spread' parameter for <code>umap</code></p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>Returns a Seurat object containing a new BBKNN Graph. If run t-SNE or 
+UMAP, will also return corresponded reduction objects.
+</p>
+
+
+<h3>References</h3>
+
+<p>Polański, Krzysztof, et al. "BBKNN: fast batch alignment of single cell 
+transcriptomes." Bioinformatics 36.3 (2020): 964-965.
+</p>
+
+
+</div>

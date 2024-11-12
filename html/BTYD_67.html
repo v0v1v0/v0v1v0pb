@@ -1,0 +1,189 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>dc.PlotLogLikelihoodContours</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Plot Log-Likelihood Contours</h2>
+
+<h3>Description</h3>
+
+<p>Creates a set of contour plots, such that there is a contour plot for every
+pair of parameters varying.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">dc.PlotLogLikelihoodContours(
+  loglikelihood.fcn,
+  predicted.params,
+  ...,
+  n.divs = 2,
+  multiple.screens = FALSE,
+  num.contour.lines = 10,
+  zoom.percent = 0.9,
+  allow.neg.params = FALSE,
+  param.names = c("param 1", "param 2", "param 3", "param 4")
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>loglikelihood.fcn</code></td>
+<td>
+<p>log-likelihood function to plot.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>predicted.params</code></td>
+<td>
+<p>estimated parameters.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>all additional arguments required by the log-likelihood
+function. For example, <code>bgbb.rf.matrix.LL</code> requires rf.matrix;
+<code>pnbd.cbs.LL</code> requires cal.cbs and hardie (defaults to TRUE); and <code>bgnbd.cbs.LL</code> requires
+cal.cbs.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>n.divs</code></td>
+<td>
+<p>integer representing how fine-grained the contour plot is. A
+higher value will produce a higher resolution plot with smoother contour
+lines, but will take longer to plot. n.divs also affects the boundaries of
+the contour plot; see details.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>multiple.screens</code></td>
+<td>
+<p>if TRUE, plots each contour plot on a separate R graphics window.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>num.contour.lines</code></td>
+<td>
+<p>number of contour lines to plot in the window.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>zoom.percent</code></td>
+<td>
+<p>determines boundaries of contour plot. See details.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>allow.neg.params</code></td>
+<td>
+<p>if FALSE, the contour plot will not include negative
+values (see details). This should be set to false for the BG/BB and
+Pareto/NBD models.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>param.names</code></td>
+<td>
+<p>a vector containing parameter names.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>For each contour plot, the non-varying parameters are kept constant at the
+predicted values.
+</p>
+<p>The contour will extend out by (n.divs * zoom.percent) in both directions and
+both dimensions from the estimated parameter values. The exception is if
+allow.neg.params is FALSE. In this case, the contour plot will end at zero if
+it would have extended into negative parameter values.
+</p>
+<p>The estimated parameter values will be indicated by the intersection of two
+red lines.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>dc.PlotLogLikelihoodContour</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R"># **Example for BG/BB model:
+data(donationsSummary)
+rf.matrix &lt;- donationsSummary$rf.matrix
+
+# starting-point parameters
+bgbb.startingparams &lt;- c(1, 1, 0.5, 3)
+# estimated parameters
+bgbb.est.params &lt;- bgbb.EstimateParameters(rf.matrix, bgbb.startingparams)
+
+# set up parameter names for a more descriptive result
+bgbb.param.names &lt;- c("alpha", "beta", "gamma", "delta")
+
+# plot-log likelihood contours:
+dc.PlotLogLikelihoodContours(bgbb.rf.matrix.LL,
+                             bgbb.est.params, 
+                             rf.matrix = rf.matrix, 
+                             n.divs = 5, 
+                             num.contour.lines = 8, 
+                             zoom.percent = 0.3, 
+                             allow.neg.params = FALSE, 
+                             param.names = bgbb.param.names)
+
+# **Example for Pareto/NBD model:
+data(cdnowSummary)
+cbs &lt;- cdnowSummary$cbs
+
+# Speed up calculations:
+cbs &lt;- dc.compress.cbs(cbs)
+
+# parameters estimated using pnbd.EstimateParameters
+pnbd.est.params &lt;- cdnowSummary$est.params
+
+# set up parameter names for a more descriptive result
+pnbd.param.names &lt;- c("r", "alpha", "s", "beta")
+
+# plot log-likelihood contours:
+dc.PlotLogLikelihoodContours(pnbd.cbs.LL, 
+                             pnbd.est.params, 
+                             cal.cbs = cbs, 
+                             hardie = TRUE,
+                             n.divs = 5, 
+                             num.contour.lines = 15, 
+                             zoom.percent = 0.3, 
+                             allow.neg.params = FALSE, 
+                             param.names = pnbd.param.names)
+
+# **Example for BG/NBD model:
+data(cdnowSummary)
+cbs &lt;- cdnowSummary$cbs
+
+# parameters estimated using bgnbd.EstimateParameters
+bgnbd.est.params &lt;- cdnowSummary$est.params
+
+# set up parameter names for a more descriptive result
+bgnbd.param.names &lt;- c("r", "alpha", "s", "beta")
+
+# plot log-likelihood contours:
+dc.PlotLogLikelihoodContours(bgnbd.cbs.LL, 
+                             bgnbd.est.params, 
+                             cal.cbs = cbs, 
+                             n.divs = 5, 
+                             num.contour.lines = 15, 
+                             zoom.percent = 0.3, 
+                             allow.neg.params = FALSE, 
+                             param.names = bgnbd.param.names)
+</code></pre>
+
+
+</div>

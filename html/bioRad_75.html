@@ -1,0 +1,339 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>integrate_profile</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Vertically integrate profiles (<code>vp</code> or <code>vpts</code>) into an
+integrated profile (<code>vpi</code>)</h2>
+
+<h3>Description</h3>
+
+<p>Performs a vertical integration of density, reflectivity and migration
+traffic rate, and a vertical averaging of ground speed and direction weighted
+by density.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">integrate_profile(
+  x,
+  alt_min,
+  alt_max,
+  alpha = NA,
+  interval_max = 3600,
+  interval_replace = NA,
+  height_quantile = NA
+)
+
+## S3 method for class 'vp'
+integrate_profile(
+  x,
+  alt_min = 0,
+  alt_max = Inf,
+  alpha = NA,
+  interval_max = 3600,
+  interval_replace = NA,
+  height_quantile = NA
+)
+
+## S3 method for class 'list'
+integrate_profile(
+  x,
+  alt_min = 0,
+  alt_max = Inf,
+  alpha = NA,
+  interval_max = 3600,
+  interval_replace = NA,
+  height_quantile = NA
+)
+
+## S3 method for class 'vpts'
+integrate_profile(
+  x,
+  alt_min = 0,
+  alt_max = Inf,
+  alpha = NA,
+  interval_max = 3600,
+  interval_replace = NA,
+  height_quantile = NA
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>A <code>vp</code> or <code>vpts</code> object.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>alt_min</code></td>
+<td>
+<p>Minimum altitude in m. <code>"antenna"</code> can be used to set the
+minimum altitude to the height of the antenna.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>alt_max</code></td>
+<td>
+<p>Maximum altitude in m.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>alpha</code></td>
+<td>
+<p>Migratory direction in clockwise degrees from north.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>interval_max</code></td>
+<td>
+<p>Maximum time interval belonging to a single profile in
+seconds. Traffic rates are set to zero at times <code>t</code> for which no
+profiles can be found within the period <code>t-interval_max/2</code> to
+<code>t+interval_max/2</code>. Ignored for single profiles of class <code>vp</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>interval_replace</code></td>
+<td>
+<p>Time interval to use for any interval &gt; interval_max.
+By default the mean of all intervals &lt;= interval_max</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>height_quantile</code></td>
+<td>
+<p>For default <code>NA</code> the calculated height equals
+the mean flight altitude. Otherwise a number between 0 and 1 specifying a
+quantile of the height distribution.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+
+
+<h4>Available quantities</h4>
+
+<p>The function generates a specially classed data frame with the following
+quantities:
+</p>
+
+<ul>
+<li> <p><code>datetime</code>: POSIXct date of each profile in UTC
+</p>
+</li>
+<li> <p><code>vid</code>: Vertically Integrated Density in individuals/km^2.
+<code>vid</code> is a surface density, whereas <code>dens</code> in <code>vp</code> objects is a volume
+density.
+</p>
+</li>
+<li> <p><code>vir</code>: Vertically Integrated Reflectivity in cm^2/km^2
+</p>
+</li>
+<li> <p><code>mtr</code>: Migration Traffic Rate in individuals/km/h
+</p>
+</li>
+<li> <p><code>rtr</code>: Reflectivity Traffic Rate in cm^2/km/h
+</p>
+</li>
+<li> <p><code>mt</code>: Migration Traffic in individuals/km, cumulated from the start of the
+time series up to <code>datetime</code>
+</p>
+</li>
+<li> <p><code>rt</code>: Reflectivity Traffic in cm^2/km, cumulated from the start of the time
+series up to <code>datetime</code>
+</p>
+</li>
+<li> <p><code>ff</code>: Horizontal ground speed in m/s
+</p>
+</li>
+<li> <p><code>dd</code>: Direction of the horizontal ground speed in degrees
+</p>
+</li>
+<li> <p><code>u</code>: Ground speed component west to east in m/s
+</p>
+</li>
+<li> <p><code>v</code>: Ground speed component south to north in m/s
+</p>
+</li>
+<li> <p><code>height</code>: Mean flight height (height weighted by eta) in m above sea level
+</p>
+</li>
+</ul>
+<p>Vertically integrated density and reflectivity are related according to
+<code class="reqn">vid=vir/rcs(x)</code>, with rcs the assumed radar cross section per
+individual. Similarly, migration traffic rate and reflectivity traffic rate
+are related according to <code class="reqn">mtr=rtr/rcs(x)</code>
+</p>
+
+
+
+<h4>Migration traffic rate (mtr) and reflectivity traffic rate (rtr)</h4>
+
+<p>Migration traffic rate (mtr) for an altitude layer is a flux measure, defined
+as the number of targets crossing a unit of transect per hour.
+</p>
+<p>Column mtr of the output dataframe gives migration traffic rates in individuals/km/hour.
+</p>
+<p>The transect direction is set by the angle <code>alpha</code>. When
+<code>alpha=NA</code>, the transect runs perpendicular to the measured migratory
+direction. <code>mtr</code> then equals the number of crossing targets per km
+transect per hour, for a transect kept perpendicular to the measured
+migratory movement at all times and altitudes. In this case <code>mtr</code> is
+always a positive quantity, defined as:
+</p>
+<p style="text-align: center;"><code class="reqn">mtr = 3.6 \sum_i \mathit{dens}_i \mathit{ff}_i \Delta h</code>
+</p>
+
+<p>with the sum running over all altitude layers between <code>alt_min</code> and
+<code>alt_max</code>, <code class="reqn">\mathit{dens}_i</code> the bird density, <code class="reqn">\mathit{ff}_i</code> the ground speed at
+altitude layer i, and <code class="reqn">\Delta h</code> the altitude layer width. The factor 3.6
+refers to a unit conversion of speeds <code class="reqn">\mathit{ff}_i</code> from m/s to km/h.
+</p>
+<p>If <code>alpha</code> is given a numeric value, the transect is taken perpendicular
+to the direction <code>alpha</code>, and the number of crossing targets per hour
+per km transect is calculated as:
+</p>
+<p style="text-align: center;"><code class="reqn">mtr = 3.6 \sum_i \mathit{dens}_i \mathit{ff}_i \cos((dd_i-\alpha) \pi/180) \Delta h</code>
+</p>
+
+<p>with <code class="reqn">dd_i</code> the migratory direction at altitude i.
+</p>
+<p>Note that this equation evaluates to the previous equation when <code>alpha</code> equals <code class="reqn">dd_i</code>.
+Also note we can rewrite this equation using trigonometry as:
+</p>
+<p style="text-align: center;"><code class="reqn">mtr = 3.6 \sum_i \mathit{dens}_i (u_i \sin(\alpha \pi/180) + v_i \cos(\alpha \pi/180)) \Delta h</code>
+</p>
+
+<p>with <code class="reqn">u_i</code> and <code class="reqn">v_i</code> the u and v ground speed components at altitude i.
+</p>
+<p>In this definition <code>mtr</code> is a traditional flux into a direction of
+interest. Targets moving into the direction <code>alpha</code> contribute
+positively to <code>mtr</code>, while targets moving in the opposite direction
+contribute negatively to <code>mtr</code>. Therefore <code>mtr</code> can be both
+positive or negative, depending on the definition of alpha.
+</p>
+<p>Note that <code>mtr</code> for a given value of <code>alpha</code> can also be calculated from
+the vertically integrated density <code>vid</code> and the height-integrated velocity
+components <code>u</code> and <code>v</code> as follows:
+</p>
+<p style="text-align: center;"><code class="reqn">mtr = 3.6 (u \sin(\alpha \pi/180) + v \cos(\alpha \pi/180)) vid</code>
+</p>
+
+<p>Formula for reflectivity traffic rate <code>rtr</code> are found by replacing
+<code>dens</code> with <code>eta</code> and <code>vid</code> with <code>vir</code> in the formula for <code>mtr</code>.
+Reflectivity traffic rate gives the cross-sectional area
+passing the radar per km transect perpendicular to the migratory direction per hour.
+<code>mtr</code> values are conditional on settings of rcs, while <code>rtr</code> values are not.
+</p>
+
+
+
+<h4>Migration traffic (mt) and reflectivity traffic (rt)</h4>
+
+<p>Migration traffic is calculated by time-integration of
+migration traffic rates. Migration traffic gives the number of individuals
+that have passed per km perpendicular to the migratory direction at the
+position of the radar for the full period of the time series within the
+specified altitude band.
+</p>
+<p>Reflectivity traffic is calculated by time-integration of
+reflectivity traffic rates. Reflectivity traffic gives the total cross-sectional area
+that has passed per km perpendicular to the migratory direction at the
+position of the radar for the full period of the time series within the
+specified altitude band.
+</p>
+<p><code>mt</code> values are conditional on settings of rcs, while <code>rt</code> values are not.
+</p>
+<p>Columns mt and rt in the output dataframe provides migration traffic as a numeric value equal to
+migration traffic and reflectivity traffic from the start of the time series up till the moment of the time stamp
+of the respective row.
+</p>
+
+
+<h5>Ground speed (ff) and ground speed components (u,v)</h5>
+
+<p>The height-averaged ground speed is defined as:
+</p>
+<p style="text-align: center;"><code class="reqn">\mathit{ff} = \sum_i \mathit{dens}_i \mathit{ff}_i / \sum_i \mathit{dens}_i</code>
+</p>
+
+<p>with the sum running over all altitude layers between <code>alt_min</code> and
+<code>alt_max</code>, <code class="reqn">\mathit{dens}_i</code> the bird density, <code class="reqn">\mathit{ff}_i</code> the ground speed at
+altitude layer i.
+</p>
+<p>the height-averaged u component (west to east) is defined as:
+</p>
+<p style="text-align: center;"><code class="reqn">u = \sum_i \mathit{dens}_i u_i / \sum_i \mathit{dens}_i</code>
+</p>
+
+<p>the height-averaged v component (south to north) is defined as:
+</p>
+<p style="text-align: center;"><code class="reqn">v = \sum_i \mathit{dens}_i v_i / \sum_i \mathit{dens}_i</code>
+</p>
+
+
+<p>Note that <code class="reqn">\mathit{ff}_i=\sqrt(u_i^2 + v_i^2)</code>, but the same does not hold for the
+height-integrated speeds, i.e. <code class="reqn">\mathit{ff} \neq \sqrt(u^2 + v^2)</code> as soon as the
+ground speed directions vary with altitude.
+</p>
+
+
+
+<h3>Value</h3>
+
+<p>an object of class <code>vpi</code>, a data frame with vertically
+integrated profile quantities
+</p>
+
+
+<h3>Methods (by class)</h3>
+
+
+<ul>
+<li> <p><code>integrate_profile(vp)</code>: Vertically integrate a vertical profile (<code>vp</code>).
+</p>
+</li>
+<li> <p><code>integrate_profile(list)</code>: Vertically integrate a list of vertical
+profiles (<code>vp</code>).
+</p>
+</li>
+<li> <p><code>integrate_profile(vpts)</code>: Vertically integrate a time series of
+vertical profiles (<code>vpts</code>).
+</p>
+</li>
+</ul>
+<h3>Examples</h3>
+
+<pre><code class="language-R"># Calculate migration traffic rates for a single vp
+integrate_profile(example_vp)
+
+# Calculate migration traffic rates for a list of vps
+integrate_profile(c(example_vp, example_vp))
+
+# Calculate migration traffic rates for a vpts
+vpi &lt;- integrate_profile(example_vpts)
+
+# Plot migration traffic rate (mtr) for the full air column
+plot(integrate_profile(example_vpts))
+
+# Plot migration traffic rate (mtr) for altitudes &gt; 1 km above sea level
+plot(integrate_profile(example_vpts, alt_min = 1000))
+
+# Plot cumulative migration traffic rates (mt)
+plot(integrate_profile(example_vpts), quantity = "mt")
+# calculate median flight altitude (instead of default mean)
+integrate_profile(example_vp, height_quantile=.5)
+# calculate the 90% percentile of the flight altitude distribution
+integrate_profile(example_vpts, height_quantile=.9)
+</code></pre>
+
+
+</div>

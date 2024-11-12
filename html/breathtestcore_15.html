@@ -1,0 +1,98 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>nls_fit</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Individual curve fit with nls to 13C breath test data</h2>
+
+<h3>Description</h3>
+
+<p>Fits individual exponential beta curves to 13C breath test time series
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">nls_fit(data, dose = 100, start = list(m = 50, k = 1/100, beta = 2))
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+<p>Data frame or tibble as created by <code>cleanup_data</code>, 
+with mandatory columns <code>patient_id, group, minute</code> and <code>pdr</code>. 
+It is recommended to run all data through <code>cleanup_data</code> which
+will insert dummy columns for <code>patient_id</code> and <code>minute</code> if the
+data are distinct, and report an error if not.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>dose</code></td>
+<td>
+<p>Dose of acetate or octanoate. Currently, only one common dose
+for all records is supported.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>start</code></td>
+<td>
+<p>Optional start values
+<code>patient_id</code> and <code>group</code>.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>A list of class ("breathtestnlsfit" "breathtestfit") with elements
+</p>
+
+<dl>
+<dt>coef</dt>
+<dd>
+<p>Estimated parameters in a key-value format with 
+columns <code>patient_id, group, parameter, stat, method</code> and <code>value</code>.
+Parameter <code>stat</code> always has value <code>"estimate"</code>.
+Confidence intervals might be added later, so do not take for granted 
+all parameters are estimates.</p>
+</dd>
+<dt>data</dt>
+<dd>
+<p>Input data; <code>nls_fit</code> does not decimate the data. If you have 
+large data sets where subsampling might be required to achieve faster convergence,
+using <code>nls_fit</code> anyway is only relevant to show how NOT to do it. 
+Use <code>nlme_fit</code> or <code>stan_fit</code> instead.</p>
+</dd>
+</dl>
+<h3>See Also</h3>
+
+<p>Base methods <code>coef, plot, print</code>; methods from package
+<code>broom: tidy, augment</code>.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">d = simulate_breathtest_data(n_records = 3, noise = 0.2, seed = 4711)
+data = cleanup_data(d$data)
+fit = nls_fit(data)
+plot(fit) # calls plot.breathtestfit
+options(digits = 2)
+cf = coef(fit)
+library(dplyr)
+cf %&gt;% 
+  filter(grepl("m|k|beta", parameter )) %&gt;% 
+  select(-method, -group) %&gt;% 
+  tidyr::spread(parameter, value) %&gt;% 
+  inner_join(d$record, by = "patient_id") %&gt;% 
+  select(patient_id, m_in = m.y, m_out = m.x, 
+         beta_in = beta.y, beta_out = beta.x,
+         k_in = k.y, k_out = k.x)
+</code></pre>
+
+
+</div>

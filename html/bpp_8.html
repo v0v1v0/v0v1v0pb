@@ -1,0 +1,158 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>bpp_2interim</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Bayesian Predictive Power (BPP) for Normally Distributed Endpoint</h2>
+
+<h3>Description</h3>
+
+<p>Compute BPP and posterior density for a Normally distributed endpoint, e.g. log(hazard ratio), assuming the trial did not stop at two blinded interim analyses.</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">bpp_2interim(prior = "normal", interimSE, finalSE, successmean, IntEffBoundary, 
+                    IntFutBoundary, priormean, thetas, ...)</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>prior</code></td>
+<td>
+<p>Prior density on effect sizes. So far, this function only accomodates a Normal prior, as opposed to <code>bpp_1interim</code> where also the pessimistic prior introduced in Rufibach et al (2016a) can be specified.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>interimSE</code></td>
+<td>
+<p>(Known) standard error of estimate at interim analysis.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>finalSE</code></td>
+<td>
+<p>(Known) standard error at which the final analysis of the study under consideration takes place.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>successmean</code></td>
+<td>
+<p>The mean that defines success at the final analysis. Typically chosen to be the minimal detectable difference, i.e. the critical on the scale of the effect size of interest corresponding to the significance level at the final analysis.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>IntEffBoundary</code></td>
+<td>
+<p>2-d vector of efficacy boundaries at the interim analyses.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>IntFutBoundary</code></td>
+<td>
+<p>2-d vector of futility boundary at the interim analyses.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>priormean</code></td>
+<td>
+<p>Prior mean.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>thetas</code></td>
+<td>
+<p>Grid to compute posterior density on.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Further arguments specific to the chosen prior (see <code>bpp_1interim</code> for examples).</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>A list containing the following elements:
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>initial BPP</code></td>
+<td>
+<p>BPP based on the prior.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>BPP after not stopping at interim interval</code></td>
+<td>
+<p>BPP after not stopping at a blinded interim.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>posterior density interval</code></td>
+<td>
+<p>The posterior density, interval knowledge.</p>
+</td>
+</tr>
+</table>
+<h3>Author(s)</h3>
+
+<p>Kaspar Rufibach (maintainer) <br><a href="mailto:kaspar.rufibach@roche.com">kaspar.rufibach@roche.com</a></p>
+
+
+<h3>References</h3>
+
+<p>Rufibach, K., Jordan, P., Abt, M. (2016a). 
+Sequentially Updating the Likelihood of Success of a Phase 3 Pivotal Time-to-Event Trial based on Interim Analyses or External Information. 
+<em>J. Biopharm. Stat.</em>, <b>26</b>(2), 191–201.
+</p>
+<p>Rufibach, K., Burger, H.U., Abt, M. (2016b). 
+Bayesian Predictive Power: Choice of Prior and some Recommendations for its Use as Probability of Success in Drug Development.
+<em>Pharm. Stat.</em>, <b>15</b>, 438–446.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R"> 
+# ------------------------------------------------------------------------------------------
+# Illustrate the update after two passed interims using the Gallium clinical trial
+# ------------------------------------------------------------------------------------------
+
+# ------------------------------------------
+# set all parameters:
+# ------------------------------------------
+# prior mean / sd
+hr0 &lt;- 0.9288563
+priormean &lt;- log(hr0)
+priorsigma &lt;- sqrt(4 / 12)
+
+# specifications for pivotal study
+propA &lt;- 0.5   # proportion of patients randomized to arm A
+fac &lt;- (propA * (1 - propA)) ^ (-1)
+nevents &lt;- c(111, 248, 370)
+interimSE &lt;- sqrt(fac / nevents[1:2])
+finalSE &lt;- sqrt(fac / nevents[3])
+za &lt;- c(3.9285726330559, 2.5028231888636, 1.9936294555664)
+alphas &lt;- 2 * (1 - pnorm(za))
+hrMDD &lt;- exp(- za * sqrt(fac / nevents))
+successmean &lt;- log(hrMDD[3])
+
+# efficacy and futility interim boundary
+effi &lt;- log(c(0, hrMDD[2]))
+futi &lt;- log(c(1, Inf))
+
+# grid to compute densities on
+thetas &lt;- seq(-0.65, 0.3, by = 0.01)
+
+bpp_2interim(prior = "normal", interimSE = interimSE, finalSE = finalSE, 
+             successmean = successmean, IntEffBoundary = effi, IntFutBoundary = futi, 
+             priormean = priormean, thetas = thetas, priorsigma = priorsigma)
+</code></pre>
+
+
+</div>

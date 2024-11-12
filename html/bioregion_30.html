@@ -1,0 +1,237 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>partition_metrics</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Calculate metrics for one or several partitions</h2>
+
+<h3>Description</h3>
+
+<p>This function aims at calculating metrics for one or several partitions,
+usually on outputs from <code>netclu_</code>, <code>hclu_</code> or <code>nhclu_</code> functions. Metrics
+may require the users to provide either a similarity or dissimilarity
+matrix, or to provide the initial species-site table.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">partition_metrics(
+  cluster_object,
+  dissimilarity = NULL,
+  dissimilarity_index = NULL,
+  net = NULL,
+  site_col = 1,
+  species_col = 2,
+  eval_metric = c("pc_distance", "anosim", "avg_endemism", "tot_endemism")
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>cluster_object</code></td>
+<td>
+<p>a <code>bioregion.clusters</code> object</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>dissimilarity</code></td>
+<td>
+<p>a <code>dist</code> object or a <code>bioregion.pairwise.metric</code> object (output
+from <code>similarity_to_dissimilarity()</code>). Necessary if <code>eval_metric</code>
+includes <code>pc_distance</code> and <code>tree</code> is not a
+<code>bioregion.hierar.tree</code> object</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>dissimilarity_index</code></td>
+<td>
+<p>a character string indicating the dissimilarity
+(beta-diversity) index to be used in case <code>dist</code> is a <code>data.frame</code> with
+multiple dissimilarity indices</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>net</code></td>
+<td>
+<p>the species-site network (i.e., bipartite network). Should be
+provided if <code>eval_metric</code> includes <code>"avg_endemism"</code> or <code>"tot_endemism"</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>site_col</code></td>
+<td>
+<p>name or number for the column of site nodes (i.e. primary
+nodes). Should be provided if <code>eval_metric</code> includes <code>"avg_endemism"</code> or
+<code>"tot_endemism"</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>species_col</code></td>
+<td>
+<p>name or number for the column of species nodes (i.e.
+feature nodes). Should be provided if <code>eval_metric</code> includes
+<code>"avg_endemism"</code> or <code>"tot_endemism"</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>eval_metric</code></td>
+<td>
+<p>character string or vector of character strings indicating
+metric(s) to be calculated to investigate the effect of different number
+of clusters. Available options: <code>"pc_distance"</code>, <code>"anosim"</code>,
+<code>"avg_endemism"</code> and <code>"tot_endemism"</code></p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<script id="MathJax-script" async src="../../mathjaxr/doc/mathjax/es5/tex-chtml-full.js"></script><p><strong>Evaluation metrics:</strong>
+</p>
+
+<ul>
+<li>
+<p><code>pc_distance</code>: this metric is the method used by
+(Holt et al. 2013). It is a ratio of the between-cluster sum of
+dissimilarity (beta-diversity) versus the total sum of dissimilarity
+(beta-diversity) for the full dissimilarity matrix. In other words, it is
+calculated on the basis of two elements. First, the total sum of
+dissimilarity is calculated by summing the entire dissimilarity matrix
+(<code>dist</code>). Second, the between-cluster sum of dissimilarity is calculated as
+follows: for a given number of cluster, the dissimilarity is only summed
+between clusters, not within clusters. To do that efficiently, all pairs of
+sites within the same clusters have their dissimilarity set to zero in
+the dissimilarity matrix, and then the dissimilarity matrix is summed. The
+<code>pc_distance</code> ratio is obtained by dividing the between-cluster sum of
+dissimilarity by the total sum of dissimilarity.
+</p>
+</li>
+<li>
+<p><code>anosim</code>: This metric is the statistic used in Analysis of
+Similarities, as suggested in (Castro-Insua et al. 2018) (see
+vegan::anosim()). It compares the between-cluster
+dissimilarities to the within-cluster dissimilarities. It is based based on
+the difference of mean ranks between groups and within groups with the
+following formula:
+\(R = (r_B - r_W)/(N (N-1) / 4)\),
+where \(r_B\) and \(r_W\) are the average ranks
+between and within clusters respectively, and \(N\) is the total
+number of sites.
+Note that the function does not estimate the significance here, it only
+computes the statistic - for significance testing see
+vegan::anosim().
+</p>
+</li>
+<li>
+<p><code>avg_endemism</code>: this metric is the average percentage of
+endemism in clusters as
+recommended by (Kreft and Jetz 2010). Calculated as follows:
+\(End_{mean} = \frac{\sum_{i=1}^K E_i / S_i}{K}\)
+where \(E_i\) is the number of endemic species in cluster i,
+\(S_i\) is the number of
+species in cluster i, and K the maximum number of clusters.
+
+</p>
+</li>
+<li>
+<p><code>tot_endemism</code>: this metric is the total endemism across all clusters,
+as recommended by (Kreft and Jetz 2010). Calculated as follows:
+\(End_{tot} = \frac{E}{C}\)
+</p>
+<p>where \(E\) is total the number of endemics (i.e., species found in
+only one cluster) and \(C\) is the number of non-endemic species.
+
+</p>
+</li>
+</ul>
+<h3>Value</h3>
+
+<p>a <code>list</code> of class <code>bioregion.partition.metrics</code> with two to three elements:
+</p>
+
+<ul>
+<li>
+<p><code>args</code>: input arguments
+
+</p>
+</li>
+<li>
+<p><code>evaluation_df</code>: the data.frame containing <code>eval_metric</code>
+for all explored numbers of clusters
+
+</p>
+</li>
+<li>
+<p><code>endemism_results</code>: if endemism calculations were requested, a list
+with the endemism results for each partition
+
+</p>
+</li>
+</ul>
+<h3>Author(s)</h3>
+
+<p>Boris Leroy (<a href="mailto:leroy.boris@gmail.com">leroy.boris@gmail.com</a>),
+Maxime Lenormand (<a href="mailto:maxime.lenormand@inrae.fr">maxime.lenormand@inrae.fr</a>) and
+Pierre Denelle (<a href="mailto:pierre.denelle@gmail.com">pierre.denelle@gmail.com</a>)
+</p>
+
+
+<h3>References</h3>
+
+<p>Castro-Insua A, Gómez-Rodríguez C, Baselga A (2018).
+“Dissimilarity measures affected by richness differences yield biased delimitations of biogeographic realms.”
+<em>Nature Communications</em>, <b>9</b>(1), 9–11.
+</p>
+<p>Ficetola GF, Mazel F, Thuiller W (2017).
+“Global determinants of zoogeographical boundaries.”
+<em>Nature Ecology &amp; Evolution</em>, <b>1</b>, 0089.
+</p>
+<p>Holt BG, Lessard J, Borregaard MK, Fritz SA, Araújo MB, Dimitrov D, Fabre P, Graham CH, Graves GR, Jønsson Ka, Nogués-Bravo D, Wang Z, Whittaker RJ, Fjeldså J, Rahbek C (2013).
+“An update of Wallace's zoogeographic regions of the world.”
+<em>Science</em>, <b>339</b>(6115), 74–78.
+</p>
+<p>Kreft H, Jetz W (2010).
+“A framework for delineating biogeographical regions based on species distributions.”
+<em>Journal of Biogeography</em>, <b>37</b>, 2029–2053.
+</p>
+<p>Langfelder P, Zhang B, Horvath S (2008).
+“Defining clusters from a hierarchical cluster tree: the Dynamic Tree Cut package for R.”
+<em>BIOINFORMATICS</em>, <b>24</b>(5), 719–720.
+</p>
+
+
+<h3>See Also</h3>
+
+<p>compare_partitions
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">comat &lt;- matrix(sample(0:1000, size = 500, replace = TRUE, prob = 1/1:1001),
+20, 25)
+rownames(comat) &lt;- paste0("Site",1:20)
+colnames(comat) &lt;- paste0("Species",1:25)
+
+comnet &lt;- mat_to_net(comat)
+
+dissim &lt;- dissimilarity(comat, metric = "all")
+
+# User-defined number of clusters
+tree1 &lt;- hclu_hierarclust(dissim, n_clust = 2:20, index = "Simpson")
+tree1
+
+a &lt;- partition_metrics(tree1, dissimilarity = dissim, net = comnet,
+                       site_col = "Node1", species_col = "Node2",
+                       eval_metric = c("tot_endemism", "avg_endemism",
+                                      "pc_distance", "anosim"))
+a
+
+</code></pre>
+
+
+</div>

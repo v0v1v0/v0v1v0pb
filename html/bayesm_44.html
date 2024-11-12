@@ -1,0 +1,341 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>rivDP</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Linear "IV" Model with DP Process Prior for Errors</h2>
+
+<h3>Description</h3>
+
+<p><code>rivDP</code> is a Gibbs Sampler for a linear structural equation with an arbitrary number of instruments. <code>rivDP</code> uses a mixture-of-normals for the structural and reduced form equations implemented with a Dirichlet Process prior.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">rivDP(Data, Prior, Mcmc)</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>Data </code></td>
+<td>
+<p>list(y, x, w, z)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Prior</code></td>
+<td>
+<p>list(md, Ad, mbg, Abg, lambda, Prioralpha, lambda_hyper)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Mcmc </code></td>
+<td>
+<p>list(R, keep, nprint, maxuniq, SCALE, gridsize)</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+
+
+<h4>Model and Priors</h4>
+
+<p><code class="reqn">x = z'\delta + e1</code> <br><code class="reqn">y = \beta*x + w'\gamma + e2</code> <br><code class="reqn">e1,e2</code> <code class="reqn">\sim</code> <code class="reqn">N(\theta_{i})</code> where <code class="reqn">\theta_{i}</code> represents <code class="reqn">\mu_{i}, \Sigma_{i}</code>
+</p>
+<p>Note: Error terms have non-zero means. 
+DO NOT include intercepts in the <code class="reqn">z</code> or <code class="reqn">w</code> matrices.  
+This is different from <code>rivGibbs</code> which requires intercepts to be included explicitly.
+</p>
+<p><code class="reqn">\delta</code> <code class="reqn">\sim</code> <code class="reqn">N(md, Ad^{-1})</code> <br><code class="reqn">vec(\beta, \gamma)</code> <code class="reqn">\sim</code> <code class="reqn">N(mbg, Abg^{-1})</code> <br><code class="reqn">\theta_{i}</code> <code class="reqn">\sim</code> <code class="reqn">G</code> <br><code class="reqn">G</code> <code class="reqn">\sim</code> <code class="reqn">DP(alpha, G_0)</code> 
+</p>
+<p><code class="reqn">alpha</code> <code class="reqn">\sim</code> <code class="reqn">(1-(alpha-alpha_{min})/(alpha_{max}-alpha{min}))^{power}</code> <br> 
+where <code class="reqn">alpha_{min}</code> and <code class="reqn">alpha_{max}</code> are set using the arguments in the reference below.  
+It is highly recommended that you use the default values for the hyperparameters of the prior on alpha.
+</p>
+<p><code class="reqn">G_0</code> is the natural conjugate prior for <code class="reqn">(\mu,\Sigma)</code>: 
+<code class="reqn">\Sigma</code> <code class="reqn">\sim</code> <code class="reqn">IW(nu, vI)</code> and  <code class="reqn">\mu|\Sigma</code> <code class="reqn">\sim</code> <code class="reqn">N(0, \Sigma(x) a^{-1})</code> <br>
+These parameters are collected together in the list <code class="reqn">\lambda</code>.  
+It is highly recommended that you use the default settings for these hyper-parameters.<br></p>
+<p><code class="reqn">\lambda(a, nu, v):</code><br><code class="reqn">a</code>  <code class="reqn">\sim</code> uniform[alim[1], alimb[2]]<br><code class="reqn">nu</code> <code class="reqn">\sim</code> dim(data)-1 + exp(z) <br><code class="reqn">z</code>  <code class="reqn">\sim</code> uniform[dim(data)-1+nulim[1], nulim[2]]<br><code class="reqn">v</code>  <code class="reqn">\sim</code> uniform[vlim[1], vlim[2]]
+</p>
+
+
+
+<h4>Argument Details</h4>
+
+<p><em><code>Data  = list(y, x, w, z)</code></em>
+</p>
+
+<table>
+<tr>
+<td style="text-align: left;">
+    <code>y: </code> </td>
+<td style="text-align: left;"> <code class="reqn">n x 1</code> vector of obs on LHS variable in structural equation </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+    <code>x: </code> </td>
+<td style="text-align: left;"> <code class="reqn">n x 1</code> vector of obs on "endogenous" variable in structural equation </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+    <code>w: </code> </td>
+<td style="text-align: left;"> <code class="reqn">n x j</code> matrix of obs on "exogenous" variables in the structural equation </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+    <code>z: </code> </td>
+<td style="text-align: left;"> <code class="reqn">n x p</code> matrix of obs on instruments
+  </td>
+</tr>
+</table>
+<p><em><code>Prior = list(md, Ad, mbg, Abg, lambda, Prioralpha, lambda_hyper)</code> [optional]</em>
+</p>
+
+<table>
+<tr>
+<td style="text-align: left;">
+    <code>md:  </code> </td>
+<td style="text-align: left;"> <code class="reqn">p</code>-length prior mean of delta (def: 0) </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+    <code>Ad:  </code> </td>
+<td style="text-align: left;"> <code class="reqn">p x p</code> PDS prior precision matrix for prior on delta (def: 0.01*I) </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+    <code>mbg: </code> </td>
+<td style="text-align: left;"> <code class="reqn">(j+1)</code>-length prior mean vector for prior on beta,gamma (def: 0) </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+    <code>Abg: </code> </td>
+<td style="text-align: left;"> <code class="reqn">(j+1)x(j+1)</code> PDS prior precision matrix for prior on beta,gamma (def: 0.01*I) </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+    <code>Prioralpha:</code> </td>
+<td style="text-align: left;"> <code>list(Istarmin, Istarmax, power)</code> </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+    <code>$Istarmin: </code> </td>
+<td style="text-align: left;">  is expected number of components at lower bound of support of alpha (def: 1) </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+    <code>$Istarmax: </code> </td>
+<td style="text-align: left;">  is expected number of components at upper bound of support of alpha (def: <code>floor(0.1*length(y))</code>) </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+    <code>$power:    </code> </td>
+<td style="text-align: left;">  is the power parameter for alpha prior (def: 0.8)  </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+    <code>lambda_hyper:</code> </td>
+<td style="text-align: left;"> <code>list(alim, nulim, vlim)</code> </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+    <code>$alim:     </code> </td>
+<td style="text-align: left;">  defines support of a distribution (def: <code>c(0.01, 10)</code>) </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+    <code>$nulim:    </code> </td>
+<td style="text-align: left;">  defines support of nu distribution (def: <code>c(0.01, 3)</code>) </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+    <code>$vlim:     </code> </td>
+<td style="text-align: left;">  defines support of v distribution (def: <code>c(0.1, 4)</code>) 
+  </td>
+</tr>
+</table>
+<p><em><code>Mcmc  = list(R, keep, nprint, maxuniq, SCALE, gridsize)</code> [only <code>R</code> required]</em>
+</p>
+
+<table>
+<tr>
+<td style="text-align: left;">
+    <code>R:        </code> </td>
+<td style="text-align: left;"> number of MCMC draws </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+    <code>keep:     </code> </td>
+<td style="text-align: left;"> MCMC thinning parameter: keep every keepth draw (def: 1) </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+    <code>nprint:   </code> </td>
+<td style="text-align: left;"> print the estimated time remaining for every nprint'th draw (def: 100, set to 0 for no print) </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+    <code>maxuniq:  </code> </td>
+<td style="text-align: left;"> storage constraint on the number of unique components (def: 200) </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+    <code>SCALE:    </code> </td>
+<td style="text-align: left;"> scale data (def: <code>TRUE</code>) </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+    <code>gridsize: </code> </td>
+<td style="text-align: left;"> gridsize parameter for alpha draws (def: 20)
+  </td>
+</tr>
+</table>
+<h4>
+<code>nmix</code> Details</h4>
+
+<p><code>nmix</code> is a list with 3 components. Several functions in the <code>bayesm</code> package that involve a Dirichlet Process or mixture-of-normals return <code>nmix</code>. Across these functions, a common structure is used for <code>nmix</code> in order to utilize generic summary and plotting functions. 
+</p>
+
+<table>
+<tr>
+<td style="text-align: left;">
+  <code>probdraw:</code> </td>
+<td style="text-align: left;"> <code class="reqn">ncomp x R/keep</code> matrix that reports the probability that each draw came from a particular component (here, a one-column matrix of 1s) </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+  <code>zdraw:   </code> </td>
+<td style="text-align: left;"> <code class="reqn">R/keep x nobs</code> matrix that indicates which component each draw is assigned to (here, null) </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+  <code>compdraw:</code> </td>
+<td style="text-align: left;"> A list of <code class="reqn">R/keep</code> lists of <code class="reqn">ncomp</code> lists. Each of the inner-most lists has 2 elemens: a vector of draws for <code>mu</code> and a matrix of draws for the Cholesky root of <code>Sigma</code>.
+  </td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>A list containing:
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>deltadraw </code></td>
+<td>
+ <p><code class="reqn">R/keep x p</code> array of delta draws</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>betadraw  </code></td>
+<td>
+ <p><code class="reqn">R/keep x 1</code> vector of beta draws</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>alphadraw </code></td>
+<td>
+ <p><code class="reqn">R/keep x 1</code> vector of draws of Dirichlet Process tightness parameter</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Istardraw </code></td>
+<td>
+ <p><code class="reqn">R/keep x 1</code> vector of draws of the number of unique normal components</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>gammadraw </code></td>
+<td>
+ <p><code class="reqn">R/keep x j</code> array of gamma draws</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nmix      </code></td>
+<td>
+<p> a list containing: <code>probdraw</code>, <code>zdraw</code>, <code>compdraw</code> (see “<code>nmix</code> Details” section)</p>
+</td>
+</tr>
+</table>
+<h3>Author(s)</h3>
+
+<p>Peter Rossi, Anderson School, UCLA, <a href="mailto:perossichi@gmail.com">perossichi@gmail.com</a>.</p>
+
+
+<h3>References</h3>
+
+<p>For further discussion, see "A Semi-Parametric Bayesian Approach to the Instrumental Variable Problem," by Conley, Hansen, McCulloch and Rossi, <em>Journal of Econometrics</em> (2008). 
+</p>
+<p>See also, Chapter 4, <em>Bayesian Non- and Semi-parametric Methods and Applications</em> by Peter Rossi.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>rivGibbs</code></p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">if(nchar(Sys.getenv("LONG_TEST")) != 0) {R=2000} else {R=10}
+set.seed(66)
+
+## simulate scaled log-normal errors and run
+k = 10
+delta = 1.5
+Sigma = matrix(c(1, 0.6, 0.6, 1), ncol=2)
+N = 1000
+tbeta = 4
+scalefactor = 0.6
+root = chol(scalefactor*Sigma)
+mu = c(1,1)
+
+## compute interquartile ranges
+ninterq = qnorm(0.75) - qnorm(0.25)
+error = matrix(rnorm(100000*2), ncol=2)%*%root
+error = t(t(error)+mu)
+Err = t(t(exp(error))-exp(mu+0.5*scalefactor*diag(Sigma)))
+lnNinterq = quantile(Err[,1], prob=0.75) - quantile(Err[,1], prob=0.25)
+
+## simulate data
+error = matrix(rnorm(N*2), ncol=2)%*%root
+error = t(t(error)+mu)
+Err = t(t(exp(error))-exp(mu+0.5*scalefactor*diag(Sigma)))
+
+## scale appropriately  
+Err[,1] = Err[,1]*ninterq/lnNinterq
+Err[,2] = Err[,2]*ninterq/lnNinterq
+z = matrix(runif(k*N), ncol=k)
+x = z%*%(delta*c(rep(1,k))) + Err[,1]
+y = x*tbeta + Err[,2]
+
+## specify data input and mcmc parameters
+Data = list(); 
+Data$z = z
+Data$x = x
+Data$y = y
+
+Mcmc = list()
+Mcmc$maxuniq = 100
+Mcmc$R = R
+end = Mcmc$R
+
+out = rivDP(Data=Data, Mcmc=Mcmc)
+
+cat("Summary of Beta draws", fill=TRUE)
+summary(out$betadraw, tvalues=tbeta)
+
+## plotting examples
+if(0){
+  plot(out$betadraw, tvalues=tbeta)
+  plot(out$nmix)  # plot "fitted" density of the errors
+}
+</code></pre>
+
+
+</div>

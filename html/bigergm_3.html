@@ -1,0 +1,437 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>bigergm</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>bigergm: Exponential-family random graph models for large networks with local dependence</h2>
+
+<h3>Description</h3>
+
+<p>The function <code>bigergm</code> estimates and simulates three classes of exponential-family
+random graph models for large networks under local dependence:
+</p>
+
+<ol>
+<li>
+<p>The p_1 model of Holland and Leinhardt (1981) in exponential-family form and extensions by Vu, Hunter, and Schweinberger (2013), Schweinberger, Petrescu-Prahova, and Vu (2014), Dahbura et al. (2021), and Fritz et al. (2024) to both directed and undirected random graphs with additional model terms, with and without covariates.
+</p>
+</li>
+<li>
+<p>The stochastic block model of Snijders and Nowicki (1997) and Nowicki and Snijders (2001) in exponential-family form.
+</p>
+</li>
+<li>
+<p>The exponential-family random graph models with local dependence of Schweinberger and Handcock (2015), with and without covariates. The exponential-family random graph models with local dependence replace the long-range dependence of conventional exponential-family random graph models by short-range dependence. Therefore, exponential-family random graph models with local dependence replace the strong dependence of conventional exponential-family random graph models by weak dependence, reducing the problem of model degeneracy (Handcock, 2003; Schweinberger, 2011) and improving goodness-of-fit (Schweinberger and Handcock, 2015). In addition, exponential-family random graph models with local dependence satisfy a weak form of self-consistency in the sense that these models are self-consistent under neighborhood sampling (Schweinberger and Handcock, 2015), which enables consistent estimation of neighborhood-dependent parameters (Schweinberger and Stewart, 2017; Schweinberger, 2017).
+</p>
+</li>
+</ol>
+<h3>Usage</h3>
+
+<pre><code class="language-R">bigergm(
+  object,
+  add_intercepts = FALSE,
+  n_blocks = NULL,
+  n_cores = 1,
+  blocks = NULL,
+  estimate_parameters = TRUE,
+  verbose = 0,
+  n_MM_step_max = 100,
+  tol_MM_step = 1e-04,
+  initialization = "infomap",
+  use_infomap_python = FALSE,
+  virtualenv_python = "r-bigergm",
+  seed_infomap = NULL,
+  weight_for_initialization = 1000,
+  seed = NULL,
+  method_within = "MPLE",
+  control_within = ergm::control.ergm(),
+  clustering_with_features = TRUE,
+  compute_pi = FALSE,
+  check_alpha_update = FALSE,
+  check_blocks = FALSE,
+  cache = NULL,
+  return_checkpoint = TRUE,
+  only_use_preprocessed = FALSE,
+  ...
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>object</code></td>
+<td>
+<p>An <span style="font-family: Courier New, Courier; color: #666666;"><b>R</b></span> <code>formula</code> object or <code>bigergm</code> class object.
+If a formula is given, the function estimates a new model specified by it.
+It needs to be of the form
+<code>y ~ &lt;model terms&gt;</code>, where <code>y</code> is a
+<code>network</code> object.
+For the details on the possible <code>&lt;model terms&gt;</code>, see
+<code>ergmTerm</code> and Morris, Handcock and Hunter (2008).
+All terms that induce dependence are excluded from the between block model, while the within block model includes all terms.
+When you pass a <code>bigergm</code> class object to the function, you continue from the previous MM step.
+Note that the block allocation (which is either provided by parameter <code>blocks</code> or estimated in the first step) is saved as the vertex.attribute <code>block</code> of the network.
+This attribute can also be used in the specified formula.
+The <code>L-ergmTerm</code> is supported to enable size-dependent coefficients for the within-blocks model.
+Note, however, that for size-dependent parameters of terms that are included in the between-blocks model,
+the intercept in the linear model provided to <code>L-ergmTerm</code> should not include the intercept.
+See the second example below for a demonstration.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>add_intercepts</code></td>
+<td>
+<p>Boolean value to indicate whether adequate intercepts
+should be added to the provided formula so that the model in the first stage
+of the estimation is a nested model of the estimated model in the second stage of the estimation.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>n_blocks</code></td>
+<td>
+<p>The number of blocks. This must be specified by the user.
+When you pass a <code>bigergm</code> class object to the function, you don't have to specify this argument.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>n_cores</code></td>
+<td>
+<p>The number of CPU cores to use.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>blocks</code></td>
+<td>
+<p>The pre-specified block memberships for each node.
+If <code>NULL</code>, the latent community structure is estimated, assuming that the number of communities is <code>n_blocks</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>estimate_parameters</code></td>
+<td>
+<p>If <code>TRUE</code>, both clustering and parameter estimation are implemented.
+If <code>FALSE</code>, only clustering is executed.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>verbose</code></td>
+<td>
+<p>A logical or an integer: if this is TRUE/1,
+the program will print out additional information about the progress of estimation and simulation.
+A higher value yields lower level information.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>n_MM_step_max</code></td>
+<td>
+<p>The maximum number of MM iterations.
+Currently, no early stopping criteria is introduced. Thus <code>n_MM_step_max</code> MM iterations are exactly implemented.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>tol_MM_step</code></td>
+<td>
+<p>Tolerance regarding the relative change of the lower bound of the likelihood
+used to decide on the convergence of the clustering step</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>initialization</code></td>
+<td>
+<p>How the blocks should be initialized.
+If <code>infomap</code> (the default), <code>igraph</code>' or Python's infomap is implemented.
+If <code>random</code>, the initial clusters are randomly uniformally selected.
+If <code>spectral</code>, spectral clustering is conducted.
+If <code>walktrap</code>, the walktrap clustering algorithm as implemented in <code>cluster_walktrap</code> is conducted.
+If <code>initialization</code>
+is a vector of integers of the same length as the number of nodes in the provided network (in <code>object</code>),
+then the provided vector is used as the initial cluster assignment.
+If <code>initialization</code> is a string relating to a file path, <code>bigergm</code> will interpret it as block allocations saved in Python's infomap .clu format under that path.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>use_infomap_python</code></td>
+<td>
+<p>If <code>TRUE</code>, the cluster initialization is implemented using Pythons' infomap.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>virtualenv_python</code></td>
+<td>
+<p>Which virtual environment should be used for the infomap algorithm?</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>seed_infomap</code></td>
+<td>
+<p>seed value (integer) for the infomap algorithm, which can be used to initialize the estimation of the blocks.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>weight_for_initialization</code></td>
+<td>
+<p>weight value used for cluster initialization. The higher this value, the more weight is put on the initialized block allocation.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>seed</code></td>
+<td>
+<p>seed value (integer) for the random number generator.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>method_within</code></td>
+<td>
+<p>If "MPLE" (the default), then the maximum pseudolikelihood estimator is implemented when estimating the within-block network model.
+If "MLE", then an approximate maximum likelihood estimator is conducted. If "CD" (EXPERIMENTAL), the Monte-Carlo contrastive divergence estimate is returned.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>control_within</code></td>
+<td>
+<p>A list of control parameters for the <code>ergm</code> function used to estimate the parameters of the within model. See <code>control.ergm</code> for details.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>clustering_with_features</code></td>
+<td>
+<p>If <code>TRUE</code>, clustering is implemented using the discrete covariates specified in the formula.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>compute_pi</code></td>
+<td>
+<p>If <code>TRUE</code>, this function keeps track of pi matrices at each MM iteration.
+If the network is large, we strongly recommend to set to be <code>FALSE</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>check_alpha_update</code></td>
+<td>
+<p>If <code>TRUE</code>, this function keeps track of alpha matrices at each MM iteration.
+If the network is large, we strongly recommend to set to be <code>FALSE</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>check_blocks</code></td>
+<td>
+<p>If TRUE, this function keeps track of estimated block memberships at each MM iteration.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>cache</code></td>
+<td>
+<p>a <code>cachem</code> cache object used to store intermediate calculations such as eigenvector decomposition results.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>return_checkpoint</code></td>
+<td>
+<p>If <code>TRUE</code>, the function returns the checkpoint list. For most applications, this should be set to <code>TRUE</code> but if memory space needed by the output is an issue, set to <code>FALSE</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>only_use_preprocessed</code></td>
+<td>
+<p>If <code>TRUE</code>, the function only uses the preprocessed data from a previous fit but does not continue the estimation from its final iteration, instead the estimation is started again from the provided initialization.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Additional arguments, to be passed to lower-level functions (mainly to the <code>ergm</code> function used for the estimation of within-block connections).</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>An object of class 'bigergm' including the results of the fitted model.
+These include:
+</p>
+
+<dl>
+<dt>call:</dt>
+<dd>
+<p>call of the mode</p>
+</dd>
+<dt>block:</dt>
+<dd>
+<p>vector of the found block of the nodes into cluster</p>
+</dd>
+<dt>initial_block:</dt>
+<dd>
+<p>vector of the initial block of the nodes into cluster</p>
+</dd>
+<dt>sbm_pi:</dt>
+<dd>
+<p>Connection probabilities represented as a <code>n_blocks x n_blocks</code> matrix from the first stage of the estimation between all clusters</p>
+</dd>
+<dt>MM_list_z:</dt>
+<dd>
+<p>list of cluster allocation for each node and each iteration</p>
+</dd>
+<dt>MM_list_alpha:</dt>
+<dd>
+<p>list of posterior distributions of cluster allocations for all nodes for each iteration</p>
+</dd>
+<dt>MM_change_in_alpha:</dt>
+<dd>
+<p>change in 'alpha' for each iteration</p>
+</dd>
+<dt>MM_lower_bound:</dt>
+<dd>
+<p> vector of the evidence lower bounds from the MM algorithm</p>
+</dd>
+<dt>alpha: </dt>
+<dd>
+<p>matrix representing the converged posterior distributions of cluster allocations for all nodes</p>
+</dd>
+<dt>counter_e_step:</dt>
+<dd>
+<p> integer number indicating the number of iterations carried out</p>
+</dd>
+<dt>adjacency_matrix:</dt>
+<dd>
+<p>sparse matrix representing the adjacency matrix used for the estimation</p>
+</dd>
+<dt>estimation_status:</dt>
+<dd>
+<p>character stating the status of the estimation</p>
+</dd>
+<dt>est_within:</dt>
+<dd>
+<p><code>ergm</code> object of the model for within cluster connections </p>
+</dd>
+<dt>est_between:</dt>
+<dd>
+<p><code>ergm</code> object of the model for between cluster connections</p>
+</dd>
+<dt>checkpoint:</dt>
+<dd>
+<p>list of information to continue the estimation (only returned if <code>return_checkpoint = TRUE</code>)</p>
+</dd>
+<dt>membership_before_kmeans:</dt>
+<dd>
+<p>vector of the found blocks of the nodes into cluster before the final check for bad clusters</p>
+</dd>
+<dt>estimate_parameters:</dt>
+<dd>
+<p>binary value if the parameters in the second step of the algorithm should be estimated or not</p>
+</dd>
+</dl>
+<h3>References</h3>
+
+<p>Babkin, S., Stewart, J., Long, X., and M. Schweinberger (2020). Large-scale estimation of random graph models with local dependence. Computational Statistics and Data Analysis, 152, 1–19.
+</p>
+<p>Dahbura, J. N. M., Komatsu, S., Nishida, T. and Mele, A. (2021), ‘A structural model of business cards exchange networks’.
+https://arxiv.org/abs/2105.12704
+</p>
+<p>Fritz C., Georg C., Mele A., and Schweinberger M. (2024). A strategic model of software dependency networks.
+https://arxiv.org/abs/2402.13375
+</p>
+<p>Handcock, M. S. (2003). Assessing degeneracy in statistical models of social networks. Technical report, Center for Statistics and the Social Sciences, University of Washington, Seattle. <br>
+https://csss.uw.edu/Papers/wp39.pdf
+</p>
+<p>Holland, P. W. and S. Leinhardt (1981). An exponential family of probability distributions for directed graphs. Journal of the American Statistical Association, Theory &amp; Methods, 76, 33–65.
+</p>
+<p>Morris M, Handcock MS, Hunter DR (2008). Specification of Exponential-Family Random Graph Models: Terms and Computational Aspects.
+Journal of Statistical Software, 24.
+</p>
+<p>Nowicki, K. and T. A. B. Snijders (2001). Estimation and prediction for stochastic blockstructures. Journal of the American Statistical Association, Theory &amp; Methods, 96, 1077–1087.
+</p>
+<p>Schweinberger, M. (2011). Instability, sensitivity, and degeneracy of discrete exponential families. Journal of the American Statistical Association, Theory &amp; Methods, 106, 1361–1370.
+</p>
+<p>Schweinberger, M. (2020). Consistent structure estimation of exponential-family random graph models with block structure. Bernoulli, 26, 1205–1233.
+</p>
+<p>Schweinberger, M. and M. S. Handcock (2015). Local dependence in random graph models: characterization, properties, and statistical inference. Journal of the Royal Statistical Society, Series B (Statistical Methodology), 7, 647-676.
+</p>
+<p>Schweinberger, M., Krivitsky, P. N., Butts, C.T. and J. Stewart (2020). Exponential-family models of random graphs: Inference in finite, super, and infinite population scenarios. Statistical Science, 35, 627-662.
+</p>
+<p>Schweinberger, M. and P. Luna (2018). HERGM: Hierarchical exponential-family random graph models. Journal of Statistical Software, 85, 1–39.
+</p>
+<p>Schweinberger, M., Petrescu-Prahova, M. and D. Q. Vu (2014). Disaster response on September 11, 2001 through the lens of statistical network analysis. Social Networks, 37, 42–55.
+</p>
+<p>Schweinberger, M. and J. Stewart (2020). Concentration and consistency results for canonical and curved exponential-family random graphs. The Annals of Statistics, 48, 374–396.
+</p>
+<p>Snijders, T. A. B. and K. Nowicki (1997). Estimation and prediction for stochastic blockmodels for graphs with latent block structure. Journal of Classification, 14, 75–100.
+</p>
+<p>Stewart, J., Schweinberger, M., Bojanowski, M., and M. Morris (2019). Multilevel network data facilitate statistical inference for curved ERGMs with geometrically weighted terms. Social Networks, 59, 98–119.
+</p>
+<p>Vu, D. Q., Hunter, D. R. and M. Schweinberger (2013). Model-based clustering of large networks. Annals of Applied Statistics, 7, 1010–1039.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R"># Load an embedded network object.
+data(toyNet)
+
+# Specify the model that you would like to estimate.
+model_formula &lt;- toyNet ~ edges + nodematch("x") + nodematch("y") + triangle
+# Estimate the model
+bigergm_res &lt;- bigergm(
+  object = model_formula,
+  # The model you would like to estimate
+  n_blocks = 4,
+  # The number of blocks
+  n_MM_step_max = 10,
+  # The maximum number of MM algorithm steps
+  estimate_parameters = TRUE,
+  # Perform parameter estimation after the block recovery step
+  clustering_with_features = TRUE,
+  # Indicate that clustering must take into account nodematch on characteristics
+  check_blocks = FALSE)
+  
+ # Example with N() operator
+ 
+ ## Not run: 
+set.seed(1)
+# Prepare ingredients for simulating a network
+N &lt;- 500
+K &lt;- 10
+
+list_within_params &lt;- c(1, 2, 2,-0.5)
+list_between_params &lt;- c(-8, 0.5, -0.5)
+formula &lt;- g ~ edges + nodematch("x") + nodematch("y")  + N(~edges,~log(n)-1)
+
+memb &lt;- sample(1:K,prob = c(0.1,0.2,0.05,0.05,0.10,0.1,0.1,0.1,0.1,0.1), 
+               size = N, replace = TRUE)
+vertex_id &lt;- as.character(11:(11 + N - 1))
+
+x &lt;- sample(1:2, size = N, replace = TRUE)
+y &lt;- sample(1:2, size = N, replace = TRUE)
+
+
+df &lt;- tibble::tibble(
+  id = vertex_id,
+  memb = memb,
+  x = x,
+  y = y
+)
+g &lt;- network::network.initialize(n = N, directed = FALSE)
+g %v% "vertex.names" &lt;- df$id
+g %v% "block" &lt;- df$memb
+g %v% "x" &lt;- df$x
+g %v% "y" &lt;- df$y
+
+# Simulate a network
+g_sim &lt;-
+  simulate_bigergm(
+    formula = formula,
+    coef_within = list_within_params,
+    coef_between = list_between_params,
+    nsim = 1, 
+    control_within = control.simulate.formula(MCMC.burnin = 200000))
+
+estimation &lt;- bigergm(update(formula,new = g_sim~.), n_blocks = 10, 
+                      verbose = T)
+summary(estimation)
+
+## End(Not run)
+</code></pre>
+
+
+</div>

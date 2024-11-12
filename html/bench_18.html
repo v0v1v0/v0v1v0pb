@@ -1,0 +1,131 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>autoplot.bench_mark</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Autoplot method for bench_mark objects</h2>
+
+<h3>Description</h3>
+
+<p>Autoplot method for bench_mark objects
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">autoplot.bench_mark(
+  object,
+  type = c("beeswarm", "jitter", "ridge", "boxplot", "violin"),
+  ...
+)
+
+## S3 method for class 'bench_mark'
+plot(x, ..., type = c("beeswarm", "jitter", "ridge", "boxplot", "violin"), y)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>object</code></td>
+<td>
+<p>A <code>bench_mark</code> object.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>type</code></td>
+<td>
+<p>The type of plot. Plotting geoms used for each type are
+</p>
+
+<ul>
+<li>
+<p> beeswarm - <code>ggbeeswarm::geom_quasirandom()</code>
+</p>
+</li>
+<li>
+<p> jitter - <code>ggplot2::geom_jitter()</code>
+</p>
+</li>
+<li>
+<p> ridge - <code>ggridges::geom_density_ridges()</code>
+</p>
+</li>
+<li>
+<p> boxplot - <code>ggplot2::geom_boxplot()</code>
+</p>
+</li>
+<li>
+<p> violin - <code>ggplot2::geom_violin()</code>
+</p>
+</li>
+</ul>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Additional arguments passed to the plotting geom.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>A <code>bench_mark</code> object.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>y</code></td>
+<td>
+<p>Ignored, required for compatibility with the <code>plot()</code> generic.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>This function requires some optional dependencies. ggplot2,
+tidyr, and depending on the plot type
+ggbeeswarm, ggridges.
+</p>
+<p>For <code>type</code> of <code>beeswarm</code> and <code>jitter</code> the points are colored by the highest
+level garbage collection performed during each iteration.
+</p>
+<p>For plots with 2 parameters <code>ggplot2::facet_grid()</code> is used to construct a
+2d facet. For other numbers of parameters <code>ggplot2::facet_wrap()</code> is used
+instead.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">dat &lt;- data.frame(x = runif(10000, 1, 1000), y=runif(10000, 1, 1000))
+
+res &lt;- bench::mark(
+  dat[dat$x &gt; 500, ],
+  dat[which(dat$x &gt; 500), ],
+  subset(dat, x &gt; 500))
+
+if (require(ggplot2) &amp;&amp; require(tidyr) &amp;&amp; require(ggbeeswarm)) {
+
+  # Beeswarm plot
+  autoplot(res)
+
+  # ridge (joyplot)
+  autoplot(res, "ridge")
+
+  # If you want to have the plots ordered by execution time you can do so by
+  # ordering factor levels in the expressions.
+  if (require(dplyr) &amp;&amp; require(forcats)) {
+
+    res %&gt;%
+      mutate(expression = forcats::fct_reorder(as.character(expression), min, .desc = TRUE)) %&gt;%
+      as_bench_mark() %&gt;%
+      autoplot("violin")
+  }
+}
+</code></pre>
+
+
+</div>

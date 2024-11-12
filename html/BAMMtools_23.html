@@ -1,0 +1,292 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>getEventData</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Create <code>bammdata</code> object from MCMC output</h2>
+
+<h3>Description</h3>
+
+<p><code>getEventData</code> Reads shift configuration data (the
+"event data" output) from a <code>BAMM</code> analysis and creates a
+<code>bammdata</code> object. The <code>bammdata</code> object is fundamental
+for extracting information about macroevolutionary rate variation
+through time and among lineages.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">getEventData(
+  phy,
+  eventdata,
+  burnin = 0,
+  nsamples = NULL,
+  verbose = FALSE,
+  type = "diversification"
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>phy</code></td>
+<td>
+<p>An object of class <code>phylo</code> - specifically, the
+time-calibrated tree that was analyzed with <code>BAMM</code>.
+Alternatively, a character string specifying the path to a
+newick-formatted tree.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>eventdata</code></td>
+<td>
+<p>A character string specifying the path to a <code>BAMM</code>
+event-data file. Alternatively, an object of class <code>data.frame</code>
+that includes the event data from a <code>BAMM</code> run.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>burnin</code></td>
+<td>
+<p>A numeric indicating the fraction of posterior samples to
+discard as burn-in.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nsamples</code></td>
+<td>
+<p>An integer indicating the number of posterior samples to
+include in the <code>bammdata</code> object. May be <code>NULL</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>verbose</code></td>
+<td>
+<p>A logical. If <code>TRUE</code> progess is outputted to the
+console. Defaults to <code>FALSE</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>type</code></td>
+<td>
+<p>A character string. Either "diversification" or "trait"
+depending on your <code>BAMM</code> analysis.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>In the <code>BAMM</code> framework, an "event" defines a
+macroevolutionary process of diversification or trait evolution. Every
+sample from the posterior includes at least one process, defined by
+such an "event". If a given sample includes just a single event, then
+the dynamics of diversification or trait evolution can be described
+entirely by a single time-constant or time-varying process that begins
+at the root of the tree. Any sample from the posterior distribution
+may include a complex mixture of distinct processes. To represent
+temporal heterogeneity in macroevolutionary rates, <code>BAMM</code> models
+a rate <code class="reqn">R</code>, e.g. speciation, as a function that changes
+exponentially with time:
+</p>
+<p><code class="reqn">R(t) = R(0)*exp(b*t)</code>.
+</p>
+<p>Here <code class="reqn">R(0)</code> is the initial rate and <code class="reqn">b</code> is a parameter
+determining how quickly that rate grows or decays with time. 
+</p>
+<p>The <code>eventdata</code> file (or data frame) is a record of events and
+associated parameters that were sampled with <code>BAMM</code> during
+simulation of the posterior with reversible jump MCMC. This complex,
+information-rich file is processed into a <code>bammdata</code> object,
+which serves as the core data object for numerous downstream analyses.
+From a <code>bammdata</code> object, you can summarize rate variation
+through time, among clades, extract locations of rate shifts,
+summarize clade-specific rates of speciation and extinction, and more.
+</p>
+<p>In general, the user does not need to be concerned with the details of
+a <code>bammdata</code> object. The object is used as input by a number of
+<code>BAMMtools</code> functions. 
+</p>
+<p>The parameter <code>nsamples</code> can be used to reduce the total amount
+of data included in the raw eventdata output from a <code>BAMM</code> run.
+The final <code>bammdata</code> object will consist of all data for
+<code>nsamples</code> from the posterior. These <code>nsamples</code> are equally
+spaced after discarding some <code>burnin</code> fraction as "burn-in". If
+<code>nsamples</code> is set to <code>NULL</code>, the <code>bammdata</code> object will
+include all samples in the posterior after discarding the
+<code>burnin</code> fraction.
+</p>
+
+
+<h3>Value</h3>
+
+<p>A list with many components:
+</p>
+
+<ul>
+<li>
+<p> edge: See documentation for class <code>phylo</code> in package ape.
+</p>
+</li>
+<li>
+<p> Nnode: See documentation for class <code>phylo</code> in package
+ape.
+</p>
+</li>
+<li>
+<p> tip.label: See documentation for class <code>phylo</code> in package
+ape.
+</p>
+</li>
+<li>
+<p> edge.length: See documentation for class <code>phylo</code> in
+package ape.
+</p>
+</li>
+<li>
+<p> begin: The beginning time of each branch in absolute time (the
+root is set to time zero)
+</p>
+</li>
+<li>
+<p> end: The ending time of each branch in absolute time.
+</p>
+</li>
+<li>
+<p> numberEvents: An integer vector with the number of events
+contained in <code>phy</code> for each posterior sample. The length of
+this vector is equal to the number of posterior samples in the
+<code>bammdata</code> object.
+</p>
+</li>
+<li>
+<p> eventData: A list of dataframes. Each element is a single
+posterior sample. Each row in a dataframe holds the data for a
+single event. Data associated with an event are: <code>node</code> - a
+node number. This identifies the branch where the event
+originates. <code>time</code> - this is the absolute time on that branch
+where the event originates (with the root at time 0). <code>lam1</code>
+- an initial rate of speciation or trait evolution. <code>lam2</code> -
+a decay/growth parameter. <code>mu1</code> - an initial rate of
+extinction. <code>mu2</code> - a decay/growth parameter. <code>index</code> -
+a unique integer associated with the event. See 'Details'.
+</p>
+</li>
+<li>
+<p> eventVectors: A list of integer vectors. Each element is a
+single posterior sample. For each branch in <code>phy</code> the index
+of the event that occurs along that branch. Branches are ordered
+increasing here and elsewhere.
+</p>
+</li>
+<li>
+<p> eventBranchSegs: A list of matrices. Each element is a single
+posterior sample. Each matrix has four columns: <code>Column 1</code>
+identifies a node in <code>phy</code>. <code>Column 2</code> identifies the
+beginning time of the branch or segment of the branch that
+subtends the node in <code>Column 1</code>. <code>Column 3</code> identifies
+the ending time of the branch or segment of the branch that
+subtends the node in <code>Column 1</code>. <code>Column 4</code> identifies
+the index of the event that occurs along the branch or segment of
+the branch that subtends the node in <code>Column 1</code>.
+</p>
+</li>
+<li>
+<p> tipStates: A list of integer vectors. Each element is a single
+posterior sample. For each tip the index of the event that occurs
+along the branch subtending the tip. Tips are ordered increasing
+here and elsewhere.
+</p>
+</li>
+<li>
+<p> tipLambda: A list of numeric vectors. Each element is a single
+posterior sample. For each tip the rate of speciation or trait
+evolution at the end of the terminal branch subtending that tip.
+</p>
+</li>
+<li>
+<p> tipMu: A list of numeric vectors. Each element is a single
+posterior sample. For each tip the rate of extinction at the end
+of the terminal branch subtending that tip. Meaningless if working
+with <code>BAMM</code> trait results.
+</p>
+</li>
+<li>
+<p> meanTipLambda: For each tip the mean of the marginal posterior
+density of the rate of speciation or trait evolution at the end of
+the terminal branch subtending that tip.
+</p>
+</li>
+<li>
+<p> meanTipMu: For each tip the mean of the marginal posterior
+density of the rate of extinction at the end of the terminal
+branch subtending that tip. Meaningless if working with
+<code>BAMM</code> trait results.
+</p>
+</li>
+<li>
+<p> type: A character string. Either "diversification" or "trait"
+depending on your <code>BAMM</code> analysis.
+</p>
+</li>
+<li>
+<p> downseq: An integer vector holding the nodes of <code>phy</code>. The
+order corresponds to the order in which nodes are visited by a
+pre-order tree traversal.
+</p>
+</li>
+<li>
+<p> lastvisit: An integer vector giving the index of the last node
+visited by the node in the corresponding position in
+<code>downseq</code>. <code>downseq</code> and <code>lastvisit</code> can be used to
+quickly retrieve the descendants of any node. e.g. the descendants
+of node 89 can be found by
+<code>downseq[which(downseq==89):which(downseq==lastvisit[89])</code>.
+</p>
+</li>
+</ul>
+<h3>Note</h3>
+
+<p>Currently the function does not check for duplicate tip labels in
+<code>phy</code>, which may cause the function to choke.
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Dan Rabosky, Mike Grundler
+</p>
+
+
+<h3>References</h3>
+
+<p><a href="http://bamm-project.org/">http://bamm-project.org/</a>
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>summary.bammdata</code>, <code>plot.bammdata</code>,
+<code>dtRates</code>.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">data(primates, events.primates)
+xx &lt;- getEventData(primates, events.primates, burnin=0.25, nsamples=500,
+                   type = 'trait')
+
+# compute mean phenotypic rate for primate body size evolution:
+brates &lt;- getCladeRates(xx)
+mean(brates$beta)
+
+# Plot rates:
+plot(xx)
+</code></pre>
+
+
+</div>

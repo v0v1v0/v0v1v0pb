@@ -1,0 +1,232 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>calibrate.bassBasis</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Calibrate a bassPCA or bassBasis Model to Data</h2>
+
+<h3>Description</h3>
+
+<p>Robust modular calibration of a bassPCA or bassBasis emulator using adaptive Metropolis, tempering, and decorrelation steps in an effort to be free of any user-required tuning.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">calibrate.bassBasis(
+  y,
+  mod,
+  type,
+  sd.est,
+  s2.df,
+  s2.ind,
+  meas.error.cor,
+  bounds,
+  discrep.mean,
+  discrep.mat,
+  nmcmc = 10000,
+  temperature.ladder = 1.05^(0:30),
+  decor.step.every = 100,
+  verbose = T
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>y</code></td>
+<td>
+<p>vector of calibration data</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>mod</code></td>
+<td>
+<p>a emulator of class bassBasis, whose predictions should match y (i.e., predictions from mod should be the same length as y)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>type</code></td>
+<td>
+<p>one of c(1,2). 1 indicates a model that uses independent truncation error variance, no measurement error correlation, and discrepancy on a basis while type 2 indicates a model that uses a full truncation error covariance matrix, a full measurement error correlation matrix, a fixed full discrepancy covariance matrix, and a fixed discrepancy mean. 1 is for situations where computational efficiency is important (because y is dense), while 2 is only for cases where y is a short vector.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>sd.est</code></td>
+<td>
+<p>vector of prior estimates of measurement error standard deviation</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>s2.df</code></td>
+<td>
+<p>vector of degrees of freedom for measurement error sd prior estimates</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>s2.ind</code></td>
+<td>
+<p>index vector, same length as y, indicating which sd.est goes with which y</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>meas.error.cor</code></td>
+<td>
+<p>a fixed correlation matrix for the measurement errors</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>bounds</code></td>
+<td>
+<p>a 2xp matrix of bounds for each input parameter, where p is the number of input parameters.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>discrep.mean</code></td>
+<td>
+<p>discrepancy mean (fixed), only used if type=2</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>discrep.mat</code></td>
+<td>
+<p>discrepancy covariance (fixed, for type 2) or basis (if not square, for type 1)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nmcmc</code></td>
+<td>
+<p>number of MCMC iterations.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>temperature.ladder</code></td>
+<td>
+<p>an increasing vector, all greater than 1, for tempering. Geometric spacing is recommended, so that you have (1+delta)^(0:ntemps), where delta is small (typically between 0.05 and 0.2) and ntemps is the number of elements in the vector.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>decor.step.every</code></td>
+<td>
+<p>integer number of MCMC iterations between decorrelation steps.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>verbose</code></td>
+<td>
+<p>logical, whether to print progress.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>Fits a modular Bayesian calibration model, with </p>
+<p style="text-align: center;"><code class="reqn">y = Kw(\theta) + Dv + \epsilon,  ~~\epsilon \sim N(0,\sigma^2 R)</code>
+</p>
+ <p style="text-align: center;"><code class="reqn">f(x) = a_0 + \sum_{m=1}^M a_m B_m(x)</code>
+</p>
+<p> and <code class="reqn">B_m(x)</code> is a BASS basis function (tensor product of spline basis functions). We use priors </p>
+<p style="text-align: center;"><code class="reqn">a \sim N(0,\sigma^2/\tau (B'B)^{-1})</code>
+</p>
+ <p style="text-align: center;"><code class="reqn">M \sim Poisson(\lambda)</code>
+</p>
+<p> as well as the priors mentioned in the arguments above.
+</p>
+
+
+<h3>Value</h3>
+
+<p>An object
+</p>
+
+
+<h3>See Also</h3>
+
+<p>predict.bassBasis for prediction and sobolBasis for sensitivity analysis.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## Not run: 
+  ## simulate data (Friedman function)
+f&lt;-function(x){
+  10*sin(pi*x[,1]*x[,2])+20*(x[,3]-.5)^2+10*x[,4]+5*x[,5]
+}
+## simulate data (Friedman function with first variable as functional)
+sigma&lt;-.1 # noise sd
+n&lt;-500 # number of observations
+nfunc&lt;-50 # size of functional variable grid
+xfunc&lt;-seq(0,1,length.out=nfunc) # functional grid
+x&lt;-matrix(runif(n*9),n,9) # 9 non-functional variables, only first 4 matter
+X&lt;-cbind(rep(xfunc,each=n),kronecker(rep(1,nfunc),x)) # to get y
+y&lt;-matrix(f(X),nrow=n)+rnorm(n*nfunc,0,sigma)
+
+## fit BASS
+library(parallel)
+mod&lt;-bassPCA(x,y,n.pc=5,n.cores=min(5,parallel::detectCores()))
+plot(mod$mod.list[[1]])
+plot(mod$mod.list[[2]])
+plot(mod$mod.list[[3]])
+plot(mod$mod.list[[4]])
+plot(mod$mod.list[[5]])
+
+hist(mod$dat$trunc.error)
+
+## prediction
+npred&lt;-100
+xpred&lt;-matrix(runif(npred*9),npred,9)
+Xpred&lt;-cbind(rep(xfunc,each=npred),kronecker(rep(1,nfunc),xpred))
+ypred&lt;-matrix(f(Xpred),nrow=npred)
+pred&lt;-predict(mod,xpred,mcmc.use=1:1000) # posterior predictive samples (each is a curve)
+matplot(ypred,apply(pred,2:3,mean),type='l',xlab='observed',ylab='mean prediction')
+abline(a=0,b=1,col=2)
+matplot(t(ypred),type='l') # actual
+matplot(t(apply(pred,2:3,mean)),type='l') # mean prediction
+
+## sensitivity
+sens&lt;-sobolBasis(mod,int.order = 2,ncores = max(parallel::detectCores()-2,1),
+                 mcmc.use=1000) # for speed, only use a few samples
+plot(sens)
+
+
+## calibration
+x.true&lt;-runif(9,0,1) # what we are trying to learn
+yobs&lt;-f(cbind(xfunc,kronecker(rep(1,nfunc),t(x.true)))) +
+  rnorm(nfunc,0,.1) # calibration data (with measurement error)
+plot(yobs)
+
+cal&lt;-calibrate.bassBasis(y=yobs,mod=mod,
+                         discrep.mean=rep(0,nfunc),
+                         discrep.mat=diag(nfunc)[,1:2]*.0000001,
+                         sd.est=.1,
+                         s2.df=50,
+                         s2.ind=rep(1,nfunc),
+                         meas.error.cor=diag(nfunc),
+                         bounds=rbind(rep(0,9),rep(1,9)),
+                         nmcmc=10000,
+                         temperature.ladder=1.05^(0:30),type=1)
+
+nburn&lt;-5000
+uu&lt;-seq(nburn,10000,5)
+
+pairs(rbind(cal$theta[uu,1,],x.true),col=c(rep(1,length(uu)),2),ylim=c(0,1),xlim=c(0,1))
+
+pred&lt;-apply(predict(mod,cal$theta[uu,1,],nugget = T,trunc.error = T,
+      mcmc.use = cal$ii[uu]),3,function(x) diag(x)+rnorm(length(uu),0,sqrt(cal$s2[uu,1,1])))
+qq&lt;-apply(pred,2,quantile,probs=c(.025,.975))
+matplot(t(qq),col='lightgrey',type='l')
+lines(yobs,lwd=3)
+
+
+
+## End(Not run)
+## minimal example for CRAN testing
+mod&lt;-bassPCA(1:10,matrix(1:20,10),n.pc=2,nmcmc=2,nburn=1)
+</code></pre>
+
+
+</div>

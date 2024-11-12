@@ -1,0 +1,223 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>BP2D</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Bayesian estimation using two dimensions Bernstein polynomial</h2>
+
+<h3>Description</h3>
+
+<p>This function runs Metropolis-Hasting algorithm which is given setting prior and data.This algorithm starts storing coefficients when it runs halfway,so we use second halves of coefficients compute Rhat to check convergence.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">BP2D(
+  prior,
+  ages,
+  years,
+  disease,
+  population,
+  Iterations = 2e+05,
+  n_chain = 5,
+  n_cluster = 1,
+  nn = 2,
+  interval = 100,
+  RJC = 0.35,
+  seed = TRUE,
+  set = 1,
+  double = 4
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>prior</code></td>
+<td>
+<p>prior=(n0,alpha,L) where alpha is a Poisson parameter,n0 is upper bound of alpha
+L can be every number which is bigger than one.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ages</code></td>
+<td>
+<p>Range of ages.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>years</code></td>
+<td>
+<p>Range of years.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>disease</code></td>
+<td>
+<p>Disease matrix.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>population</code></td>
+<td>
+<p>Population matrix.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Iterations</code></td>
+<td>
+<p>Iterations of chain.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>n_chain</code></td>
+<td>
+<p>Number of Markov chain.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>n_cluster</code></td>
+<td>
+<p>This parameter means number of cores, five cores is recommended.(default: n_cluster=1).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nn</code></td>
+<td>
+<p>The parameter nn is lower bound of alpha.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>interval</code></td>
+<td>
+<p>Each hundreds save one coefficient.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>RJC</code></td>
+<td>
+<p>Control parameter for transfer dimension.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>seed</code></td>
+<td>
+<p>Set seed yes or not.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>set</code></td>
+<td>
+<p>Choose seed.(defaults:set=1)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>double</code></td>
+<td>
+<p>If R.hat &gt;1.1 then double the iterations of times.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>This function will return Bayesian estimate of incidence,Stored parameters,posterior mean,posterior max and table.
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>Fhat</code></td>
+<td>
+<p>Bayesian estimate of incidence.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>chain</code></td>
+<td>
+<p>Bayesian estimate of posterior p-value mean.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>maxchain</code></td>
+<td>
+<p>Bayesian estimate of posterior p-value max.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>store_coefficients</code></td>
+<td>
+<p>Two dimensional Bernstein coefficients.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>output</code></td>
+<td>
+<p>When M-H algorithm ends,contruct the table which contains norm,mean of Fhat,maximum of Fhat,R.hat,iterations,P-value and elasped time.</p>
+</td>
+</tr>
+</table>
+<h3>References</h3>
+
+<p>Li-Chu Chien,Yuh-Jenn Wu,Chao A. Hsiung,Lu-Hai Wang,I-Shou Chang(2015).Smoothed Lexis Diagrams With Applications to Lung and Breast Cancer Trends in Taiwan,Journal of the American Statistical Association, Taylor &amp; Francis Journals, vol. 110(511), pages 1000-1012, September.
+</p>
+
+
+<h3>See Also</h3>
+
+<p>Other Bayesain estimate: 
+<code>BP2D_coef()</code>,
+<code>BP2D_table()</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+# ---------------------------------------- #
+library(BayesBP)
+ages&lt;-35:85
+years&lt;-1988:2007
+prior&lt;-c(10,5,2)
+data(simulated_data_1)
+disease&lt;-simulated_data_1$disease
+population&lt;-simulated_data_1$population
+result&lt;-BP2D(prior,ages,years,disease,population)
+# ---------------------------------------- #
+# Bernstein basis
+basis&lt;-BPbasis(ages,years,10)
+pdbasis1&lt;-PD_BPbasis(ages,years,10,by = 1)
+pdbasis2&lt;-PD_BPbasis(ages,years,10,by = 2)
+# Bernstein polynomial
+coef&lt;-result$store_coefficients$chain_1[[1]]
+BPFhat(coef,ages,years,basis)
+PD_BPFhat(coef,ages,years,pdbasis1,by = 1)
+PD_BPFhat(coef,ages,years,pdbasis2,by = 2)
+# Credible interval
+Credible_interval(result)
+PD_Credible_interval(result,by = 1)
+PD_Credible_interval(result,by = 2)
+# ---------------------------------------- #
+# Given four prior set
+ages&lt;-35:85
+years&lt;-1988:2007
+data(simulated_data_2)
+disease&lt;-simulated_data_2$disease
+population&lt;-simulated_data_2$population
+p&lt;-expand.grid(n0=c(10,20),alpha=c(5,10),LL=c(2,4))
+prior_set&lt;-p[p$n0==p$alpha*2,]
+result_list&lt;-paste0('result',1:nrow(prior_set))
+for (i in seq_len(nrow(prior_set))) {
+   prior&lt;-prior_set[i,]
+   assign(result_list[i],BP2D(prior,ages,years,disease,population))
+   write.BP(get(result_list[i]),sprintf('%s.xlsx',result_list[i]))
+}
+tab&lt;-BP2D_table(result_list)
+write.BPtable(tab,'result_table.xlsx')
+# ---------------------------------------- #
+
+</code></pre>
+
+
+</div>

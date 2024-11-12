@@ -1,0 +1,109 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>gsYZstarcens2</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Jointly resampling Ystar and Zstar function in the case of censoring</h2>
+
+<h3>Description</h3>
+
+<p>This function resamples jointly the distinct pairs (Ystar,Zstar) in the
+fully nonparametric model.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">gsYZstarcens2(
+  ystar,
+  zstar,
+  nstar,
+  rstar,
+  idx,
+  xleft,
+  xright,
+  censor_code,
+  delta,
+  kappa,
+  distr.k,
+  distr.py0,
+  mu.py0,
+  sigma.py0,
+  distr.pz0,
+  mu.pz0,
+  sigma.pz0
+)
+</code></pre>
+
+
+<h3>Details</h3>
+
+<p>For internal use
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+## The function is currently defined as
+function(ystar, zstar, nstar, rstar, idx, xleft, xright, censor_code,
+         delta, kappa, distr.k, distr.py0, mu.py0, sigma.py0, distr.pz0,
+         mu.pz0, sigma.pz0) {
+  for (j in seq(rstar)) {
+    flag &lt;- 1
+    while (flag == 1) {
+      id &lt;- which(!is.na(match(idx, j)))
+      xjleft &lt;- xleft[id]
+      xjright &lt;- xright[id]
+      xbar &lt;- 0.5 * sum(xjleft + xjright, na.rm = T) / nstar[j]
+      z2star &lt;- rk(1,
+        distr = distr.pz0, mu = zstar[j],
+        sigma = zstar[j] / sqrt(delta)
+      )
+      y2star &lt;- rk(1, distr = distr.py0, mu = xbar, sigma = kappa *
+        z2star / sqrt(nstar[j]))
+      f.ratio &lt;- rfyzstarcens2(
+        v = y2star, v2 = ystar[j],
+        z = z2star, z2 = zstar[j], xleft = xjleft, xright = xjright,
+        censor_code = censor_code[id], distr.k = distr.k,
+        distr.py0 = distr.py0, mu.py0 = mu.py0, sigma.py0 = sigma.py0,
+        distr.pz0 = distr.pz0, mu.pz0 = mu.pz0, sigma.pz0 = sigma.pz0
+      )
+      k.ratioNum &lt;- dk(zstar[j],
+        distr = distr.pz0, mu = z2star,
+        sigma = z2star / sqrt(delta)
+      )
+      k.ratioDen &lt;- dk(z2star,
+        distr = distr.pz0, mu = zstar[j],
+        sigma = zstar[j] / sqrt(delta)
+      )
+      k.ratio &lt;- k.ratioNum / k.ratioDen
+      k.ratioNum &lt;- dk(ystar[j],
+        distr = distr.py0, mu = xbar,
+        sigma = kappa * zstar[j] / sqrt(nstar[j])
+      )
+      k.ratioDen &lt;- dk(y2star,
+        distr = distr.py0, mu = xbar,
+        sigma = kappa * z2star / sqrt(nstar[j])
+      )
+      k.ratio &lt;- k.ratio * k.ratioNum / k.ratioDen
+      q2 &lt;- min(1, f.ratio * k.ratio)
+      if (is.na(q2)) {
+        flag &lt;- 1
+      }
+      else {
+        flag &lt;- 0
+        if (runif(1) &lt;= q2) {
+          ystar[j] &lt;- y2star
+          zstar[j] &lt;- z2star
+        }
+      }
+    }
+  }
+  return(list(ystar = ystar, zstar = zstar))
+}
+</code></pre>
+
+
+</div>

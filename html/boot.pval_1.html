@@ -1,0 +1,118 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>boot.pval</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Compute Bootstrap p-values</h2>
+
+<h3>Description</h3>
+
+<p>Compute bootstrap p-values through confidence interval inversion, as described in Hall (1992) and Thulin (2021).
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">boot.pval(boot_res, type = "perc", theta_null = 0, pval_precision = NULL, ...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>boot_res</code></td>
+<td>
+<p>An object of class "boot" containing the output of a bootstrap calculation.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>type</code></td>
+<td>
+<p>A vector of character strings representing the type of interval to base the test on. The value should be one of "norm", "basic", "stud", "perc" (the default), and "bca".</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>theta_null</code></td>
+<td>
+<p>The value of the parameter under the null hypothesis.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>pval_precision</code></td>
+<td>
+<p>The desired precision for the p-value. The default is 1/R,  where R is the number of bootstrap samples in <code>boot_res</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Additional arguments passed to <code>boot.ci</code>.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>p-values can be computed by inverting the corresponding confidence intervals, as described in Section 12.2 of Thulin (2021) and Section 3.12 in Hall (1992). This function computes p-values in this way from "boot" objects. The approach relies on the fact that:
+</p>
+
+<ul>
+<li>
+<p> the p-value of the two-sided test for the parameter theta is the smallest alpha such that theta is not contained in the corresponding 1-alpha confidence interval,
+</p>
+</li>
+<li>
+<p> for a test of the parameter theta with significance level alpha, the set of values of theta that aren't rejected by the two-sided test (when used as the null hypothesis) is a 1-alpha confidence interval for theta.
+</p>
+</li>
+</ul>
+<h3>Value</h3>
+
+<p>A bootstrap p-value.
+</p>
+
+
+<h3>References</h3>
+
+<p>Hall P (1992).
+<em>The Bootstrap and Edgeworth Expansion</em>.
+Springer, New York.
+ISBN 9781461243847.
+</p>
+<p>Thulin M (2021).
+<em>Modern Statistics with R</em>.
+Eos Chasma Press, Uppsala.
+ISBN 9789152701515, <a href="https://www.modernstatisticswithr.com/">https://www.modernstatisticswithr.com/</a>.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R"># Hypothesis test for the city data
+# H0: ratio = 1.4
+library(boot)
+ratio &lt;- function(d, w) sum(d$x * w)/sum(d$u * w)
+city.boot &lt;- boot(city, ratio, R = 99, stype = "w", sim = "ordinary")
+boot.pval(city.boot, theta_null = 1.4)
+
+# Studentized test for the two sample difference of means problem
+# using the final two series of the gravity data.
+diff.means &lt;- function(d, f)
+{
+  n &lt;- nrow(d)
+  gp1 &lt;- 1:table(as.numeric(d$series))[1]
+  m1 &lt;- sum(d[gp1,1] * f[gp1])/sum(f[gp1])
+  m2 &lt;- sum(d[-gp1,1] * f[-gp1])/sum(f[-gp1])
+  ss1 &lt;- sum(d[gp1,1]^2 * f[gp1]) - (m1 *  m1 * sum(f[gp1]))
+  ss2 &lt;- sum(d[-gp1,1]^2 * f[-gp1]) - (m2 *  m2 * sum(f[-gp1]))
+  c(m1 - m2, (ss1 + ss2)/(sum(f) - 2))
+}
+grav1 &lt;- gravity[as.numeric(gravity[,2]) &gt;= 7, ]
+grav1.boot &lt;- boot(grav1, diff.means, R = 99, stype = "f",
+                   strata = grav1[ ,2])
+boot.pval(grav1.boot, type = "stud", theta_null = 0)
+</code></pre>
+
+
+</div>

@@ -1,0 +1,182 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>cv_spatial_autocor</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Measure spatial autocorrelation in spatial response data or predictor raster files</h2>
+
+<h3>Description</h3>
+
+<p>This function provides a quantitative basis for choosing block size. The spatial autocorrelation in either the
+spatial sample points or all continuous predictor variables available as raster layers is assessed and reported.
+The response (as defined be <code>column</code>) in spatial sample points can be binary such as species distribution data,
+or continuous response like soil organic carbon. The function estimates spatial autocorrelation <em>ranges</em> of all input
+raster layers or the response data. This is the range over which observations are independent and is determined by
+constructing the empirical variogram, a fundamental geostatistical tool for measuring spatial autocorrelation.
+The empirical variogram models the structure of spatial autocorrelation by measuring variability between all possible
+pairs of points (O'Sullivan and Unwin, 2010). Results are plotted. See the details section for further information.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">cv_spatial_autocor(
+  r,
+  x,
+  column = NULL,
+  num_sample = 5000L,
+  deg_to_metre = 111325,
+  plot = TRUE,
+  progress = TRUE,
+  ...
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>r</code></td>
+<td>
+<p>a terra SpatRaster object. If provided (and <code>x</code> is missing), it will be used for to calculate range.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>a simple features (sf) or SpatialPoints object of spatial sample data (e.g., species binary or continuous date).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>column</code></td>
+<td>
+<p>character; indicating the name of the column in which response variable (e.g. species data as a binary
+response i.e. 0s and 1s) is stored for calculating spatial autocorrelation range. This supports multiple column names.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>num_sample</code></td>
+<td>
+<p>integer; the number of sample points of each raster layer to fit variogram models. It is 5000 by default,
+however it can be increased by user to represent their region well (relevant to the extent and resolution of rasters).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>deg_to_metre</code></td>
+<td>
+<p>integer. The conversion rate of degrees to metres.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>plot</code></td>
+<td>
+<p>logical; whether to plot the results.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>progress</code></td>
+<td>
+<p>logical; whether to shows a progress bar.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>additional option for <code>cv_plot</code></p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The input raster layers should be continuous for computing the variograms and estimating the range of spatial
+autocorrelation. The input rasters should also have a specified coordinate reference system. However, if the reference
+system is not specified, the function attempts to guess it based on the extent of the map. It assumes an un-projected
+reference system for layers with extent lying between -180 and 180.
+</p>
+<p>Variograms are calculated based on the distances between pairs of points, so un-projected rasters (in degrees) will
+not give an accurate result (especially over large latitudinal extents). For un-projected rasters, <em>the great circle distance</em>
+(rather than Euclidean distance) is used to calculate the spatial distances between pairs of points. To
+enable more accurate estimate, it is recommended to transform un-projected maps (geographic coordinate
+system / latitude-longitude) to a projected metric reference system (e.g. UTM or Lambert) where it is possible.
+See <code>autofitVariogram</code> from <span class="pkg">automap</span> and <code>variogram</code> from <span class="pkg">gstat</span> packages
+for further information.
+</p>
+
+
+<h3>Value</h3>
+
+<p>An object of class S3. A list object including:
+</p>
+
+<ul>
+<li>
+<p>range - the suggested range (i.e. size), which is the median of all calculated ranges in case of 'r'.
+</p>
+</li>
+<li>
+<p>range_table - a table of input covariates names and their autocorrelation range
+</p>
+</li>
+<li>
+<p>plots - the output plot (the plot is shown by default)
+</p>
+</li>
+<li>
+<p>num_sample - number sample of 'r' used for analysis
+</p>
+</li>
+<li>
+<p>variograms - fitted variograms for all layers
+</p>
+</li>
+</ul>
+<h3>References</h3>
+
+<p>O'Sullivan, D., Unwin, D.J., (2010). Geographic Information Analysis, 2nd ed. John Wiley &amp; Sons.
+</p>
+<p>Roberts et al., (2017). Cross-validation strategies for data with temporal, spatial, hierarchical,
+or phylogenetic structure. Ecography. 40: 913-929.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>cv_block_size</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+library(blockCV)
+
+# import presence-absence species data
+points &lt;- read.csv(system.file("extdata/", "species.csv", package = "blockCV"))
+# make an sf object from data.frame
+pa_data &lt;- sf::st_as_sf(points, coords = c("x", "y"), crs = 7845)
+
+# load raster data
+path &lt;- system.file("extdata/au/", package = "blockCV")
+files &lt;- list.files(path, full.names = TRUE)
+covars &lt;- terra::rast(files)
+
+# spatial autocorrelation of a binary/continuous response
+sac1 &lt;- cv_spatial_autocor(x = pa_data,
+                           column = "occ", # binary or continuous data
+                           plot = TRUE)
+
+
+# spatial autocorrelation of continuous raster files
+sac2 &lt;- cv_spatial_autocor(r = covars,
+                           num_sample = 5000,
+                           plot = TRUE)
+
+# show the result
+summary(sac2)
+
+</code></pre>
+
+
+</div>

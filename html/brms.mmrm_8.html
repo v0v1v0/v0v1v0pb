@@ -1,0 +1,288 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>brm_data</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Create and preprocess an MMRM dataset.</h2>
+
+<h3>Description</h3>
+
+<p>Create a dataset to analyze with an MMRM.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">brm_data(
+  data,
+  outcome,
+  baseline = NULL,
+  group,
+  subgroup = NULL,
+  time,
+  patient,
+  covariates = character(0L),
+  missing = NULL,
+  reference_group,
+  reference_subgroup = NULL,
+  reference_time = NULL,
+  role = NULL,
+  level_baseline = NULL,
+  level_control = NULL
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+<p>Data frame or tibble with longitudinal data.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>outcome</code></td>
+<td>
+<p>Character of length 1, name of the continuous
+outcome variable.
+Example possibilities from clinical trial datasets include
+<code>"CHG"</code> and <code>"AVAL"</code>.
+The <code>outcome</code> column in the data should be a numeric vector.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>baseline</code></td>
+<td>
+<p>Character of length 1,
+name of the baseline response variable (for example, <code>"BASE"</code>
+in many clinical trial datasets).
+Only relevant if the response variable is change from baseline.
+Supply <code>NULL</code> to ignore or omit.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>group</code></td>
+<td>
+<p>Character of length 1, name of the treatment group variable.
+Example possibilities from clinical trial datasets include
+<code>"TRT01P"</code>, <code>"TREATMENT"</code>, <code>"TRT"</code>, and <code>"GROUP"</code>.
+The <code>group</code> column in the data should be a
+character vector or unordered factor.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>subgroup</code></td>
+<td>
+<p>Character of length 1, optional name of the a
+discrete subgroup variable. Set to <code>NULL</code> to omit the subgroup (default).
+If present, the <code>subgroup</code> column in the data should be a
+character vector or unordered factor.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>time</code></td>
+<td>
+<p>Character of length 1, name of the discrete time variable.
+Example possibilities from clinical trial datasets include
+<code>"AVISIT"</code> and <code>"VISIT"</code>.
+For most analyses, please ensure the time column in the data
+is an ordered factor. You can easily turn
+the time variable into an ordered factor using
+<code>brm_data_chronologize()</code>, either before or immediately after
+<code>brm_data()</code> (but before any <code style="white-space: pre;">⁠brm_archetype_*()⁠</code> functions).
+This ensures the time points sort in chronological order,
+which ensures the correctness of informative prior archetypes and
+autoregressive / moving average correlation structures.
+</p>
+<p>Ordinarily, ordered factors automatically use polynomial contrasts from
+<code>contr.poly()</code>. This is undesirable for MMRMs, so if the time variable
+is an ordered factor, then <code>brm_data()</code>
+manually sets <code>contrasts(data[[time]])</code> to a set of treatment contrasts
+using <code>contr.treatment()</code>. If you prefer different contrasts, please
+manually set <code>contrasts(data[[time]])</code> to something else after
+calling <code>brm_data()</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>patient</code></td>
+<td>
+<p>Character of length 1, name of the patient ID variable.
+Example possibilities from clinical trial datasets include
+<code>"USUBJID"</code>, <code>"SUBJID"</code>, <code>"PATIENT"</code>, <code>"PATIENTID"</code>, <code>"SUBJECT"</code>,
+<code>"SUBJIDID"</code>, <code>"SBJID"</code>, <code>"STYSID1A"</code>, <code>"SBJ1N"</code>, and <code>"ID"</code>.
+The <code>patient</code> column in the data should be a factor or character vector.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>covariates</code></td>
+<td>
+<p>Character vector of names of other covariates.
+All these covariates are assumed to be non-time-varying. For time-varying
+covariates, please manually expand the data to the full grid of patients
+and time points before you call <code>brm_data()</code>. See the "Preprocessing"
+section for details.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>missing</code></td>
+<td>
+<p>Character of length 1, name of an optional variable
+in a simulated dataset to indicate which outcome values should be missing.
+Set to <code>NULL</code> to omit.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>reference_group</code></td>
+<td>
+<p>Atomic value of length 1, Level of the <code>group</code>
+column to indicate the control group.
+Example possibilities from clinical trial datasets include
+<code>"Placebo"</code>, <code>"PLACEBO"</code>, <code>"PBO"</code>, <code>"PLB"</code>, <code>"CONTROL"</code>, <code>"CTRL"</code>,
+<code>"REFERENCE"</code>, and <code>"REF"</code>.
+<code>reference_group</code> only applies to the post-processing that happens
+in functions like <code>brm_marginal_draws()</code> downstream of the model.
+It does not control the fixed effect mapping in the
+model matrix that <code>brms</code> derives from the formula from <code>brm_formula()</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>reference_subgroup</code></td>
+<td>
+<p>Atomic value of length 1,
+level of the <code>subgroup</code> column
+to use as a reference for pairwise differences in when computing
+marginal means downstream of the model.
+It does not control the fixed effect mapping in the
+model matrix that <code>brms</code> derives from the formula from <code>brm_formula()</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>reference_time</code></td>
+<td>
+<p>Atomic value of length 1 or <code>NULL</code>,
+level of the <code>time</code> column to indicate the baseline time point.
+Leave as <code>NULL</code> if there is no baseline or baseline is not included
+in <code>data[[time]]</code>.
+</p>
+<p>If <code>reference_time</code> is not <code>NULL</code>, then <code>brm_marginal_draws()</code> will
+calculate change from baseline, and it will calculate treatment
+differences as differences between change-from-baseline values.
+If <code>reference_time</code> is not <code>NULL</code>, then <code>brm_marginal_draws()</code> will
+not calculate change from baseline, and it will calculate treatment
+differences as differences between response values.
+</p>
+<p>Note: <code>reference_time</code> only applies to the post-processing that happens
+in functions like <code>brm_marginal_draws()</code> downstream of the model.
+It does not control the fixed effect mapping in the
+model matrix that <code>brms</code> derives from the formula from <code>brm_formula()</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>role</code></td>
+<td>
+<p>Deprecated as unnecessary on 2024-07-11 (version 1.0.1.9007).
+Use <code>reference_time</code> to supply a baseline time point value if it exists.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>level_baseline</code></td>
+<td>
+<p>Deprecated on 2024-01-11 (version 0.2.0.9002).
+Use <code>reference_time</code> instead.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>level_control</code></td>
+<td>
+<p>Deprecated on 2024-01-11 (version 0.2.0.9002).
+Use <code>reference_group</code> instead.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>A classed tibble with attributes which denote features of
+the data such as the treatment group and discrete time variables.
+</p>
+
+
+<h3>Preprocessing</h3>
+
+<p>The preprocessing steps in <code>brm_data()</code> are as follows:
+</p>
+
+<ul>
+<li>
+<p> Perform basic assertions to make sure the data and other arguments
+are properly formatted.
+</p>
+</li>
+<li>
+<p> Convert the group and time columns to character vectors.
+</p>
+</li>
+<li>
+<p> Sanitize the levels of the group and time columns using
+<code>make.names(unique = FALSE, allow_ = TRUE)</code> to ensure agreement
+between the data and the output of <code>brms</code>.
+</p>
+</li>
+<li>
+<p> For each implicitly missing outcome observation, add explicit row
+with the outcome variable equal to <code>NA_real_</code>. Missing values
+in the predictors are implicitly filled using <code>zoo::na.locf()</code>
+on within each patient, which is not valid for time-varying
+covariates. If any covariates are time-varying, please
+manually perform this step before calling <code>brm_data()</code>.
+</p>
+</li>
+<li>
+<p> Arrange the rows of the data by group, then patient, then discrete time.
+</p>
+</li>
+<li>
+<p> Select only the columns of the data relevant to an MMRM analysis.
+</p>
+</li>
+</ul>
+<h3>Separation string</h3>
+
+<p>Post-processing in <code>brm_marginal_draws()</code> names each of the
+group-by-time marginal means with the delimiting character string
+from <code>Sys.getenv("BRM_SEP", unset = "|")</code>. Neither the column names
+nor element names of the group and time variables can contain
+this string. To set a custom string yourself, use
+<code>Sys.setenv(BRM_SEP = "YOUR_CUSTOM_STRING")</code>.
+</p>
+
+
+<h3>See Also</h3>
+
+<p>Other data: 
+<code>brm_data_change()</code>,
+<code>brm_data_chronologize()</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">set.seed(0)
+data &lt;- brm_simulate_simple()$data
+colnames(data) &lt;- paste0("col_", colnames(data))
+data
+brm_data(
+  data = data,
+  outcome = "col_response",
+  group = "col_group",
+  time = "col_time",
+  patient = "col_patient",
+  reference_group = "group_1",
+  reference_time = "time_1"
+)
+</code></pre>
+
+
+</div>

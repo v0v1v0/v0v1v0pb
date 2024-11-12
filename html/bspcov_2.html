@@ -1,0 +1,159 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>bmspcov</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Bayesian Sparse Covariance Estimation</h2>
+
+<h3>Description</h3>
+
+<p>Provides a Bayesian sparse and positive definite estimate of a covariance matrix via the beta-mixture shrinkage prior.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">bmspcov(X, Sigma, prior = list(), nsample = list())
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>X</code></td>
+<td>
+<p>a n <code class="reqn">\times</code> p data matrix with column mean zero.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Sigma</code></td>
+<td>
+<p>an initial guess for Sigma.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>prior</code></td>
+<td>
+<p>a list giving the prior information.
+The list includes the following parameters (with default values in parentheses):
+<code>a (1/2)</code> and <code>b (1/2)</code> giving the shape parameters for beta distribution,
+<code>lambda (1)</code> giving the hyperparameter for the diagonal elements,
+<code>tau1sq (10000/(n*p^4))</code> giving the hyperparameter for the shrinkage prior of covariance.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nsample</code></td>
+<td>
+<p>a list giving the MCMC parameters.
+The list includes the following integers (with default values in parentheses):
+<code>burnin (1000)</code> giving the number of MCMC samples in transition period,
+<code>nmc (1000)</code> giving the number of MCMC samples for analysis.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>Lee, Jo and Lee (2022) proposed the beta-mixture shrinkage prior for estimating a sparse and positive definite covariance matrix.
+The beta-mixture shrinkage prior for <code class="reqn">\Sigma = (\sigma_{jk})</code> is defined as
+</p>
+<p style="text-align: center;"><code class="reqn">
+ \pi(\Sigma) = \frac{\pi^{u}(\Sigma)I(\Sigma \in C_p)}{\pi^{u}(\Sigma \in C_p)}, ~ C_p = \{\mbox{ all } p \times p \mbox{ positive definite matrices }\},
+</code>
+</p>
+
+<p>where <code class="reqn">\pi^{u}(\cdot)</code> is the unconstrained prior given by
+</p>
+<p style="text-align: center;"><code class="reqn">
+\pi^{u}(\sigma_{jk} \mid \rho_{jk}) = N\left(\sigma_{jk} \mid 0, \frac{\rho_{jk}}{1 - \rho_{jk}}\tau_1^2\right)</code>
+</p>
+
+<p style="text-align: center;"><code class="reqn">
+\pi^{u}(\rho_{jk}) = Beta(\rho_{jk} \mid a, b), ~ \rho_{jk} = 1 - 1/(1 + \phi_{jk})</code>
+</p>
+
+<p style="text-align: center;"><code class="reqn">
+\pi^{u}(\sigma_{jj}) = Exp(\sigma_{jj} \mid \lambda).
+</code>
+</p>
+
+<p>For more details, see Lee, Jo and Lee (2022).
+</p>
+
+
+<h3>Value</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>Sigma</code></td>
+<td>
+<p>a nmc <code class="reqn">\times</code> p(p+1)/2 matrix including lower triangular elements of covariance matrix.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Phi</code></td>
+<td>
+<p>a nmc <code class="reqn">\times</code> p(p+1)/2 matrix including shrinkage parameters corresponding to lower triangular elements of covariance matrix.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>p</code></td>
+<td>
+<p>dimension of covariance matrix.</p>
+</td>
+</tr>
+</table>
+<h3>Author(s)</h3>
+
+<p>Kyoungjae Lee and Seongil Jo
+</p>
+
+
+<h3>References</h3>
+
+<p>Lee, K., Jo, S., and Lee, J. (2022), "The beta-mixture shrinkage prior for sparse covariances with near-minimax posterior convergence rate",
+<em>Journal of Multivariate Analysis</em>, 192, 105067.
+</p>
+
+
+<h3>See Also</h3>
+
+<p>sbmspcov
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+set.seed(1)
+n &lt;- 20
+p &lt;- 5
+
+# generate a sparse covariance matrix:
+True.Sigma &lt;- matrix(0, nrow = p, ncol = p)
+diag(True.Sigma) &lt;- 1
+Values &lt;- -runif(n = p*(p-1)/2, min = 0.2, max = 0.8)
+nonzeroIND &lt;- which(rbinom(n=p*(p-1)/2,1,prob=1/p)==1)
+zeroIND = (1:(p*(p-1)/2))[-nonzeroIND]
+Values[zeroIND] &lt;- 0
+True.Sigma[lower.tri(True.Sigma)] &lt;- Values
+True.Sigma[upper.tri(True.Sigma)] &lt;- t(True.Sigma)[upper.tri(True.Sigma)]
+if(min(eigen(True.Sigma)$values) &lt;= 0){
+  delta &lt;- -min(eigen(True.Sigma)$values) + 1.0e-5
+  True.Sigma &lt;- True.Sigma + delta*diag(p)
+}
+
+# generate a data
+X &lt;- MASS::mvrnorm(n = n, mu = rep(0, p), Sigma = True.Sigma)
+
+# compute sparse, positive covariance estimator:
+fout &lt;- bspcov::bmspcov(X = X, Sigma = diag(diag(cov(X))))
+post.est.m &lt;- bspcov::estimate(fout)
+sqrt(mean((post.est.m - True.Sigma)^2))
+sqrt(mean((cov(X) - True.Sigma)^2))
+
+</code></pre>
+
+
+</div>

@@ -1,0 +1,227 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>blme</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Fit Bayesian Linear and Generalized Linear Mixed-Effects Models</h2>
+
+<h3>Description</h3>
+
+<p>Maximum a posteriori estimation for linear and generalized
+linear mixed-effects models in a Bayesian setting. Built off of
+<code>lmer</code>.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">blmer(formula, data = NULL, REML = TRUE,
+      control = lmerControl(), start = NULL, verbose = 0L,
+      subset, weights, na.action, offset, contrasts = NULL,
+      devFunOnly = FALSE, cov.prior = wishart,
+      fixef.prior = NULL, resid.prior = NULL, ...)
+bglmer(formula, data = NULL, family = gaussian,
+       control = glmerControl(), start = NULL, verbose = 0L,
+       nAGQ = 1L, subset, weights, na.action, offset,
+       contrasts = NULL, mustart, etastart,
+       devFunOnly = FALSE, cov.prior = wishart,
+       fixef.prior = NULL, ...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>cov.prior</code></td>
+<td>
+<p>a BLME prior or list of priors with allowable
+distributions: <code>wishart</code>, <code>invwishart</code>, <code>gamma</code>,
+<code>invgamma</code>, or <code>NULL</code>. Imposes a prior over the covariance of the random
+effects/modeled coefficients. Default is <code>wishart</code>. The <code>NULL</code> argument
+imposes flat priors over all relevant parameters.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>fixef.prior</code></td>
+<td>
+<p>a BLME prior of family <code>normal</code>, <code>t</code>, <code>horseshoe</code>, or <code>NULL</code>.
+Imposes a prior over the fixed effects/modeled coefficients.
+Default is <code>NULL</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>resid.prior</code></td>
+<td>
+<p>a BLME prior of family <code>gamma</code>, <code>invamma</code>, <code>point</code>
+or <code>NULL</code>. Imposes a prior over the noise/residual variance, also known as common scale
+parameter or the conditional variance given the random effects.
+Default is <code>NULL</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>start</code></td>
+<td>
+<p>like the <code>start</code> arguments for <code>lmer</code> and
+<code>glmer</code> a numeric vector or named list. Unlike the aforementioned,
+list members of <code>fixef</code> and <code>sigma</code> are applicable to linear mixed models
+provided that numeric optimization is required for these parameters.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>formula, data, REML, family, control, verbose, nAGQ,
+mustart, etastart, devFunOnly, ...</code></td>
+<td>
+<p>model specification arguments as in <code>lmer</code> and <code>glmer</code>;
+see there for details.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>subset, weights, na.action, offset, contrasts</code></td>
+<td>
+<p>further model
+specification arguments as in <code>lm</code>; see there for
+details.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The bulk of the usage for <code>blmer</code> and <code>bglmer</code> closely
+follows the functions <code>lmer</code> and
+<code>glmer</code>. Those help pages provide a good overview of
+fitting linear and generalized linear mixed models. The primary
+distinction is that <code>blmer</code> and <code>bglmer</code> allow the user to
+do Bayesian inference or penalized maximum likelihood, with priors imposed on the different
+model components. For the specifics of any distribution listed below,
+see the distributions page.
+</p>
+<p><strong>Covariance Prior</strong>
+</p>
+<p>The <code>cov.prior</code> argument applies a prior over the
+covariance matrix of the random effects/modeled coefficients.
+As there is one covariance matrix for every named grouping factor -
+that is every element that appears to the right of a vertical bar
+("|") in the model formula - it is possible to apply as many
+different priors as there are said factors.
+</p>
+<p>The general formats of an argument to <code>blmer</code> or <code>bglmer</code>
+for such a prior are of the form:
+</p>
+
+<ul>
+<li> <p><code>cov.prior = factor.name ~ covariance.distribution(option1 = value1, ...)</code>
+</p>
+</li>
+<li> <p><code>cov.prior = list(fc.nm ~ dist1, fc.nm ~ dist2, ..., default.distribution)</code>
+</p>
+</li>
+</ul>
+<p>If the “<code>factor.name ~</code>” construct is ommitted, the prior
+is interpretted as a default and applied to all factors that
+lack specific priors of their own. Options are not required,
+but permit fine-tuning of the model.
+</p>
+<p>Supported distributions are <code>gamma</code>, <code>invgamma</code>, <code>wishart</code>,
+<code>invwishart</code>, <code>NULL</code>, and <code>custom</code>.
+</p>
+<p>The <code>common.scale</code> option, a logical, determines whether or
+not the prior applies to in the absolute-real world
+sense (value = <code>FALSE</code>), or if the prior is applied to the random effect
+covariance divided by the estimated residual variance (<code>TRUE</code>). As a practical matter,
+when false computation can be slower as the profiled common scale may
+no longer have a closed-form solution. As such, the default for all
+cases is <code>TRUE</code>.
+</p>
+<p>Other options are specified along with the specific distributions and
+defaults are explained in the blme distributions page.  
+</p>
+<p><strong>Fixed Effects Prior</strong>
+</p>
+<p>Priors on the fixed effects, or unmodeled coefficients, are specified
+in a fashion similar to that of covariance priors. The general format is
+</p>
+<ul><li> <p><code>fixef.prior = multivariate.distribution(options1 = value1, ...)</code></p>
+</li></ul>
+<p>At present, the implemented multivariate distributions are <code>normal</code>, <code>t</code>,
+<code>horseshoe</code>, and <code>NULL</code>. <code>t</code> and <code>horseshoe</code> priors cannot be used
+when <code>REML</code> is <code>TRUE</code>, as that integral does not have a closed form solution.
+</p>
+<p><strong>Residual Variance Prior</strong>
+</p>
+<p>The general format for a residual variance prior is the same as for a fixed
+effect prior. The supported distributions are <code>point</code>, <code>gamma</code>,
+<code>invgamma</code>.
+</p>
+
+
+<h3>Value</h3>
+
+<p>An object of class <code>"bmerMod"</code>, for which many methods
+are available. See there for details.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>lmer</code>, <code>glmer</code>,
+<code>merMod</code> class, and <code>lm</code>.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">data("sleepstudy", package = "lme4")
+
+### Examples using a covariance prior ##
+
+# Here we are ignoring convergence warnings just to illustate how the package
+# is used: this is not a good idea in practice..
+control &lt;- lmerControl(check.conv.grad = "ignore")
+(fm1 &lt;- blmer(Reaction ~ Days + (0 + Days|Subject), sleepstudy,
+              control = control,
+              cov.prior = gamma))
+(fm2 &lt;- blmer(Reaction ~ Days + (0 + Days|Subject), sleepstudy,
+              control = control,
+              cov.prior = gamma(shape = 2, rate = 0.5, posterior.scale = 'sd')))
+(fm3 &lt;- blmer(Reaction ~ Days + (1 + Days|Subject), sleepstudy,
+              control = control,
+              cov.prior = wishart))
+(fm4 &lt;- blmer(Reaction ~ Days + (1 + Days|Subject), sleepstudy,
+              control = control,
+              cov.prior = invwishart(df = 5, scale = diag(0.5, 2))))
+
+# Custom prior
+penaltyFn &lt;- function(sigma)
+  dcauchy(sigma, 0, 10, log = TRUE)
+(fm5 &lt;- blmer(Reaction ~ Days + (0 + Days|Subject), sleepstudy,
+              cov.prior = custom(penaltyFn, chol = TRUE, scale = "log")))
+
+
+### Examples using a fixed effect prior ###
+(fm6 &lt;- blmer(Reaction ~ Days + (1 + Days|Subject), sleepstudy,
+              cov.prior = NULL,
+              fixef.prior = normal))
+(fm7 &lt;- blmer(Reaction ~ Days + (1 + Days|Subject), sleepstudy,
+              cov.prior = NULL,
+              fixef.prior = normal(cov = diag(0.5, 2), common.scale = FALSE)))
+
+### Example using a residual variance prior ###
+# This is the "eight schools" data set; the mode should be at the boundary
+# of the space.
+
+control &lt;- lmerControl(check.conv.singular = "ignore",
+                       check.nobs.vs.nRE   = "ignore",
+                       check.nobs.vs.nlev  = "ignore")
+y &lt;- c(28, 8, -3, 7, -1, 1, 18, 12)
+sigma &lt;- c(15, 10, 16, 11, 9, 11, 10, 18)
+g &lt;- 1:8
+
+(schools &lt;- blmer(y ~ 1 + (1 | g), control = control, REML = FALSE,
+                  resid.prior = point, cov.prior = NULL,
+                  weights = 1 / sigma^2))
+</code></pre>
+
+
+</div>

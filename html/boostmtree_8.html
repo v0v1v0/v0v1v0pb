@@ -1,0 +1,438 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>predict.boostmtree</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Prediction for Boosted multivariate trees for longitudinal data.</h2>
+
+<h3>Description</h3>
+
+<p>Obtain predicted values.  Also returns test-set performance
+if the test data contains y-outcomes.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">## S3 method for class 'boostmtree'
+predict(object,
+        x,
+        tm,
+        id,
+        y,
+        M,
+        eps = 1e-5,
+        useCVflag = FALSE,
+        ...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>object</code></td>
+<td>
+<p>A boosting object of class <code>(boostmtree, grow)</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>Data frame (or matrix) containing test set x-values.  Rows
+must be duplicated to match the number of time points for an
+individual. If missing, the training x values are used and
+<code>tm</code>, <code>id</code> and <code>y</code> are not required and no
+performance values are returned.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>tm</code></td>
+<td>
+<p>Time values for each test set individual with one entry for
+each row of <code>x</code>.  Optional, but if missing, the set of unique time
+values from the training values are used for each individual and no
+test-set performance values are returned.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>id</code></td>
+<td>
+<p>Unique subject identifier, one entry for each row in
+<code>x</code>.  Optional, but if missing, each individual is assumed to
+have a full time-profile specified by the unique time values from
+the training data.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>y</code></td>
+<td>
+<p>Test set y-values, with one entry for each row  in <code>x</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>M</code></td>
+<td>
+<p>Fixed value for the boosting step number.  Leave this empty 
+to determine the optimized value obtained by minimizing test-set error.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>eps</code></td>
+<td>
+<p>Tolerance value used for determining the optimal <code>M</code>.
+For experts only.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>useCVflag</code></td>
+<td>
+<p>Should the predicted value be based on the estimate derived from oob sample?</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Further arguments passed to or from other methods.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The predicted time profile and performance values are obtained for
+test data from the boosted object grown on the training data.
+</p>
+<p>R-side parallel processing is implemented by replacing the R function
+<code>lapply</code> with <code>mclapply</code> found in the <span class="pkg">parallel</span>
+package.  You can set the number of cores accessed by
+<code>mclapply</code> by issuing the command <code>options(mc.cores =
+  x)</code>, where <code>x</code> is the number of cores.  As an example, issuing
+the following options command uses all available cores:
+</p>
+<p><code>options(mc.cores=detectCores())</code>
+</p>
+<p>However, this can create high RAM usage, especially when using
+function <code>partialPlot</code> which calls the <code>predict</code>
+function.
+</p>
+<p>Note that all performance values (for example prediction error) 
+are standardized by the overall y-standard deviation.
+Thus, reported RMSE (root-mean-squared-error) is actually standardized
+RMSE.  Values are reported at the optimal stopping time.
+</p>
+
+
+<h3>Value</h3>
+
+<p>An object of class <code>(boostmtree, predict)</code>, which is a list with the
+following components:
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>boost.obj</code></td>
+<td>
+<p>The original boosting object.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>The test x-values, but with only one row per individual
+(i.e. duplicated rows are removed).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>time</code></td>
+<td>
+<p>List with each component containing the time
+points for a given test individual.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>id</code></td>
+<td>
+<p>Sorted subject identifier.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>y</code></td>
+<td>
+<p>List containing the test y-values.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Y</code></td>
+<td>
+<p>y-values, in the list-format, where nominal or ordinal Response
+is converted into the binary response.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>family</code></td>
+<td>
+<p>Family of <code>y</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ymean</code></td>
+<td>
+<p>Overall mean of y-values for all individuals. If <code>family</code> = 
+"Binary", "Nominal" or "Ordinal", <code>ymean</code> = 0.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ysd</code></td>
+<td>
+<p>Overall standard deviation of y-values for all individuals. If <code>family</code> = 
+"Binary", "Nominal" or "Ordinal", <code>ysd</code> = 1.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>xvar.names</code></td>
+<td>
+<p>X-variable names.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>K</code></td>
+<td>
+<p>Number of terminal nodes.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>n</code></td>
+<td>
+<p>Total number of subjects.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ni</code></td>
+<td>
+<p>Number of repeated measures for each subject.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>n.Q</code></td>
+<td>
+<p>Number of class labels for non-continuous response.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Q_set</code></td>
+<td>
+<p>Class labels for the non-continuous response.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>y.unq</code></td>
+<td>
+<p>Unique y values for the non-continous response.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nu</code></td>
+<td>
+<p>Boosting regularization parameter.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>D</code></td>
+<td>
+<p>Design matrix for each subject.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>df.D</code></td>
+<td>
+<p>Number of columns of <code>D</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>time.unq</code></td>
+<td>
+<p>Vector of the unique time points.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>baselearner</code></td>
+<td>
+<p>List of length <em>M</em> containing the base learners.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>gamma</code></td>
+<td>
+<p>List of length <em>M</em>, with each component
+containing the boosted tree fitted values.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>membership</code></td>
+<td>
+<p>List of length <em>M</em>, with each component
+containing the terminal node membership for a given boosting
+iteration.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>mu</code></td>
+<td>
+<p>Estimated mean profile at the optimized <code>M</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Prob_class</code></td>
+<td>
+<p>For family == "Ordinal", this provides individual probabilty rather than
+cumulative probabilty.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>muhat</code></td>
+<td>
+<p>Extrapolated mean profile to all unique time points
+evaluated at the the optimized <code>M</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Prob_hat_class</code></td>
+<td>
+<p>Extrapolated <code>Prob_class</code> to all unique time points
+evaluated at the the optimized <code>M</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>err.rate</code></td>
+<td>
+<p>Test set standardized l1-error and RMSE.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>rmse</code></td>
+<td>
+<p>Test set standardized RMSE at the optimized <code>M</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Mopt</code></td>
+<td>
+<p>The optimized <code>M</code>.</p>
+</td>
+</tr>
+</table>
+<h3>Author(s)</h3>
+
+<p>Hemant Ishwaran, Amol Pande and Udaya B. Kogalur
+</p>
+
+
+<h3>References</h3>
+
+<p>Pande A., Li L., Rajeswaran J., Ehrlinger J., Kogalur U.B.,
+Blackstone E.H., Ishwaran H. (2017).  Boosted multivariate trees for
+longitudinal data, <em>Machine Learning</em>, 106(2): 277–305. 
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>plot.boostmtree</code>,
+<code>print.boostmtree</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## Not run: 
+##------------------------------------------------------------
+## Synthetic example (Response is continuous)
+##
+##  High correlation, quadratic time with quadratic interaction
+##  largish number of noisy variables
+##
+##  Illustrates how modified gradient improves performance
+##  also compares performance to ideal and well specified linear models 
+##----------------------------------------------------------------------------
+
+## simulate the data
+## simulation 2: main effects (x1, x3, x4), quad-time-interaction (x2)
+dtaO &lt;- simLong(n = 100, ntest = 100, model = 2, family = "Continuous", q = 25)
+
+## save the data as both a list and data frame
+dtaL &lt;- dtaO$dtaL
+dta &lt;- dtaO$dta
+
+## get the training data
+trn &lt;- dtaO$trn
+
+## save formulas for linear model comparisons
+f.true &lt;- dtaO$f.true
+f.linr &lt;- "y~g( x1+x2+x3+x4+x1*time+x2*time+x3*time+x4*time )"
+
+
+## modified tree gradient (default)
+o.1 &lt;- boostmtree(dtaL$features[trn, ], dtaL$time[trn], dtaL$id[trn],dtaL$y[trn],
+       family = "Continuous",M = 350)
+p.1 &lt;- predict(o.1, dtaL$features[-trn, ], dtaL$time[-trn], dtaL$id[-trn], dtaL$y[-trn])
+
+## non-modified tree gradient (nmtg)
+o.2 &lt;- boostmtree(dtaL$features[trn, ], dtaL$time[trn], dtaL$id[trn], dtaL$y[trn],
+       family = "Continuous",M = 350, mod.grad = FALSE)
+p.2 &lt;- predict(o.2, dtaL$features[-trn, ], dtaL$time[-trn], dtaL$id[-trn], dtaL$y[-trn])
+
+## set rho = 0
+o.3 &lt;- boostmtree(dtaL$features[trn, ], dtaL$time[trn], dtaL$id[trn], dtaL$y[trn],
+       family = "Continuous",M = 350, rho = 0)
+p.3 &lt;- predict(o.3, dtaL$features[-trn, ], dtaL$time[-trn], dtaL$id[-trn], dtaL$y[-trn])
+
+
+##rmse values compared to generalized least squares (GLS)
+##for true model and well specified linear models (LM)
+cat("true LM           :", boostmtree:::gls.rmse(f.true,dta,trn),"\n")
+cat("well specified LM :", boostmtree:::gls.rmse(f.linr,dta,trn),"\n")
+cat("boostmtree        :", p.1$rmse,"\n")
+cat("boostmtree  (nmtg):", p.2$rmse,"\n")
+cat("boostmtree (rho=0):", p.3$rmse,"\n")
+
+##predicted value plots
+plot(p.1)
+plot(p.2)
+plot(p.3)
+
+
+
+##------------------------------------------------------------
+## Synthetic example (Response is binary)
+##
+##  High correlation, quadratic time with quadratic interaction
+##  largish number of noisy variables
+##----------------------------------------------------------------------------
+
+## simulate the data
+## simulation 2: main effects (x1, x3, x4), quad-time-interaction (x2)
+dtaO &lt;- simLong(n = 100, ntest = 100, model = 2, family = "Binary", q = 25)
+
+## save the data as both a list and data frame
+dtaL &lt;- dtaO$dtaL
+dta &lt;- dtaO$dta
+
+## get the training data
+trn &lt;- dtaO$trn
+
+## save formulas for linear model comparisons
+f.true &lt;- dtaO$f.true
+f.linr &lt;- "y~g( x1+x2+x3+x4+x1*time+x2*time+x3*time+x4*time )"
+
+
+## modified tree gradient (default)
+o.1 &lt;- boostmtree(dtaL$features[trn, ], dtaL$time[trn], dtaL$id[trn],dtaL$y[trn],
+       family = "Binary",M = 350)
+p.1 &lt;- predict(o.1, dtaL$features[-trn, ], dtaL$time[-trn], dtaL$id[-trn], dtaL$y[-trn])
+
+
+## End(Not run)
+</code></pre>
+
+
+</div>

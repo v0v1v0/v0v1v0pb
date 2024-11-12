@@ -1,0 +1,152 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>nsgpModel</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>NIMBLE code for a generic nonstationary GP model</h2>
+
+<h3>Description</h3>
+
+<p>This function sets up and compiles a nimble model for a general 
+nonstationary Gaussian process.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">nsgpModel(
+  tau_model = "constant",
+  sigma_model = "constant",
+  Sigma_model = "constant",
+  mu_model = "constant",
+  likelihood = "fullGP",
+  coords,
+  data,
+  constants = list(),
+  monitorAllSampledNodes = TRUE,
+  ...
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>tau_model</code></td>
+<td>
+<p>Character; specifies the model to be used for the log(tau) 
+process. Options are <code>"constant"</code> (spatially-constant), 
+<code>"logLinReg"</code> (log-linear regression), and <code>"approxGP"</code> 
+(approximation to a Gaussian process).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>sigma_model</code></td>
+<td>
+<p>Character; specifies the model to be used for the 
+log(sigma) process. See <code>tau_model</code> for options.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Sigma_model</code></td>
+<td>
+<p>Character; specifies the model to be used for the 
+Sigma anisotropy process. Options are <code>"constant"</code> (spatially-constant),
+<code>"constantIso"</code> (spatially-constant and isotropic), <code>"covReg"</code> 
+(covariance regression), <code>"compReg"</code> (componentwise regression), 
+<code>"compRegIso"</code> (isotropic componentwise regression), <code>"npApproxGP"</code>
+(nonparameteric regression via an approximation to a stationary Gaussian 
+process), and <code>"npApproxGPIso"</code> (isotropic nonparameteric regression 
+via an approximation to a stationary Gaussian process)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>mu_model</code></td>
+<td>
+<p>Character; specifies the model to be used for the mu mean 
+process. Options are <code>"constant"</code> (spatially-constant), <code>"linReg"</code>
+(linear regression), and <code>"zero"</code> (a fixed zero-mean).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>likelihood</code></td>
+<td>
+<p>Character; specifies the likelihood model. Options are
+<code>"fullGP"</code> (the exact Gaussian process likelihood), <code>"NNGP"</code> (the
+nearest-neighbor GP for the response approximate likelihood), and <code>"SGV"</code> 
+(the sparse general Vecchia approximate likelihood).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>coords</code></td>
+<td>
+<p>N x d matrix of spatial coordinates.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+<p>N-vector; observed vector of the spatial process of interest</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>constants</code></td>
+<td>
+<p>A list of constants required to build the model; depends on
+the specific parameter process models chosen.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>monitorAllSampledNodes</code></td>
+<td>
+<p>Logical; indicates whether all sampled nodes 
+should be stored (<code>TRUE</code>) or not (<code>FALSE</code>).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Additional arguments can be passed to the function; for example,
+as an alternative to the <code>constants</code> list, items can be passed directly
+via this argument.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>A <code>nimbleCode</code> object.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R"># Generate some data: stationary/isotropic
+N &lt;- 100
+coords &lt;- matrix(runif(2*N), ncol = 2)
+alpha_vec &lt;- rep(log(sqrt(1)), N) # Log process SD
+delta_vec &lt;- rep(log(sqrt(0.05)), N) # Log nugget SD
+Sigma11_vec &lt;- rep(0.4, N) # Kernel matrix element 1,1
+Sigma22_vec &lt;- rep(0.4, N) # Kernel matrix element 2,2
+Sigma12_vec &lt;- rep(0, N) # Kernel matrix element 1,2
+mu_vec &lt;- rep(0, N) # Mean
+nu &lt;- 0.5 # Smoothness
+dist_list &lt;- nsDist(coords)
+Cor_mat &lt;- nsCorr( dist1_sq = dist_list$dist1_sq, dist2_sq = dist_list$dist2_sq, 
+                   dist12 = dist_list$dist12, Sigma11 = Sigma11_vec, 
+                   Sigma22 = Sigma22_vec, Sigma12 = Sigma12_vec, nu = nu )
+Cov_mat &lt;- diag(exp(alpha_vec)) %*% Cor_mat %*% diag(exp(alpha_vec))
+D_mat &lt;- diag(exp(delta_vec)^2) 
+set.seed(110)
+data &lt;- as.numeric(mu_vec + t(chol(Cov_mat + D_mat)) %*% rnorm(N))
+# Set up constants
+constants &lt;- list( nu = 0.5, Sigma_HP1 = 2 )
+# Defaults: tau_model = "constant", sigma_model = "constant", mu_model = "constant",
+# and Sigma_model = "constant"
+Rmodel &lt;- nsgpModel(likelihood = "fullGP", constants = constants, coords = coords, data = data )
+
+</code></pre>
+
+
+</div>

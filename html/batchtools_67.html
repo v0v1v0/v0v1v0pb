@@ -1,0 +1,149 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>loadRegistry</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Load a Registry from the File System</h2>
+
+<h3>Description</h3>
+
+<p>Loads a registry from its <code>file.dir</code>.
+</p>
+<p>Multiple R sessions accessing the same registry simultaneously can lead to database inconsistencies.
+This is especially dangerous if the same <code>file.dir</code> is accessed from multiple machines, e.g. via a mount.
+</p>
+<p>If you just need to check on the status or peek into some preliminary results while another process is still submitting or waiting
+for pending results, you can load the registry in a read-only mode.
+All operations that need to change the registry will raise an exception in this mode.
+Files communicated back by the computational nodes are parsed to update the registry in memory while the registry on the file system remains unchanged.
+</p>
+<p>A heuristic tries to detect if the registry has been altered in the background by an other process and in this case automatically restricts the current registry to read-only mode.
+However, you should rely on this heuristic to work flawlessly.
+Thus, set to <code>writeable</code> to <code>TRUE</code> if and only if you are absolutely sure that other state-changing processes are terminated.
+</p>
+<p>If you need write access, load the registry with <code>writeable</code> set to <code>TRUE</code>.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">loadRegistry(
+  file.dir,
+  work.dir = NULL,
+  conf.file = findConfFile(),
+  make.default = TRUE,
+  writeable = FALSE
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>file.dir</code></td>
+<td>
+<p>[<code>character(1)</code>]<br>
+Path where all files of the registry are saved.
+Default is directory “registry” in the current working directory.
+The provided path will get normalized unless it is given relative to the home directory
+(i.e., starting with “~”). Note that some templates do not handle relative paths well.
+</p>
+<p>If you pass <code>NA</code>, a temporary directory will be used.
+This way, you can create disposable registries for <code>btlapply</code> or examples.
+By default, the temporary directory <code>tempdir()</code> will be used.
+If you want to use another directory, e.g. a directory which is shared between nodes,
+you can set it in your configuration file by setting the variable <code>temp.dir</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>work.dir</code></td>
+<td>
+<p>[<code>character(1)</code>]<br>
+Working directory for R process for running jobs.
+Defaults to the working directory currently set during Registry construction (see <code>getwd</code>).
+<code>loadRegistry</code> uses the stored <code>work.dir</code>, but you may also explicitly overwrite it,
+e.g., after switching to another system.
+</p>
+<p>The provided path will get normalized unless it is given relative to the home directory
+(i.e., starting with “~”). Note that some templates do not handle relative paths well.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>conf.file</code></td>
+<td>
+<p>[<code>character(1)</code>]<br>
+Path to a configuration file which is sourced while the registry is created.
+In the configuration file you can define how <span class="pkg">batchtools</span> interacts with the system via <code>ClusterFunctions</code>.
+Separating the configuration of the underlying host system from the R code allows to easily move computation to another site.
+</p>
+<p>The file lookup is implemented in the internal (but exported) function <code>findConfFile</code> which returns the first file found of the following candidates:
+</p>
+
+<ol>
+<li>
+<p>File “batchtools.conf.R” in the path specified by the environment variable “R_BATCHTOOLS_SEARCH_PATH”.
+</p>
+</li>
+<li>
+<p>File “batchtools.conf.R” in the current working directory.
+</p>
+</li>
+<li>
+<p>File “config.R” in the user configuration directory as reported by <code>rappdirs::user_config_dir("batchtools", expand = FALSE)</code> (depending on OS, e.g., on linux this usually resolves to “~/.config/batchtools/config.R”).
+</p>
+</li>
+<li>
+<p>“.batchtools.conf.R” in the home directory (“~”).
+</p>
+</li>
+<li>
+<p>“config.R” in the site config directory as reported by <code>rappdirs::site_config_dir("batchtools")</code> (depending on OS). This file can be used for admins to set sane defaults for a computation site.
+</p>
+</li>
+</ol>
+<p>Set to <code>NA</code> if you want to suppress reading any configuration file.
+If a configuration file is found, it gets sourced inside the environment of the registry after the defaults for all variables are set.
+Therefore you can set and overwrite slots, e.g. <code>default.resources = list(walltime = 3600)</code> to set default resources or “max.concurrent.jobs” to
+limit the number of jobs allowed to run simultaneously on the system.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>make.default</code></td>
+<td>
+<p>[<code>logical(1)</code>]<br>
+If set to <code>TRUE</code>, the created registry is saved inside the package
+namespace and acts as default registry. You might want to switch this
+off if you work with multiple registries simultaneously.
+Default is <code>TRUE</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>writeable</code></td>
+<td>
+<p>[<code>logical(1)</code>]<br>
+Loads the registry in read-write mode. Default is <code>FALSE</code>.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>[<code>Registry</code>].
+</p>
+
+
+<h3>See Also</h3>
+
+<p>Other Registry: 
+<code>clearRegistry()</code>,
+<code>getDefaultRegistry()</code>,
+<code>makeRegistry()</code>,
+<code>removeRegistry()</code>,
+<code>saveRegistry()</code>,
+<code>sweepRegistry()</code>,
+<code>syncRegistry()</code>
+</p>
+
+
+</div>

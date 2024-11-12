@@ -1,0 +1,87 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>constructNewdataMatrix</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Construct the model matrix for new data based on an existing
+BayesMfp object</h2>
+
+<h3>Description</h3>
+
+<p>This is an internal function, which constructs a model matrix for new covariate
+data, based on the formula and scaling info in an existing BayesMfp object.
+The matrix can then be passed to prediction functions.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">constructNewdataMatrix(BayesMfpObject, newdata)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>BayesMfpObject</code></td>
+<td>
+<p>a valid <code>BayesMfp</code>-Object</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>newdata</code></td>
+<td>
+<p>the new covariate data as a data.frame (with the same
+covariate names as in the call to <code>BayesMfp</code>)</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>The (uncentered!) model matrix with the FP columns shifted and scaled
+as for the original data.
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Daniel Saban\'es Bov\'e</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## construct a BayesMfp object
+set.seed(19)
+
+x1 &lt;- rnorm (n=15)
+x2 &lt;- rbinom (n=15, size=20, prob=0.5) 
+x3 &lt;- rexp (n=15)
+
+y &lt;- rt (n=15, df=2)
+
+test &lt;- BayesMfp (y ~ bfp (x2, max = 4) + uc (x1 + x3), nModels = 200, method="exhaustive")
+
+## some new covariate data
+newdata &lt;- data.frame(x1 = 1:10, x2 = rbinom(n=10, size=20, prob=0.6),
+x3 = 2:11)
+
+## construct the new design matrix:
+newmatrix &lt;- bfp:::constructNewdataMatrix(BayesMfpObject=test, newdata=newdata)
+
+## check the result:
+stopifnot(identical(newmatrix,
+                    structure(c(1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1.6,
+				1.2, 1.2, 1.2,  1.3, 1.3, 1.4, 1.1,
+				1.2, 1.1, 1, 2, 3, 4, 5, 6, 7, 8, 9,
+				10,  2, 3, 4, 5, 6, 7, 8, 9, 10, 11),
+				.Dim = c(10L, 4L),
+				.Dimnames =
+                                 list(c("1", "2", "3", "4", "5", "6", "7", "8", "9", "10"),
+				      c("(Intercept)", "x2", "x1", "x3")),
+				assign = 0:3)))
+</code></pre>
+
+
+</div>

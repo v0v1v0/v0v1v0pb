@@ -1,0 +1,126 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>bigAnd</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>
+Functions to perform binary operations on integers of arbitrary size, and of arbitrary base (up to 36). 
+</h2>
+
+<h3>Description</h3>
+
+<p>These functions extend the capabilities of the matching base <code>bitw*</code> functions (which are limited to 32-bit integers).  Not only can any integer be processed, at least up to the machine limits as determined with the <code>gmp</code> library, but the inputs and outputs can be in any base. Further, both unsigned (a minus sign indicates negative) and 2s complement base-2 values are allowed. 
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">bigOr(x, y, inBase = 10, outBase = 10, inTwosComp = TRUE) 
+bigAnd(x, y, inBase = 10, outBase = 10,  inTwosComp = TRUE) 
+bigXor(x, y, inBase = 10, outBase = 10, inTwosComp = TRUE) 
+bigNot(x,inBase=10,outBase=10,binSize = 32,inTwosComp = TRUE,outTwosComp = TRUE)
+bigShiftL(x, shift = 1,  inBase = 10 , outBase = 10, binSize = 32, inTwosComp = TRUE) 
+bigShiftR(x, shift = 1,  inBase = 10, outBase = 10, binSize = 32, inTwosComp = TRUE) 
+bigRotate(x, shift,  inBase = 10,binSize = 32, outBase = 10, inTwosComp = TRUE)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>x,y</code></td>
+<td>
+<p> The integers to be processed. These can be numeric, integer, <code>mpfr</code>, <code>bigz</code> , or character class. These two items must be of the same class. List variables are acceptable so long as the contents are all of one class. 
+They can be any base from 2 through 36 as specified by <code>inBase</code>. 
+If these are character strings, formats such as "-37e+5" or "0x4e" (for hex data) are accepted. 
+See the Details section for the capabilities and limits on "translation" of inputs.  If the lengths of <code>x</code> and <code>y</code> differ, the shorter one will be silently recycled.  
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>inBase</code></td>
+<td>
+
+<p>Specify the designated base of the input(s) .  Default is 10.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>outBase</code></td>
+<td>
+
+<p>Specify the designated base of the output(s) .  Default is 10.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>inTwosComp</code></td>
+<td>
+
+<p>When <code>inBase</code> is 2,  the input(s) is treated as being in 2s complement format when this is TRUE (the default). Otherwise the input(s) is treated as a  positive base-2 value unless a negative sign is present. .  If <code>inBase</code> is not equal to 2, this arg is ignored. 
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>binSize</code></td>
+<td>
+
+<p>Specify the number of binary bits for the output calculation. If this is set to zero (the default), the minimum number is set to 4*N such that the current value of the input and output is containable.  But see the Details section for a discussion of 2s complement behavior. 
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>outTwosComp</code></td>
+<td>
+
+<p>Whent <code>outBase</code> is 2, return the 2s complement version of the value(s). Default is TRUE; when False, return a  binary value(s) with a negative sign as necessary. 
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>shift</code></td>
+<td>
+
+<p>The number of bits to shift the input by. Only positive values are allowed for  <code>bigShiftL</code> and <code>bigShiftR</code>, which  shift to the "left" and "right" respectively.
+<code>bigRotate</code> accepts positive or negative values and rotates in the prescribed direction accordingly. See the Details section for comments on 2s complement inputs. 
+</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The inputs, when not in base 10, are expected to follow the common encoding where the letters "a" through "z" correspond to the decimal values 10 through 35.  Values in bases greater than 10 must be character strings. 
+If the input is base 16 ('hex'), the character string can begin with or without '0x'.
+Inputs specified as base 2 through 10 can be provided in any of the numeric formats and the functions automagically interpret them correctly. For example, when  <code>x</code> is numeric  1101 and  <code>inBase</code> is 2 , the functions will interpret the input as 13 if <code>inTwosComp</code> is FALSE and as -3 if TRUE. 
+</p>
+<p>Shifting to the right when 2s complement is in use can lead to unexpected results. <code>bigShiftR</code> assumes 32-bit binary 2scomp for compatibility with <code>bitwShiftR</code>. But for an arbitrarily large binary 2s complement input, the output, for a shift of one, will move -1 (11111...) to 2^(N-1) -1 , where N is the number of bits including the sign bit. <code>bigShiftR</code> defaults to max(32, min_needed_for_magnitude_of_x) bits.
+Similarly, <code>bigShiftL</code> by default provides sufficient bits to handle the shifted value. This is unlike <code>bitwShiftL</code> which  returns the value of the 32 LSBs (in 2s complement form) if the shifted value exceeds 2^31-1 .  If <code>binSize</code> is not zero (the default), <code>bigShiftL</code> will truncate to the specified bit size (or 32, whichever is greater).
+</p>
+<p><code>bigRotate</code> converts input 2s complement binaries to unsigned binaries (with a negative sign when needed).  This is because the behavior of different compilers with respect to rotating 2s complement binary data can be different or even unspecified.  When the input is negative (in any base), the rotation is applied to the positive unsigned binary equivalent and a negative sign attached to the output.  In particular, this means that 2s complement output is disallowed. 
+</p>
+<p>Note that, for compability with the base <code>bitw*</code> functions, the value is internally extended to (at least) 32 bits prior to bitwise operations. In particular, the value of the NOT function when 2s complement is in use depends on the specified size of the binary data. 
+Remember that there will be precision errors if large numerics are entered, possibly leading to roundoff errors.  In general, it is safer to enter values in <code>bigz</code> format or as character strings. 
+</p>
+
+
+<h3>Value</h3>
+
+<p>A list object with one value per entry, corresponding to the input value(s) of x (or y if y is the longer input). In most cases the entries are character strings.  However, if the input and the output are specified as base 10, then the output is converted to the class of the input.  
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Author and Maintainer:Carl Witthoft <a href="mailto:carl@witthoft.com">carl@witthoft.com</a>
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>bitwAnd</code> and other "bitw*" functions
+</p>
+
+
+</div>

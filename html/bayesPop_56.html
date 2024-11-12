@@ -1,0 +1,259 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>pop.expressions</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Expressions as used in Population Output Functions</h2>
+
+<h3>Description</h3>
+
+<p>Documentation of expressions supported by functions <code>pop.trajectories.plot</code>, <code>pop.trajectories.plotAll</code>, <code>pop.trajectories.table</code>, <code>pop.byage.plot</code>, <code>pop.byage.table</code>, <code>cohorts</code>, <code>pop.cohorts.plot</code>, <code>pop.map</code>, <code>pop.map.gvis</code>, <code>write.pop.projection.summary</code>, <code>get.pop.ex</code>, <code>get.pop.exba</code>.
+</p>
+
+
+<h3>Details</h3>
+
+<p>The functions above accept an argument <code>expression</code> which should define a population measure, i.e. a quantity that can be computed from population projections, observed population data or vital events. Such an expression is a collection of <em>basic components</em> connected via usual arithmetic operators, such as <code>+</code>,  <code>-</code>, <code>*</code>, <code>/</code>, <code>^</code>, <code>%%</code>, <code>%/%</code>, and combined using parentheses. In addition, standard R functions or predefined functions (see below) can be used within expressions.
+</p>
+<p>A <b>basic component</b> is a character string constituted of four parts, two of which are optional. They must be in the following order:
+</p>
+
+<ol>
+<li>
+<p> Measure identification. One of the folowing upper-case characters:
+</p>
+
+<ul>
+<li> <p>‘P’ - population, 
+</p>
+</li>
+<li> <p>‘D’ - deaths, 
+</p>
+</li>
+<li> <p>‘B’ - births, 
+</p>
+</li>
+<li> <p>‘S’ - survival ratio,
+</p>
+</li>
+<li> <p>‘F’ - fertility rate,
+</p>
+</li>
+<li> <p>‘R’ - percent age-specific fertility,
+</p>
+</li>
+<li> <p>‘M’ - mortality rate, 
+</p>
+</li>
+<li> <p>‘Q’ - probability of dying,
+</p>
+</li>
+<li> <p>‘E’ - life expectancy,
+</p>
+</li>
+<li> <p>‘G’ - net migration,
+</p>
+</li>
+<li> <p>‘A’ - a_x column of the life table.
+</p>
+</li>
+</ul>
+<p>All but the ‘P’ and ‘G’ indicators are available only if the <code>pop.predict</code> function was run with <code>keep.vital.events=TRUE</code>.
+</p>
+</li>
+<li>
+<p> Country part. One of the following:
+</p>
+
+<ul>
+<li>
+<p> Numerical country code (as used in <code>UNlocations</code>, see <a href="https://en.wikipedia.org/wiki/ISO_3166-1_numeric">https://en.wikipedia.org/wiki/ISO_3166-1_numeric</a>), 
+</p>
+</li>
+<li>
+<p> two- or three-character ISO 3166 code, see <a href="https://en.wikipedia.org/wiki/ISO_3166-1_alpha-2">https://en.wikipedia.org/wiki/ISO_3166-1_alpha-2</a>, <a href="https://en.wikipedia.org/wiki/ISO_3166-1_alpha-3">https://en.wikipedia.org/wiki/ISO_3166-1_alpha-3</a>, 
+</p>
+</li>
+<li>
+<p> characters “XXX” which serves as a wildcard for a country code.
+</p>
+</li>
+</ul>
+</li>
+<li>
+<p> Sex part (optional): The country part can be followed by either “_F” (for female) or “_M” (for male).
+</p>
+</li>
+<li>
+<p> Age part (optional): If used, the basic component is concluded by an age index given as an array. Such array is embraced by either brackets (“[” and “]”) or curly braces (“{” and “}”). The former invokes a summation of counts over given ages, the latter is used when no summation is desired. Note that if this part is missing, counts are automatically summed over all ages. To use all ages without summing, empty curly braces can be used. 
+</p>
+
+<ul>
+<li>
+<p> For 5x5 predictions, the age index 1 corresponds to age 0-4, index 2 corresponds to age 5-9 etc. Indicators ‘S’, ‘M’, ‘Q’ and ‘E’ allow an index -1 which corresponds to age 0-1 and an index 0 which corresponds to age 1-4. Use the pre-defined functions <code>age.index01(...)</code> and <code>age.index05(...)</code> (see below) to define the right indices.
+</p>
+</li>
+<li>
+<p> For 1x1 predictions, the age index starts with 0 for all indicators and matches exactly the age. I.e., indices 0,1,2,... correspond to ages 0,1,2,....
+</p>
+</li>
+</ul>
+</li>
+</ol>
+<p>Not all combinations of the four parts above make sense. For example, ‘F’ and ‘R’ can be only combined with female sex, ‘B’, ‘F’ and ‘R’ can be only combined with a subset of the age groups, namely child-bearing ages (indices 4 to 10 in 5x5, or 11 to 55 in 1x1). Or, there is no point in summing the life table based indicators (M, Q, E, S, A) over multiple age groups, i.e. using brackets, or over sexes. Thus, if the sex part is omitted for the life table indicators, the life table is correctly aggregated over sexes, instead of a simple summation.
+</p>
+<p>Examples of basic components are “P276”, “D50_F[4:10]”, “PXXX{14:27}”, “SCZE_M{}”, “QIE_M[-1]”.
+</p>
+<p>When the expression is evaluated on a prediction object, each basic component is substituted by an array of four dimensions (using the <code>get.pop</code> function):
+</p>
+
+<ol>
+<li>
+<p> Country dimension: Equals to one if a specific country code is given, or it equals the number of countries in the prediction object if a wildcard is used.
+</p>
+</li>
+<li>
+<p> Age dimension: Equals to one if the third component above is missing or the age is defined within square brackets. If the age is defined within curly braces, this dimension corresponds to the length of the age array.
+</p>
+</li>
+<li>
+<p> Time dimension: Depending on the time context of the expression, this dimension corresponds to either the number of projection periods or the number of observation periods.
+</p>
+</li>
+<li>
+<p> Trajectory dimension: Corresponds to the number of trajectories in the prediction object, or one if the component is evaluated on observed data.
+</p>
+</li>
+</ol>
+<p>Depending on the context from which the expression is called, the trajectory dimension of the result of the expression can be reduced by computing given quantiles, and if only one country is evaluated, the first dimension is removed. In addition, with an exception of functions <code>pop.byage.plot</code>, <code>pop.byage.table</code>,  <code>cohorts</code>, and <code>pop.cohorts.plot</code>, the expression should be constructed in a way that the age dimension is eliminated. This can be done for example by using brackets to define age, by using the <code>apply</code> function or one of the pre-defined functions described below. When using within <code>pop.byage.plot</code>, <code>pop.byage.table</code>, <code>cohorts</code>, or <code>pop.cohorts.plot</code>, the expression MUST include curly braces.
+</p>
+<p>While <code>get.pop</code> can be used to obtain results of a basic component, functions <code>get.pop.ex</code> and <code>get.pop.exba</code> evaluate whole expressions. 
+</p>
+
+
+<h3>Pre-defined functions</h3>
+
+<p>The following functions can be used within an expression:
+</p>
+
+<ul>
+<li> <p><code>gmedian(f, cat)</code> <br>
+It gives a median for grouped data with frequencies <code>f</code> and categories <code>cat</code>. This function is to be used in combination with <code>apply</code> or <code>pop.apply</code> (see below) along the age dimension. For example, <br>
+“apply(P380{}, c(1,3,4), gmedian, cats=seq(0, by=5, length=28))” <br>
+is an expression for median age in Italy. (See <code>pop.apply</code> below for a simplified version.) 
+</p>
+</li>
+<li> <p><code>gmean(f, cat)</code> <br>
+Works like <code>gmedian</code> but gives the grouped mean.
+</p>
+</li>
+<li> <p><code>age.func(data, fun="*")</code> <br>
+This function applies <code>fun</code> to <code>data</code> and the corresponding age (the middle point of each age category). The default case would multiply data by the corresponding age. As <code>gmedian</code>, it is to be used in combination with <code>apply</code> or <code>pop.apply</code>.
+</p>
+</li>
+<li> <p><code>drop.age(data)</code> <br>
+Drops the age dimension of the data. For example, if two basic components are combined where one is used within the <code>apply</code> function, the other will need to change its dimension in order to have conformable arrays. For example, <br>
+“apply(age.func(P752{}), c(1,3,4), sum) / drop.age(P752)” <br>
+is an expression for the average age in Sweden. (See <code>pop.apply</code> below for a simplified version.)
+</p>
+</li>
+<li> <p><code>pop.apply(data, fun, ..., split.along=c("None", "age", "traj", "country"))</code> <br>
+By default applies function <code>fun</code> to the age dimension of <code>data</code> and converts the result into the same format as returned by a basic component. This allows combining the <code>apply</code> function with other basic components without having to modify their dimensions. For example, <br>
+“pop.apply(age.func(P752{}), fun=sum) / P752” gives the average age in Sweden, or <br>
+“pop.apply(P380{}, gmedian, cats=seq(0, by=5, length=28))” gives the median age of Italy.
+If <code>slice.along</code> is not ‘None’, it can be used as an <code>apply</code> function where the data is sliced along one axis. 
+</p>
+</li>
+<li> <p><code>pop.combine(data1, data2, fun, ..., split.along=c("age", "traj", "country"))</code> <br>
+Can be used if two basic components should be combined that result in different shapes. It tries to put data into the right format and calls <code>pop.apply</code>. For example, <br>
+“pop.combine(PIND{}, PIND, '/')” give population by age per total population in India, or <br>
+“pop.combine(BFR - DFR, GFR, '+', split.along='traj')” gives births minus deaths plus net migration in France. Here, <code>pop.combine</code> is necessary, because ‘GFR’ is a deterministic component and thus, has only one trajectory, whereas births and deaths are probabilistic.
+</p>
+</li>
+<li> <p><code>age.index01(end)</code> <br>
+Can be used with indicators ‘S’, ‘M’, ‘Q’ and ‘E’ only. It returns an array of age group indices that include ages 0-1 and 1-4 and exclude 0-4. The last age index is <code>end</code>.
+</p>
+</li>
+<li> <p><code>age.index05(end)</code> <br>
+Returns an array of age group indices starting with group 0-4, 5-9 until the age group corresponding to index <code>end</code>.
+</p>
+</li>
+</ul>
+<p>There is also a help function available that generates an expression for the mean age of childbearing, see <code>mac.expression</code>.
+</p>
+
+
+<h3>Note</h3>
+
+<p>The expression parser is simple and far from being perfect. We recommend to leave spaces around the basic components.</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Hana Sevcikova, Adrian Raftery</p>
+
+
+<h3>References</h3>
+
+<p>H. Sevcikova, A. E. Raftery (2016). bayesPop: Probabilistic
+Population Projections. Journal of Statistical Software, 75(5), 1-29.
+doi:10.18637/jss.v075.i05
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>mac.expression</code>, <code>get.pop</code>, <code>pop.trajectories.plot</code>, <code>pop.map</code>, <code>write.pop.projection.summary</code>.</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">sim.dir &lt;- file.path(find.package("bayesPop"), "ex-data", "Pop")
+pred &lt;- get.pop.prediction(sim.dir, write.to.cache=FALSE)
+
+# median age of women in child-bearing ages in Netherlands and all countries - trajectories
+pop.trajectories.plot(pred, nr.traj=0,
+    expression="pop.apply(P528_F{4:10}, gmedian, cats= seq(15, by=5, length=8))")
+## Not run: 
+pop.trajectories.plotAll(pred, nr.traj=0, 
+    expression="pop.apply(PXXX_F{4:10}, gmedian, cats= seq(15, by=5, length=8))")
+
+## End(Not run)
+# mean age of women in child-bearing ages in Netherlands - table
+pop.trajectories.table(pred, 
+    expression="pop.apply(age.func(P528_F{4:10}), fun=sum) / P528_F[4:10]")
+# - gives the same results as with "pop.apply(P528_F{4:10}, gmean, cats=seq(15, by=5, length=8))"
+# - for the mean age of childbearing, see ?mac.expression
+
+# migration per capita by age
+pop.byage.plot(pred, expression="GNL{} / PNL{}", year=2000)
+
+## Not run: 
+# potential support ratio - map (with the two countries
+#       contained in pred object)
+pop.map(pred, expression="PXXX[5:13] / PXXX[14:27]")
+## End(Not run)
+
+# proportion of 0-4 years old to whole population - export to an ASCII file
+dir &lt;- tempfile()
+write.pop.projection.summary(pred, expression="PXXX[1] / PXXX", output.dir=dir)
+unlink(dir)
+
+## Not run: 
+# These are vital events only available if keep.vital.events=TRUE in pop.predict, e.g.
+# sim.dir.tmp &lt;- tempfile()
+# pred &lt;- pop.predict(countries="Netherlands", nr.traj=3, 
+#           				keep.vital.events=TRUE, output.dir=sim.dir.tmp)
+# log female mortality rate by age for Netherlands in 2050, including 0-1 and 1-4 age groups
+pop.byage.plot(pred, expression="log(MNL_F{age.index01(27)})", year=2050)
+
+# trajectories of male 1q0 and table of 5q0 for Netherlands
+pop.trajectories.plot(pred, expression="QNLD_M[-1]")
+pop.trajectories.table(pred, expression="QNLD_M[1]")
+# unlink(sim.dir.tmp)
+## End(Not run)
+</code></pre>
+
+
+</div>

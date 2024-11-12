@@ -1,0 +1,112 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>rtnorm</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Random number generator for a truncated normal distribution</h2>
+
+<h3>Description</h3>
+
+<p>Generates a random number from a truncated normal distribution.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">rtnorm(n, mean = 0, sd = 1, lower = -Inf, upper = Inf)
+</code></pre>
+
+
+<h3>Details</h3>
+
+<p>For internal use
+</p>
+
+
+<h3>Note</h3>
+
+<p>Taken from <code>msm</code> R-package.
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>C. H. Jackson
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+## The function is currently defined as
+function(n, mean = 0, sd = 1, lower = -Inf, upper = Inf) {
+  if (length(n) &gt; 1) {
+    n &lt;- length(n)
+  }
+  mean &lt;- rep(mean, length = n)
+  sd &lt;- rep(sd, length = n)
+  lower &lt;- rep(lower, length = n)
+  upper &lt;- rep(upper, length = n)
+  lower &lt;- (lower - mean) / sd
+  upper &lt;- (upper - mean) / sd
+  ind &lt;- seq(length = n)
+  ret &lt;- numeric(n)
+  alg &lt;- ifelse(lower &gt; upper, -1, ifelse(((lower &lt; 0 &amp; upper ==
+    Inf) | (lower == -Inf &amp; upper &gt; 0) | (is.finite(lower) &amp;
+    is.finite(upper) &amp; (lower &lt; 0) &amp; (upper &gt; 0) &amp; (upper -
+    lower &gt; sqrt(2 * pi)))), 0, ifelse((lower &gt;= 0 &amp; (upper &gt;
+    lower + 2 * sqrt(exp(1)) / (lower + sqrt(lower^2 + 4)) *
+      exp((lower * 2 - lower * sqrt(lower^2 + 4)) / 4))),
+  1, ifelse(upper &lt;= 0 &amp; (-lower &gt; -upper + 2 * sqrt(exp(1)) / (-upper +
+    sqrt(upper^2 + 4)) * exp((upper * 2 - -upper * sqrt(upper^2 +
+    4)) / 4)), 2, 3)
+  )))
+  ind.nan &lt;- ind[alg == -1]
+  ind.no &lt;- ind[alg == 0]
+  ind.expl &lt;- ind[alg == 1]
+  ind.expu &lt;- ind[alg == 2]
+  ind.u &lt;- ind[alg == 3]
+  ret[ind.nan] &lt;- NaN
+  while (length(ind.no) &gt; 0) {
+    y &lt;- rnorm(length(ind.no))
+    done &lt;- which(y &gt;= lower[ind.no] &amp; y &lt;= upper[ind.no])
+    ret[ind.no[done]] &lt;- y[done]
+    ind.no &lt;- setdiff(ind.no, ind.no[done])
+  }
+  stopifnot(length(ind.no) == 0)
+  while (length(ind.expl) &gt; 0) {
+    a &lt;- (lower[ind.expl] + sqrt(lower[ind.expl]^2 + 4)) / 2
+    z &lt;- rexp(length(ind.expl), a) + lower[ind.expl]
+    u &lt;- runif(length(ind.expl))
+    done &lt;- which((u &lt;= exp(-(z - a)^2 / 2)) &amp; (z &lt;= upper[ind.expl]))
+    ret[ind.expl[done]] &lt;- z[done]
+    ind.expl &lt;- setdiff(ind.expl, ind.expl[done])
+  }
+  stopifnot(length(ind.expl) == 0)
+  while (length(ind.expu) &gt; 0) {
+    a &lt;- (-upper[ind.expu] + sqrt(upper[ind.expu]^2 + 4)) / 2
+    z &lt;- rexp(length(ind.expu), a) - upper[ind.expu]
+    u &lt;- runif(length(ind.expu))
+    done &lt;- which((u &lt;= exp(-(z - a)^2 / 2)) &amp; (z &lt;= -lower[ind.expu]))
+    ret[ind.expu[done]] &lt;- -z[done]
+    ind.expu &lt;- setdiff(ind.expu, ind.expu[done])
+  }
+  stopifnot(length(ind.expu) == 0)
+  while (length(ind.u) &gt; 0) {
+    z &lt;- runif(length(ind.u), lower[ind.u], upper[ind.u])
+    rho &lt;- ifelse(lower[ind.u] &gt; 0, exp((lower[ind.u]^2 -
+      z^2) / 2), ifelse(upper[ind.u] &lt; 0, exp((upper[ind.u]^2 -
+      z^2) / 2), exp(-z^2 / 2)))
+    u &lt;- runif(length(ind.u))
+    done &lt;- which(u &lt;= rho)
+    ret[ind.u[done]] &lt;- z[done]
+    ind.u &lt;- setdiff(ind.u, ind.u[done])
+  }
+  stopifnot(length(ind.u) == 0)
+  ret * sd + mean
+}
+</code></pre>
+
+
+</div>

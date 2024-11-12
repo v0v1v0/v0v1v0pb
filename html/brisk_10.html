@@ -1,0 +1,88 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>sim_weights</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Simulate Normalized Weights</h2>
+
+<h3>Description</h3>
+
+<p>Simulate Normalized Weights
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">sim_weights(n, ...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>n</code></td>
+<td>
+<p>number of weights to simulate.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>vectors of length 2 indicating the lower
+and upper bound (respectively) of the un-normalized weights.  At least one
+set of bounds must be equal to each other (e.g. c(1, 1)) and be the largest
+set of bounds in the set specified.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The weights are normalized relative to a set of bounds which
+are equal to each other (e.g. c(1, 1)), and also are the largest set of
+bounds in the set specified.  See Example.
+</p>
+
+
+<h3>Value</h3>
+
+<p>A tibble with weights for each argument supplied to <code>...</code>.  Each
+column represents the weights, and each row (total of <code>n</code> rows) is a
+set of random weights across groups. Column names are obtained from the
+argument names of <code>...</code>, if supplied.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">w &lt;- sim_weights(1e4, a = c(1, 1), b = c(.4, .6), c = c(.2, .3))
+# ratio of b to a is between c(.4, .6) / c(1, 1)
+summary(w$b / w$a)
+# ratio of c to a is between c(.2, .3) / c(1, 1)
+summary(w$c / w$a)
+
+# Weights can be used to add uncertainty to the benefit/risk analysis
+set.seed(1132)
+ilogit &lt;- function(x) 1 / (1 + exp(-x))
+out &lt;- mcda(
+  benefit("CV", function(x) ilogit(x), weight = w$a),
+  risk("DVT", function(x) ilogit(- .5 * x), weight = w$b),
+  risk("MI", function(x) ilogit(- .5 * x), weight = w$c),
+  br_group(
+    label = "PBO",
+    CV = rnorm(1e4, .1),
+    DVT = rnorm(1e4, .1),
+    MI = rnorm(1e4, .1)
+  ),
+  br_group(
+    label = "TRT",
+    CV = rnorm(1e4, 2),
+    DVT = rnorm(1e4, 1),
+    MI = rnorm(1e4, 0.5)
+  )
+)
+</code></pre>
+
+
+</div>

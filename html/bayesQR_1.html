@@ -1,0 +1,336 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>bayesQR</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2> Bayesian quantile regression </h2>
+
+<h3>Description</h3>
+
+<p><code>bayesQR</code> implements a Bayesian method for estimating quantile regression  models (see references).
+To improve the speed of the routine, the Markov Chain Monte Carlo (MCMC) part of the algorithm is programmed in Fortran and is called from within the R function <code>bayesQR</code>.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">  bayesQR(formula, data, quantile, alasso, normal.approx, ndraw, keep, prior)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>formula</code></td>
+<td>
+<p> a symbolic description of the model to be fit. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+<p> an optional data frame containing the variables in the model. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>quantile</code></td>
+<td>
+<p> numerical scalar or vector containing quantile(s) of interest (default=0.5). </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>alasso</code></td>
+<td>
+<p> logical flag for adaptive lasso variable selection (default=FALSE). </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>normal.approx</code></td>
+<td>
+<p> logical flag for normal approximation of posterior distribution (default=TRUE). </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ndraw</code></td>
+<td>
+<p> number of MCMC draws. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>keep</code></td>
+<td>
+<p> thinning parameter, i.e. keep every keepth draw (default=1). </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>prior</code></td>
+<td>
+<p> an S3 object of class <code>"prior"</code>. If omitted, a diffuse prior will be assumed (see <code>prior</code>). </p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The function <code>bayesQR</code> can estimate four types of models, depending on whether the dependent variable is continuous or binary and whether adaptive lasso variable selection is used.
+</p>
+
+<ul>
+<li>
+<p> Continuous dependent variable without adaptive lasso variable selection:
+</p>
+
+<table>
+<tr>
+<td style="text-align: left;">
+    Model:  </td>
+<td style="text-align: left;"> y = X<em>beta</em> + e </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+            </td>
+<td style="text-align: left;"> <em>e ~ ALD(location=0, scale=sigma, quantile=p)</em> </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+    Priors: </td>
+<td style="text-align: left;"> <em>beta ~ N(beta0, V0)</em> </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+            </td>
+<td style="text-align: left;"> <em>sigma ~ invGamma(shape0,scale0)</em> </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+  	</td>
+</tr>
+</table>
+</li>
+<li>
+<p> Continuous dependent variable with adaptive lasso variable selection:
+</p>
+
+<table>
+<tr>
+<td style="text-align: left;">
+    Model:  </td>
+<td style="text-align: left;"> y = X<em>beta</em> + e </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+            </td>
+<td style="text-align: left;"> <em>e ~ ALD(location=0, scale=sigma, quantile=p)</em> </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+    Priors: </td>
+<td style="text-align: left;"> <em>beta ~ ALD(location=0, scale=sigma/lambda, p=0.5)</em> </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+            </td>
+<td style="text-align: left;"> <em>sigma ~ InvGamma(shape=sigma_shape, scale=sigma_scale)</em> </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+            </td>
+<td style="text-align: left;"> <em>(lambda/sigma)^2 ~ Gamma(shape=etasq_shape, scale=etasq_scale)</em> </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+  	</td>
+</tr>
+</table>
+</li>
+<li>
+<p> Binary dependent variable without adaptive lasso variable selection:
+</p>
+
+<table>
+<tr>
+<td style="text-align: left;">
+    Model:  </td>
+<td style="text-align: left;"> y* = X<em>beta</em> + e </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+            </td>
+<td style="text-align: left;"> <em>e ~ ALD(location=0, scale=1, quantile=p)</em> </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+            </td>
+<td style="text-align: left;"> <em>y = 1, if (y* &gt; 0); y = 0, otherwise</em> </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+    Priors: </td>
+<td style="text-align: left;"> <em>beta ~ N(beta0, V0)</em> </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+    </td>
+</tr>
+</table>
+</li>
+<li>
+<p> Binary dependent variable with adaptive lasso variable selection:
+</p>
+
+<table>
+<tr>
+<td style="text-align: left;">
+    Model:  </td>
+<td style="text-align: left;"> y* = X<em>beta</em> + e </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+            </td>
+<td style="text-align: left;"> <em>e ~ ALD(location=0, scale=1, quantile=p)</em> </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+            </td>
+<td style="text-align: left;"> <em>y = 1, if (y* &gt; 0); y = 0, otherwise</em> </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+    Priors: </td>
+<td style="text-align: left;"> <em>beta ~ ALD(location=0, scale=1/lambda, p=0.5)</em> </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+            </td>
+<td style="text-align: left;"> <em>lambda^2 ~ Gamma(shape=lambdasq_shape, scale=lambdasq_scale)</em> </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+    </td>
+</tr>
+</table>
+</li>
+</ul>
+<h3>Value</h3>
+
+<p>An object of class <code>bayesQR</code>, basically a list of lists.
+For every estimated quantile a list is created containing the following elements:
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>method</code></td>
+<td>
+<p> a string containing the method that was used, i.e. indicating whether the dependent variable was continuous or binary and whether adaptive lasso variable selection was used. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>normal.approx</code></td>
+<td>
+<p> logical flag for normal approximation of posterior distribution. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>quantile</code></td>
+<td>
+<p> the quantile that was estimated. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>names</code></td>
+<td>
+<p> character vector containing the names of the independent variables in the model. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>betadraw</code></td>
+<td>
+<p> ndraw/keep x nvar(X) matrix of beta draws. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>sigmadraw</code></td>
+<td>
+<p> ndraw/keep vector of sigma draws (only in case of continuous dependent variable). </p>
+</td>
+</tr>
+</table>
+<h3>Author(s)</h3>
+
+<p>Dries F. Benoit, Rahim Al-Hamzawi, Keming Yu and Dirk Van den Poel
+</p>
+
+
+<h3>References</h3>
+
+  
+<ul>
+<li>
+<p> Paper about the bayesQR package:
+</p>
+<p>Benoit, D.F and Van den Poel, D. (2017). bayesQR: A Bayesian Approach to Quantile Regression, <em>Journal of Statistical Software</em>, 76(7), 1-32. &lt;doi:10.18637/jss.v076.i07&gt;<br></p>
+</li>
+<li>
+<p> Continuous dependent variable without adaptive lasso variable selection:
+</p>
+<p>Yu, K. and Moyeed, R. (2001). Bayesian quantile regression, <em>Statistics and Probability Letters</em>, 54, 437-447. &lt;doi:10.1016/S0167-7152(01)00124-9&gt;
+</p>
+<p>Also see: <br>
+Kozumi, H. and Kobayashi, G. (2011). Gibbs sampling methods for Bayesian quantile regression, <em>Journal of Statistical Computation and Simulation</em>, 81(11), 1565-1578. &lt;doi:10.1080/00949655.2010.496117&gt;<br></p>
+</li>
+<li>
+<p> Continuous dependent variable with adaptive lasso variable selection:
+</p>
+<p>Alhamzawi, R., Yu, K. and Benoit, D.F. (2012). Bayesian adaptive LASSO quantile regression, <em>Statistical Modelling</em>, 12(3), 279-297. &lt;doi:10.1177/1471082X1101200304&gt;
+</p>
+<p>Also see: <br>
+Li, Q., Xi, R. and Lin, N. (2010). Bayesian Regularized Quantile Regression. <em>Bayesian Analysis</em>, 5, 1-24. &lt;doi:10.1214/10-BA521&gt;<br></p>
+</li>
+<li>
+<p> Binary dependent variable without adaptive lasso variable selection:
+</p>
+<p>Benoit, D.F. and Van den Poel, D. (2012). Binary quantile regression: A Bayesian approach based on the asymmetric Laplace distribution, <em>Journal of Applied Econometrics</em>, 27(7), 1174-1188. &lt;doi:10.1002/jae.1216&gt;<br></p>
+</li>
+<li>
+<p> Binary dependent variable with adaptive lasso variable selection:
+</p>
+<p>Al-Hamzawi, R., Benoit, D.F. and Yu, K. (2012). Bayesian lasso binary quantile regression. <em>Computational Statistics</em>, 28(6), 2861-2873. &lt;doi:10.1007/s00180-013-0439-0&gt;
+</p>
+</li>
+</ul>
+<h3>Examples</h3>
+
+<pre><code class="language-R"># Simulate data from heteroskedastic regression
+set.seed(66)
+n &lt;- 200
+X &lt;- runif(n=n,min=0,max=10)
+X &lt;- X
+y &lt;- 1 + 2*X + rnorm(n=n, mean=0, sd=.6*X)
+
+# Estimate series of quantile regressions with adaptive lasso
+# NOTE: to limit execution time of the example, ndraw is set
+#       to a very low value. Set value to 5000 for a better
+#       approximation of the posterior distirubtion.
+out &lt;- bayesQR(y~X, quantile=c(.05,.25,.5,.75,.95), alasso=TRUE, ndraw=500)
+
+# Initiate plot
+## Plot datapoints
+plot(X, y, main="", cex=.6, xlab="X")
+
+## Add quantile regression lines to the plot (exclude first 500 burn-in draws)
+sum &lt;- summary(out, burnin=50)
+for (i in 1:length(sum)){
+  abline(a=sum[[i]]$betadraw[1,1],b=sum[[i]]$betadraw[2,1],lty=i,col=i)
+}
+
+# Estimate and plot OLS model
+outOLS = lm(y~X)
+abline(outOLS,lty=1,lwd=2,col=6)
+
+# Add legend to plot
+legend(x=0,y=max(y),legend=c(.05,.25,.50,.75,.95,"OLS"),lty=c(1,2,3,4,5,1),
+       lwd=c(1,1,1,1,1,2),col=c(1:6),title="Quantile")
+</code></pre>
+
+
+</div>

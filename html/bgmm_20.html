@@ -1,0 +1,133 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>init.model.params</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>
+Initiation of model parameters 
+</h2>
+
+<h3>Description</h3>
+
+<p>Methods for the initiation of model parameters for the EM algorithm. Two initiation procedures are implemented. The first procedure is available by setting the argument <code>method='knowns'</code>. It takes into account only labeled observations and is thus suitable for datasets with a high percentage of labeled cases. The second is available by setting <code>method='all'</code> and does not take the labeling into account. 
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">init.model.params(X = NULL, knowns = NULL, class = NULL, 
+    k = length(unique(class)), method = "all", B = P, P = NULL)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>X</code></td>
+<td>
+<p>a <code>data.frame</code> with the unlabeled observations, its rows correspond to the observations while the columns correspond to variables/data dimensions.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>knowns</code></td>
+<td>
+<p>a <code>data.frame</code> with the labeled observations, rows correspond to the observations while the columns correspond to variables/data dimensions.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>B</code></td>
+<td>
+<p>a beliefs matrix with the distribution of beliefs for the labeled observations. If not specified and the argument <code>P</code> is given, the beliefs matrix is set to the value of <code>P</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>P</code></td>
+<td>
+<p>a matrix of plausibilities, specified only for the labeled observations. The function assumes that the remaining observations are unlabeled and gives them
+uniformly distributed plausibilities by default. If not specified and the argument <code>B</code> is given, the plausibilities matrix is set to the value of <code>B</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>class</code></td>
+<td>
+<p><code>class</code> is a vector of labels for the known observations. If not specified, it is derived from eithter the argument <code>B</code> or <code>P</code> with the use of the MAP rule.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>k</code></td>
+<td>
+<p>the desired number of model components. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>method</code></td>
+<td>
+<p>a method for parameter initialization, one of following <code>c("knowns","all")</code>, see the section Details.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>For <code>method='knowns'</code>, the initialization is based only on the labeled observations. i.e. those observations which have certain or probable components assigned. The initial model parameters
+for each component are estimated in one step from the observations that are assigned to this component (as in fully supervised learning).
+</p>
+<p>If <code>method='all'</code> (default), the initialization is based on all observations. In this case, to obtain the initial set of model components, we start by clustering the data using the k-means algorithm (repeated 10 times to get stable results). The only exception is for one dimensional data. In such a case the clusters are identified by dividing the data into <code>k</code> equal subsets of observations, where the subsets are separated by empirical quantiles c(1/2k, 3/2k, 5/2k, ..., (2k-1)/2k). After this initial clustering each cluster is linked to one model component and initial values for the model parameters are derived from the clustered observations. 
+</p>
+<p>For the partially and semi-supervised methods, correspondence of labels from the initial clustering algorithm and labels for the observations in the <code>knowns</code> dataset rises a  technical problem. The cluster corresponding to component <code>y</code> should be as close as possible to the set of labeled observations with label <code>y</code>. 
+</p>
+<p>Note that for the unsupervised modeling this problem is irrelevant and any cluster may be used to initialize any component.
+</p>
+<p>To mach the cluster labels with the labels of model components a greedy heuristic is used. The heuristic calculates weighted distances between all possible pairs of cluster centers and sets of observations grouped by their labels. 
+In each step, the pair with a minimal distance is chosen (the pair: a group of observations with a common label and a cluster, for which the center of the group is the closest to the center of the cluster). For the chosen pair, the cluster is labeled with the same label as the group of observations. 
+Then, this pair is removed and the heuristic repeats for the reduced set of pairs. 
+</p>
+
+
+<h3>Value</h3>
+
+<p>A list with the following elements:
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>pi</code></td>
+<td>
+<p> a vector of length <code>k</code> with the initial values for the mixing proportions.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>mu</code></td>
+<td>
+<p> a matrix with the means' vectors with the initial values for <code>k</code> components.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>cvar</code></td>
+<td>
+<p> a three-dimensional matrix with the covariance matrices with the initial values for <code>k</code> components.</p>
+</td>
+</tr>
+</table>
+<h3>Author(s)</h3>
+
+<p>Przemyslaw Biecek
+</p>
+
+
+<h3>References</h3>
+
+<p>Przemyslaw Biecek, Ewa Szczurek, Martin Vingron, Jerzy Tiuryn (2012), The R Package bgmm: Mixture Modeling with Uncertain Knowledge, Journal of Statistical Software.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R"> data(genotypes)
+ initial.params = init.model.params(X=genotypes$X, knowns=genotypes$knowns,
+									 class = genotypes$labels)
+ str(initial.params)
+</code></pre>
+
+
+</div>

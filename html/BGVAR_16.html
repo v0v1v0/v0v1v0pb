@@ -1,0 +1,111 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>fevd</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Forecast Error Variance Decomposition</h2>
+
+<h3>Description</h3>
+
+<p>This function calculates the forecast error variance decomposition (FEVDs) for Cholesky and sign-identified shocks.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">fevd(x, rotation.matrix=NULL, var.slct=NULL, verbose=TRUE)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>an object of class <code>bgvar.irf</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>rotation.matrix</code></td>
+<td>
+<p>If <code>NULL</code> and the <code>x</code> has been fitted via sign restrictions, the rotation matrix is used that minimizes the distance to the median impulse responses at the posterior median.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>var.slct</code></td>
+<td>
+<p>character vector that contains the variables for which forecast error variance decomposition should be performed. If <code>NULL</code> the FEVD is computed for the whole system, which is very time consuming.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>verbose</code></td>
+<td>
+<p>If set to <code>FALSE</code> it suppresses printing messages to the console.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>Since the calculations are very time consuming, the FEVDs are based on the posterior median only (as opposed to calculating FEVDs for each MCMC sweep). In case the underlying shock has been identified via sign restrictions, the rotation matrix corresponds to the one that fulfills the sign restrictions at the posterior median of the estimated coefficients. More precisely, the algorithm searches for 50 rotation matrices that fulfill the sign restrictions at the <em>posterior median</em> of the coefficients and then singles out the rotation matrix that minimizes the distance to the median of the impulse responses as suggested in Fry and Pagan (2011).
+</p>
+
+
+<h3>Value</h3>
+
+<p>Returns a list with two elements </p>
+
+<dl>
+<dt><code>FEVD</code></dt>
+<dd>
+<p>  an array of size (K times horizon times N), where K are all variables in the system, horizon is the specified impulse response horizon and N is the size of the decomposed structural variables (if <code>var.slct=NULL</code> then K=N).</p>
+</dd>
+<dt><code>xglobal</code></dt>
+<dd>
+<p> used data of the model.</p>
+</dd>
+</dl>
+<h3>Author(s)</h3>
+
+<p>Maximilian Boeck, Martin Feldkircher, Florian Huber
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>bgvar</code>, <code>irf</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+set.seed(123)
+library(BGVAR)
+data(testdata)
+model.eer&lt;-bgvar(Data=testdata,W=W.test,prior="MN",
+                 draws=50,burnin=50,plag=1,eigen=TRUE)
+                      
+# US monetary policy shock
+shockinfo &lt;- get_shockinfo("chol")
+shockinfo$shock &lt;- "US.stir"; shockinfo$scale &lt;- -100
+irf.chol.us.mp&lt;-irf(model.eer,n.ahead=48,shockinfo=shockinfo)
+
+# calculates FEVD for variables US.Dp and EA.y
+fevd.us.mp=fevd(irf.chol.us.mp,var.slct=c("US.Dp","EA.y"))
+
+# US monetary policy shock with sign restrictions
+shockinfo &lt;- get_shockinfo("sign")
+shockinfo &lt;- add_shockinfo(shockinfo, shock="US.stir", 
+                           restriction=c("US.y","US.Dp"), 
+                           sign=c("&lt;","&lt;"), horizon=c(1,1), 1, 100)
+irf.sign.us.mp&lt;-irf(model.eer,n.ahead=24,shockinfo=shockinfo)
+
+# calculates FEVD for variables US.Dp and EA.y
+fevd.us.mp=fevd(irf.sign.us.mp,var.slct=c("US.Dp","EA.y"))
+
+</code></pre>
+
+
+</div>

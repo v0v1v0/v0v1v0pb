@@ -1,0 +1,96 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>kfold_predict</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Predictions from K-Fold Cross-Validation</h2>
+
+<h3>Description</h3>
+
+<p>Compute and evaluate predictions after performing K-fold
+cross-validation via <code>kfold</code>.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">kfold_predict(x, method = "posterior_predict", resp = NULL, ...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>Object of class <code>'kfold'</code> computed by <code>kfold</code>.
+For <code>kfold_predict</code> to work, the fitted model objects need to have
+been stored via argument <code>save_fits</code> of <code>kfold</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>method</code></td>
+<td>
+<p>Method used to obtain predictions. Can be set to
+<code>"posterior_predict"</code> (the default), <code>"posterior_epred"</code>,
+or <code>"posterior_linpred"</code>. For more details, see the respective
+function documentations.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>resp</code></td>
+<td>
+<p>Optional names of response variables. If specified, predictions
+are performed only for the specified response variables.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Further arguments passed to <code>prepare_predictions</code>
+that control several aspects of data validation and prediction.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>A <code>list</code> with two slots named <code>'y'</code> and <code>'yrep'</code>.
+Slot <code>y</code> contains the vector of observed responses.
+Slot <code>yrep</code> contains the matrix of predicted responses,
+with rows being posterior draws and columns being observations.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>kfold</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## Not run: 
+fit &lt;- brm(count ~ zBase * Trt + (1|patient),
+           data = epilepsy, family = poisson())
+
+# perform k-fold cross validation
+(kf &lt;- kfold(fit, save_fits = TRUE, chains = 1))
+
+# define a loss function
+rmse &lt;- function(y, yrep) {
+  yrep_mean &lt;- colMeans(yrep)
+  sqrt(mean((yrep_mean - y)^2))
+}
+
+# predict responses and evaluate the loss
+kfp &lt;- kfold_predict(kf)
+rmse(y = kfp$y, yrep = kfp$yrep)
+
+## End(Not run)
+
+</code></pre>
+
+
+</div>

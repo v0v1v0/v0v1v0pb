@@ -1,0 +1,124 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>bigquery</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>BigQuery DBI driver</h2>
+
+<h3>Description</h3>
+
+<p>Creates a BigQuery DBI driver for use in <code>DBI::dbConnect()</code>.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">## S4 method for signature 'BigQueryDriver'
+dbConnect(
+  drv,
+  project,
+  dataset = NULL,
+  billing = project,
+  page_size = 10000,
+  quiet = NA,
+  use_legacy_sql = FALSE,
+  bigint = c("integer", "integer64", "numeric", "character"),
+  ...
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>drv</code></td>
+<td>
+<p>an object that inherits from DBIDriver,
+or an existing DBIConnection
+object (in order to clone an existing connection).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>project, dataset</code></td>
+<td>
+<p>Project and dataset identifiers</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>billing</code></td>
+<td>
+<p>Identifier of project to bill.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>page_size</code></td>
+<td>
+<p>Number of items per page.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>quiet</code></td>
+<td>
+<p>If <code>FALSE</code>, displays progress bar; if <code>TRUE</code> is silent;
+if <code>NA</code> picks based on whether or not you're in an interactive context.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>use_legacy_sql</code></td>
+<td>
+<p>If <code>TRUE</code> will use BigQuery's legacy SQL format.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>bigint</code></td>
+<td>
+<p>The R type that BigQuery's 64-bit integer types should be mapped to.
+The default is <code>"integer"</code> which returns R's <code>integer</code> type but results in <code>NA</code> for
+values above/below +/- 2147483647. <code>"integer64"</code> returns a bit64::integer64,
+which allows the full range of 64 bit integers.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Other arguments for compatibility with generic; currently ignored.</p>
+</td>
+</tr>
+</table>
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+con &lt;- DBI::dbConnect(
+  bigquery(),
+  project = "publicdata",
+  dataset = "samples",
+  billing = bq_test_project()
+)
+con
+DBI::dbListTables(con)
+DBI::dbReadTable(con, "natality", n_max = 10)
+
+# Create a temporary dataset to explore
+ds &lt;- bq_test_dataset()
+con &lt;- DBI::dbConnect(
+  bigquery(),
+  project = ds$project,
+  dataset = ds$dataset
+)
+DBI::dbWriteTable(con, "mtcars", mtcars)
+DBI::dbReadTable(con, "mtcars")[1:6, ]
+
+DBI::dbGetQuery(con, "SELECT count(*) FROM mtcars")
+
+res &lt;- DBI::dbSendQuery(con, "SELECT cyl, mpg FROM mtcars")
+dbColumnInfo(res)
+dbFetch(res, 10)
+dbFetch(res, -1)
+DBI::dbHasCompleted(res)
+
+</code></pre>
+
+
+</div>

@@ -1,0 +1,121 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>check_formula</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Check if input model formula is appropriate to use with
+<code>bayesnec</code>
+</h2>
+
+<h3>Description</h3>
+
+<p>Perform a series of checks to ensure that the input formula is valid
+for usage within <code>bayesnec</code>.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">check_formula(formula, data, run_par_checks = FALSE)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>formula</code></td>
+<td>
+<p>An object of class <code>bayesnecformula</code> as returned
+by function <code>bayesnecformula</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+<p>A <code>data.frame</code> containing the variables
+specified in <code>formula</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>run_par_checks</code></td>
+<td>
+<p>See details. A <code>logical</code> defining
+whether random terms for specific parameters should be checked against the
+underlying concentration-response model defined in <code>formula</code>.
+Defaults to <code>FALSE</code>.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>This function allows the user to make sure that the input formula
+will allow for a successful model fit with the function <code>bnec</code>.
+Should all checks pass, the function returns the original formula. Otherwise
+it will fail and requires that the user fixes it until they're able to use
+it with <code>bnec</code>.
+</p>
+<p>The argument <code>run_par_checks</code> is irrelevant for most usages of this
+package because it only applies if three conditions are met: 1) the user has
+specified a group-level effect; 2) the group-level effects is parameter
+specific (e.g. <code>(par | group_variable)</code> rather than <code>pgl/ogl(group_variable)</code>); and 3) The user is keen to learn if the specified parameter
+is found in the specified model (via argument <code>model</code> in the <code>crf</code> term – see details in ?bayesnecformula).
+</p>
+<p><strong>NB:</strong> <code>aterms</code> other than <code>trials()</code> and <code>weights()</code> are
+currently omitted from <code>model.frame</code> output. If you need other
+<code>aterms</code> as part of that output please raise an issue on our GitHub
+page. See details about <code>aterms</code> in ?bayesnecformula.
+</p>
+
+
+<h3>Value</h3>
+
+<p>A validated object of class <code>bayesnecformula</code> and
+<code>formula</code>.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>bnec</code>,
+<code>bayesnecformula</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">library(bayesnec)
+nec3param &lt;- function(beta, nec, top, x) {
+  top * exp(-exp(beta) * (x - nec) *
+    ifelse(x - nec &lt; 0, 0, 1))
+}
+
+data &lt;- data.frame(x = seq(1, 20, length.out = 10), tr = 100, wght = c(1, 2),
+                   group_1 = sample(c("a", "b"), 10, replace = TRUE),
+                   group_2 = sample(c("c", "d"), 10, replace = TRUE))
+data$y &lt;- nec3param(beta = -0.2, nec = 4, top = 100, data$x)
+
+# returns error
+# &gt; f_1 &lt;- y ~ crf(x, "nec3param") + z
+# regular formula not allowed, wrap it with function bnf
+# &gt; check_formula(f_1, data)
+# population-level covariates are not allowed
+# &gt; check_formula(bnf(f_1), data)
+
+
+# expect a series of messages for because not all
+# nec models have the "bot" parameter
+f_2 &lt;- y | trials(tr) ~ crf(x, "nec") + (nec + bot | group_1)
+check_formula(bnf(f_2), data, run_par_checks = TRUE)
+
+# runs fine
+f_3 &lt;- "y | trials(tr) ~ crf(sqrt(x), \"nec3param\")"
+check_formula(bnf(f_3), data)
+f_4 &lt;- y | trials(tr) ~ crf(x, "nec3param") + ogl(group_1) + pgl(group_2)
+inherits(check_formula(bnf(f_4), data), "bayesnecformula")
+
+</code></pre>
+
+
+</div>

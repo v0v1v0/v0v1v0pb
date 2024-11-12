@@ -1,0 +1,230 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>gibbs_np</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Gibbs sampler for Bayesian nonparametric inference with Whittle likelihood</h2>
+
+<h3>Description</h3>
+
+<p>Obtain samples of the posterior of the Whittle likelihood in conjunction with a Bernstein-Dirichlet prior on the spectral density.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">gibbs_np(
+  data,
+  Ntotal,
+  burnin,
+  thin = 1,
+  print_interval = 100,
+  numerical_thresh = 1e-07,
+  M = 1,
+  g0.alpha = 1,
+  g0.beta = 1,
+  k.theta = 0.01,
+  tau.alpha = 0.001,
+  tau.beta = 0.001,
+  kmax = 100 * coars + 500 * (!coars),
+  trunc_l = 0.1,
+  trunc_r = 0.9,
+  coars = F,
+  L = max(20, length(data)^(1/3))
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+<p>numeric vector; NA values are interpreted as missing values and treated as random</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Ntotal</code></td>
+<td>
+<p>total number of iterations to run the Markov chain</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>burnin</code></td>
+<td>
+<p>number of initial iterations to be discarded</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>thin</code></td>
+<td>
+<p>thinning number (postprocessing)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>print_interval</code></td>
+<td>
+<p>Number of iterations, after which a status is printed to console</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>numerical_thresh</code></td>
+<td>
+<p>Lower (numerical pointwise) bound for the spectral density</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>M</code></td>
+<td>
+<p>DP base measure constant (&gt; 0)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>g0.alpha, g0.beta</code></td>
+<td>
+<p>parameters of Beta base measure of DP</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>k.theta</code></td>
+<td>
+<p>prior parameter for polynomial degree k (propto exp(-k.theta*k*log(k)))</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>tau.alpha, tau.beta</code></td>
+<td>
+<p>prior parameters for tau (inverse gamma)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>kmax</code></td>
+<td>
+<p>upper bound for polynomial degree of Bernstein-Dirichlet mixture (can be set to Inf, algorithm is faster with kmax&lt;Inf due to pre-computation of basis functions, but values 500&lt;kmax&lt;Inf are very memory intensive)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>trunc_l, trunc_r</code></td>
+<td>
+<p>left and right truncation of Bernstein polynomial basis functions, 0&lt;=trunc_l&lt;trunc_r&lt;=1</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>coars</code></td>
+<td>
+<p>flag indicating whether coarsened or default bernstein polynomials are used (see Appendix E.1 in Ghosal and van der Vaart 2017)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>L</code></td>
+<td>
+<p>truncation parameter of DP in stick breaking representation</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>Further details can be found in the simulation study section in the references papers.
+</p>
+
+
+<h3>Value</h3>
+
+<p>list containing the following fields:
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>psd.median,psd.mean</code></td>
+<td>
+<p>psd estimates: (pointwise) posterior median and mean</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>psd.p05,psd.p95</code></td>
+<td>
+<p>pointwise credibility interval</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>psd.u05,psd.u95</code></td>
+<td>
+<p>uniform credibility interval</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>k,tau,V,W</code></td>
+<td>
+<p>posterior traces of PSD parameters</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>lpost</code></td>
+<td>
+<p>trace of log posterior</p>
+</td>
+</tr>
+</table>
+<h3>References</h3>
+
+<p>C. Kirch et al. (2018)
+<em>Beyond Whittle: Nonparametric Correction of a Parametric Likelihood With a Focus on Bayesian Time Series Analysis</em>
+Bayesian Analysis
+&lt;doi:10.1214/18-BA1126&gt;
+</p>
+<p>N. Choudhuri et al. (2004)
+<em>Bayesian Estimation of the Spectral Density of a Time Series</em>
+JASA
+&lt;doi:10.1198/016214504000000557&gt;
+</p>
+<p>S. Ghosal and A. van der Vaart (2017)
+<em>Fundamentals of Nonparametric Bayesian Inference</em> &lt;doi:10.1017/9781139029834&gt;
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## Not run: 
+
+##
+## Example 1: Fit the NP model to sunspot data:
+##
+
+data &lt;- sqrt(as.numeric(sunspot.year))
+data &lt;- data - mean(data)
+
+# If you run the example be aware that this may take several minutes
+print("example may take some time to run")
+mcmc &lt;- gibbs_np(data=data, Ntotal=10000, burnin=4000, thin=2)
+
+# Plot spectral estimate, credible regions and periodogram on log-scale
+plot(mcmc, log=T)
+
+
+##
+## Example 2: Fit the NP model to high-peaked AR(1) data
+##
+
+n &lt;- 256
+data &lt;- arima.sim(n=n, model=list(ar=0.95)) 
+data &lt;- data - mean(data)
+omega &lt;- fourier_freq(n)
+psd_true &lt;- psd_arma(omega, ar=0.95, ma=numeric(0), sigma2=1)
+
+# If you run the example be aware that this may take several minutes
+print("example may take some time to run")
+mcmc &lt;- gibbs_np(data=data, Ntotal=10000, burnin=4000, thin=2)
+
+# Compare estimate with true function (green)
+plot(mcmc, log=F, pdgrm=F, credib="uniform")
+lines(x=omega, y=psd_true, col=3, lwd=2)
+
+# Compute the Integrated Absolute Error (IAE) of posterior median
+cat("IAE=", mean(abs(mcmc$psd.median-psd_true)[-1]) , sep="")
+
+## End(Not run)
+</code></pre>
+
+
+</div>

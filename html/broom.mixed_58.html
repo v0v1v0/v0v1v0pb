@@ -1,0 +1,101 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>tidy.varFunc</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Tidy variance structure for the <code>nlme</code> package.</h2>
+
+<h3>Description</h3>
+
+<p>Returns a tibble with the following columns:
+</p>
+
+<dl>
+<dt>group</dt>
+<dd>
+<p>type of varFunc, along with the right hand side of the formula
+in parentheses e.g. <code>"varExp(age | Sex)"</code>.</p>
+</dd>
+<dt>term</dt>
+<dd>
+<p>terms included in the formula of the variance model, specifically
+the names of the coefficients.  If the value is fixed, it will be appended
+with <code>" ; fixed"</code>.</p>
+</dd>
+<dt>estimate</dt>
+<dd>
+<p>estimated coefficient</p>
+</dd>
+<dt>estimated</dt>
+<dd>
+<p>This column is only included if some parameters are fixed.
+TRUE if the parameter is estimated and FALSE if the parameter is fixed.</p>
+</dd>
+</dl>
+<h3>Usage</h3>
+
+<pre><code class="language-R">## S3 method for class 'varFunc'
+tidy(x, ...)
+
+## S3 method for class 'varComb'
+tidy(x, ...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>An object of class <code>varFunc</code>, such as those used as the
+<code>weights</code> argument from the <code>nlme</code> package</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Ignored</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>If the <code>varFunc</code> is uninitialized or has no parameters, the
+function will return an empty tibble.  Otherwise, it will return a tibble with
+names described in the details section.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## Not run: 
+if (require("nlme")) {
+ChickWeight_arbitrary_group &lt;- datasets::ChickWeight
+ChickWeight_arbitrary_group$group_arb_n &lt;-
+  1 + (
+    as.integer(ChickWeight_arbitrary_group$Chick) &gt;
+    median(as.integer(ChickWeight_arbitrary_group$Chick))
+  )
+ChickWeight_arbitrary_group$group_arb &lt;- c("low", "high")[ChickWeight_arbitrary_group$group_arb_n]
+
+fit_with_fixed &lt;-
+  lme(
+    weight ~ Diet * Time,
+    random = ~Time | Chick,
+    data =ChickWeight_arbitrary_group,
+    weights=varIdent(fixed=c("low"=5), form=~1|group_arb)
+  )
+# Show all parameters
+tidy(fit_with_fixed)
+# Exclude fixed parameters
+tidy(fit_with_fixed) %&gt;%
+  filter(across(any_of("estimated"), ~.x))
+}
+
+## End(Not run)
+</code></pre>
+
+
+</div>

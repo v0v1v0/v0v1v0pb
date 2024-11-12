@@ -1,0 +1,199 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>bcajack2</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Nonparametric bias-corrected and accelerated bootstrap
+confidence limits</h2>
+
+<h3>Description</h3>
+
+<p>This function is a version of <code>bcajack</code> that allows
+all the recomputations of the original statistic function
+<code class="reqn">f</code> to be carried out separately. This is an advantage
+if <code class="reqn">f</code> is time-consuming, in which case the B
+replications for the nonparametric bca calculations might need
+to be done on a distributed basis.
+</p>
+<p>To use <code>bcajack2</code> in this mode, we first compute a list <code>Blist</code> via
+<code>Blist &lt;- list(Y = Y, tt = tt, t0 = t0)</code>.  Here <code>tt</code> is a vector of
+length <code>B</code> having i-th entry <code>tt[i] &lt;- func(x[Ii,], ...)</code>, where <code>x</code>
+is the <code class="reqn">n \times p</code> data matrix and <code>Ii</code> is a bootstrap vector
+of (observation) indices. <code>Y</code> is a <code>B</code> by <code class="reqn">n</code> count matrix,
+whose i-th row is the counts corresponding to <code>Ii</code>. For example if
+n = 5 and <code style="white-space: pre;">⁠Ii = (2, 5, 2, 1, 4)⁠</code>, then <code style="white-space: pre;">⁠Yi = (1, 2, 0, 1, 1)⁠</code>. Having computed <code>Blist</code>, <code>bcajack2</code> is invoked as
+<code>bcajack2(Blist)</code> without need to enter the function <code class="reqn">func</code>.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">bcajack2(
+  x,
+  B,
+  func,
+  ...,
+  m = nrow(x),
+  mr,
+  pct = 0.333,
+  K = 2,
+  J = 12,
+  alpha = c(0.025, 0.05, 0.1, 0.16),
+  verbose = TRUE
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>an <code class="reqn">n \times p</code> data matrix, rows are observed
+<code class="reqn">p</code>-vectors, assumed to be independently sampled from
+target population. If <code class="reqn">p</code> is 1 then <code>x</code> can be a vector.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>B</code></td>
+<td>
+<p>number of bootstrap replications. <code>B</code> can also be a vector
+of <code>B</code> bootstrap replications of the estimated parameter of
+interest, computed separately. If <code>B</code> is <code>Blist</code> as explained
+above, <code>x</code> is not needed.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>func</code></td>
+<td>
+<p>function <code class="reqn">\hat{\theta}=func(x)</code> computing estimate of the
+parameter of interest; <code class="reqn">func(x)</code> should return a real value
+for any <code class="reqn">n^\prime \times p</code> matrix <code class="reqn">x^\prime</code>,
+<code class="reqn">n^\prime</code> not necessarily equal to <code class="reqn">n</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>additional arguments for <code>func</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>m</code></td>
+<td>
+<p>an integer less than or equal to <code class="reqn">n</code>; the routine
+collects the <code class="reqn">n</code> rows of <code>x</code> into <code>m</code> groups to speed up
+the jackknife calculations for estimating the acceleration
+value <code class="reqn">a</code>; typically <code>m</code> is 20 or 40 and does not have to
+exactly divide <code class="reqn">n</code>. However, warnings will be shown.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>mr</code></td>
+<td>
+<p>if <code class="reqn">m &lt; n</code> then <code>mr</code> repetions of the randomly
+grouped jackknife calculations are averaged.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>pct</code></td>
+<td>
+<p><code>bcajack2</code> uses those count vectors nearest (1,1,...1)
+to estimate the gradient of the statistic, "nearest" being
+defined as those count vectors in the smallest <code>pct</code> of all B
+of them. Default value for 'pct is 1/3 (see appendix in Efron
+and Narasimhan for further details)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>K</code></td>
+<td>
+<p>a non-negative integer. If <code>K</code> &gt; 0, bcajack also returns
+estimates of <em>internal standard error</em>, that is, of the
+variability due to stopping at <code>B</code> bootstrap replications
+rather than going on to infinity. These are obtained from a
+second type of jackknifing, taking an average of <code>K</code> separate
+jackknife estimates, each randomly splitting the <code>B</code> bootstrap
+replications into <code>J</code> groups.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>J</code></td>
+<td>
+<p>the number of groups into which the bootstrap replications
+are split</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>alpha</code></td>
+<td>
+<p>percentiles desired for the bca confidence limits. One
+only needs to provide <code>alpha</code> values below 0.5; the upper
+limits are automatically computed</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>verbose</code></td>
+<td>
+<p>logical for verbose progress messages</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>a named list of several items
+</p>
+
+<ul>
+<li> <p><strong>lims</strong> : first column shows the estimated bca confidence limits
+at the requested alpha percentiles. These can be compared with
+the standard limits <code class="reqn">\hat{\theta} +
+    \hat{\sigma}z_{\alpha}</code>, third column. The second column
+<code>jacksd</code> gives the internal standard errors for the bca limits,
+quite small in the example. Column 4, <code>pct</code>, gives the
+percentiles of the ordered B bootstrap replications
+corresponding to the bca limits, eg the 897th largest
+replication equalling the .975 bca limit .557.
+</p>
+</li>
+<li> <p><strong>stats</strong> : top line of stats shows 5 estimates: theta is
+<code class="reqn">func(x)</code>, original point estimate of the parameter of
+interest; <code>sdboot</code> is its bootstrap estimate of standard error;
+<code>z0</code> is the bca bias correction value, in this case quite
+negative; <code>a</code> is the <em>acceleration</em>, a component of the bca
+limits (nearly zero here); <code>sdjack</code> is the jackknife estimate
+of standard error for theta. Bottom line gives the internal
+standard errors for the five quantities above. This is
+substantial for <code>z0</code> above.
+</p>
+</li>
+<li> <p><strong>B.mean</strong> : bootstrap sample size B, and the mean of the B
+bootstrap replications <code class="reqn">\hat{\theta^*}</code>
+</p>
+</li>
+<li> <p><strong>ustats</strong> : The bias-corrected estimator <code>2 * t0 - mean(tt)</code>,
+and an estimate <code>sdu</code> of its sampling error
+</p>
+</li>
+<li> <p><strong>seed</strong> : The random number state for reproducibility
+</p>
+</li>
+</ul>
+<h3>Examples</h3>
+
+<pre><code class="language-R">data(diabetes, package = "bcaboot")
+Xy &lt;- cbind(diabetes$x, diabetes$y)
+rfun &lt;- function(Xy) {
+  y &lt;- Xy[, 11]
+  X &lt;- Xy[, 1:10]
+  summary(lm(y~X) )$adj.r.squared
+}
+set.seed(1234)
+bcajack2(x = Xy, B = 1000, func = rfun, m = 40, verbose = FALSE)
+
+</code></pre>
+
+
+</div>

@@ -1,0 +1,328 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>aanma</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>All Atom Normal Mode Analysis</h2>
+
+<h3>Description</h3>
+
+<p>Perform all-atom elastic network model normal modes calculation of a protein
+structure.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">aanma(...)
+
+## S3 method for class 'pdb'
+aanma(pdb, pfc.fun = NULL, mass = TRUE, temp = 300,
+  keep = NULL, hessian = NULL, outmodes = "calpha", rm.wat = TRUE,
+  reduced = FALSE, rtb = FALSE, nmer = 1, ...)
+
+rtb(hessian, pdb, mass = TRUE, nmer = 1, verbose = TRUE)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>additional arguments to <code>build.hessian</code> and
+<code>aa2mass</code>. One useful option here for dealing with
+unconventional residues is ‘mass.custom’, see the
+<code>aa2mass</code> function for details.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>pdb</code></td>
+<td>
+<p>an object of class <code>pdb</code> as obtained from function
+<code>read.pdb</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>pfc.fun</code></td>
+<td>
+<p>customized pair force constant (‘pfc’) function. The
+provided function should take a vector of distances as an argument to
+return a vector of force constants. If NULL, the default function
+‘aaenm2’ will be employed. (See details below).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>mass</code></td>
+<td>
+<p>logical, if TRUE the Hessian will be mass-weighted.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>temp</code></td>
+<td>
+<p>numerical, temperature for which the amplitudes for scaling the
+atomic displacement vectors are calculated. Set ‘temp=NULL’ to
+avoid scaling.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>keep</code></td>
+<td>
+<p>numerical, final number of modes to be stored. Note that all
+subsequent analyses are limited to this subset of modes. This option is
+useful for very large structures and cases where memory may be limited.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>hessian</code></td>
+<td>
+<p>hessian matrix as obtained from <code>build.hessian</code>.
+For internal purposes and generally not intended for public use.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>outmodes</code></td>
+<td>
+<p>either a character (‘calpha’ or ‘noh’) or atom
+indices as obtained from <code>atom.select</code> specifying the atoms to
+include in the resulting mode object. (See details below).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>rm.wat</code></td>
+<td>
+<p>logical, if TRUE water molecules will be removed before
+calculation.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>reduced</code></td>
+<td>
+<p>logical, if TRUE the coarse-grained (‘4-bead’) ENM will
+be employed. (See details below).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>rtb</code></td>
+<td>
+<p>logical, if TRUE the rotation-translation block based
+approximate modes will be calculated. (See details below).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nmer</code></td>
+<td>
+<p>numerical, defines the number of residues per block (used only
+when <code>rtb=TRUE</code>).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>verbose</code></td>
+<td>
+<p>logical, if TRUE print detailed processing message</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>This function builds an elastic network model (ENM) based on all
+heavy atoms of input <code>pdb</code>, and performs subsequent normal mode
+analysis (NMA) in various manners. By default, the ‘aaenm2’ force
+field (defining of the spring constants between atoms) is used, which was
+obtained by fitting to a local energy minimum of a crambin model
+derived from the AMBER99SB force field. It employs a pair force constant
+function which falls as r^-6, and specific force constants for
+covalent and intra-residue atom pairs. See also <code>load.enmff</code>
+for other force field options.
+</p>
+<p>The <code>outmodes</code> argument controls the type of output modes. There are
+two standard types of output modes: ‘noh’ and ‘calpha’.
+<code>outmodes='noh'</code> invokes regular all-atom based ENM-NMA. When
+<code>outmodes='calpha'</code>, an effective Hessian with respect to all C-alpha
+atoms will be first calculated using the same formula as in Hinsen et al.
+NMA is then performed on this effective C-alpha based Hessian. In addition,
+users can provide their own atom selection (see <code>atom.select</code>)
+as the value of <code>outmodes</code> for customized output modes generation.
+</p>
+<p>When <code>reduced=TRUE</code>, only a selection of all heavy atoms is used
+to build the ENM. More specifically, three to five atoms per residue
+constitute the model. Here the N, CA, C atoms represent the protein
+backbone, and zero to two selected side chain atoms represent the side chain
+(selected based on side chain size and the distance to CA). This
+coarse-grained ENM has significantly improved computational efficiency and
+similar prediction accuracy with respect to the all-atom ENM.
+</p>
+<p>When <code>rtb=TRUE</code>, rotation-translation block (RTB) based approximate
+modes will be calculated. In this method, each residue is assumed to be a
+rigid body (or ‘block’) that has only rotational and translational
+degrees of freedom. Intra-residue deformation is thus ignored.
+(See Durand et al 1994 and Tama et al. 2000 for more details). N residues per
+block is also supported, where N=1, 2, 3, etc. (See argument <code>nmer</code>).
+The RTB method has significantly improved computational efficiency and
+similar prediction accuracy with respect to the all-atom ENM.
+</p>
+<p>By default the function will diagonalize the mass-weighted Hessian matrix.
+The resulting mode vectors are moreover scaled by the thermal fluctuation
+amplitudes.
+</p>
+
+
+<h3>Value</h3>
+
+<p>Returns an object of class ‘nma’ with the following
+components:
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>modes</code></td>
+<td>
+<p> numeric matrix with columns containing the normal mode
+vectors. Mode vectors are converted to unweighted Cartesian
+coordinates  when <code>mass=TRUE</code>. Note that the 6 first trivial
+eigenvectos appear in columns one to six. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>frequencies</code></td>
+<td>
+<p> numeric vector containing the vibrational
+frequencies corresponding to each mode (for <code>mass=TRUE</code>). </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>force.constants</code></td>
+<td>
+<p> numeric vector containing the force constants
+corresponding to each mode (for <code>mass=FALSE)</code>). </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>fluctuations</code></td>
+<td>
+<p> numeric vector of atomic fluctuations. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>U</code></td>
+<td>
+<p> numeric matrix with columns containing the raw
+eigenvectors. Equals to the <code>modes</code> component when
+<code>mass=FALSE</code> and <code>temp=NULL</code>. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>L</code></td>
+<td>
+<p> numeric vector containing the raw eigenvalues. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>xyz</code></td>
+<td>
+<p> numeric matrix of class <code>xyz</code> containing the
+Cartesian coordinates in which the calculation was performed. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>mass</code></td>
+<td>
+<p> numeric vector containing the residue masses used for the
+mass-weighting. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>temp</code></td>
+<td>
+<p> numerical, temperature for which the amplitudes for
+scaling the atomic displacement vectors are calculated. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>triv.modes</code></td>
+<td>
+<p> number of trivial modes. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>natoms</code></td>
+<td>
+<p> number of C-alpha atoms. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>call</code></td>
+<td>
+<p> the matched call. </p>
+</td>
+</tr>
+</table>
+<h3>Author(s)</h3>
+
+<p>Lars Skjaerven &amp; Xin-Qiu Yao
+</p>
+
+
+<h3>References</h3>
+
+<p>Hinsen, K. et al. (2000) <em>Chem. Phys.</em> <b>261</b>, 25.
+Durand, P. et al. (1994) <em>Biopolymers</em> <b>34</b>, 759.
+Tama, F. et al. (2000) <em>Proteins</em> <b>41</b>, 1.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>nma.pdb</code> for C-alpha based NMA, <code>aanma.pdbs</code> for
+ensemble all-atom NMA, <code>load.enmff</code> for available ENM force
+fields, and <code>fluct.nma</code>, <code>mktrj.nma</code>, and
+<code>dccm.nma</code> for various post-NMA calculations.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## Not run: 
+   # All-atom NMA takes relatively long time - Don't run by default.
+
+   ## Fetch stucture
+   pdb &lt;- read.pdb( system.file("examples/1hel.pdb", package="bio3d") )
+
+   ## Calculate all-atom normal modes
+   modes.aa &lt;- aanma(pdb, outmodes='noh')
+
+   ## Calculate all-atom normal modes with RTB approximation
+   modes.aa.rtb &lt;- aanma(pdb, outmodes='noh', rtb=TRUE)
+
+   ## Compare the two modes
+   rmsip(modes.aa, modes.aa.rtb)
+
+   ## Calculate C-alpha normal modes.
+   modes &lt;- aanma(pdb)
+
+   ## Calculate C-alpha normal modes with reduced ENM.
+   modes.cg &lt;- aanma(pdb, reduced=TRUE)
+
+   ## Calculate C-alpha normal modes with RTB approximation
+   modes.rtb &lt;- aanma(pdb, rtb=TRUE)
+
+   ## Compare modes
+   rmsip(modes, modes.cg)
+   rmsip(modes, modes.rtb)
+
+   ## Print modes
+   print(modes)
+
+   ## Plot modes
+   plot(modes)
+
+   ## Visualize modes
+   #m7 &lt;- mktrj.nma(modes, mode=7, file="mode_7.pdb", pdb=pdb)
+
+## End(Not run)
+</code></pre>
+
+
+</div>

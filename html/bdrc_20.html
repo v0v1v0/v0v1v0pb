@@ -1,0 +1,344 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>gplm</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Generalized power-law model with variance that varies with stage.</h2>
+
+<h3>Description</h3>
+
+<p>gplm is used to fit a discharge rating curve for paired measurements of stage and discharge using a generalized power-law model with variance that varies with stage as described in Hrafnkelsson et al. (2022).  See "Details" for a more elaborate description of the model.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">gplm(
+  formula,
+  data,
+  c_param = NULL,
+  h_max = NULL,
+  parallel = TRUE,
+  num_cores = NULL,
+  forcepoint = rep(FALSE, nrow(data))
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>formula</code></td>
+<td>
+<p>an object of class "formula", with discharge column name as response and stage column name as a covariate, i.e. of the form <code>y</code>~<code>x</code> where <code>y</code> is discharge in m<code class="reqn">^3/</code>s and <code>x</code> is stage in m (it is very important that the data is in the correct units).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+<p>data.frame containing the variables specified in formula.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>c_param</code></td>
+<td>
+<p>stage for which there is zero discharge. If NULL, it is treated as unknown in the model and inferred from the data.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>h_max</code></td>
+<td>
+<p>maximum stage to which the rating curve should extrapolate to. If NULL, the maximum stage value in the data is selected as an upper bound.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>parallel</code></td>
+<td>
+<p>logical value indicating whether to run the MCMC in parallel or not. Defaults to TRUE.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>num_cores</code></td>
+<td>
+<p>integer between 1 and 4 (number of MCMC chains) indicating how many cores to use. Only used if parallel=TRUE. If NULL, the number of cores available on the device is detected automatically.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>forcepoint</code></td>
+<td>
+<p>logical vector of the same length as the number of rows in data. If an element at index <code class="reqn">i</code> is TRUE it indicates that the rating curve should be forced through the <code class="reqn">i</code>-th measurement. Use with care, as this will strongly influence the resulting rating curve.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The generalized power-law model is of the form
+</p>
+<p style="text-align: center;"><code class="reqn">Q=a(h-c)^{f(h)}</code>
+</p>
+
+<p>where <code class="reqn">Q</code> is discharge, <code class="reqn">h</code> is stage, <code class="reqn">a</code> and <code class="reqn">c</code> are unknown constants and <code class="reqn">f</code> is a function of <code class="reqn">h</code>, referred to as the generalized power-law exponent.<br><br>
+The generalized power-law model is here inferred by using a Bayesian hierarchical model. The function <code class="reqn">f</code> is modeled at the latent level as a fixed constant <code class="reqn">b</code> plus a continuous stochastic process, <code class="reqn">\beta(h)</code>, which is assumed to be twice differentiable. The model is on a logarithmic scale
+</p>
+<p style="text-align: center;"><code class="reqn">\log(Q_i) = \log(a) + (b + \beta(h_i)) \log(h_i - c) + \varepsilon_i,     i = 1,...,n</code>
+</p>
+
+<p>where <code class="reqn">\varepsilon_i</code> follows a normal distribution with mean zero and variance <code class="reqn">\sigma_\varepsilon(h_i)^2</code> that varies with stage. The stochastic process <code class="reqn">\beta(h)</code> is assumed a priori to be a Gaussian process governed by a Matern covariance function with smoothness parameter <code class="reqn">\nu = 2.5</code>. The error variance, <code class="reqn">\sigma_\varepsilon^2(h)</code>, of the log-discharge data  is modeled as an exponential of a B-spline curve, that is, a linear combination of six B-spline basis functions that are defined over the range of the stage observations. An efficient posterior simulation is achieved by sampling from the joint posterior density of the hyperparameters of the model, and then sampling from the density of the latent parameters conditional on the hyperparameters.<br><br>
+Bayesian inference is based on the posterior density and summary statistics such as the posterior mean and 95% posterior intervals are based on the posterior density. Analytical formulas for these summary statistics are intractable in most cases and thus they are computed by generating samples from the posterior density using a Markov chain Monte Carlo simulation.
+</p>
+
+
+<h3>Value</h3>
+
+<p>gplm returns an object of class "gplm". An object of class "gplm" is a list containing the following components:
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>rating_curve</code></td>
+<td>
+<p>a data frame with 2.5%, 50% and 97.5% percentiles of the posterior predictive distribution of the rating curve.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>rating_curve_mean</code></td>
+<td>
+<p>a data frame with 2.5%, 50% and 97.5% percentiles of the posterior distribution of the mean of the rating curve.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>param_summary</code></td>
+<td>
+<p>a data frame with 2.5%, 50% and 97.5% percentiles of the posterior distribution of latent- and hyperparameters. Additionally contains columns with r_hat and the effective number of samples for each parameter as defined in Gelman et al. (2013).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>f_summary</code></td>
+<td>
+<p>a data frame with 2.5%, 50% and 97.5% percentiles of the posterior distribution of <code class="reqn">f(h)</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>beta_summary</code></td>
+<td>
+<p>a data frame with 2.5%, 50% and 97.5% percentiles of the posterior distribution of <code class="reqn">\beta(h)</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>sigma_eps_summary</code></td>
+<td>
+<p>a data frame with 2.5%, 50% and 97.5% percentiles of the posterior distribution of <code class="reqn">\sigma_\varepsilon(h)</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Deviance_summary</code></td>
+<td>
+<p>a data frame with 2.5%, 50% and 97.5% percentiles of the posterior distribution of the deviance.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>rating_curve_posterior</code></td>
+<td>
+<p>a matrix containing the full thinned posterior samples of the posterior predictive distribution of the rating curve excluding burn-in samples.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>rating_curve_mean_posterior</code></td>
+<td>
+<p>a matrix containing the full thinned posterior samples of the posterior distribution of the mean of the rating curve excluding burn-in samples.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>a_posterior</code></td>
+<td>
+<p>a numeric vector containing the full thinned posterior samples of the posterior distribution of <code class="reqn">a</code> excluding burn-in samples.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>b_posterior</code></td>
+<td>
+<p>a numeric vector containing the full thinned posterior samples of the posterior distribution of <code class="reqn">b</code> excluding burn-in samples.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>c_posterior</code></td>
+<td>
+<p>a numeric vector containing the full thinned posterior samples of the posterior distribution of <code class="reqn">c</code> excluding burn-in samples.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>sigma_beta_posterior</code></td>
+<td>
+<p>a numeric vector containing the full thinned posterior samples of the posterior distribution of <code class="reqn">\sigma_\beta</code> excluding burn-in samples.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>phi_beta_posterior</code></td>
+<td>
+<p>a numeric vector containing the full thinned posterior samples of the posterior distribution of <code class="reqn">\phi_\beta</code> excluding burn-in samples.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>sigma_eta_posterior</code></td>
+<td>
+<p>a numeric vector containing the full thinned posterior samples of the posterior distribution of <code class="reqn">\sigma_\eta</code> excluding burn-in samples.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>eta_1_posterior</code></td>
+<td>
+<p>a numeric vector containing the full thinned posterior samples of the posterior distribution of <code class="reqn">\eta_1</code> excluding burn-in samples.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>eta_2_posterior</code></td>
+<td>
+<p>a numeric vector containing the full thinned posterior samples of the posterior distribution of <code class="reqn">\eta_2</code> excluding burn-in samples.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>eta_3_posterior</code></td>
+<td>
+<p>a numeric vector containing the full thinned posterior samples of the posterior distribution of <code class="reqn">\eta_3</code> excluding burn-in samples.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>eta_4_posterior</code></td>
+<td>
+<p>a numeric vector containing the full thinned posterior samples of the posterior distribution of <code class="reqn">\eta_4</code> excluding burn-in samples.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>eta_5_posterior</code></td>
+<td>
+<p>a numeric vector containing the full thinned posterior samples of the posterior distribution of <code class="reqn">\eta_5</code> excluding burn-in samples.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>eta_6_posterior</code></td>
+<td>
+<p>a numeric vector containing the full thinned posterior samples of the posterior distribution of <code class="reqn">\eta_6</code> excluding burn-in samples.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>f_posterior</code></td>
+<td>
+<p>a numeric vector containing the full thinned posterior samples of the posterior distribution of <code class="reqn">f(h)</code> excluding burn-in samples.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>beta_posterior</code></td>
+<td>
+<p>a numeric vector containing the full thinned posterior samples of the posterior distribution of <code class="reqn">\beta(h)</code> excluding burn-in samples.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>sigma_eps_posterior</code></td>
+<td>
+<p>a numeric vector containing the full thinned posterior samples of the posterior distribution of <code class="reqn">\sigma_\varepsilon(h)</code> excluding burn-in samples.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Deviance_posterior</code></td>
+<td>
+<p>a numeric vector containing the full thinned posterior samples of the posterior distribution of the deviance excluding burn-in samples.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>D_hat</code></td>
+<td>
+<p>deviance at the median value of the parameters.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>effective_num_param_DIC</code></td>
+<td>
+<p>effective number of parameters, which is calculated as median(Deviance_posterior) minus D_hat.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>DIC</code></td>
+<td>
+<p>Deviance Information Criterion for the model, calculated as D_hat plus 2*effective_num_parameters_DIC.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>lppd</code></td>
+<td>
+<p>log pointwise predictive probability of the observed data under the model</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>effective_num_param_WAIC</code></td>
+<td>
+<p>effective number of parameters, which is calculated by summing up the posterior variance of the log predictive density for each data point.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>WAIC</code></td>
+<td>
+<p>Watanabe-Akaike information criterion for the model, defined as -2*( lppd - effective_num_param_WAIC ).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>autocorrelation</code></td>
+<td>
+<p>a data frame with the autocorrelation of each parameter for different lags.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>acceptance_rate</code></td>
+<td>
+<p>proportion of accepted samples in the thinned MCMC chain (excluding burn-in).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>formula</code></td>
+<td>
+<p>object of type "formula" provided by the user.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+<p>data provided by the user, ordered by stage.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>run_info</code></td>
+<td>
+<p>information about the input arguments and the specific parameters used in the MCMC chain.</p>
+</td>
+</tr>
+</table>
+<h3>References</h3>
+
+<p>Gelman, A., Carlin, J. B., Stern, H. S., Dunson, D. B., Vehtari, A., and Rubin, D. B. (2013). Bayesian Data Analysis, Third Edition. Chapman &amp; Hall/CRC Texts in Statistical Science. Taylor &amp; Francis.
+</p>
+<p>Hrafnkelsson, B., Sigurdarson, H., and Gardarsson, S. M. (2022). Generalization of the power-law rating curve using hydrodynamic theory and Bayesian hierarchical modeling, Environmetrics, 33(2):e2711.
+</p>
+<p>Spiegelhalter, D., Best, N., Carlin, B., Van Der Linde, A. (2002). Bayesian measures of model complexity and fit. Journal of the Royal Statistical Society: Series B (Statistical Methodology) 64(4), 583–639.
+</p>
+<p>Watanabe, S. (2010). Asymptotic equivalence of Bayes cross validation and widely applicable information criterion in singular learning theory. J. Mach. Learn. Res. 11, 3571–3594.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>summary.gplm</code> for summaries, <code>predict.gplm</code> for prediction and <code>plot.gplm</code> for plots. <code>spread_draws</code> and <code>gather_draws</code> are also useful to aid further visualization of the full posterior distributions.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+data(norn)
+set.seed(1)
+gplm.fit &lt;- gplm(formula=Q~W,data=norn,num_cores=2)
+summary(gplm.fit)
+
+</code></pre>
+
+
+</div>

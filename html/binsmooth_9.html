@@ -1,0 +1,127 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>simcounty</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>
+Simulate data to mimic <code>county_bins</code> and <code>county_true</code>
+</h2>
+
+<h3>Description</h3>
+
+<p>Samples from a selection of distributions (Gamma, Lognormal, Weibull, Triangle) to simulate income data in the
+format used in the American Community Survey data (<code>county_bins</code> and <code>county_true</code>).
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">simcounty(numCounties, minPop = 1000, maxPop = 100000,
+          bin_minimums = c(0, 10000, 15000, 20000, 25000, 30000, 35000, 40000, 45000,
+                           50000, 60000, 75000, 100000, 125000, 150000, 200000))
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>numCounties</code></td>
+<td>
+
+<p>The number of counties to simulate data for
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>minPop</code></td>
+<td>
+
+<p>Minimum population to sample (default = 1000)
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>maxPop</code></td>
+<td>
+
+<p>Maximum population to sample (default = 100000)
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>bin_minimums</code></td>
+<td>
+
+<p>Bin edges. Defaults to the edges used in the Census data.
+</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The county names will tell which distributions were sampled to simulate each county.
+</p>
+
+
+<h3>Value</h3>
+
+<p>Returns a list of two data frames:
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>county_bins</code></td>
+<td>
+<p>Simulated binned income data</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>county_true</code></td>
+<td>
+<p>Statistics computed from the raw data</p>
+</td>
+</tr>
+</table>
+<h3>Author(s)</h3>
+
+<p>David J. Hunter and McKalie Drown
+</p>
+
+
+<h3>References</h3>
+
+<p>Paul T. von Hippel, David J. Hunter, McKalie Drown. <em>Better Estimates from Binned Income Data: Interpolated CDFs and Mean-Matching</em>, Sociological Science, November 15, 2017. <a href="https://www.sociologicalscience.com/articles-v4-26-641/">https://www.sociologicalscience.com/articles-v4-26-641/</a>
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>county_bins</code>, <code>county_true</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">l1 &lt;- simcounty(5)
+cb &lt;- l1$county_bins
+ct &lt;- l1$county_true
+sbl &lt;- splinebins(cb$bin_max[cb$fips==103], cb$households[cb$fips==103],
+                  ct$mean_true[ct$fips==103])
+stl &lt;- stepbins(cb$bin_max[cb$fips==105], cb$households[cb$fips==105],
+                ct$mean_true[ct$fips==105])
+plot(sbl$splinePDF, 0, 300000, n=500)
+plot(stl$stepPDF, do.points=FALSE, main=cb$county[cb$fips==105][1])
+
+## Simulate one county and estimate gini and theil from binned data
+l2 &lt;- simcounty(1)
+binedges &lt;- l2$county_bins$bin_max + 0.5 # continuity correction
+bincounts &lt;- l2$county_bins$households
+splinefit &lt;- splinebins(binedges, bincounts, l2$county_true$mean_true)
+gini(splinefit)
+theil(splinefit)
+l2$county_true
+</code></pre>
+
+
+</div>

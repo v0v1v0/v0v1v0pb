@@ -1,0 +1,105 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>get_diagnostics</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>MCMC diagnostics</h2>
+
+<h3>Description</h3>
+
+<p>This function provides diagnostics of convergence for the MCMC output of <code>learn_DAG</code> function.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">get_diagnostics(learnDAG_output, ask = TRUE, nodes = integer(0))
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>learnDAG_output</code></td>
+<td>
+<p>object of class <code>bcdag</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ask</code></td>
+<td>
+<p>Boolean argument passed to par() for visualization;</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nodes</code></td>
+<td>
+<p>Numerical vector indicating those nodes for which we want to compute the posterior probability of edge inclusion;</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>Function <code>learn_DAG</code> implements a Markov Chain Monte Carlo (MCMC) algorithm for structure learning and posterior inference of Gaussian DAGs.
+Output of the algorithm is a collection of <code class="reqn">S</code> DAG structures (represented as <code class="reqn">(q,q)</code> adjacency matrices) and DAG parameters <code class="reqn">(D,L)</code>
+approximately drawn from the joint posterior.
+In addition, if <code>learn_DAG</code> is implemented with <code>collapse = TRUE</code>, the only approximate marginal posterior of DAGs (represented by the collection of <code class="reqn">S</code> DAG structures) is returned;
+see the documentation of <code>learn_DAG</code> for more details.
+</p>
+<p>Diagnostics of convergence for the MCMC output are conducted by monitoring across MCMC iterations: (1) the number of edges in the DAGs;
+(2) the posterior probability of edge inclusion for each possible edge <code class="reqn">u -&gt; v</code>.
+With regard to (1), a traceplot of the number of edges in the DAGs visited by the MCMC chain at each step <code class="reqn">s = 1, ..., S</code> is first provided as the output of the function.
+The absence of trends in the plot can provide information on a genuine convergence of the MCMC chain.
+In addition, the traceplot of the average number of edges in the DAGs visited up to time <code class="reqn">s</code>, for <code class="reqn">s = 1, ..., S</code>, is also returned.
+The convergence of the curve around a "stable" average size generally suggests good convergence of the algorithm.
+With regard to (2), for each edge <code class="reqn">u -&gt; v</code>, the posterior probability at time <code class="reqn">s</code>, for <code class="reqn">s = 1, ..., S</code>, can be estimated as
+as the proportion of DAGs visited by the MCMC up to time <code class="reqn">s</code> which contain the directed edge <code class="reqn">u -&gt; v</code>.
+Output is organized in <code class="reqn">q</code> plots (one for each node <code class="reqn">v = 1, ..., q</code>), each summarizing the posterior probabilities of edges <code class="reqn">u -&gt; v</code>, <code class="reqn">u = 1, ..., q</code>.
+If the number of nodes is larger than 30 the traceplot of a random sample of 30 nodes is returned.
+</p>
+
+
+<h3>Value</h3>
+
+<p>A collection of plots summarizing the behavior of the number of edges and the posterior probabilities of edge inclusion computed from the MCMC output.
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Federico Castelletti and Alessandro Mascaro
+</p>
+
+
+<h3>References</h3>
+
+<p>F. Castelletti and A. Mascaro (2021). Structural learning and estimation of joint causal effects among network-dependent variables. <em>Statistical Methods and Applications</em>, Advance publication.
+</p>
+<p>F. Castelletti (2020). Bayesian model selection of Gaussian Directed Acyclic Graph structures. <em>International Statistical Review</em> 88 752-775.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R"># Randomly generate a DAG and the DAG-parameters
+q = 8
+w = 0.2
+set.seed(123)
+DAG = rDAG(q = q, w = w)
+outDL = rDAGWishart(n = 1, DAG = DAG, a = q, U = diag(1, q))
+L = outDL$L; D = outDL$D
+Sigma = solve(t(L))%*%D%*%solve(L)
+n = 200
+# Generate observations from a Gaussian DAG-model
+X = mvtnorm::rmvnorm(n = n, sigma = Sigma)
+# Run the MCMC for posterior inference of DAGs only (collapse = TRUE)
+out_mcmc = learn_DAG(S = 5000, burn = 1000, a = q, U = diag(1,q)/n, data = X, w = 0.1,
+                                   fast = TRUE, save.memory = FALSE, collapse = TRUE)
+# Produce diagnostic plots
+get_diagnostics(out_mcmc)
+</code></pre>
+
+
+</div>

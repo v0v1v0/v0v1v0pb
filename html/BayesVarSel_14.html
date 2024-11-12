@@ -1,0 +1,158 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>pltltn</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Correction for p&gt;&gt;n for an object of class <code>Bvs</code>
+</h2>
+
+<h3>Description</h3>
+
+<p>In cases where p&gt;&gt;n and the true model is expected to be sparse, it is very unlikely that the Gibbs sampling
+will sample models in the singular subset of the model space (models with k&gt;n). Nevertheless, depending on
+how large is p/n and the strenght of the signal, this part of the model space could be very influential in the
+final response.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">pltltn(object)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table><tr style="vertical-align: top;">
+<td><code>object</code></td>
+<td>
+<p>An object of class <code>Bvs</code> obtained with <code>GibbsBvs</code></p>
+</td>
+</tr></table>
+<h3>Details</h3>
+
+<p>From an object created with GibbsBvs and prior probabilities specified as Scott-Berger,
+this function provides an estimation of the posterior probability of models with k&gt;n which is a measure of the
+importance of these models. In summary, when this probability is large,  the sample size is not large enough to beat
+such large p.
+Additionally, <code>pltltn</code> gives corrections of the posterior inclusion probabilities and posterior probabilities
+of dimension of the true model.
+</p>
+
+
+<h3>Value</h3>
+
+<p><code>pltltn</code> returns a list with the following elements:
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>pS </code></td>
+<td>
+<p>An estimation of the probability that the true model is irregular (k&gt;n)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>postprobdim </code></td>
+<td>
+<p>A corrected estimation of the posterior probabilities over the dimensions</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>inclprob </code></td>
+<td>
+<p>A corrected estimation of the posterior inclusion probabilities</p>
+</td>
+</tr>
+</table>
+<h3>Author(s)</h3>
+
+<p>Gonzalo Garcia-Donato
+</p>
+<p>Maintainer: &lt;gonzalo.garciadonato@uclm.es&gt;
+</p>
+
+
+<h3>References</h3>
+
+<p>Berger, J.O., Garcia-Donato, G., Martínez-Beneito M.A. and Peña, V. (2016)
+Bayesian variable selection in high dimensional problems without assumptions on prior model probabilities.
+arXiv:1607.02993
+</p>
+
+
+<h3>See Also</h3>
+
+<p>See
+<code>GibbsBvs</code> for creating objects of the class
+<code>Bvs</code>.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+## Not run: 
+data(riboflavin, package="hdi")
+
+set.seed(16091956)
+#the following sentence took 37.3 minutes in a single core
+#(a trick to see the evolution of the algorithm is to monitor
+#the files created by the function.
+#you can see the working directory running
+#tempdir()
+#copy this path in the clipboard. Then open another R session
+#and from there (once the simulating process is running and the burnin has completed)
+#write
+#system("wc (path from clipboard)/AllBF")
+#the number here appearing is the number of completed iterations
+#
+testRB&lt;- GibbsBvs(formula=y~.,
+                  data=riboflavin,
+                  prior.betas="Robust",
+                  init.model="null",
+                  time.test=F,
+                  n.iter=10000,
+                  n.burnin=1000)
+
+set.seed(16091956)
+system.time(
+testRB&lt;- GibbsBvs(formula=y~.,
+                  data=riboflavin,
+                  prior.betas="Robust",
+                  init.model="null",
+                  time.test=F,
+                  n.iter=10000,
+                  n.burnin=1000)
+)
+
+#notice the large sparsity of the result since
+#the great majority of covariates are not influential:
+boxplot(testRB$inclprob)
+testRB$inclprob[testRB$inclprob&gt;.5]
+#xYOAB_at xYXLE_at
+#  0.9661   0.6502
+#we can discharge all covariates except xYOAB_at and xYXLE_at
+#the method does not reach to inform about xYXLE_at and its posterior
+#probability is only slightly bigger than its prior probability
+
+#We see that dimensions of visited models are small:
+plot(testRB, option="d", xlim=c(0,100))
+#so the part of the model space with singular models (k&gt;n)
+#has not been explored.
+#To correct this issue we run:
+corrected.testRB&lt;- pltltn(testRB)
+#Estimate of the posterior probability of the
+# model space with singular models is: 0
+#Meaning that it is extremely unlikely that the true model is such that k&gt;n
+#The corrected inclusion probabilities can be accessed through
+#corrected.testRB but, in this case, these are essentially the same as in the
+#original object (due to the unimportance of the singular part of the model space)
+
+
+## End(Not run)
+
+</code></pre>
+
+
+</div>

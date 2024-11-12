@@ -1,0 +1,277 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>BIFIE.data.transform</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>
+Data Transformation for <code>BIFIEdata</code> Objects
+</h2>
+
+<h3>Description</h3>
+
+<p>Computes a data transformation for <code>BIFIEdata</code> objects.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">BIFIE.data.transform( bifieobj, transform.formula, varnames.new=NULL )
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>bifieobj</code></td>
+<td>
+
+<p>Object of class <code>BIFIEdata</code>
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>transform.formula</code></td>
+<td>
+
+<p><span style="font-family: Courier New, Courier; color: #666666;"><b>R</b></span> formula object for data transformation.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>varnames.new</code></td>
+<td>
+<p>Optional vector of names for new defined variables.
+</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>An object of class <code>BIFIEdata</code>. Additional values are
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>varnames.added</code></td>
+<td>
+<p>Added variables in data transformation</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>varsindex.added</code></td>
+<td>
+<p>Indices of added variables</p>
+</td>
+</tr>
+</table>
+<h3>Examples</h3>
+
+<pre><code class="language-R">library(miceadds)
+
+#############################################################################
+# EXAMPLE 1: Data transformations for TIMSS data
+#############################################################################
+
+data(data.timss2)
+data(data.timssrep)
+# create BIFIEdata object
+bifieobj1 &lt;- BIFIEsurvey::BIFIE.data( data.timss2, wgt=data.timss2[[1]]$TOTWGT,
+            wgtrep=data.timssrep[,-1] )
+# create BIFIEdata object in compact way (cdata=TRUE)
+bifieobj2 &lt;- BIFIEsurvey::BIFIE.data( data.timss2, wgt=data.timss2[[1]]$TOTWGT,
+            wgtrep=data.timssrep[,-1], cdata=TRUE)
+
+#****************************
+#*** Transformation 1: Squared and cubic book variable
+transform.formula &lt;- ~ I( books^2 ) + I( books^3 )
+# as.character(transform.formula)
+bifieobj &lt;- BIFIEsurvey::BIFIE.data.transform( bifieobj1,
+                  transform.formula=transform.formula)
+bifieobj$variables
+# rename added variables
+bifieobj$varnames[ bifieobj$varsindex.added ] &lt;- c("books_sq", "books_cub")
+
+# check descriptive statistics
+res1 &lt;- BIFIEsurvey::BIFIE.univar( bifieobj, vars=c("books_sq", "books_cub" ) )
+summary(res1)
+
+## Not run: 
+#****************************
+#*** Transformation 2: Create dummy variables for variable book
+transform.formula &lt;- ~ as.factor(books)
+bifieobj &lt;- BIFIEsurvey::BIFIE.data.transform( bifieobj,
+                    transform.formula=transform.formula )
+##   Included 5 variables: as.factor(books)1 as.factor(books)2 as.factor(books)3
+##        as.factor(books)4 as.factor(books)5
+bifieobj$varnames[ bifieobj$varsindex.added ] &lt;- paste0("books_D", 1:5)
+
+#****************************
+#*** Transformation 3: Discretized mathematics score
+hi3a &lt;- BIFIEsurvey::BIFIE.hist( bifieobj, vars="ASMMAT" )
+plot(hi3a)
+transform.formula &lt;- ~ I( as.numeric(cut( ASMMAT, breaks=seq(200,800,100) )) )
+bifieobj &lt;- BIFIEsurvey::BIFIE.data.transform( bifieobj,
+                 transform.formula=transform.formula, varnames.new="ASMMAT_discret")
+hi3b &lt;- BIFIEsurvey::BIFIE.hist( bifieobj, vars="ASMMAT_discret", breaks=1:7 )
+plot(hi3b)
+# check frequencies
+fr3b &lt;- BIFIEsurvey::BIFIE.freq( bifieobj, vars="ASMMAT_discret", se=FALSE )
+summary(fr3b)
+
+#****************************
+#*** Transformation 4: include standardization variables for book variable
+
+# start with testing the transformation function on a single dataset
+dat1 &lt;- bifieobj$dat1
+stats::weighted.mean( dat1[,"books"], dat1[,"TOTWGT"], na.rm=TRUE)
+sqrt( Hmisc::wtd.var( dat1[,"books"], dat1[,"TOTWGT"], na.rm=TRUE) )
+# z standardization
+transform.formula &lt;- ~ I( ( books - weighted.mean( books, TOTWGT, na.rm=TRUE) )/
+                                sqrt( Hmisc::wtd.var( books, TOTWGT, na.rm=TRUE) ))
+bifieobj &lt;- BIFIEsurvey::BIFIE.data.transform( bifieobj,
+               transform.formula=transform.formula, varnames.new="z_books" )
+# standardize variable books with M=500 and SD=100
+transform.formula &lt;- ~ I(
+        500 + 100*( books - stats::weighted.mean( books, w=TOTWGT, na.rm=TRUE) ) /
+              sqrt( Hmisc::wtd.var( books, weights=TOTWGT, na.rm=TRUE) )  )
+bifieobj &lt;- BIFIEsurvey::BIFIE.data.transform( bifieobj,
+             transform.formula=transform.formula, varnames.new="z500_books" )
+
+# standardize variable books with respect to M and SD of ALL imputed datasets
+res &lt;- BIFIEsurvey::BIFIE.univar( bifieobj, vars="books" )
+summary(res)
+##       var  Nweight Ncases     M M_SE M_fmi M_VarMI M_VarRep    SD SD_SE SD_fmi
+##   1 books 76588.72   4554 2.945 0.04     0       0    0.002 1.146 0.015      0
+M &lt;- round(res$output$mean1,5)
+SD &lt;- round(res$output$sd1,5)
+transform.formula &lt;- paste0( " ~ I( ( books - ",  M, " ) / ", SD, ")"  )
+##   &gt; transform.formula
+##   [1] " ~ I( ( books - 2.94496 ) / 1.14609)"
+bifieobj &lt;- BIFIEsurvey::BIFIE.data.transform( bifieobj,
+                 transform.formula=stats::as.formula(transform.formula),
+                 varnames.new="zall_books" )
+
+# check statistics
+res4 &lt;- BIFIEsurvey::BIFIE.univar( bifieobj,
+              vars=c("z_books", "z500_books", "zall_books") )
+summary(res4)
+
+#****************************
+#*** Transformation 5: include rank transformation for variable ASMMAT
+
+# calculate percentage ranks using wtd.rank function from Hmisc package
+dat1 &lt;- bifieobj$dat1
+100 * Hmisc::wtd.rank( dat1[,"ASMMAT"], w=dat1[,"TOTWGT"] ) / sum( dat1[,"TOTWGT"] )
+# define an auxiliary function for calculating percentage ranks
+wtd.percrank &lt;- function( x, w ){
+    100 * Hmisc::wtd.rank( x, w, na.rm=TRUE ) / sum( w, na.rm=TRUE )
+}
+wtd.percrank( dat1[,"ASMMAT"], dat1[,"TOTWGT"] )
+# define transformation formula
+transform.formula &lt;- ~ I( wtd.percrank( ASMMAT, TOTWGT ) )
+# add ranks to BIFIEdata object
+bifieobj &lt;- BIFIEsurvey::BIFIE.data.transform( bifieobj,
+               transform.formula=transform.formula,  varnames.new="ASMMAT_rk")
+# check statistic
+res5 &lt;- BIFIEsurvey::BIFIE.univar( bifieobj, vars=c("ASMMAT_rk" ) )
+summary(res5)
+
+#****************************
+#*** Transformation 6: recode variable books
+
+library(car)
+# recode variable books according to "1,2=0, 3,4=1, 5=2"
+dat1 &lt;- bifieobj$dat1
+# use Recode function from car package
+car::Recode( dat1[,"books"], "1:2='0'; c(3,4)='1';5='2'")
+# define transformation formula
+transform.formula &lt;- ~ I( car::Recode( books, "1:2='0'; c(3,4)='1';5='2'") )
+bifieobj &lt;- BIFIEsurvey::BIFIE.data.transform( bifieobj,
+               transform.formula=transform.formula,  varnames.new="book_rec" )
+res6 &lt;- BIFIEsurvey::BIFIE.freq( bifieobj, vars=c("book_rec" ) )
+summary(res6)
+
+#****************************
+#*** Transformation 7: include some variables aggregated to the school level
+
+dat1 &lt;- as.data.frame(bifieobj$dat1)
+# at first, create school ID in the dataset by transforming the student ID
+dat1$idschool &lt;- as.numeric(substring( dat1$IDSTUD, 1, 5 ))
+transform.formula &lt;- ~ I( as.numeric( substring( IDSTUD, 1, 5 ) ) )
+bifieobj &lt;- BIFIEsurvey::BIFIE.data.transform( bifieobj,
+               transform.formula=transform.formula, varnames.new="idschool" )
+
+#*** test function for a single dataset bifieobj$dat1
+dat1 &lt;- as.data.frame(bifieobj$dat1)
+gm &lt;- miceadds::GroupMean( data=dat1$ASMMAT, group=dat1$idschool, extend=TRUE)[,2]
+
+# add school mean ASMMAT
+tformula &lt;- ~ I( miceadds::GroupMean( ASMMAT, group=idschool, extend=TRUE)[,2] )
+bifieobj &lt;- BIFIEsurvey::BIFIE.data.transform( bifieobj, transform.formula=tformula,
+                varnames.new="M_ASMMAT" )
+# add within group centered mathematics values of ASMMAT
+bifieobj &lt;- BIFIEsurvey::BIFIE.data.transform( bifieobj,
+                transform.formula=~ 0 + I( ASMMAT - M_ASMMAT ),
+                varnames.new="WC_ASMMAT" )
+
+# add school mean books
+bifieobj &lt;- BIFIEsurvey::BIFIE.data.transform( bifieobj,
+                transform.formula=~ 0 + I( add.groupmean( books, idschool ) ),
+                varnames.new="M_books" )
+
+#****************************
+#*** Transformation 8: include fitted values and residuals from a linear model
+# create new BIFIEdata object
+data(data.timss1)
+bifieobj3 &lt;- BIFIEsurvey::BIFIE.data( data.timss1, wgt=data.timss1[[1]]$TOTWGT,
+            wgtrep=data.timssrep[,-1] )
+
+# specify transformation
+transform.formula &lt;- ~ I( fitted( stats::lm( ASMMAT ~ migrant + female ) ) ) +
+                             I( residuals( stats::lm( ASMMAT ~ migrant + female ) ) )
+  # Note that lm omits cases in regression by listwise deletion.
+# add fitted values and residual to BIFIEdata object
+bifieobj &lt;- BIFIEsurvey::BIFIE.data.transform( bifieobj3,
+                  transform.formula=transform.formula )
+bifieobj$varnames[ bifieobj$varsindex.added ] &lt;- c("math_fitted1", "math_resid1")
+
+#****************************
+#*** Transformation 9: Including principal component scores in BIFIEdata object
+
+# define auxiliary function for extracting PCA scores
+BIFIE.princomp &lt;- function( formula, Ncomp ){
+    X &lt;- stats::princomp( formula, cor=TRUE)
+    Xp &lt;- X$scores[, 1:Ncomp ]
+    return(Xp)
+}
+# define transformation formula
+transform.formula &lt;- ~ I( BIFIE.princomp( ~ migrant + female + books + lang + ASMMAT, 3 ))
+# apply transformation
+bifieobj &lt;- BIFIEsurvey::BIFIE.data.transform( bifieobj3,
+                transform.formula=transform.formula )
+bifieobj$varnames[ bifieobj$varsindex.added ] &lt;- c("pca_sc1", "pca_sc2","pca_sc3")
+# check descriptive statistics
+res9 &lt;- BIFIEsurvey::BIFIE.univar( bifieobj, vars="pca_sc1", se=FALSE)
+summary(res9)
+res9$output$mean1M
+
+# The transformation formula can also be conveniently generated by string operations
+vars &lt;- c("migrant", "female", "books", "lang" )
+transform.formula2 &lt;- as.formula( paste0( "~ 0 + I ( BIFIE.princomp( ~ ",
+       paste0( vars, collapse="+" ),  ", 3 ) )") )
+  ##   &gt; transform.formula2
+  ##   ~ I(BIFIE.princomp(~migrant + female + books + lang, 3))
+
+#****************************
+#*** Transformation 10: Overwriting variables books and migrant
+bifieobj4 &lt;-  BIFIEsurvey::BIFIE.data.transform( bifieobj3,
+                  transform.formula=~ I( 1*(books &gt;=1 ) ) + I(2*migrant),
+                  varnames.new=c("books","migrant") )
+summary(bifieobj4)
+
+## End(Not run)
+</code></pre>
+
+
+</div>

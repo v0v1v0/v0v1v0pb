@@ -1,0 +1,272 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>sim.dp.byf2</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Simulate Dissolution Profiles by <code class="reqn">f_2</code> Values</h2>
+
+<h3>Description</h3>
+
+<p>Given any mean dissolution profile <code>dp</code>, this function will simulate a mean
+dissolution profile such that when the newly simulated profile is compared
+to <code>dp</code>, the calculated <code class="reqn">f_2</code> will be equal to the predefined target
+<code class="reqn">f_2</code> value.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">sim.dp.byf2(tp, dp, target.f2, seed = NULL, min.points = 3L,
+            regulation = c("EMA", "FDA", "WHO", "Canada", "ANVISA"),
+            model = c("Weibull", "first-order"), digits = 2L,
+            max.disso = 100, message = FALSE, both.TR.85 = FALSE,
+            time.unit = c("min", "h"), plot = TRUE, sim.dp.out,
+            sim.target = c("ref.pop", "ref.median", "ref.mean"),
+            model.par.cv = 50, fix.fmax.cv = 0, random.factor = 3)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>tp, dp</code></td>
+<td>
+<p><em>Numeric</em> vector of time points <code>tp</code> and the mean dissolution
+profiles <code>dp</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>target.f2</code></td>
+<td>
+<p><em>Numeric</em> value of target <code class="reqn">f_2</code>. It can be a
+<em>single value</em>, or a <em>vector of two values</em> that represent the lower and
+upper limit of target <code class="reqn">f_2</code> value. See Details.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>seed</code></td>
+<td>
+<p><em>Integer</em> seed value for reproducibility. If missing, a random
+seed will be generated for reproducibility purpose.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>min.points</code></td>
+<td>
+<p>An <em>integer</em> indicating the minimum time points to be used
+to calculate <code class="reqn">f_2</code>. The default value 3 should be used for
+conventional <code class="reqn">f_2</code> calculation. See Details. @seealso <code>calcf2()</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>regulation</code></td>
+<td>
+<p><em>Character</em> strings indicating regulatory guidelines.
+@seealso <code>calcf2()</code> for the discussion of those guidelines.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>model</code></td>
+<td>
+<p><em>Character</em> strings of model names. Currently only <code>"Weibull"</code>
+and <code>"first-order"</code> models are supported. @seealso <code>sim.dp()</code> for the
+description of models.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>digits</code></td>
+<td>
+<p>An <em>integer</em> indicating the decimal points for the output.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>max.disso</code></td>
+<td>
+<p><em>Numeric</em> value for the maximum possible dissolution.
+In theory, the maximum dissolution is 100%, but in practice, it is not
+uncommon to see higher values, such as 105%, or much lower values,
+especially for products with low solubility.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>message</code></td>
+<td>
+<p><em>Logical</em>. If <code>TRUE</code>, basic information of the simulation
+will be printed on screen.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>both.TR.85</code></td>
+<td>
+<p><em>Logical</em>. If <code>TRUE</code>, and if <code>regulation = "FDA"</code>, all
+measurements up to the time points at which both test and reference
+products dissolve more than 85% will be used to calculate <code class="reqn">f_2</code>.
+This is the conventional, but incorrect, interpretation of the US FDA rule.
+Therefore, the argument should only be set to <code>TRUE</code> for validation purpose
+such as comparing the results from old literature that use the wrong
+interpretation to calculate <code class="reqn">f_2</code>. @seealso <code>calcf2()</code> for detailed
+discussion.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>time.unit</code></td>
+<td>
+<p><em>Character</em> strings indicating the unit of time. It should
+be either <code>"min"</code> for minute or <code>"h"</code> for hour. It is mainly used for
+checking CV rules and making plot. See Regulation in Details.
+@seealso <code>calcf2()</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>plot</code></td>
+<td>
+<p><em>Logical</em>. If <code>TRUE</code>, a a dissolution versus time plot will be
+included in the output.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>sim.dp.out</code></td>
+<td>
+<p>Output of function <code>sim.dp()</code>. If this argument is
+supplied by the user, then <code>tp/dp</code>, <code>regulation</code>, <code>model</code>, <code>max.disso</code>,
+and <code>time.unit</code> will be ignored, if they are provided by the user, since
+all those arguments are included in <code>sim.dp.out</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>sim.target</code></td>
+<td>
+<p><em>Character</em> strings indicating to which target profile
+should the newly simulated profile be compared for the calculation of
+<code class="reqn">f_2</code>. This argument is only applicable when <code>sim.dp.out</code> is
+provided. See Details.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>model.par.cv, fix.fmax.cv</code></td>
+<td>
+<p><em>Numeric</em> values expressed as percentages
+used for random generation of model parameters and fmax when optimization
+algorithm is not used, i.e., when <code>target.f2</code> is a vector of two numbers.
+See Details.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>random.factor</code></td>
+<td>
+<p><em>Numeric</em> value used for random generation of model
+parameters when optimization algorithm is used, i.e., when <code>target.f2</code>
+is a single number. See Details.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The main principle of the function is as follows:
+</p>
+
+<ol>
+<li>
+<p> For any given mean dissolution profile <code>dp</code>, fit a suitable mathematical
+model and obtain model parameters.
+</p>
+
+<ul>
+<li>
+<p> No precise fitting is required since those parameters will be served as
+<em>initial value</em> for further model fitting.
+</p>
+</li>
+<li>
+<p> If <code>sim.dp.out</code>, the output of the function <code>sim.dp()</code>, is available,
+no initial fitting is necessary as model parameters can be read directly
+from the output, unless multivariate normal distribution approach was
+used in <code>sim.dp()</code>. In such case, initial model fitting will be done.
+</p>
+</li>
+</ul>
+</li>
+<li>
+<p> Find a suitable model parameters and simulate a new dissolution profile,
+comparing the new profile to the provided reference profile <code>dp</code> by
+calculating <code class="reqn">f_2</code>. If the the obtained <code class="reqn">f_2</code> is
+<em>equal to</em>, or <em>within the lower and upper limit of</em>, the <code>target.f2</code>,
+then the function will output the obtained model parameters and the new
+profile.
+</p>
+</li>
+</ol>
+<p>There are two approaches used to find the suitable model parameters:
+</p>
+
+<ul>
+<li>
+<p> If <code>target.f2</code> is a single value, optimization algorithm will be used and
+the newly simulated dissolution profile will have <code class="reqn">f_2</code> equal to
+<code>target.f2</code> when compared to <code>dp</code> (within numeric precision defined by the
+tolerance).
+</p>
+</li>
+<li>
+<p> If <code>target.f2</code> is a vector of two numbers representing the lower and upper
+limit of target <code class="reqn">f_2</code> value, such as <code>target.f2 = c(lower, upper)</code>,
+then dissolution will be obtained by random searching and the calculated
+<code class="reqn">f_2</code> will be within the range of lower and upper.
+</p>
+</li>
+</ul>
+<p>For example, you can set <code>target.f2 = c(54.95, 55.04)</code> to have target
+<code class="reqn">f_2</code> of 55. Since <code class="reqn">f_2</code> should be normally reported without
+decimal, in practice, this precision is enough. You might be able to do with
+<code>c(54.99, 55.01)</code> if you really need more precision. However, the narrower
+the range, the longer it takes the function to run. With narrow range such as
+<code>c(54.999, 55.001)</code>, it is likely the program will fail. In such case,
+provide single value to use optimization algorithm.
+</p>
+<p>Arguments <code>model.par.cv</code>, <code>fix.fmax.cv</code>, and <code>random.factor</code> are certain
+numeric values used to better control the random generation of model
+parameters. The default values should work in most scenarios. Those values
+should be changed only when the function failed to return any value. Read
+vignette of the function (<code>vignette("sim.dp.byf2", package = "bootf2")</code>)
+for more details.
+</p>
+<p>The data frame <code>sim.summary</code> in <code>sim.dp.out</code>, the output of function
+<code>sim.dp()</code>, contains <code>dp</code>, the population profile, and <code>sim.mean</code> and
+<code>sim.median</code>, the mean and median profiles calculated with <code>n.units</code> of
+simulated individual profiles. All these three profiles could be used as the
+target profile that the newly simulated profile will be compare to. Argument
+<code>sim.target</code> defines which of the three will be used: <code>ref.pop</code>, <code>ref.mean</code>,
+and <code>ref.median</code> correspond to <code>dp</code>, <code>sim.mean</code> and <code>sim.median</code>,
+respectively.
+</p>
+
+
+<h3>Value</h3>
+
+<p>A <em>list</em> of 2 components: a <em>data frame of model parameters</em> and a
+<em>data frame of mean dissolution profile</em> generated using the said model
+parameters. The output can be passed to function <code>sim.dp()</code> to further
+simulate multiple individual profiles.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">tp &lt;- c(5, 10, 15, 20, 30, 45, 60)
+
+mod.par.r &lt;- list(fmax = 100, fmax.cv = 2, tlag = 0, tlag.cv = 0,
+                  mdt = 25, mdt.cv = 4, beta = 2.1, beta.cv = 3)
+
+d.r &lt;- sim.dp(tp, model.par = mod.par.r, seed = 100, n.units = 120L,
+              plot = FALSE)
+
+model.par1 &lt;- sim.dp.byf2(sim.dp.out = d.r, target.f2 = 60, seed = 123)
+model.par2 &lt;- sim.dp.byf2(sim.dp.out = d.r, target.f2 = c(59.95, 60.04),
+                          seed = 123)
+
+</code></pre>
+
+
+</div>

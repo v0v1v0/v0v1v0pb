@@ -1,0 +1,83 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>get_MAPdag</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Compute the maximum a posteriori DAG model from the MCMC output</h2>
+
+<h3>Description</h3>
+
+<p>This function computes the maximum a posteriori DAG model estimate (MAP) from the MCMC output of <code>learn_DAG</code>
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">get_MAPdag(learnDAG_output)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table><tr style="vertical-align: top;">
+<td><code>learnDAG_output</code></td>
+<td>
+<p>object of class <code>bcdag</code></p>
+</td>
+</tr></table>
+<h3>Details</h3>
+
+<p>Output of <code>learn_dag</code> function consists of <code class="reqn">S</code> draws from the joint posterior of DAGs and DAG-parameters in a zero-mean Gaussian DAG-model;
+see the documentation of <code>learn_DAG</code> for more details.
+</p>
+<p>The Maximum A Posteriori (MAP) model estimate is defined as the DAG visited by the MCMC with the highest associated posterior probability.
+Each DAG posterior probability is estimated as the frequency of visits of the DAG in the MCMC chain.
+The MAP estimate is represented through its <code class="reqn">(q,q)</code> adjacency matrix, with <code class="reqn">(u,v)</code>-element equal to one whenever the MAP contains <code class="reqn">u -&gt; v</code>,
+zero otherwise.
+</p>
+
+
+<h3>Value</h3>
+
+<p>The <code class="reqn">(q,q)</code> adjacency matrix of the maximum a posteriori DAG model
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Federico Castelletti and Alessandro Mascaro
+</p>
+
+
+<h3>References</h3>
+
+<p>F. Castelletti and A. Mascaro (2021). Structural learning and estimation of joint causal effects among network-dependent variables. <em>Statistical Methods and Applications</em>, Advance publication.
+</p>
+<p>G. Garcia-Donato and M.A. Martinez-Beneito (2013). On sampling strategies in Bayesian variable selection problems with large model spaces. <em>Journal of the American Statistical Association</em> 108 340-352.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R"># Randomly generate a DAG and the DAG-parameters
+q = 8
+w = 0.2
+set.seed(123)
+DAG = rDAG(q = q, w = w)
+outDL = rDAGWishart(n = 1, DAG = DAG, a = q, U = diag(1, q))
+L = outDL$L; D = outDL$D
+Sigma = solve(t(L))%*%D%*%solve(L)
+# Generate observations from a Gaussian DAG-model
+n = 200
+X = mvtnorm::rmvnorm(n = n, sigma = Sigma)
+# Run the MCMC (Set S = 5000 and burn = 1000 for better results)
+out_mcmc = learn_DAG(S = 500, burn = 100, a = q, U = diag(1,q)/n, data = X, w = 0.1,
+                     fast = TRUE, save.memory = FALSE)
+# Produce the MAP DAG estimate
+get_MAPdag(out_mcmc)
+
+</code></pre>
+
+
+</div>

@@ -1,0 +1,331 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>BIOMOD_EnsembleForecasting</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Project ensemble species distribution models onto new environment</h2>
+
+<h3>Description</h3>
+
+<p>This function allows to project ensemble models built with the 
+<code>BIOMOD_EnsembleModeling</code> function onto new environmental data 
+(<em>which can represent new areas, resolution or time scales for example</em>).
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">BIOMOD_EnsembleForecasting(
+  bm.em,
+  bm.proj = NULL,
+  proj.name = NULL,
+  new.env = NULL,
+  new.env.xy = NULL,
+  models.chosen = "all",
+  metric.binary = NULL,
+  metric.filter = NULL,
+  compress = TRUE,
+  nb.cpu = 1,
+  na.rm = TRUE,
+  ...
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>bm.em</code></td>
+<td>
+<p>a <code>BIOMOD.ensemble.models.out</code> object returned by the 
+<code>BIOMOD_EnsembleModeling</code> function</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>bm.proj</code></td>
+<td>
+<p>a <code>BIOMOD.projection.out</code> object returned by the 
+<code>BIOMOD_Projection</code> function</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>proj.name</code></td>
+<td>
+<p>(<em>optional, default</em> <code>NULL</code>) <br> 
+If <code>bm.proj = NULL</code>, a <code>character</code> corresponding to the name (ID) of the 
+projection set (<em>a new folder will be created within the simulation folder with this 
+name</em>)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>new.env</code></td>
+<td>
+<p>(<em>optional, default</em> <code>NULL</code>) <br> 
+If <code>bm.proj = NULL</code>, a <code>matrix</code>, <code>data.frame</code> or
+<code>SpatRaster</code> object containing the new 
+explanatory variables (in columns or layers, with names matching the
+variables names given to the <code>BIOMOD_FormatingData</code> function to build 
+<code>bm.mod</code>) that will be used to project the species distribution model(s)
+<br><em>Note that old format from <span class="pkg">raster</span> are still supported such as 
+<code>RasterStack</code> objects. </em></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>new.env.xy</code></td>
+<td>
+<p>(<em>optional, default</em> <code>NULL</code>) <br> 
+If <code>new.env</code> is a <code>matrix</code> or a <code>data.frame</code>, a 2-columns <code>matrix</code> or 
+<code>data.frame</code> containing the corresponding <code>X</code> and <code>Y</code> coordinates that will 
+be used to project the ensemble species distribution model(s)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>models.chosen</code></td>
+<td>
+<p>a <code>vector</code> containing model names to be kept, must be either 
+<code>all</code> or a sub-selection of model names that can be obtained with the 
+<code>get_built_models</code> function</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>metric.binary</code></td>
+<td>
+<p>(<em>optional, default</em> <code>NULL</code>) <br> 
+A <code>vector</code> containing evaluation metric names to be used to transform prediction values 
+into binary values based on models evaluation scores obtained with the 
+<code>BIOMOD_Modeling</code> function. Must be among <code>all</code> (same evaluation metrics than 
+those of <code>modeling.output</code>) or <code>POD</code>, <code>FAR</code>, <code>POFD</code>, <code>SR</code>, 
+<code>ACCURACY</code>, <code>BIAS</code>, <code>ROC</code>, <code>TSS</code>, <code>KAPPA</code>, <code>OR</code>, <code>ORSS</code>, 
+<code>CSI</code>, <code>ETS</code>, <code>BOYCE</code>, <code>MPA</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>metric.filter</code></td>
+<td>
+<p>(<em>optional, default</em> <code>NULL</code>) <br> 
+A <code>vector</code> containing evaluation metric names to be used to transform prediction values 
+into filtered values based on models evaluation scores obtained with the 
+<code>BIOMOD_Modeling</code> function. Must be among <code>all</code> (same evaluation metrics than 
+those of <code>modeling.output</code>) or <code>POD</code>, <code>FAR</code>, <code>POFD</code>, <code>SR</code>, 
+<code>ACCURACY</code>, <code>BIAS</code>, <code>ROC</code>, <code>TSS</code>, <code>KAPPA</code>, <code>OR</code>, <code>ORSS</code>, 
+<code>CSI</code>, <code>ETS</code>, <code>BOYCE</code>, <code>MPA</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>compress</code></td>
+<td>
+<p>(<em>optional, default</em> <code>TRUE</code>) <br> 
+A <code>logical</code> or a <code>character</code> value defining whether and how objects should be 
+compressed when saved on hard drive, must be either <code>TRUE</code>, <code>FALSE</code>, <code>xz</code> or 
+<code>gzip</code> (see Details)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nb.cpu</code></td>
+<td>
+<p>(<em>optional, default</em> <code>1</code>) <br> 
+An <code>integer</code> value corresponding to the number of computing resources to be used to 
+parallelize the single models computation</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>na.rm</code></td>
+<td>
+<p>(<em>optional, default</em> <code>TRUE</code>) <br>
+A boolean defining whether Ensemble Model projection should ignore <code>NA</code>
+in Individual Model projection. Argument ignored by EWmean ensemble algorithm.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>(<em>optional, see Details</em>)</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>If <code>models.chosen = 'all'</code>, projections are done for all calibration and pseudo absences 
+runs if applicable. <br> These projections may be used later by the 
+<code>BIOMOD_EnsembleForecasting</code> function. <br><br></p>
+<p>If <code>build.clamping.mask = TRUE</code>, a raster file will be saved within the projection 
+folder. This mask values will correspond to the number of variables in each pixel that are out 
+of their calibration / validation range, identifying locations where predictions are uncertain. 
+<br><br></p>
+<p><code>...</code> can take the following values :
+</p>
+
+<ul>
+<li> <p><code>on_0_1000</code> : a <code>logical</code> value defining whether <code>0 - 1</code> 
+probabilities are to be converted to <code>0 - 1000</code> scale to save memory on backup
+</p>
+</li>
+<li> <p><code>do.stack</code> : a <code>logical</code> value defining whether all projections are to be 
+saved as one <code>SpatRaster</code> object or several <code>SpatRaster</code> files (<em>the 
+default if projections are too heavy to be all loaded at once in memory</em>)
+</p>
+</li>
+<li> <p><code>keep.in.memory</code> : a <code>logical</code> value defining whether all projections are 
+to be kept loaded at once in memory, or only links pointing to hard drive are to be returned
+</p>
+</li>
+<li> <p><code>output.format</code> : a <code>character</code> value corresponding to the projections 
+saving format on hard drive, must be either <code>.grd</code>, <code>.img</code>, <code>.tif</code> or <code>.RData</code> (the 
+default if <code>new.env</code> is given as <code>matrix</code> or <code>data.frame</code>)
+</p>
+</li>
+</ul>
+<h3>Value</h3>
+
+<p>A <code>BIOMOD.projection.out</code> object containing models projections, or links to saved 
+outputs. <br> Models projections are stored out of <span style="font-family: Courier New, Courier; color: #666666;"><b>R</b></span> (for memory storage reasons) in 
+<code>proj.name</code> folder created in the current working directory :
+</p>
+
+<ol>
+<li>
+<p> the output is a <code>data.frame</code> if <code>new.env</code> is a <code>matrix</code> or a 
+<code>data.frame</code>
+</p>
+</li>
+<li>
+<p> it is a <code>SpatRaster</code> if <code>new.env</code> 
+is a <code>SpatRaster</code> (or several
+<code>SpatRaster</code> objects, if <code>new.env</code> is too large)
+</p>
+</li>
+<li>
+<p> raw projections, as well as binary and filtered projections (if asked),
+are saved in the <code>proj.name</code> folder
+</p>
+</li>
+</ol>
+<h3>Author(s)</h3>
+
+<p>Wilfried Thuiller, Damien Georges, Robin Engler
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>BIOMOD_FormatingData</code>, <code>bm_ModelingOptions</code>, 
+<code>BIOMOD_Modeling</code>, <code>BIOMOD_EnsembleModeling</code>, 
+<code>BIOMOD_RangeSize</code>
+</p>
+<p>Other Main functions: 
+<code>BIOMOD_EnsembleModeling()</code>,
+<code>BIOMOD_FormatingData()</code>,
+<code>BIOMOD_LoadModels()</code>,
+<code>BIOMOD_Modeling()</code>,
+<code>BIOMOD_Projection()</code>,
+<code>BIOMOD_RangeSize()</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+library(terra)
+# Load species occurrences (6 species available)
+data(DataSpecies)
+head(DataSpecies)
+
+# Select the name of the studied species
+myRespName &lt;- 'GuloGulo'
+
+# Get corresponding presence/absence data
+myResp &lt;- as.numeric(DataSpecies[, myRespName])
+
+# Get corresponding XY coordinates
+myRespXY &lt;- DataSpecies[, c('X_WGS84', 'Y_WGS84')]
+
+# Load environmental variables extracted from BIOCLIM (bio_3, bio_4, bio_7, bio_11 &amp; bio_12)
+data(bioclim_current)
+myExpl &lt;- terra::rast(bioclim_current)
+
+
+
+ 
+# --------------------------------------------------------------- #
+file.out &lt;- paste0(myRespName, "/", myRespName, ".AllModels.models.out")
+if (file.exists(file.out)) {
+  myBiomodModelOut &lt;- get(load(file.out))
+} else {
+
+  # Format Data with true absences
+  myBiomodData &lt;- BIOMOD_FormatingData(resp.var = myResp,
+                                       expl.var = myExpl,
+                                       resp.xy = myRespXY,
+                                       resp.name = myRespName)
+
+  # Model single models
+  myBiomodModelOut &lt;- BIOMOD_Modeling(bm.format = myBiomodData,
+                                      modeling.id = 'AllModels',
+                                      models = c('RF', 'GLM'),
+                                      CV.strategy = 'random',
+                                      CV.nb.rep = 2,
+                                      CV.perc = 0.8,
+                                      OPT.strategy = 'bigboss',
+                                      metric.eval = c('TSS','ROC'),
+                                      var.import = 3,
+                                      seed.val = 42)
+}
+
+
+file.proj &lt;- paste0(myRespName, "/proj_Current/", myRespName, ".Current.projection.out")
+if (file.exists(file.proj)) {
+  myBiomodProj &lt;- get(load(file.proj))
+} else {
+
+  # Project single models
+  myBiomodProj &lt;- BIOMOD_Projection(bm.mod = myBiomodModelOut,
+                                    proj.name = 'Current',
+                                    new.env = myExpl,
+                                    models.chosen = 'all',
+                                    build.clamping.mask = TRUE)
+}
+
+
+file.EM &lt;- paste0(myRespName, "/", myRespName, ".AllModels.ensemble.models.out")
+if (file.exists(file.EM)) {
+  myBiomodEM &lt;- get(load(file.EM))
+} else {
+
+  # Model ensemble models
+  myBiomodEM &lt;- BIOMOD_EnsembleModeling(bm.mod = myBiomodModelOut,
+                                        models.chosen = 'all',
+                                        em.by = 'all',
+                                        em.algo = c('EMmean', 'EMca'),
+                                        metric.select = c('TSS'),
+                                        metric.select.thresh = c(0.7),
+                                        metric.eval = c('TSS', 'ROC'),
+                                        var.import = 3,
+                                        seed.val = 42)
+}
+
+
+# --------------------------------------------------------------- #
+# Project ensemble models (from single projections)
+myBiomodEMProj &lt;- BIOMOD_EnsembleForecasting(bm.em = myBiomodEM, 
+                                             bm.proj = myBiomodProj,
+                                             models.chosen = 'all',
+                                             metric.binary = 'all',
+                                             metric.filter = 'all')
+
+# Project ensemble models (building single projections)
+myBiomodEMProj &lt;- BIOMOD_EnsembleForecasting(bm.em = myBiomodEM,
+                                             proj.name = 'CurrentEM',
+                                             new.env = myExpl,
+                                             models.chosen = 'all',
+                                             metric.binary = 'all',
+                                             metric.filter = 'all')
+myBiomodEMProj
+plot(myBiomodEMProj)
+
+
+</code></pre>
+
+
+</div>

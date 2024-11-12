@@ -1,0 +1,315 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>describe_posterior</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Describe Posterior Distributions</h2>
+
+<h3>Description</h3>
+
+<p>Compute indices relevant to describe and characterize the posterior distributions.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">describe_posterior(posterior, ...)
+
+## S3 method for class 'numeric'
+describe_posterior(
+  posterior,
+  centrality = "median",
+  dispersion = FALSE,
+  ci = 0.95,
+  ci_method = "eti",
+  test = c("p_direction", "rope"),
+  rope_range = "default",
+  rope_ci = 0.95,
+  keep_iterations = FALSE,
+  bf_prior = NULL,
+  BF = 1,
+  verbose = TRUE,
+  ...
+)
+
+## S3 method for class 'stanreg'
+describe_posterior(
+  posterior,
+  centrality = "median",
+  dispersion = FALSE,
+  ci = 0.95,
+  ci_method = "eti",
+  test = c("p_direction", "rope"),
+  rope_range = "default",
+  rope_ci = 0.95,
+  keep_iterations = FALSE,
+  bf_prior = NULL,
+  diagnostic = c("ESS", "Rhat"),
+  priors = FALSE,
+  effects = c("fixed", "random", "all"),
+  component = c("location", "all", "conditional", "smooth_terms", "sigma",
+    "distributional", "auxiliary"),
+  parameters = NULL,
+  BF = 1,
+  verbose = TRUE,
+  ...
+)
+
+## S3 method for class 'brmsfit'
+describe_posterior(
+  posterior,
+  centrality = "median",
+  dispersion = FALSE,
+  ci = 0.95,
+  ci_method = "eti",
+  test = c("p_direction", "rope"),
+  rope_range = "default",
+  rope_ci = 0.95,
+  keep_iterations = FALSE,
+  bf_prior = NULL,
+  diagnostic = c("ESS", "Rhat"),
+  effects = c("fixed", "random", "all"),
+  component = c("conditional", "zi", "zero_inflated", "all", "location",
+    "distributional", "auxiliary"),
+  parameters = NULL,
+  BF = 1,
+  priors = FALSE,
+  verbose = TRUE,
+  ...
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>posterior</code></td>
+<td>
+<p>A vector, data frame or model of posterior draws.
+<strong>bayestestR</strong> supports a wide range of models (see <code>methods("describe_posterior")</code>)
+and not all of those are documented in the 'Usage' section, because methods
+for other classes mostly resemble the arguments of the <code>.numeric</code> method.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Additional arguments to be passed to or from methods.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>centrality</code></td>
+<td>
+<p>The point-estimates (centrality indices) to compute. Character
+(vector) or list with one or more of these options: <code>"median"</code>, <code>"mean"</code>, <code>"MAP"</code>
+(see <code>map_estimate()</code>), <code>"trimmed"</code> (which is just <code>mean(x, trim = threshold)</code>),
+<code>"mode"</code> or <code>"all"</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>dispersion</code></td>
+<td>
+<p>Logical, if <code>TRUE</code>, computes indices of dispersion related
+to the estimate(s) (<code>SD</code> and <code>MAD</code> for <code>mean</code> and <code>median</code>, respectively).
+Dispersion is not available for <code>"MAP"</code> or <code>"mode"</code> centrality indices.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ci</code></td>
+<td>
+<p>Value or vector of probability of the CI (between 0 and 1)
+to be estimated. Default to <code>0.95</code> (<code style="white-space: pre;">⁠95%⁠</code>).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ci_method</code></td>
+<td>
+<p>The type of index used for Credible Interval. Can be
+<code>"ETI"</code> (default, see <code>eti()</code>), <code>"HDI"</code>
+(see <code>hdi()</code>), <code>"BCI"</code> (see
+<code>bci()</code>), <code>"SPI"</code> (see <code>spi()</code>), or
+<code>"SI"</code> (see <code>si()</code>).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>test</code></td>
+<td>
+<p>The indices of effect existence to compute. Character (vector) or
+list with one or more of these options: <code>"p_direction"</code> (or <code>"pd"</code>),
+<code>"rope"</code>, <code>"p_map"</code>, <code>"equivalence_test"</code> (or <code>"equitest"</code>),
+<code>"bayesfactor"</code> (or <code>"bf"</code>) or <code>"all"</code> to compute all tests.
+For each "test", the corresponding <span class="pkg">bayestestR</span> function is called
+(e.g. <code>rope()</code> or <code>p_direction()</code>) and its results
+included in the summary output.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>rope_range</code></td>
+<td>
+<p>ROPE's lower and higher bounds. Should be a list of two
+values (e.g., <code>c(-0.1, 0.1)</code>) or <code>"default"</code>. If <code>"default"</code>,
+the bounds are set to <code>x +- 0.1*SD(response)</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>rope_ci</code></td>
+<td>
+<p>The Credible Interval (CI) probability, corresponding to the
+proportion of HDI, to use for the percentage in ROPE.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>keep_iterations</code></td>
+<td>
+<p>If <code>TRUE</code>, will keep all iterations (draws) of
+bootstrapped or Bayesian models. They will be added as additional columns
+named <code style="white-space: pre;">⁠iter_1, iter_2, ...⁠</code>. You can reshape them to a long format by
+running <code>reshape_iterations()</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>bf_prior</code></td>
+<td>
+<p>Distribution representing a prior for the computation of
+Bayes factors / SI. Used if the input is a posterior, otherwise (in the
+case of models) ignored.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>BF</code></td>
+<td>
+<p>The amount of support required to be included in the support interval.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>verbose</code></td>
+<td>
+<p>Toggle off warnings.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>diagnostic</code></td>
+<td>
+<p>Diagnostic metrics to compute.  Character (vector) or list
+with one or more of these options: <code>"ESS"</code>, <code>"Rhat"</code>, <code>"MCSE"</code> or <code>"all"</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>priors</code></td>
+<td>
+<p>Add the prior used for each parameter.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>effects</code></td>
+<td>
+<p>Should results for fixed effects, random effects or both be
+returned? Only applies to mixed models. May be abbreviated.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>component</code></td>
+<td>
+<p>Should results for all parameters, parameters for the
+conditional model or the zero-inflated part of the model be returned? May
+be abbreviated. Only applies to <span class="pkg">brms</span>-models.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>parameters</code></td>
+<td>
+<p>Regular expression pattern that describes the parameters
+that should be returned. Meta-parameters (like <code>lp__</code> or <code>prior_</code>) are
+filtered by default, so only parameters that typically appear in the
+<code>summary()</code> are returned. Use <code>parameters</code> to select specific parameters
+for the output.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>One or more components of point estimates (like posterior mean or median),
+intervals and tests can be omitted from the summary output by setting the
+related argument to <code>NULL</code>. For example, <code>test = NULL</code> and <code>centrality = NULL</code> would only return the HDI (or CI).
+</p>
+
+
+<h3>References</h3>
+
+
+<ul>
+<li>
+<p> Makowski, D., Ben-Shachar, M. S., Chen, S. H. A., and Lüdecke, D. (2019).
+<em>Indices of Effect Existence and Significance in the Bayesian Framework</em>.
+Frontiers in Psychology 2019;10:2767. <a href="https://doi.org/10.3389/fpsyg.2019.02767">doi:10.3389/fpsyg.2019.02767</a>
+</p>
+</li>
+<li> <p><a href="https://easystats.github.io/bayestestR/articles/region_of_practical_equivalence.html">Region of Practical Equivalence (ROPE)</a>
+</p>
+</li>
+<li> <p><a href="https://easystats.github.io/bayestestR/articles/bayes_factors.html">Bayes factors</a>
+</p>
+</li>
+</ul>
+<h3>Examples</h3>
+
+<pre><code class="language-R">library(bayestestR)
+
+if (require("logspline")) {
+  x &lt;- rnorm(1000)
+  describe_posterior(x, verbose = FALSE)
+  describe_posterior(x,
+    centrality = "all",
+    dispersion = TRUE,
+    test = "all",
+    verbose = FALSE
+  )
+  describe_posterior(x, ci = c(0.80, 0.90), verbose = FALSE)
+
+  df &lt;- data.frame(replicate(4, rnorm(100)))
+  describe_posterior(df, verbose = FALSE)
+  describe_posterior(
+    df,
+    centrality = "all",
+    dispersion = TRUE,
+    test = "all",
+    verbose = FALSE
+  )
+  describe_posterior(df, ci = c(0.80, 0.90), verbose = FALSE)
+
+  df &lt;- data.frame(replicate(4, rnorm(20)))
+  head(reshape_iterations(
+    describe_posterior(df, keep_iterations = TRUE, verbose = FALSE)
+  ))
+}
+
+# rstanarm models
+# -----------------------------------------------
+if (require("rstanarm") &amp;&amp; require("emmeans")) {
+  model &lt;- suppressWarnings(
+    stan_glm(mpg ~ wt + gear, data = mtcars, chains = 2, iter = 200, refresh = 0)
+  )
+  describe_posterior(model)
+  describe_posterior(model, centrality = "all", dispersion = TRUE, test = "all")
+  describe_posterior(model, ci = c(0.80, 0.90))
+
+  # emmeans estimates
+  # -----------------------------------------------
+  describe_posterior(emtrends(model, ~1, "wt"))
+}
+
+# BayesFactor objects
+# -----------------------------------------------
+if (require("BayesFactor")) {
+  bf &lt;- ttestBF(x = rnorm(100, 1, 1))
+  describe_posterior(bf)
+  describe_posterior(bf, centrality = "all", dispersion = TRUE, test = "all")
+  describe_posterior(bf, ci = c(0.80, 0.90))
+}
+
+</code></pre>
+
+
+</div>

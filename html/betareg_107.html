@@ -1,0 +1,148 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>predict.betareg</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Prediction Method for betareg Objects</h2>
+
+<h3>Description</h3>
+
+<p>Extract various types of predictions from beta regression models:
+First, GLM-style predictions on the scale of responses in (0, 1)
+or the scale of the linear predictor are provided. Second, various
+quantities based on the predicted beta distributions are available,
+e.g., moments, quantiles, probabilities, densities, etc.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">## S3 method for class 'betareg'
+predict(object, newdata = NULL,
+  type = c("response", "link", "precision", "variance", "parameters",
+    "distribution", "density", "probability", "quantile"),
+  na.action = na.pass, at = 0.5, elementwise = NULL, ...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>object</code></td>
+<td>
+<p>fitted model object of class <code>"betareg"</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>newdata</code></td>
+<td>
+<p>optionally, a data frame in which to look for variables with
+which to predict. If omitted, the original observations are used.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>type</code></td>
+<td>
+<p>character indicating type of predictions: fitted means of the response
+(default, <code>"response"</code> or equivalently <code>"mean"</code>),
+corresponding linear predictor (<code>"link"</code>), fitted precision parameter
+phi (<code>"precision"</code>), fitted variances of the response (<code>"variance"</code>),
+all <code>"parameters"</code> of the response distribution, or the corresponding
+<code>"distribution"</code> object (using the infrastructure from <span class="pkg">distributions3</span>).
+Finally, standard functions for the distribution can be evaluated (at
+argument <code>at</code>, see below), namely
+the <code>"density"</code> (or equivalently <code>"pdf"</code>),
+the <code>"quantile"</code> function,
+or the cumulative <code>"probability"</code> (or equivalently <code>"cdf"</code>).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>na.action</code></td>
+<td>
+<p>function determining what should be done with missing values
+in <code>newdata</code>. The default is to predict <code>NA</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>at</code></td>
+<td>
+<p>numeric vector at which the predictions should be evaluated if
+<code>type</code> specifies a function that takes an additional argument.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>elementwise</code></td>
+<td>
+<p>logical. Should each element of the distribution only be evaluated at the
+corresponding element of <code>at</code> (<code>elementwise = TRUE</code>) or at all elements
+in <code>at</code> (<code>elementwise = FALSE</code>). Elementwise evaluation is only possible
+if the number of observations is the same as the length of <code>at</code> and in that case a vector of
+the same length is returned. Otherwise a matrix is returned. The default is to use
+<code>elementwise = TRUE</code> if possible, and otherwise <code>elementwise = FALSE</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>further arguments when <code>type</code> specifies a function, e.g.,
+<code>type = "density"</code> with <code>log = TRUE</code> computes log-densities
+(or log-likelihoods).</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>Each prediction for a <code>betareg</code> model internally first computes the parameters
+for all observations in <code>newdata</code> (or the original data if <code>newdata</code> is missing).
+These parameters correspond to a predicted beta distribution (or extended-support beta distribution)
+for each observation. Then the actual predictions can also be moments of the distributions
+or standard quantities such as densities, cumulative probabilities, or quantiles.
+The latter are computed with the <code>d</code>/<code>p</code>/<code>q</code> functions such as
+<code>dbetar</code> (or <code>dxbetax</code> or <code>dxbeta</code>).
+</p>
+
+
+<h3>Value</h3>
+
+<p>Either a vector or matrix of predictions with the same number of observations as rows
+in <code>newdata</code>.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">options(digits = 4)
+
+data("GasolineYield", package = "betareg")
+
+gy2 &lt;- betareg(yield ~ batch + temp | temp, data = GasolineYield)
+
+cbind(
+  predict(gy2, type = "response"),
+  predict(gy2, type = "link"),
+  predict(gy2, type = "precision"),
+  predict(gy2, type = "variance"),
+  predict(gy2, type = "quantile", at = c(0.25, 0.5, 0.75))
+)
+
+## evaluate cumulative _p_robabilities for (small) new data set
+gyd &lt;- GasolineYield[c(1, 5, 10), ]
+
+## CDF at 0.1 for each observation
+predict(gy2, newdata = gyd, type = "probability", at = 0.1)
+
+## CDF at each combination of 0.1/0.2 and observations
+predict(gy2, newdata = gyd, type = "probability", at = c(0.1, 0.2))
+
+## CDF at elementwise combinations of 0.1/0.2/0.3 and observations
+predict(gy2, newdata = gyd, type = "probability", at = c(0.1, 0.2, 0.3))
+predict(gy2, newdata = gyd, type = "probability", at = c(0.1, 0.2, 0.3), elementwise = TRUE)
+
+## CDF at all combinations of 0.1/0.2/0.3 and observations
+predict(gy2, newdata = gyd, type = "probability", at = c(0.1, 0.2, 0.3), elementwise = FALSE)
+</code></pre>
+
+
+</div>

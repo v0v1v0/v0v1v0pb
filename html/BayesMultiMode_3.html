@@ -1,0 +1,277 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>bayes_mode</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Bayesian mode inference</h2>
+
+<h3>Description</h3>
+
+<p>Bayesian inference on the modes in a univariate mixture estimated with MCMC methods, see Cross et al. (2024).
+Provides posterior probabilities of the number of modes and their locations.
+Under the hood it calls the function <code>mix_mode()</code> to find the modes in each MCMC draw.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">bayes_mode(
+  BayesMix,
+  rd = 1,
+  tol_mixp = 0,
+  tol_x = sd(BayesMix$data)/10,
+  tol_conv = 1e-08,
+  inside_range = TRUE,
+  range = c(min(BayesMix$data), max(BayesMix$data))
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>BayesMix</code></td>
+<td>
+<p>An object of class <code>bayes_mixture</code> generated with either <code>bayes_fit()</code> or <code>bayes_mixture()</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>rd</code></td>
+<td>
+<p>(for continuous mixtures) Integer indicating the number of decimal places when rounding the distribution's support.
+It is necessary to compute posterior probabilities of mode locations.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>tol_mixp</code></td>
+<td>
+<p>Components with a mixture proportion below <code>tol_mixp</code> are discarded when estimating modes;
+note that this does not apply to the biggest component so that it is not possible to discard all components;
+should be between <code>0</code> and <code>1</code>; default is <code>0</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>tol_x</code></td>
+<td>
+<p>(for continuous mixtures) Tolerance parameter for distance in-between modes; default is <code>sd(data)/10</code>
+where data is the vector of observations from <code>BayesMix</code>.
+If two modes are closer than <code>tol_x</code>, only the first estimated mode is kept.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>tol_conv</code></td>
+<td>
+<p>(for continuous mixtures) Tolerance parameter for convergence of the algorithm; default is <code>1e-8</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>inside_range</code></td>
+<td>
+<p>Should modes outside of <code>range</code> be discarded? Default is <code>TRUE</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>range</code></td>
+<td>
+<p>limits of the support where modes are saved (if <code>inside_range</code> is <code>TRUE</code>);
+default is <code>c(min(BayesMix$data), max(BayesMix$data))</code>.
+This sometimes occurs with very small components when K is large.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>Each draw from the MCMC output after burnin, <code class="reqn">\theta^{(d)}, \quad d = 1,...,D</code>, leads to a posterior predictive probability
+density/mass function:
+</p>
+<p style="text-align: center;"><code class="reqn">p(y | \theta^{(d)}) =\sum_{k=1}^{K} \pi_k^{(d)} p(y | \theta_k^{(d)}).</code>
+</p>
+
+<p>Using this function, the mode in draw <code class="reqn">d</code> <code class="reqn">y_{m}^{(d)}</code>, <code class="reqn">m = 1,..., M^{(d)}</code>,
+where <code class="reqn">M^{(d)}</code> is the number of modes, are estimated using the algorithm mentioned
+in the description above.
+</p>
+<p>After running this procedure across all retained posterior draws,
+we compute the posterior probability for the number of modes being <code class="reqn">M</code> as:
+</p>
+<p style="text-align: center;"><code class="reqn">P(\#\text{modes}=M)=\frac{1}{D}\sum_{d=1}^{D}1(M^{(d)} = M).</code>
+</p>
+
+<p>Similarly, posterior probabilities for locations of the modes are given by:
+</p>
+<p style="text-align: center;"><code class="reqn">P(y=\text{mode})=\frac{1}{D}\sum_{d=1}^{D} \sum_{m=1}^{M^{(d)}} 1(y = y_m^{(d)}),</code>
+</p>
+
+<p>for each location <code class="reqn">y</code> in the range <code class="reqn">[\min(y),\max(y)]</code>. Obviously,
+continuous data are not defined on a discrete support;
+it is therefore necessary to choose a rounding decimal to discretize their support (with the <code>rd</code> argument).
+</p>
+
+
+<h3>Value</h3>
+
+<p>A list of class <code>bayes_mode</code> containing:
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+<p>From <code>BayesMix</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>dist</code></td>
+<td>
+<p>From <code>BayesMix</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>dist_type</code></td>
+<td>
+<p>From <code>BayesMix</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>pars_names</code></td>
+<td>
+<p>From <code>BayesMix</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>modes</code></td>
+<td>
+<p>Matrix with a row for each draw and columns showing modes.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>p1</code></td>
+<td>
+<p>Posterior probability of unimodality.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>p_nb_modes</code></td>
+<td>
+<p>Matrix showing posterior probabilities for the number of modes.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>p_mode_loc</code></td>
+<td>
+<p>Matrix showing posterior probabilities for mode locations.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>mix_density</code></td>
+<td>
+<p>Mixture density at all locations in each draw.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>algo</code></td>
+<td>
+<p>Algorithm used for mode estimation.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>range</code></td>
+<td>
+<p>Range outside which modes are discarded if <code>inside_range</code> is <code>TRUE</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>BayesMix</code></td>
+<td>
+<p><code>BayesMix</code>.</p>
+</td>
+</tr>
+</table>
+<h3>References</h3>
+
+<p>Cross JL, Hoogerheide L, Labonne P, van Dijk HK (2024).
+“Bayesian mode inference for discrete distributions in economics and finance.”
+<em>Economics Letters</em>, <b>235</b>, 111579.
+ISSN 0165-1765, <a href="https://doi.org/10.1016/j.econlet.2024.111579">doi:10.1016/j.econlet.2024.111579</a>.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R"># Example with galaxy data ================================================
+set.seed(123) 
+
+# retrieve galaxy data
+y = galaxy
+
+# estimation
+bayesmix = bayes_fit(data = y,
+                           K = 5, #not many to run the example rapidly
+                           dist = "normal",
+                           nb_iter = 500, #not many to run the example rapidly
+                           burnin = 100)
+
+# mode estimation
+BayesMode = bayes_mode(bayesmix)
+
+# plot 
+# plot(BayesMode, max_size = 200)
+
+# summary 
+# summary(BayesMode)
+
+# Example with DNA data ================================================
+set.seed(123) 
+
+# retrieve DNA data
+y = d4z4
+
+# estimation
+bayesmix = bayes_fit(data = y,
+                           K = 5, #not many to run the example rapidly
+                           dist = "shifted_poisson",
+                           nb_iter = 500, #not many to run the example rapidly
+                           burnin = 100)
+
+# mode estimation
+BayesMode = bayes_mode(bayesmix)
+
+# plot 
+# plot(BayesMode, max_size = 200)
+
+# summary 
+# summary(BayesMode)
+
+# Example with a Student t ================================================
+mu = c(0.5,6)
+sigma = c(1,2)
+nu = c(5,5)
+p = c(0.8,0.2)#'
+data = c(sn::rst(p[1]*1000, mu[1], sigma[1], nu = nu[1]),
+         sn::rst(p[2]*1000, mu[2], sigma[2], nu = nu[2]))
+
+fit = c(eta = p, mu = mu, sigma = sigma, nu = nu, xi = c(0,0))
+fit = rbind(fit, fit)
+
+pdf_func = function(x, pars) {
+  sn::dst(x, pars["mu"], pars["sigma"], pars["xi"], pars["nu"])
+}
+
+dist_type = "continuous"
+
+bayesmix = bayes_mixture(fit, data, burnin = 1, 
+pdf_func = pdf_func, dist_type = dist_type, loc = "mu")
+
+BayesMode = bayes_mode(bayesmix)
+
+# plot 
+# plot(BayesMode, max_size = 200)
+
+# summary 
+# summary(BayesMode)
+
+</code></pre>
+
+
+</div>

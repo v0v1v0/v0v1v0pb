@@ -1,0 +1,339 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>bigtps</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>
+Fits Cubic Thin-Plate Splines
+</h2>
+
+<h3>Description</h3>
+
+<p>Given a real-valued response vector <code class="reqn">\mathbf{y}=\{y_{i}\}_{n\times1}</code>, a thin-plate spline model has the form </p>
+<p style="text-align: center;"><code class="reqn">y_{i}=\eta(\mathbf{x}_{i})+e_{i}</code>
+</p>
+<p> where <code class="reqn">y_{i}</code> is the <code class="reqn">i</code>-th observation's respone, <code class="reqn">\mathbf{x}_{i}=(x_{i1},\ldots,x_{id})</code> is the <code class="reqn">i</code>-th observation's nonparametric predictor vector, <code class="reqn">\eta</code> is an unknown smooth function relating the response and predictor, and <code class="reqn">e_{i}\sim\mathrm{N}(0,\sigma^{2})</code> is iid Gaussian error. Function only fits interaction models.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">bigtps(x,y,nknots=NULL,nvec=NULL,rparm=NA,
+       alpha=1,lambdas=NULL,se.fit=FALSE,
+       rseed=1234,knotcheck=TRUE)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+
+<p>Predictor vector or matrix with three or less columns.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>y</code></td>
+<td>
+
+<p>Response vector. Must be same length as <code>x</code> has rows.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nknots</code></td>
+<td>
+
+<p>Two possible options: (a) scalar giving total number of random knots to sample, or (b) vector indexing which rows of <code>x</code> to use as knots.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nvec</code></td>
+<td>
+
+<p>Number of eigenvectors (and eigenvalues) to use in approximation. Must be less than or equal to the number of knots and greater than or equal to <code>ncol(x)+2</code>. Default sets <code>nvec&lt;-nknots</code>. Can also input <code>0&lt;nvec&lt;1</code> to retain <code>nvec</code> percentage of eigenbasis variation.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>rparm</code></td>
+<td>
+
+<p>Rounding parameter(s) for <code>x</code>. Use <code>rparm=NA</code> to fit unrounded solution. Can provide one (positive) rounding parameter for each column of <code>x</code>.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>alpha</code></td>
+<td>
+
+<p>Manual tuning parameter for GCV score. Using <code>alpha=1</code> gives unbaised esitmate. Using a larger alpha enforces a smoother estimate.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>lambdas</code></td>
+<td>
+
+<p>Vector of global smoothing parameters to try. Default estimates smoothing parameter that minimizes GCV score.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>se.fit</code></td>
+<td>
+
+<p>Logical indicating if the standard errors of fitted values should be estimated. 
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>rseed</code></td>
+<td>
+
+<p>Random seed for knot sampling. Input is ignored if <code>nknots</code> is an input vector of knot indices. Set <code>rseed=NULL</code> to obtain a different knot sample each time, or set <code>rseed</code> to any positive integer to use a different seed than the default.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>knotcheck</code></td>
+<td>
+
+<p>If <code>TRUE</code>, only unique knots are used (for stability).  
+</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>To estimate <code class="reqn">\eta</code> I minimize the penalized least-squares functional </p>
+<p style="text-align: center;"><code class="reqn">\frac{1}{n}\sum_{i=1}^{n}(y_{i}-\eta(\mathbf{x}_{i}))^{2}+\lambda J(\eta)</code>
+</p>
+<p> where <code class="reqn">J(\eta)</code> is the thin-plate penalty (see Helwig and Ma) and <code class="reqn">\lambda\geq0</code> is a smoothing parameter that controls the trade-off between fitting and smoothing the data. Default use of the function estimates <code class="reqn">\lambda</code> by minimizing the GCV score (see <code>bigspline</code>).
+</p>
+<p>Using the rounding parameter input <code>rparm</code> can greatly speed-up and stabilize the fitting for large samples. When <code>rparm</code> is used, the spline is fit to a set of unique data points after rounding; the unique points are determined using the efficient algorithm described in Helwig (2013). Rounding parameter should be on the raw data scale. 
+</p>
+
+
+<h3>Value</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>fitted.values</code></td>
+<td>
+<p>Vector of fitted values corresponding to the original data points in <code>x</code> (if <code>rparm=NA</code>) or the rounded data points in <code>xunique</code> (if <code>rparm</code> is used).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>se.fit</code></td>
+<td>
+<p>Vector of standard errors of <code>fitted.values</code> (if input <code>se.fit=TRUE)</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>Predictor vector (same as input).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>y</code></td>
+<td>
+<p>Response vector (same as input).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>xunique</code></td>
+<td>
+<p>Unique elements of <code>x</code> after rounding (if <code>rparm</code> is used).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>yunique</code></td>
+<td>
+<p>Mean of <code>y</code> for unique elements of <code>x</code> after rounding (if <code>rparm</code> is used).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>funique</code></td>
+<td>
+<p>Vector giving frequency of each element of <code>xunique</code> (if <code>rparm</code> is used).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>sigma</code></td>
+<td>
+<p>Estimated error standard deviation, i.e., <code class="reqn">\hat{\sigma}</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ndf</code></td>
+<td>
+<p>Data frame with two elements: <code>n</code> is total sample size, and <code>df</code> is effective degrees of freedom of fit model (trace of smoothing matrix).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>info</code></td>
+<td>
+<p>Model fit information: vector containing the GCV, multiple R-squared, AIC, and BIC of fit model (assuming Gaussian error).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>myknots</code></td>
+<td>
+<p>Spline knots used for fit.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nvec</code></td>
+<td>
+<p>Number of eigenvectors used for solution.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>rparm</code></td>
+<td>
+<p>Rounding parameter for <code>x</code> (same as input).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>lambda</code></td>
+<td>
+<p>Optimal smoothing parameter.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>coef</code></td>
+<td>
+<p>Spline basis function coefficients.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>coef.csqrt</code></td>
+<td>
+<p>Matrix square-root of covariace matrix of <code>coef</code>. Use <code>tcrossprod(coef.csqrt)</code> to get covariance matrix of <code>coef</code>.</p>
+</td>
+</tr>
+</table>
+<h3>Warnings </h3>
+
+<p>Input <code>nvec</code> must be greater than <code>ncol(x)+1</code>.
+</p>
+<p>When using rounding parameters, output <code>fitted.values</code> corresponds to unique rounded predictor scores in output <code>xunique</code>. Use <code>predict.bigtps</code> function to get fitted values for full <code>y</code> vector.
+</p>
+
+
+<h3>Computational Details </h3>
+
+<p>According to thin-plate spline theory, the function <code class="reqn">\eta</code> can be approximated as </p>
+<p style="text-align: center;"><code class="reqn">\eta(x) = \sum_{k=1}^{M}d_{k}\phi_{k}(\mathbf{x}) + \sum_{h=1}^{q}c_{h}\xi(\mathbf{x},\mathbf{x}_{h}^{*})</code>
+</p>
+<p> where the <code class="reqn">\{\phi_{k}\}_{k=1}^{M}</code> are linear functions, <code class="reqn">\xi</code> is the thin-plate spline semi-kernel, <code class="reqn">\{\mathbf{x}_{h}^{*}\}_{h=1}^{q}</code> are the knots, and the <code class="reqn">c_{h}</code> coefficients are constrained to be orthongonal to the <code class="reqn">\{\phi_{k}\}_{k=1}^{M}</code> functions.
+</p>
+<p>This implies that the penalized least-squares functional can be rewritten as </p>
+<p style="text-align: center;"><code class="reqn"> \|\mathbf{y} - \mathbf{K}\mathbf{d} - \mathbf{J}\mathbf{c}\|^{2} + n\lambda\mathbf{c}'\mathbf{Q}\mathbf{c} </code>
+</p>
+
+<p>where <code class="reqn">\mathbf{K}=\{\phi(\mathbf{x}_{i})\}_{n \times M}</code> is the null space basis function matrix, <code class="reqn">\mathbf{J}=\{\xi(\mathbf{x}_{i},\mathbf{x}_{h}^{*})\}_{n \times q}</code> is the contrast space basis funciton matrix, <code class="reqn">\mathbf{Q}=\{\xi(\mathbf{x}_{g}^{*},\mathbf{x}_{h}^{*})\}_{q \times q}</code> is the penalty matrix, and <code class="reqn">\mathbf{d}=(d_{0},\ldots,d_{M})'</code> and <code class="reqn">\mathbf{c}=(c_{1},\ldots,c_{q})'</code> are the unknown basis function coefficients, where <code class="reqn">\mathbf{c}</code> are constrained to be orthongonal to the <code class="reqn">\{\phi_{k}\}_{k=1}^{M}</code> functions.
+</p>
+<p>See Helwig and Ma for specifics about how the constrained estimation is handled.
+</p>
+
+
+<h3>Note</h3>
+
+<p>The spline is estimated using penalized least-squares, which does not require the Gaussian error assumption. However, the spline inference information (e.g., standard errors and fit information) requires the Gaussian error assumption.
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Nathaniel E. Helwig &lt;helwig@umn.edu&gt;
+</p>
+
+
+<h3>References</h3>
+
+<p>Gu, C. (2013). <em>Smoothing spline ANOVA models, 2nd edition</em>. New York: Springer.
+</p>
+<p>Helwig, N. E. (2017). <a href="http://dx.doi.org/10.3389/fams.2017.00015">Regression with ordered predictors via ordinal smoothing splines</a>. Frontiers in Applied Mathematics and Statistics, 3(15), 1-13.
+</p>
+<p>Helwig, N. E. and Ma, P. (2015). Fast and stable multiple smoothing parameter selection in smoothing spline analysis of variance models with large samples. <em>Journal of Computational and Graphical Statistics, 24</em>, 715-732.
+</p>
+<p>Helwig, N. E. and Ma, P. (2016). Smoothing spline ANOVA for super-large samples: Scalable computation via rounding parameters. <em>Statistics and Its Interface, 9</em>, 433-444.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+##########   EXAMPLE 1   ##########
+
+# define relatively smooth function
+set.seed(773)
+myfun &lt;- function(x){ sin(2*pi*x) }
+x &lt;- runif(500)
+y &lt;- myfun(x) + rnorm(500)
+
+# fit thin-plate spline (default 1 dim: 30 knots)
+tpsmod &lt;- bigtps(x,y)
+tpsmod
+
+
+##########   EXAMPLE 2   ##########
+
+# define more jagged function
+set.seed(773)
+myfun &lt;- function(x){ 2*x+cos(2*pi*x) }
+x &lt;- runif(500)*4
+y &lt;- myfun(x) + rnorm(500)
+
+# try different numbers of knots
+r1mod &lt;- bigtps(x,y,nknots=20,rparm=0.01)
+crossprod( myfun(r1mod$xunique) - r1mod$fitted )/length(r1mod$fitted)
+r2mod &lt;- bigtps(x,y,nknots=35,rparm=0.01)
+crossprod( myfun(r2mod$xunique) - r2mod$fitted )/length(r2mod$fitted)
+r3mod &lt;- bigtps(x,y,nknots=50,rparm=0.01)
+crossprod( myfun(r3mod$xunique) - r3mod$fitted )/length(r3mod$fitted)
+
+
+##########   EXAMPLE 3   ##########
+
+# function with two continuous predictors
+set.seed(773)
+myfun &lt;- function(x1v,x2v){
+  sin(2*pi*x1v) + log(x2v+.1) + cos(pi*(x1v-x2v))
+}
+x &lt;- cbind(runif(500),runif(500))
+y &lt;- myfun(x[,1],x[,2]) + rnorm(500)
+
+# fit thin-plate spline with 50 knots (default 2 dim: 100 knots)
+tpsmod &lt;- bigtps(x,y,nknots=50)
+tpsmod
+crossprod( myfun(x[,1],x[,2]) - tpsmod$fitted.values )/500
+
+
+##########   EXAMPLE 4   ##########
+
+# function with three continuous predictors
+set.seed(773)
+myfun &lt;- function(x1v,x2v,x3v){
+  sin(2*pi*x1v) + log(x2v+.1) + cos(pi*x3v)
+  }
+x &lt;- cbind(runif(500),runif(500),runif(500))
+y &lt;- myfun(x[,1],x[,2],x[,3]) + rnorm(500)
+
+# fit thin-plate spline with 50 knots (default 3 dim: 200 knots)
+tpsmod &lt;- bigtps(x,y,nknots=50)
+tpsmod
+crossprod( myfun(x[,1],x[,2],x[,3]) - tpsmod$fitted.values )/500
+
+</code></pre>
+
+
+</div>

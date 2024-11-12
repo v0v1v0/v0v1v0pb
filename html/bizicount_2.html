@@ -1,0 +1,459 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>bizicount</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Bizicount: Maximum likelihood estimation of copula-based bivariate zero-inflated
+(and non-inflated) count models</h2>
+
+<h3>Description</h3>
+
+<p>The main bivariate regression function of the <code>bizicount-package</code>
+Estimates copula-based bivariate zero-inflated (and non-inflated)
+count models via maximum likelihood. Supports the Frank and Gaussian
+copulas, as well as zero-inflated Poisson and negative binomial margins
+(and their non-inflated counterparts). It's class has associated
+<code>simulate</code> methods for post-estimation diagnostics using
+the <code>DHARMa</code> package, as well as an
+<code>extract</code> method for printing professional tables using
+<code>texreg</code>, and a test for zero-modification using <code>zi_test</code>.
+See the 'See Also' section for links to these methods.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">bizicount(
+  fmla1,
+  fmla2,
+  data,
+  cop = "gaus",
+  margins = c("pois", "pois"),
+  link.ct = c("log", "log"),
+  link.zi = c("logit", "logit"),
+  scaling = "none",
+  starts = NULL,
+  keep = TRUE,
+  subset,
+  na.action,
+  weights,
+  frech.min = 1e-07,
+  pmf.min = 1e-07,
+  ...
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>fmla1, fmla2</code></td>
+<td>
+<p><code>formula</code>s for the first margin and
+second margins, respectively. If non-inflated, of the form <code>y ~ x_1 + x_2 + ... + x_k</code>; if inflated, of the form <code>y ~ x1 + x2 + ... + x_k| z1 + z2 + ... + z_p</code>, where <code>y</code> is the outcome for the first margin, <code>x</code> are
+covariates for count parameters, and <code>z</code> are covariates for zero-inflated
+parameters in each margin. All covariates can be the same.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+<p>A <code>data.frame</code> containing the response variables, covariates, and
+offsets for the model. If <code>NULL</code>, these quantities are searched for in the
+parent environment.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>cop</code></td>
+<td>
+<p>Character string specifying the copula to be used. One of
+<code>c("gaus", "frank")</code>. Partial matching supported.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>margins</code></td>
+<td>
+<p>Length 2 character vector specifying the marginal
+distributions for each outcome. Each of the two elements must be one of
+<code>c("pois", "nbinom", "zip", "zinb")</code>, and must be consistent with its
+corresponding formula (i.e., zero-inflated margins with zero-inflated
+formulas).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>link.ct</code></td>
+<td>
+<p>Length 2 character string specifying the link function used
+for the count portion of each margin. One of <code>c("log", "identity", "sqrt")</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>link.zi</code></td>
+<td>
+<p>Length 2 character string specifying the link function used
+for the zero-inflation portion of each margin. One of <code>c("logit", "probit", "cauchit", "log", "cloglog")</code>. Ignored if corresponding <code>margins</code> entry is
+not zero-inflated.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>scaling</code></td>
+<td>
+<p>Deprecated. It is recommended that users scale their covariates
+if they encounter convergence issues, which can be accomplished using the
+<code>scale()</code> function on their data before putting it into the <code>bizicount()</code> function.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>starts</code></td>
+<td>
+<p>Numeric vector of starting values for parameter estimates. See
+'Details' section regarding the correct order for the values in this vector.
+If <code>NULL</code>, starting values are obtained automatically by a univariate regression fit.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>keep</code></td>
+<td>
+<p>Logical indicating whether to keep the model matrix in the
+returned model object. Defaults to <code>TRUE</code>, but can be set to <code>FALSE</code> to conserve memory.
+NOTE: Must be <code>TRUE</code> to use any post-estimation functions in this package,
+including <code>zi_test</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>subset</code></td>
+<td>
+<p>A vector indicating the subset of observations to use in
+estimation.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>na.action</code></td>
+<td>
+<p>Deprecated.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>weights</code></td>
+<td>
+<p>An optional numeric vector of weights for each observation.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>frech.min</code></td>
+<td>
+<p>Lower boundary for Frechet-Hoeffding bounds on copula CDF.
+Used for computational purposes to prevent over/underflow in likelihood
+search. Must be in <code class="reqn">[0, 1e-5]</code>, with <code class="reqn">0</code> imposing the original FH
+bounds without computational consideration. See 'Details.'</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>pmf.min</code></td>
+<td>
+<p>Lower boundary on copula PMF evaluations. Used for
+computational purposes to prevent over/underflow in likelihood search. Must
+be in <code class="reqn">[0, 1e-5]</code>, with <code class="reqn">0</code> imposing no bound. See ‘Details.’</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Additional arguments to be passed on to the quasi-newton fitting
+function, <code>nlm</code>. See 'Details' for some parameters that
+may be useful to alter.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+
+<ul>
+<li> <p><code>starts</code> – Starting values should be organized as
+follows:
+</p>
+
+<ol>
+<li>
+<p> count parameters for margin 1
+</p>
+</li>
+<li>
+<p> count parameters for margin 2
+</p>
+</li>
+<li>
+<p> zero-inflated parameters for margin 1 (if applicable),
+</p>
+</li>
+<li>
+<p> zero-inflated parameters for margin 2 (if applicable),
+</p>
+</li>
+<li>
+<p> inverse dispersion parameter for margin 1 (if applicable),
+</p>
+</li>
+<li>
+<p> inverse dispersion parameter for margin 2 (if applicable)
+</p>
+</li>
+</ol>
+<p>Thus, in general count parameters should come first, followed by
+zero-inflation parameters, and finally inverse dispersion parameters.
+</p>
+</li>
+<li> <p><code>frech.min</code> – Changing this argument should almost never be
+necessary. Frechet (1951) and Hoeffding (1940) showed that copula CDFs have
+bounds of the form <code class="reqn">max\{u + v - 1, 0\} \le C(u, v) \le min\{u, v\}</code>, where
+<code class="reqn">u</code> and <code class="reqn">v</code> are uniform realizations derived from the probability
+integral transform. Due to numerical underflow, very small values of <code class="reqn">u</code>
+and <code class="reqn">v</code> can be rounded to zero. Particularly when evaluating the Gaussian
+copula CDF this is problematic, ultimately leading to infinite-valued
+likelihood evaluations. Therefore, we impose Frechet-Hoeffding bounds
+numerically as <code class="reqn">max\{u + v - 1, frech.min\} \le C(u, v) \le min\{u, v, 1 -
+frech.min\}</code>. NOTE: Setting this to 0 imposes the original Frechet bounds
+mentioned above.
+</p>
+</li>
+<li> <p><code>pmf.min</code> – Changing this argument should almost never be
+necessary. Observations can have likelihoods that are extremely close to 0.
+Numerically, these get rounded to 0 due to underflow. Then, taking logarithms
+results in an infinite likelihood. To avoid this, we bound PMF evaluations
+from below at <code>pmf.min</code>.
+</p>
+</li>
+<li> <p><code>...</code> – Sometimes it may be useful to alter <code>nlm</code>'s
+default parameters. This can be done by simply passing those arguments into
+<code>bizicount()</code>. The two that seem to benefit the fitting process the most are
+<code>stepmax</code> and <code>steptol</code>. Readers are referred to the documentation on
+<code>nlm</code> for more details on these parameters. It can be
+useful to lower <code>stepmax</code> particularly when the Hessian is not negative
+definite at convergence, sometimes to a value between 0 and 1. It can also be
+beneficial to increase <code>steptol</code>.
+</p>
+</li>
+</ul>
+<h3>Value</h3>
+
+<p>An S3 <code>bizicount-class</code> object, which is a list containing:
+</p>
+
+<ul>
+<li> <p><code>coef</code> – Coefficients of the model
+</p>
+</li>
+<li> <p><code>coef.nid</code> – Coefficients without margin IDs
+</p>
+</li>
+<li> <p><code>coef.orig</code> – Coefficients prior to transformations, for Gaussian
+dependence and negative binomial dispersion.
+</p>
+</li>
+<li> <p><code>coef.orig.nid</code> – Coefficients prior to transforms, no margin IDs.
+</p>
+</li>
+<li> <p><code>se</code> – Asymptotic normal-theory standard errors based on observed Fisher Information
+</p>
+</li>
+<li> <p><code>se.nid</code> – Standard errors without margin IDs
+</p>
+</li>
+<li> <p><code>z</code> – z-scores for parameter estimates
+</p>
+</li>
+<li> <p><code>z.nid</code> – z-scores without margin IDs
+</p>
+</li>
+<li> <p><code>p</code> – p-values for parameter estimates
+</p>
+</li>
+<li> <p><code>p.nid</code> – p-values without margin IDs
+</p>
+</li>
+<li> <p><code>coefmats</code> – A list containing coeficient matrices for each margin
+</p>
+</li>
+<li> <p><code>loglik</code> – Scalar log-likelihood at convergence
+</p>
+</li>
+<li> <p><code>grad</code> – Numerical gradient vector at convergence
+</p>
+</li>
+<li> <p><code>n.iter</code> – Number of quasi-newton fitting iterations.
+</p>
+</li>
+<li> <p><code>covmat</code> – Covariance matrix of parameter estimates based on observed Fisher Information
+</p>
+</li>
+<li> <p><code>aic</code> – Model's Akaike information
+</p>
+</li>
+<li> <p><code>bic</code> – Model's Bayesian information criterion
+</p>
+</li>
+<li> <p><code>nobs</code> – Number of observations
+</p>
+</li>
+<li> <p><code>margins</code> – Marginal distributions used in fitting
+</p>
+</li>
+<li> <p><code style="white-space: pre;">⁠link.zi, link.ct⁠</code> – Names of link functions used in fitting
+</p>
+</li>
+<li> <p><code style="white-space: pre;">⁠invlink.ct, invlink.zi⁠</code> – Inverse link functions used in fitting (the
+actual function, not their names)
+</p>
+</li>
+<li> <p><code>outcomes</code> – Name of the response vector
+</p>
+</li>
+<li> <p><code>conv</code> – Integer telling convergence status in nlm. See ?nlm.
+</p>
+</li>
+<li> <p><code>cop</code> – The copula used in fitting
+</p>
+</li>
+<li> <p><code>starts</code> – list of starting values used
+</p>
+</li>
+<li> <p><code>call</code> – The model's call
+</p>
+</li>
+<li> <p><code>model</code> – List containing model matrices, or <code>NULL</code> if <code>keep = F</code>.
+</p>
+</li>
+</ul>
+<h3>Author(s)</h3>
+
+<p>John Niehaus
+</p>
+
+
+<h3>References</h3>
+
+<p><a href="doi:10.18637/jss.v109.i01">doi:10.18637/jss.v109.i01</a>
+</p>
+<p>Genest C, Nešlehová J (2007). “A primer on copulas for count
+data.” ASTIN Bulletin: The Journal of the IAA, 37(2), 475–515.
+</p>
+<p>Inouye DI, Yang E, Allen GI, Ravikumar P (2017). “A review of multivariate
+distributions for count data derived from the Poisson distribution.” Wiley
+Interdisciplinary Reviews: Computational Statistics, 9(3).
+</p>
+<p>Joe H (1997). Multivariate models and multivariate dependence concepts. CRC Press.
+</p>
+<p>Nikoloulopoulos A (2013). “Copula-Based Models for Multivariate Discrete
+Response Data.” In P Jaworski, F Durante, WK Härdle (eds.), Copulae in
+Mathematical and Quantitative Finance, chapter 11, pp. 231–250. Springer.
+</p>
+<p>Nelsen RB (2007). An Introduction to Copulas. Springer Science &amp; Business Media.
+</p>
+<p>Trivedi P, Zimmer D (2017). “A note on identification of bivariate copulas
+for discrete countdata.” Econometrics, 5(1), 10.
+</p>
+<p>Trivedi PK, Zimmer DM (2007). Copula modeling: an introduction for
+practitioners. NowPublishers Inc.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>extract.bizicount</code>, <code>make_DHARMa</code>, <code>zi_test</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">### bizicount example
+
+## SETUP
+set.seed(123)
+n = 300
+
+# define a function to simulate from a gaussian copula
+# first margin is zero-inflated negative binomial (zinb)
+# second margin is zero-inflated poisson (zip)
+# Note: marginal distributions are hard-coded in function, including
+# inverse dispersion parameter for zinb.
+gen = function(n,
+               b1,
+               b2,
+               g1,
+               g2,
+               dep) {
+
+     k1 = length(b1)
+     k2 = length(b2)
+
+     X1 = cbind(1, matrix(rbinom(n * (k1 - 1), 1, .5), ncol = k1 - 1))
+     X2 = cbind(1, matrix(rexp(n * (k2 - 1), 3), ncol = k2 - 1))
+
+     lam1 = exp(X1 %*% b1)
+     lam2 = exp(X2 %*% b2)
+
+     Z1 = cbind(1, matrix(runif(n * (k1 - 1), -1, 1), ncol = k1 - 1))
+     Z2 = cbind(1, matrix(rnorm(n * (k2 - 1)), ncol = k2 - 1))
+
+     psi1 = plogis(Z1 %*% g1)
+     psi2 = plogis(Z2 %*% g2)
+
+     norm_vars = MASS::mvrnorm(
+          n,
+          mu = c(0, 0),
+          Sigma = matrix(c(1, dep, dep, 1), ncol =2)
+          )
+
+     U = pnorm(norm_vars)
+
+     y1 =  qzinb(U[, 1],
+                 mu = lam1,
+                 psi = psi1,
+                 size = .3)
+     y2 =  qzip(U[, 2],
+                lambda = lam2,
+                psi = psi2)
+
+     dat = data.frame(
+          X1 = X1[, -1],
+          X2 = X2[, -1],
+          Z1 = Z1[, -1],
+          Z2 = Z2[, -1],
+          y1,
+          y2,
+          lam1,
+          lam2,
+          psi1,
+          psi2
+     )
+     return(dat)
+}
+
+
+# define parameters
+b1 = c(1, -2, 3)
+b2 = c(-1, 3, 1)
+g1 = c(2, -1.5, 2)
+g2 = c(-1, -3.75, 1.25)
+rho = .5
+
+
+# generate data
+dat = gen(n, b1, b2, g1, g2, rho)
+f1 = y1 ~ X1.1 + X1.2 | Z1.1 + Z1.2
+f2 = y2 ~ X2.1 + X2.2 | Z2.1 + Z2.2
+
+## END SETUP
+
+# estimate model
+
+mod = bizicount(f1, f2, dat, cop = "g", margins = c("zinb", "zip"), keep = TRUE)
+
+print(mod)
+summary(mod)
+</code></pre>
+
+
+</div>

@@ -1,0 +1,297 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>cure_rate_mcmc</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>
+The basic MCMC scheme. 
+</h2>
+
+<h3>Description</h3>
+
+<p>This is core MCMC function. The continuous parameters of the model are updated using (a) single-site Metropolis-Hastings steps and (b) a Metropolis adjusted Langevin diffusion step. The binary latent variables of the model (cured status per censored observation) are updated according to a Gibbs step. This function is embedded to the main function of the package <code>cure_rate_MC3</code> which runs parallel tempered MCMC chains. 
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">cure_rate_mcmc(y, X, Censoring_status, m, alpha = 1, mu_g = 1, s2_g = 1, 
+	a_l = 2.1, b_l = 1.1, promotion_time = list(distribution = "weibull", 
+	prior_parameters = matrix(rep(c(2.1, 1.1), 2), byrow = TRUE, 2, 2), 
+	prop_scale = c(0.2, 0.03)), mu_b = NULL, Sigma = NULL, g_prop_sd = 0.045, 
+	lambda_prop_scale = 0.03, b_prop_sd = NULL, initialValues = NULL, 
+	plot = FALSE, verbose = FALSE, tau_mala = 1.5e-05, mala = 0.15, 
+	single_MH_in_f = 0.5, c_under = 1e-9)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>y</code></td>
+<td>
+
+<p>observed data (time-to-event or censored time)
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>X</code></td>
+<td>
+
+<p>design matrix. Should contain a column of 1's if the model has a constant term. 
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Censoring_status</code></td>
+<td>
+
+<p>binary variables corresponding to time-to-event and censoring.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>m</code></td>
+<td>
+
+<p>number of MCMC iterations.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>alpha</code></td>
+<td>
+
+<p>A value between 0 and 1, corresponding to the temperature of the complete posterior distribution. The target posterior distribution corresponds to <code>alpha = 1</code>.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>mu_g</code></td>
+<td>
+
+<p>Parameter <code class="reqn">a_{\gamma}</code> of the prior distribution of <code class="reqn">\gamma</code>.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>s2_g</code></td>
+<td>
+
+<p>Parameter <code class="reqn">b_{\gamma}</code> of the prior distribution of <code class="reqn">\gamma</code>.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>a_l</code></td>
+<td>
+
+<p>Shape parameter <code class="reqn">a_{\lambda}</code> of the Inverse Gamma prior distribution of <code class="reqn">\lambda</code>.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>b_l</code></td>
+<td>
+
+<p>Scale parameter <code class="reqn">b_{\lambda}</code> of the Inverse Gamma prior distribution of <code class="reqn">\lambda</code>.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>promotion_time</code></td>
+<td>
+
+<p>A list containing the specification of the promotion time distribution. See 'details'.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>mu_b</code></td>
+<td>
+
+<p>Mean <code class="reqn">\mu</code> of the multivariate normal prior distribution of regression coefficients. Should be a vector whose length is equal to the number of columns of the design matrix <code>X</code>.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Sigma</code></td>
+<td>
+
+<p>Covariance matrix of the multivariate normal prior distribution of regression coefficients.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>g_prop_sd</code></td>
+<td>
+
+<p>The scale of the proposal distribution for single-site updates of the <code class="reqn">\gamma</code> parameter.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>lambda_prop_scale</code></td>
+<td>
+
+<p>The scale of the proposal distribution for single-site updates of the <code class="reqn">\lambda</code> parameter.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>b_prop_sd</code></td>
+<td>
+
+<p>The scale of the proposal distribution for the update of the <code class="reqn">\beta</code> parameter (regression coefficients).
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>initialValues</code></td>
+<td>
+
+<p>A list of initial values for each parameter (optional).
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>plot</code></td>
+<td>
+
+<p>Boolean for plotting on the run.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>verbose</code></td>
+<td>
+
+<p>Boolean for printing progress on the run.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>tau_mala</code></td>
+<td>
+
+<p>scale of the MALA proposal.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>mala</code></td>
+<td>
+
+<p>Propability of attempting a MALA step. Otherwise, a simple MH move is attempted. 
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>single_MH_in_f</code></td>
+<td>
+
+<p>Probability of attempting a single-site MH move in the basic Metropolis-Hastings step. Otherwise, a joint update is attempted.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>c_under</code></td>
+<td>
+
+<p>A small positive number (much smaller than 1) which is used as a threshold in the CDF of the promotion time for avoiding underflows in the computation of the log-likelihood function. Default value: 1e-9.
+</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>A list containing the following entries
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>mcmc_sample</code></td>
+<td>
+<p>The sampled MCMC values per parameter. See 'note'.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>complete_log_likelihood</code></td>
+<td>
+<p> Logarithm of the complete likelihood per MCMC iteration.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>acceptance_rates</code></td>
+<td>
+<p>The acceptance rate per move.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>latent_status_censored</code></td>
+<td>
+<p> The MCMC sample of the latent status per censored observation.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>log_prior_density</code></td>
+<td>
+<p>Logarithm of the prior density per MCMC iteration.</p>
+</td>
+</tr>
+</table>
+<h3>Note</h3>
+
+<p>In the case where the promotion time distribution is a mixture model, the mixing proportions <code class="reqn">w_1,\ldots,w_K</code> are reparameterized according to the following transformation
+</p>
+<p style="text-align: center;"><code class="reqn">w_j = \frac{\rho_j}{\sum_{i=1}^{K}\rho_i}, j = 1,\ldots,K</code>
+</p>
+
+<p>where <code class="reqn">\rho_i &gt; 0</code> for <code class="reqn">i=1,\ldots,K-1</code> and <code class="reqn">\rho_{K}=1</code>. The sampler returns the parameters <code class="reqn">\rho_1,\ldots,\rho_{K-1}</code>, not the mixing proportions. 
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Panagiotis Papastamoulis
+</p>
+
+
+<h3>References</h3>
+
+<p>Papastamoulis and Milienos (2024). Bayesian inference and cure rate modeling for event history data. TEST doi: 10.1007/s11749-024-00942-w.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>cure_rate_MC3</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R"># simulate toy data just for cran-check purposes        
+        set.seed(1)
+        n = 10
+        stat = rbinom(n, size = 1, prob = 0.5)
+        x &lt;- cbind(1, matrix(rnorm(2*n), n, 2))
+        y &lt;- rexp(n)
+# run a weibull model (including const. term) 
+#	for m = 10 mcmc iterations 
+        fit1 &lt;- cure_rate_mcmc(y = y, X = x, Censoring_status = stat, 
+              	plot = FALSE,
+                promotion_time = list(distribution = 'weibull', 
+                        prior_parameters = matrix(rep(c(2.1, 1.1), 2), 
+                                                byrow = TRUE, 2, 2),
+                        prop_scale = c(0.1, 0.1)
+                ),
+                m = 10)
+#	the generated mcmc sampled values         
+	fit1$mcmc_sample
+</code></pre>
+
+
+</div>

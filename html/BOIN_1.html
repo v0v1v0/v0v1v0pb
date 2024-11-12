@@ -1,0 +1,203 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>get.boundary</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Generate the optimal dose escalation and deescalation boundaries for conducting the trial.</h2>
+
+<h3>Description</h3>
+
+<p>Use this function to generate the optimal dose escalation and deescalation boundaries for conducting the trial.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">get.boundary(
+  target,
+  ncohort,
+  cohortsize,
+  n.earlystop = 100,
+  p.saf = 0.6 * target,
+  p.tox = 1.4 * target,
+  cutoff.eli = 0.95,
+  extrasafe = FALSE,
+  offset = 0.05
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>target</code></td>
+<td>
+<p>the target DLT rate</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ncohort</code></td>
+<td>
+<p>the total number of cohorts</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>cohortsize</code></td>
+<td>
+<p>the cohort size</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>n.earlystop</code></td>
+<td>
+<p>the early stopping parameter. If the number of patients treated at
+the current dose reaches <code>n.earlystop</code>, stop the trial
+and select the MTD based on the observed data. The default
+value <code>n.earlystop=100</code> essentially turns off the type
+of early stopping.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>p.saf</code></td>
+<td>
+<p>the highest toxicity probability that is deemed subtherapeutic
+(i.e., below the MTD) such that dose escalation should be made.
+The default value is <code>p.saf = 0.6 * target</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>p.tox</code></td>
+<td>
+<p>the lowest toxicity probability that is deemed overly toxic such
+that deescalation is required. The default value is
+<code>p.tox=1.4*target</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>cutoff.eli</code></td>
+<td>
+<p>the cutoff to eliminate an overly toxic dose for safety.
+We recommend the default value (<code>cutoff.eli=0.95</code>) for general use.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>extrasafe</code></td>
+<td>
+<p>set <code>extrasafe=TRUE</code> to impose a more strict stopping rule for extra safety,
+expressed as the stopping boundary value in the result .</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>offset</code></td>
+<td>
+<p>a small positive number (between 0 and 0.5) to control how strict
+the stopping rule is when <code>extrasafe=TRUE</code>. A larger value leads
+to a more strict stopping rule. The default value
+(<code>offset=0.05</code>) generally works well.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The dose escalation and deescalation boundaries are all we need to run a
+phase I trial when using the BOIN design. The decision of which dose to
+administer to the next cohort of patients does not require complicated
+computations, but only a simple comparison of the observed DLT rate
+at the current dose with the dose escalation and deescalation boundaries.
+If the observed DLT rate at the current dose is smaller than or equal
+to the escalation boundary, we escalate the dose; if the observed toxicity
+rate at the current dose is greater than or equal to the deescalation boundary,
+we deescalate the dose; otherwise, we retain the current dose. The dose
+escalation and deescalation boundaries are chosen to minimize the probability
+of assigning patients to subtherapeutic or overly toxic doses, thereby
+optimizing patient ethics. <code>get.boundary()</code> also outputs the elimination
+boundary, which is used to avoid treating patients at overly toxic doses based
+on the following Bayesian safety rule: if <code class="reqn">Pr(p_j &gt; \phi | m_j , n_j ) &gt; 0.95</code> and
+<code class="reqn">n_j \ge 3</code>, dose levels <code class="reqn">j</code> and higher are eliminated from the trial, where <code class="reqn">p_j</code> is
+the toxicity probability of dose level <code class="reqn">j</code>, <code class="reqn">\phi</code> is the target DLT rate,
+and <code class="reqn">m_j</code> and <code class="reqn">n_j</code> are the number of toxicities and patients treated at dose level <code class="reqn">j</code>.
+The trial is terminated if the lowest dose is eliminated.
+</p>
+<p>The BOIN design has two built-in stopping rules: (1) stop the trial if the lowest dose is eliminated
+due to toxicity, and no dose should be selected as the MTD; and (2) stop the trial
+and select the MTD if the number of patients treated at the current dose reaches
+<code>n.earlystop</code>. The first stopping rule is a safety rule to protect patients
+from the case in which all doses are overly toxic. The rationale for the second
+stopping rule is that when there is a large number (i.e., <code>n.earlystop</code>)
+of patients assigned to a dose, it means that the dose-finding algorithm has
+approximately converged. Thus, we can stop the trial early and select the MTD
+to save the sample size and reduce the trial duration. For some applications,
+investigators may prefer a more strict safety stopping rule than rule (1) for
+extra safety when the lowest dose is overly toxic. This can be achieved by
+setting <code>extrasafe=TRUE</code>, which imposes the following more strict safety
+stopping rule: stop the trial if (i) the number of patients treated at the
+lowest dose &gt;=3, and (ii) <code class="reqn">Pr(toxicity\ rate\ of\ the\ lowest\ dose &gt; \code{target} | data)
+         &gt; \code{cutoff.eli}-\code{offset}</code>. As a tradeoff, the strong stopping rule will decrease the
+MTD selection percentage when the lowest dose actually is the MTD.
+</p>
+
+
+<h3>Value</h3>
+
+<p><code>get.boundary()</code> returns a list object, including the dose escalation and de-escalation
+boundaries <code>$lambda_e</code> and <code>$lambda_d</code> and the corresponding decision tables
+<code>$boundary_tab</code> and <code>$full_boundary_tab</code>. If <code>extrasafe=TRUE</code>, the function also returns
+a (more strict) safety stopping boundary <code>$stop_boundary</code>.
+</p>
+
+
+<h3>Note</h3>
+
+<p>We should avoid setting the values of <code>p.saf</code> and <code>p.tox</code> very close to the
+<code>target</code>. This is because the small sample sizes of typical phase I trials prevent us from
+differentiating the target DLT rate from the rates close to it. In addition,
+in most clinical applications, the target DLT rate is often a rough guess,
+and finding a dose level with a DLT rate reasonably close to the target rate
+will still be of interest to the investigator. The default values provided by
+<code>get.boundary()</code> are generally reasonable for most clinical applications.
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Suyu Liu and Ying Yuan
+</p>
+
+
+<h3>References</h3>
+
+<p>Liu S. and Yuan, Y. (2015). Bayesian Optimal Interval Designs for Phase I
+Clinical Trials, <em>Journal of the Royal Statistical Society: Series C</em>, 64, 507-523.
+</p>
+<p>Yan, F., Zhang, L., Zhou, Y., Pan, H., Liu, S. and Yuan, Y. (2020).BOIN: An R Package
+for Designing Single-Agent and Drug-Combination Dose-Finding Trials Using Bayesian Optimal
+Interval Designs. <em>Journal of Statistical Software</em>, 94(13),1-32.&lt;doi:10.18637/jss.v094.i13&gt;.
+</p>
+<p>Yuan Y., Hess K.R., Hilsenbeck S.G. and Gilbert M.R. (2016). Bayesian Optimal Interval Design: A
+Simple and Well-performing Design for Phase I Oncology Trials, <em>Clinical Cancer Research</em>, 22, 4291-4301.
+</p>
+
+
+<h3>See Also</h3>
+
+<p>Tutorial: <a href="http://odin.mdacc.tmc.edu/~yyuan/Software/BOIN/BOIN2.6_tutorial.pdf">http://odin.mdacc.tmc.edu/~yyuan/Software/BOIN/BOIN2.6_tutorial.pdf</a>
+</p>
+<p>Paper: <a href="http://odin.mdacc.tmc.edu/~yyuan/Software/BOIN/paper.pdf">http://odin.mdacc.tmc.edu/~yyuan/Software/BOIN/paper.pdf</a>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+## get the dose escalation and deescalation boundaries for BOIN design with
+## the target DLT rate of 0.3, maximum sample size of 30, and cohort size of 3
+bound &lt;- get.boundary(target=0.3, ncohort=10, cohortsize=3)
+summary(bound) # get the descriptive summary of the boundary
+plot(bound)    # plot the flowchart of the design with boundaries
+
+</code></pre>
+
+
+</div>

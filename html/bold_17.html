@@ -1,0 +1,199 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>bold_seq</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Search BOLD for sequences.</h2>
+
+<h3>Description</h3>
+
+<p>Get sequences for a taxonomic name, id, bin, container, institution,
+researcher, geographic, place, or gene.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">bold_seq(
+  taxon = NULL,
+  ids = NULL,
+  bin = NULL,
+  container = NULL,
+  institutions = NULL,
+  researchers = NULL,
+  geo = NULL,
+  marker = NULL,
+  response = FALSE,
+  ...
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>taxon</code></td>
+<td>
+<p>(character) One or more taxonomic name. Optional.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ids</code></td>
+<td>
+<p>(character|integer|numeric) One or more IDs. Optional. IDs
+include Sample IDs, Process IDs, Museum IDs and Field IDs.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>bin</code></td>
+<td>
+<p>(character) One or more Barcode Index Number URI. Optional.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>container</code></td>
+<td>
+<p>(character) One or more project codes or dataset codes.
+Optional.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>institutions</code></td>
+<td>
+<p>(character) One or more institution's name. Optional.
+Institutions are the Specimen Storing Site.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>researchers</code></td>
+<td>
+<p>(character) One or more researcher names. Optional.
+Include collectors and specimen identifiers.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>geo</code></td>
+<td>
+<p>(character) One or more geographic sites.
+Includes countries and province/states.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>marker</code></td>
+<td>
+<p>(character) Returns all records containing matching
+marker codes.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>response</code></td>
+<td>
+<p>(logical) Default : FALSE. If TRUE, returns the object from
+the Curl call. Useful for debugging and getting more detailed info on the
+API call.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Further args passed on to
+<code>crul::verb-GET</code>, main purpose being curl
+debugging</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>A data frame with each element as row and 5 columns for processid, identification,
+marker, accession, and sequence.
+</p>
+
+
+<h3>Large requests</h3>
+
+<p>Some requests can lead to errors. These often have to do with requesting
+data for a rank that is quite high in the tree, such as an Order,
+for example, Coleoptera. If your request is taking a long time,
+it's likely that something will go wrong on the BOLD server side,
+or we'll not be able to parse the result here in R because
+R can only process strings of a certain length. <code>bold</code>
+users have reported errors in which the resulting response from
+BOLD is so large that we could not parse it.
+</p>
+<p>A good strategy for when you want data for a high rank is to
+do many separate requests for lower ranks within your target
+rank. You can do this manually, or use the function
+<code>taxize::downstream</code> to get all the names of a lower
+rank within a target rank. There's an example in the README
+(https://docs.ropensci.org/bold/#large-data)
+</p>
+
+
+<h3>If a request times out</h3>
+
+<p>This is likely because you're request was for a large number of
+sequences and the BOLD service timed out. You still should get
+some output, those sequences that were retrieved before the time
+out happened. As above, see the README
+(https://docs.ropensci.org/bold/#large-data) for an example of
+dealing with large data problems with this function.
+</p>
+
+
+<h3>Marker</h3>
+
+<p>Notes from BOLD on the <code>marker</code> param:
+"All markers for a specimen matching the search string will be returned.
+ie. A record with COI-5P and ITS will return sequence data for both
+markers even if only COI-5P was specified."
+</p>
+<p>You will likely end up with data with markers that you did not request -
+just be sure to filter those out as needed.
+</p>
+
+
+<h3>Note</h3>
+
+<p>If using the <code>taxon</code> parameter with another parameter, if the <code>taxon</code> isn't found in the public database, it will act as if no <code>taxon</code> was specified and try to return all the data for the other specified parameter. You can make sure that the <code>taxon</code> you're looking up has public records with <code>bold_stats</code>.
+</p>
+
+
+<h3>References</h3>
+
+<p>http://v4.boldsystems.org/index.php/resources/api?type=webservices
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## Not run: 
+bold_seq(taxon='Coelioxys')
+bold_seq(taxon='Aglae')
+bold_seq(taxon=c('Coelioxys','Osmia'))
+bold_seq(ids='ACRJP618-11')
+bold_seq(ids=c('ACRJP618-11','ACRJP619-11'))
+bold_seq(bin='BOLD:AAA5125')
+bold_seq(container='ACRJP')
+bold_seq(researchers='Thibaud Decaens')
+bold_seq(geo='Ireland')
+bold_seq(geo=c('Ireland','Denmark'))
+
+# Return the http response object for detailed Curl call response details
+res &lt;- bold_seq(taxon='Coelioxys', response=TRUE)
+res$url
+res$status_code
+res$response_headers
+
+## curl debugging
+### You can do many things, including get verbose output on the curl
+### call, and set a timeout
+bold_seq(taxon='Coelioxys', verbose = TRUE)[1:2]
+
+## End(Not run)
+
+</code></pre>
+
+
+</div>

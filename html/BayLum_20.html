@@ -1,0 +1,317 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>Generate_DataFile_MG-deprecated</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Generates, from one (or several) BIN file(s) of Multi-grain OSL measurements a list of luminescence data and information before statistical analysis (DEPRECATED)</h2>
+
+<h3>Description</h3>
+
+<p>This function is used to generate, from the BIN file(s), a list of values of:
+</p>
+<p><b>Multi-grain</b> OSL intensities and associated uncertainties, regenerative doses, etc., which will be the input of the Bayesian models.
+To be easy-to-use, this function requires a rigorous organisation - all needed files should be arranged in one folder -
+of informations concerning each BIN file.<br>
+It is possible to process data for various samples simultaneously and to consider more
+than one BIN-file per sample.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">Generate_DataFile_MG(
+  Path,
+  FolderNames,
+  Nb_sample,
+  Nb_binfile = length(FolderNames),
+  BinPerSample = rep(1, Nb_sample),
+  sepD = c(","),
+  sepDE = c(","),
+  sepDS = c(","),
+  sepR = c("="),
+  verbose = TRUE,
+  force_run1_at_a_time = FALSE,
+  ...
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>Path</code></td>
+<td>
+<p>character (<strong>required</strong>): the path to the project folder, containing one or more sub folders in which the BIN files
+are located. If it is not equal to <code>""</code>, it must end with <code>"/"</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>FolderNames</code></td>
+<td>
+<p>character (<strong>required</strong>) vector: list of names of the sub-folders containing the BIN files
+</p>
+
+<ul><li>
+<p> each sub folder must contain a BIN file and associated csv files.
+See details for more informations on associated csv files required in the sub folders.
+If there is more than one BIN file per sample, see the details section for instructions regarding how to correctly fill the
+<code>FolderNames</code> vector.
+</p>
+</li></ul>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Nb_sample</code></td>
+<td>
+<p>integer (<strong>required</strong>): number of samples</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Nb_binfile</code></td>
+<td>
+<p>integer (with default): number of BIN files. It must be equal to, or greater than <code>Nb_sample</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>BinPerSample</code></td>
+<td>
+<p>integer vector (with default): vector with the number of BIN files per sample.
+The length of this vector must be equal to <code>Nb_sample</code> and the sum of entries of this vector must be equal to <code>Nb_binfile</code>.
+If there is more than one BIN file per sample, see the details section for instructions regarding how to correctly fill <code>BinPerSample</code> vector.
+Otherwise, this vector must contain a list of 1 values.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>sepD</code></td>
+<td>
+<p>character (with default): column separator in the <code>DiscPose.csv</code> files.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>sepDE</code></td>
+<td>
+<p>character (with default): column separator in the <code>DoseEnv.csv</code> files.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>sepDS</code></td>
+<td>
+<p>character (with default): column separator in the <code>DoseLab.csv</code> files.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>sepR</code></td>
+<td>
+<p>character (with default): column separator in the <code>Rule.csv</code> files.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>verbose</code></td>
+<td>
+<p>logical (with default): enable/disable verbose mode</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>force_run1_at_a_time</code></td>
+<td>
+<p>logical (<em>with default</em>): if set to <code>TRUE</code>, the order of the records is
+pushed to follow the one "Run 1 at a time" order (this is, all sequence steps were performed on
+one aliquot before moving to the next aliquot), regardless of their original sequence.
+The default is <code>FALSE</code> because <code>'BayLum'</code> assumes that the sample was measured with the
+"Run 1 at a time" option (only Risø readers, lexsyg readers do not have another option).
+In other words, the argument allows you to automatically correct your input data to follow the order <code>'BayLum'</code> expects.
+Why isn't the default value <code>TRUE</code>?. Because this re-ordering must fail
+if a measurement position was used more than once for different samples!
+This typically happens when different BIN/BINX files are merged.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>further arguments that can be passed to Luminescence::read_BIN2R.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>With <code>Path</code> and <code>FolderNames</code>, this function goes to the sub folders containing the BIN files and associated information to compute
+the luminescence data.<br></p>
+<p>** What are the required files in each subfolder? **<br></p>
+<p>Each subfolder can be named, for example, as the sample name followed by a number; it must contain:
+</p>
+
+<ul>
+<li> <p><b>bin.bin</b>, the bin file renamed as bin.BIN (note: the name of all files matters);
+</p>
+</li>
+<li> <p><b>Disc.csv</b>, a one columns csv file containing the list of disc number of the previously selected grains
+(typically this list will include the position of grains based on their sensitivity, recycling or other properties);
+</p>
+</li>
+<li> <p><b>DoseEnv.csv</b>, a two columns file containing the observation of the natural (or environmental),
+dose rate, and its non-shared variance (i.e. after removing all shared errors), both in Gy. Note: the user shall provide the squared value of the error associated
+with the dose rate experienced by the sample grains in nature;
+</p>
+</li>
+<li> <p><b>DoseSourve.csv</b>, a two columns file containing the observation of the laboratory dose rate,
+and its variance (squared error), both in Gy;
+</p>
+</li>
+<li> <p><b>rule.csv</b>, a csv file containing information on
+</p>
+
+<ul>
+<li> <p><code style="white-space: pre;">⁠beginSignal=⁠</code>  the first channel for summing the natural or regenerative OSL signal (typically 1 or 6);
+</p>
+</li>
+<li> <p><code style="white-space: pre;">⁠endSignal=⁠</code> the last channel for summing the natural or regenerative OSL signal (typically 5 or 10);
+</p>
+</li>
+<li> <p><code style="white-space: pre;">⁠beginBackground=⁠</code> the first channel for background estimation of the natural or regenerative OSL signal (typically 76 or 81);
+</p>
+</li>
+<li> <p><code style="white-space: pre;">⁠endBackground=⁠</code> the last channel for background estimation of the natural or regenerative OSL signal (typically 95 or 100);
+</p>
+</li>
+<li> <p><code>beginTest</code>,
+</p>
+</li>
+<li> <p><code>endTest</code>,
+</p>
+</li>
+<li> <p><code>beginTestBackground</code>,
+</p>
+</li>
+<li> <p><code style="white-space: pre;">⁠endTestBackground=⁠</code> same values as above, for the test dose response (typically the same values should be used);
+</p>
+</li>
+<li> <p><code style="white-space: pre;">⁠inflatePercent=⁠</code> uncertainty arising from the instrument reproducibility (typically 0.02, i.e. 2\
+</p>
+</li>
+<li> <p><code style="white-space: pre;">⁠nbOfLastCycleToRemove=⁠</code> number of cycles at the end of the SAR protocol which should not be included in the dose response curve fitting
+(typically 1 if only a recycling test is performed, or 2 if both recycling and IR depletion are tested).<br></p>
+</li>
+</ul>
+</li>
+</ul>
+<p>** How to fill the <code>FolderNames</code> vector? **<br></p>
+<p><code>FolderNames</code> is a vector of length <code>Nb_binfile</code>. <code>FolderNames[i]</code> is the name (e.g., Sample1-File1, or successive names separated by "/" signs,
+if BIN files are in subfolders, e.g. Sample1/File1) of the subfolder containing all informations on the BIN file of ID number <code>i</code>.
+The names in <code>FolderNames</code> are ordered following two rules:
+</p>
+
+<ul>
+<li>
+<p> The names in the <code>FolderNames</code> vector must be ordered following the sample order
+(the names of subfolders containing BIN files for the same sample should follow each other in the <code>FolderNames</code> vector, e.g.
+Sample1, Sample2-File1, Sample2-File2, etc.).
+</p>
+</li>
+<li>
+<p> If stratigraphic constraints apply to samples, and so a <b>Bayesian model with stratigraphic constraints</b> is implemented,
+then the names in the <code>FolderNames</code> vector must be ordered by order of increasing ages. <br>
+For example, <code>FolderNames=c(noun1,noun2)</code>, in which case <code>noun1</code> (respectively, <code>noun2</code>) corresponds to the subfolder
+name containing the BIN file of sample 1 (respectively of sample 2).
+In addition, if we know that sample 1 is younger than sample 2, then <code>FolderNames</code> vector is correctly filled. <br>
+If conversely, <code>FolderNames=c(noun2,noun1)</code>, the analysis performed by <code>AgeS_Computation</code> would not be consistent.<br></p>
+</li>
+</ul>
+<p>** How to fill the <code>BinPerSample</code> vector? **<br></p>
+<p><code>BinPerSample[i]</code> corresponds to the number of BIN files for the sample whose number ID is equal to <code>i</code>.<br>
+For example, let us consider a case with two samples (Sample1 and Sample2), with 2 BIN files for Sample1 and 1 for Sample2.
+In this case, <code>Nb_binfile</code>=3 and <code>Nb_sample</code>=2.
+The user may then set <code>FolderNames=c("Sample1-File1", "Sample1-File2", "Sample2-File1")</code>, in which case <code>"Sample1-1"</code> is the name of the subfolder containing the first BIN file
+for Sample1, <code>"Sample1-File2"</code> the name of the  subfolder for the second BIN file of Sample1; eventually, <code>"Sample2-1"</code> is the name of the subfolder containing the BIN file
+for the second sample. In this case, <code>BinPerSample=c(2,1)</code>.
+</p>
+<p>For the general BIN-file structure, the reader is referred to the following website:  <code style="white-space: pre;">⁠http://www.nutech.dtu.dk/⁠</code>
+</p>
+<p>The function Luminescence::read_BIN2R is used to read the BIN files.
+</p>
+
+
+<h3>Value</h3>
+
+<p>A list containing the following objects:
+</p>
+
+<ul>
+<li> <p><b>LT</b> (one list per sample); each list contains all L/T values for the corresponding sample;
+</p>
+</li>
+<li> <p><b>sLT</b> (one list per sample); each list contains all uncertainties on L/T values for the corresponding sample;
+</p>
+</li>
+<li> <p><b>ITimes</b> (one list per sample); each list contains irradiation time values for the corresponding sample;
+</p>
+</li>
+<li> <p><b>dLab</b>, a matrix containing in line <code>i</code>, the laboratory dose rate and its variance for sample <code>i</code>;
+</p>
+</li>
+<li> <p><b>ddot_env</b>, a matrix containing in line <code>i</code>, the environmental dose rate and its variance (excluding the common error terms) for sample <code>i</code>;
+</p>
+</li>
+<li> <p><b>regDose</b> (one list per sample); each list contains all regenerated doses;
+</p>
+</li>
+<li> <p><b>J</b>, a vector giving, for each BIN file, the number of aliquots selected for the analysis;
+</p>
+</li>
+<li> <p><b>K</b>, a vector giving, for each BIN file, the number of regenerative doses in the SAR protocol;
+</p>
+</li>
+<li> <p><b>Nb_measurement</b>, a vector giving, for each BIN file, the number of measurements;
+</p>
+</li>
+</ul>
+<p>** How to save this list **
+</p>
+<p>You can save this list in a .RData object. To do this, you can use the function <code>save</code>.
+Then, to load this list you can use the function <code>load</code> (see example section fore more details).
+</p>
+
+
+<h3>Note</h3>
+
+<p>The function imports only BIN/BINX-file records which have been previously selected.
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Claire Christophe, Sebastian Kreutzer, Anne Philippe, Guillaume Guérin
+, RLum Developer Team</p>
+
+
+<h3>See Also</h3>
+
+<p><code>read_BIN2R</code>, <code>combine_DataFiles</code>, <code>LT_RegenDose</code>
+<code>Age_Computation</code>, <code>AgeS_Computation</code>, <code>Palaeodose_Computation</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## Not run: 
+path &lt;- system.file("extdata/FER1", "", package="BayLum")
+folder &lt;- ""
+# give the number of sample
+nbsample &lt;- 1
+DATA &lt;- Generate_DataFile_MG(
+ Path = path,
+ FolderNames = folder,
+ Nb_sample = nbsample)
+str(DATA)
+
+# to save information in RData object in folder containing bin file
+#save(DATA,file=c(paste(path,folder,'DATA.RData',sep="")))
+# to load information containing DATA.RData object
+#load(file=c(paste(path,folder,"DATA.RData",sep="")))
+
+## End(Not run)
+</code></pre>
+
+
+</div>

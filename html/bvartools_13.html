@@ -1,0 +1,140 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>bvs</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Bayesian Variable Selection</h2>
+
+<h3>Description</h3>
+
+<p><code>bvs</code> employs Bayesian variable selection as proposed by Korobilis (2013)
+to produce a vector of inclusion parameters for the coefficient matrix
+of a VAR model.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">bvs(y, z, a, lambda, sigma_i, prob_prior, include = NULL)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>y</code></td>
+<td>
+<p>a <code class="reqn">K \times T</code> matrix of the endogenous variables.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>z</code></td>
+<td>
+<p>a <code class="reqn">KT \times M</code> matrix of explanatory variables.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>a</code></td>
+<td>
+<p>an M-dimensional vector of parameter draws. If time varying parameters are used,
+an <code class="reqn">M \times T</code> coefficient matrix can be provided.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>lambda</code></td>
+<td>
+<p>an <code class="reqn">M \times M</code> inclusion matrix that should be updated.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>sigma_i</code></td>
+<td>
+<p>the inverse variance-covariance matrix. If the variance-covariance matrix
+is time varying, a <code class="reqn">KT \times K</code> matrix can be provided.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>prob_prior</code></td>
+<td>
+<p>an M-dimensional vector of prior inclusion probabilities.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>include</code></td>
+<td>
+<p>an integer vector specifying the positions of variables, which should be
+included in the BVS algorithm. If <code>NULL</code> (default), BVS will be applied to all variables.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The function employs Bayesian variable selection as proposed
+by Korobilis (2013) to produce a vector of inclusion parameters, which are
+the diagonal elements of the inclusion matrix <code class="reqn">\Lambda</code> for the VAR model
+</p>
+<p style="text-align: center;"><code class="reqn">y_t = Z_t \Lambda a_t + u_t,</code>
+</p>
+
+<p>where <code class="reqn">u_t \sim N(0, \Sigma_{t})</code>.
+<code class="reqn">y_t</code> is a K-dimensional vector of endogenous variables and
+<code class="reqn">Z_t = x_t^{\prime} \otimes I_K</code> is a <code class="reqn">K \times M</code> matrix of regressors with
+<code class="reqn">x_t</code> as a vector of regressors.
+</p>
+
+
+<h3>Value</h3>
+
+<p>A matrix of inclusion parameters on its diagonal.
+</p>
+
+
+<h3>References</h3>
+
+<p>Korobilis, D. (2013). VAR forecasting using Bayesian variable selection. <em>Journal of Applied Econometrics, 28</em>(2), 204–230. <a href="https://doi.org/10.1002/jae.1271">doi:10.1002/jae.1271</a>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+# Load data
+data("e1")
+data &lt;- diff(log(e1)) * 100
+
+# Generate model data
+temp &lt;- gen_var(data, p = 2, deterministic = "const")
+
+y &lt;- t(temp$data$Y)
+z &lt;- temp$data$SUR
+
+tt &lt;- ncol(y)
+m &lt;- ncol(z)
+
+# Priors
+a_mu_prior &lt;- matrix(0, m)
+a_v_i_prior &lt;- diag(0.1, m)
+
+# Prior for inclusion parameter
+prob_prior &lt;- matrix(0.5, m)
+
+# Initial value of Sigma
+sigma &lt;- tcrossprod(y) / tt
+sigma_i &lt;- solve(sigma)
+
+lambda &lt;- diag(1, m)
+
+z_bvs &lt;- z %*% lambda
+
+a &lt;- post_normal_sur(y = y, z = z_bvs, sigma_i = sigma_i,
+                     a_prior = a_mu_prior, v_i_prior = a_v_i_prior)
+
+lambda &lt;- bvs(y = y, z = z, a = a, lambda = lambda,
+              sigma_i = sigma_i, prob_prior = prob_prior)
+
+</code></pre>
+
+
+</div>

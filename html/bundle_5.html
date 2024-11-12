@@ -1,0 +1,171 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>bundle.H2OAutoML</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Bundle an <code>h2o</code> object</h2>
+
+<h3>Description</h3>
+
+<p>Bundling a model prepares it to be saved to a file and later
+restored for prediction in a new R session. See the 'Value' section for
+more information on bundles and their usage.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">## S3 method for class 'H2OAutoML'
+bundle(x, id = NULL, n = NULL, ...)
+
+## S3 method for class 'H2OMultinomialModel'
+bundle(x, ...)
+
+## S3 method for class 'H2OBinomialModel'
+bundle(x, ...)
+
+## S3 method for class 'H2ORegressionModel'
+bundle(x, ...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>An object returned from modeling functions in the h2o
+package.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>id</code></td>
+<td>
+<p>A single character. The <code>model_id</code> entry in the leaderboard.
+Applies to AutoML output only. Supply only one of this argument or
+<code>n</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>n</code></td>
+<td>
+<p>An integer giving the position in the leaderboard of the model
+to bundle. Applies to AutoML output only. Will be ignored if <code>id</code> is
+supplied.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Not used in this bundler and included for compatibility with
+the generic only. Additional arguments passed to this method will return
+an error.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>A bundle object with subclass <code>bundled_h2o</code>.
+</p>
+<p>Bundles are a list subclass with two components:
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>object</code></td>
+<td>
+<p>An R object. Gives the output of native serialization
+methods from the model-supplying package, sometimes with additional
+classes or attributes that aid portability. This is often
+a raw object.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>situate</code></td>
+<td>
+<p>A function. The <code>situate()</code> function is defined when
+<code>bundle()</code> is called, though is a loose analogue of an <code>unbundle()</code> S3
+method for that object. Since the function is defined on <code>bundle()</code>, it
+has access to references and dependency information that can
+be saved alongside the <code>object</code> component. Calling <code>unbundle()</code> on a
+bundled object <code>x</code> calls <code>x$situate(x$object)</code>, returning the
+unserialized version of <code>object</code>. <code>situate()</code> will also restore needed
+references, such as server instances and environmental variables.</p>
+</td>
+</tr>
+</table>
+<p>Bundles are R objects that represent a "standalone" version of their
+analogous model object. Thus, bundles are ready for saving to a file; saving
+with <code>base::saveRDS()</code> is our recommended serialization strategy for bundles,
+unless documented otherwise for a specific method.
+</p>
+<p>To restore the original model object <code>x</code> in a new environment, load its
+bundle with <code>base::readRDS()</code> and run <code>unbundle()</code> on it. The output
+of <code>unbundle()</code> is a model object that is ready to <code>predict()</code> on new data,
+and other restored functionality (like plotting or summarizing) is supported
+as a side effect only.
+</p>
+<p>The bundle package wraps native serialization methods from model-supplying
+packages. Between versions, those model-supplying packages may change their
+native serialization methods, possibly introducing problems with re-loading
+objects serialized with previous package versions. The bundle package does
+not provide checks for these sorts of changes, and ought to be used in
+conjunction with tooling for managing and monitoring model environments
+like vetiver or renv.
+</p>
+<p>See <code>vignette("bundle")</code> for more information on bundling and its motivation.
+</p>
+
+
+<h3>See Also</h3>
+
+<p>These methods wrap <code>h2o::h2o.save_mojo()</code> and
+<code>h2o::h2o.saveModel()</code>.
+</p>
+<p>Other bundlers: 
+<code>bundle.keras.engine.training.Model()</code>,
+<code>bundle.luz_module_fitted()</code>,
+<code>bundle.model_fit()</code>,
+<code>bundle.model_stack()</code>,
+<code>bundle.recipe()</code>,
+<code>bundle.step_umap()</code>,
+<code>bundle.train()</code>,
+<code>bundle.workflow()</code>,
+<code>bundle.xgb.Booster()</code>,
+<code>bundle()</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+# fit model and bundle ------------------------------------------------
+library(h2o)
+
+set.seed(1)
+
+h2o.init()
+
+cars_h2o &lt;- as.h2o(mtcars)
+
+cars_fit &lt;-
+  h2o.glm(
+    x = colnames(cars_h2o)[2:11],
+    y = colnames(cars_h2o)[1],
+    training_frame = cars_h2o
+  )
+
+cars_bundle &lt;- bundle(cars_fit)
+
+# then, after saveRDS + readRDS or passing to a new session ----------
+cars_unbundled &lt;- unbundle(cars_fit)
+
+predict(cars_unbundled, cars_h2o[, 2:11])
+
+h2o.shutdown(prompt = FALSE)
+
+</code></pre>
+
+
+</div>

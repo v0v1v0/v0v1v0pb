@@ -1,0 +1,206 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>lcube</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>The Local Cube method</h2>
+
+<h3>Description</h3>
+
+<p>Selects doubly balanced samples with prescribed inclusion probabilities
+from a finite population using the Local Cube method.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">lcube(prob, Xspread, Xbal, type = "kdtree2", bucketSize = 50, eps = 1e-12)
+
+lcubestratified(
+  prob,
+  Xspread,
+  Xbal,
+  integerStrata,
+  type = "kdtree2",
+  bucketSize = 50,
+  eps = 1e-12
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>prob</code></td>
+<td>
+<p>A vector of length N with inclusion probabilities.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Xspread</code></td>
+<td>
+<p>An N by p matrix of (standardized) auxiliary variables. Squared euclidean distance is used in the <code>Xspread</code> space.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Xbal</code></td>
+<td>
+<p>An N by q matrix of balancing auxiliary variables.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>type</code></td>
+<td>
+<p>The method used in finding nearest neighbours.
+Must be one of <code>"kdtree0"</code>, <code>"kdtree1"</code>, <code>"kdtree2"</code>, and
+<code>"notree"</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>bucketSize</code></td>
+<td>
+<p>The maximum size of the terminal nodes in the k-d-trees.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>eps</code></td>
+<td>
+<p>A small value used to determine when an updated probability is
+close enough to 0.0 or 1.0.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>integerStrata</code></td>
+<td>
+<p>An integer vector of length N with stratum numbers.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>If <code>prob</code> sum to an integer n, and <code>prob</code> is included as the first
+balancing variable, a fixed sized sample (n) will be produced.
+</p>
+
+
+<h4>Stratified lcube</h4>
+
+<p>For <code>lcubestratified</code>, <code>prob</code> is automatically inserted as a balancing variable.
+</p>
+<p>The stratified version uses the fast flight Cube method and pooling of
+landing phases.
+</p>
+
+
+
+<h3>Value</h3>
+
+<p>A vector of selected indices in 1,2,...,N.
+</p>
+
+
+<h3>Functions</h3>
+
+
+<ul><li> <p><code>lcubestratified()</code>: 
+</p>
+</li></ul>
+<h3>k-d-trees</h3>
+
+<p>The <code>type</code>s "kdtree" creates k-d-trees with terminal node bucket sizes
+according to <code>bucketSize</code>.
+</p>
+
+<ul>
+<li>
+<p>"kdtree0" creates a k-d-tree using a median split on alternating variables.
+</p>
+</li>
+<li>
+<p>"kdtree1" creates a k-d-tree using a median split on the largest range.
+</p>
+</li>
+<li>
+<p>"kdtree2" creates a k-d-tree using a sliding-midpoint split.
+</p>
+</li>
+<li>
+<p>"notree" does a naive search for the nearest neighbour.
+</p>
+</li>
+</ul>
+<h3>References</h3>
+
+<p>Deville, J. C. and Tillé, Y. (2004).
+Efficient balanced sampling: the cube method.
+Biometrika, 91(4), 893-912.
+</p>
+<p>Chauvet, G. and Tillé, Y. (2006).
+A fast algorithm for balanced sampling.
+Computational Statistics, 21(1), 53-62.
+</p>
+<p>Chauvet, G. (2009).
+Stratified balanced sampling.
+Survey Methodology, 35, 115-119.
+</p>
+<p>Grafström, A. and Tillé, Y. (2013).
+Doubly balanced spatial sampling with spreading and restitution of auxiliary totals.
+Environmetrics, 24(2), 120-131
+</p>
+
+
+<h3>See Also</h3>
+
+<p>Other sampling: 
+<code>cube()</code>,
+<code>hlpm2()</code>,
+<code>lpm()</code>,
+<code>scps()</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## Not run: 
+set.seed(12345);
+N = 1000;
+n = 100;
+prob = rep(n/N, N);
+x = matrix(runif(N * 2), ncol = 2);
+xspr = matrix(runif(N * 2), ncol = 2);
+s = lcube(prob, xspr, cbind(prob, x));
+plot(x[, 1], x[, 2]);
+points(x[s, 1], x[s, 2], pch = 19);
+
+set.seed(12345);
+N = 1000;
+n = 100;
+prob = rep(n/N, N);
+x = matrix(runif(N * 2), ncol = 2);
+xspr = matrix(runif(N * 2), ncol = 2);
+strata = c(rep(1L, 100), rep(2L, 200), rep(3L, 300), rep(4L, 400));
+s = lcubestratified(prob, xspr, x, strata);
+plot(x[, 1], x[, 2]);
+points(x[s, 1], x[s, 2], pch = 19);
+
+set.seed(12345);
+prob = c(0.2, 0.25, 0.35, 0.4, 0.5, 0.5, 0.55, 0.65, 0.7, 0.9);
+N = length(prob);
+x = matrix(runif(N * 2), ncol = 2);
+xspr = matrix(runif(N * 2), ncol = 2);
+ep = rep(0L, N);
+r = 10000L;
+for (i in seq_len(r)) {
+  s = lcube(prob, xspr, cbind(prob, x));
+  ep[s] = ep[s] + 1L;
+}
+print(ep / r);
+
+## End(Not run)
+
+</code></pre>
+
+
+</div>

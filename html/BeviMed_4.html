@@ -1,0 +1,249 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>bevimed_m</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Perform inference under model gamma = 1 conditional on mode of inheritance</h2>
+
+<h3>Description</h3>
+
+<p>Sample from posterior distribution of parameters under model gamma = 1 and conditional on mode of inheritance, set via the <code>min_ac</code> argument.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">bevimed_m(
+  y,
+  G,
+  min_ac = 1L,
+  tau_shape = c(1, 1),
+  pi_shape = c(6, 1),
+  omega_shape = if (max(min_ac) == 1L) c(2, 8) else c(2, 2),
+  samples_per_chain = 1000,
+  stop_early = FALSE,
+  blocks = 5,
+  burn = as.integer(samples_per_chain/10),
+  temperatures = (0:6/6)^2,
+  tune_temps = 0,
+  vec_sums = FALSE,
+  return_z_trace = TRUE,
+  return_x_trace = TRUE,
+  raw_only = FALSE,
+  swaps = as.integer(length(temperatures)/2),
+  optimise_z0 = FALSE,
+  tune_omega_and_phi_proposal_sd = FALSE,
+  tune_block_size = 100,
+  variant_weights = NULL,
+  standardise_weights = TRUE,
+  log_phi_mean = -0.15,
+  log_phi_sd = sqrt(0.3),
+  tandem_variant_updates = if (max(min_ac) == 1) 0 else min(sum(y), ncol(G)),
+  ...
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>y</code></td>
+<td>
+<p>Logical vector of case (<code>TRUE</code>) control (<code>FALSE</code>) status.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>G</code></td>
+<td>
+<p>Integer matrix of variant counts per individual, one row per individual and one column per variant.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>min_ac</code></td>
+<td>
+<p>Integer vector with a length equalling the number of individuals or length <code>1</code> (in which case the given value is used for all individuals) giving the minimum number of alleles at pathogenic variant sites each individual requires in order to classify as having a ‘pathogenic allele configuration’. Thus, this parameter encodes the mode of inheritance. For instance, setting this parameter to <code>1</code> corresponds to dominant inheritance. If there are differences in ploidy between individuals in the locus, it is necessary to set it on an sample level basis - e.g. to ensure sex is accounted for if the locus lies on the X chromosome.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>tau_shape</code></td>
+<td>
+<p>Beta shape hyper-priors for prior on rate of affection (i.e. being a case) amongst individuals with non-pathogenic variant combinations (i.e. they have less than <code>min_ac</code> variants.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>pi_shape</code></td>
+<td>
+<p>Beta shape hyper-priors for prior on rate of affection (i.e. being a case) amongst individuals with pathogenic variant combinations (i.e. they have at least <code>min_ac</code> variants.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>omega_shape</code></td>
+<td>
+<p>Beta shape hyper-priors for prior on rate of pathogenicity amongst variants.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>samples_per_chain</code></td>
+<td>
+<p>Number of samples to draw from each chain.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>stop_early</code></td>
+<td>
+<p>Logical value determining whether to attempt to stop the sampling as soon as certain conditions are met (i.e. either the estimated marginal log likelihood lies within a certain confidence interval, or we are sufficiently confidence that the log Bayes factor against of model gamma = 1 over model gamma = 0 is sufficiently low).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>blocks</code></td>
+<td>
+<p>Maximum number of blocks of <code>samples_per_chain</code> samples to draw before either the confidence interval for the marginal likelihood under the model gamma = 1 is sufficiently small or terminating the sampling. This parameter is ignored if unless <code>stop_early==TRUE</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>burn</code></td>
+<td>
+<p>Number of samples to drop from the start of the chain.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>temperatures</code></td>
+<td>
+<p>Numeric vector of temperatures of power posteriors. One chain will be created for each element of the vector at the corresponding temperature.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>tune_temps</code></td>
+<td>
+<p>Integer value - if greater than 0, the <code>temperatures</code> argument is ignored, and instead <code>tune_temps</code> tuned temperatures are used instead.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>vec_sums</code></td>
+<td>
+<p>Logical value determining whether to calculate vector summary statistics.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>return_z_trace</code></td>
+<td>
+<p>Logical value determining whether to store the z-vectors for each chain, which uses alot of memory, particularly if <code>samples_per_chain</code>, k and <code>length(temperatures)</code> are large.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>return_x_trace</code></td>
+<td>
+<p>Logical value determining whether to store the x variable determined by success samples of z. Potentially uses alot of memory, particularly if <code>samples_per_chain</code>, k and <code>length(temperatures)</code> are large.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>raw_only</code></td>
+<td>
+<p>Logical value determining whether to return raw output of MCMC routine only.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>swaps</code></td>
+<td>
+<p>Number of swaps between adjacent tempered chains to perform per update cycle.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>optimise_z0</code></td>
+<td>
+<p>Logical value determining whether to use a simulated annealing optimisation run to tune the initial values of <code>z</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>tune_omega_and_phi_proposal_sd</code></td>
+<td>
+<p>Logical value determining whether the proposal SDs of the Metropolis-Hastings estimated parameters should be tuned for a target acceptance range.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>tune_block_size</code></td>
+<td>
+<p>Integer value giving number of samples to draw when estimatating the acceptance rate of the omega/phi proposals.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>variant_weights</code></td>
+<td>
+<p>Vector of log-odds off-sets for rates of pathogenicity of individual variants relative to the global rate, omega.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>standardise_weights</code></td>
+<td>
+<p>Boolean value determining whether weights should be standardised by subtracting their mean and dividing by their sample standard deviation. If <code>FALSE</code>, weights are untransformed.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>log_phi_mean</code></td>
+<td>
+<p>Mean for normal prior on scaling factor phi.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>log_phi_sd</code></td>
+<td>
+<p>SD for normal prior on scaling factor phi. Setting to 0 causes the weights to be fixed and not estimated.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>tandem_variant_updates</code></td>
+<td>
+<p>Number of tandem variant updates to make per update cycle.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Other arguments to be passed to <code>stop_chain</code> and/or <code>tune_proposal_sds</code>.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>A <code>BeviMed_m</code> object is a list containing elements:
+</p>
+
+<ul>
+<li>
+<p> ‘parameters’: a list containing arguments used in the function call, including the adjusted weights used in the inference in the ‘c_weights’ slot,
+</p>
+</li>
+<li>
+<p> ‘traces’: a list of traces of model parameters from all MCMC chains for each parameter. Parameters sampled are z, omega, phi and x (the indicator of having a pathogenic configuration of alleles). The list of traces is named by parameter name, and each is a matrix where the rows correspond to samples. $z has k columns for each temperature, with the samples from the true posterior (i.e. with temperature equal to 1) of z corresponding to the final k columns. Likewise, the true posterior is given by the final column for the traces of phi and omega. The trace of x is only given for temperature equal to 1 to reduce memory usage.
+</p>
+</li>
+<li>
+<p> ‘final’: a list named by model parameter giving the final sample of each,
+</p>
+</li>
+<li>
+<p> ‘swaps’: a list with an element named ‘accept’ which is a logical vector whose ith element indicates whether the ith swap between adjacent tempered chains was accepted or not, and an element named 'at_temperature', an integer vector whose ith element indicates which pair of consecutive temperatures was the ith to be proposed for swapping (giving the lowest one). 
+</p>
+</li>
+</ul>
+<h3>Value</h3>
+
+<p>An object of class <code>BeviMed_m</code>.
+</p>
+
+
+<h3>References</h3>
+
+<p>Greene et al., A Fast Association Test for Identifying Pathogenic Variants Involved in Rare Diseases, The American Journal of Human Genetics (2017), http://dx.doi.org/10.1016/j.ajhg.2017.05.015.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>bevimed_m</code>, <code>prob_association_m</code>
+</p>
+
+
+</div>

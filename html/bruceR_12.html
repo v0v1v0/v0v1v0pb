@@ -1,0 +1,192 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>add</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Create, modify, and delete variables.</h2>
+
+<h3>Description</h3>
+
+<p>Enhanced functions to create, modify, and/or delete variables.
+The functions <strong>combine</strong> the advantages of
+<code>within</code> (base),
+<code>mutate</code> (dplyr),
+<code>transmute</code> (dplyr), and
+<code>:=</code> (data.table).
+See examples below for the usage and convenience.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">add(data, expr, when, by, drop = FALSE)
+
+added(data, expr, when, by, drop = FALSE)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+<p>A <code>data.table</code>
+(preferred).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>expr</code></td>
+<td>
+<p>R expression(s) enclosed in <code>{...}</code> to compute variables.
+</p>
+<p>Passing to <code>data.table</code>:
+<code>DT[ , `:=`(expr), ]</code>
+</p>
+<p>Execute each line of expression in <code>{...}</code> <em>one by one</em>,
+such that newly created variables are available immediately.
+This is an advantage of <code>mutate</code> and
+has been implemented here for <code>data.table</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>when</code></td>
+<td>
+<p>[Optional] Compute for which rows or rows meeting what condition(s)?
+</p>
+<p>Passing to <code>data.table</code>:
+<code>DT[when, , ]</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>by</code></td>
+<td>
+<p>[Optional] Compute by what group(s)?
+</p>
+<p>Passing to <code>data.table</code>:
+<code>DT[ , , by]</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>drop</code></td>
+<td>
+<p>Drop existing variables and return only new variables?
+Defaults to <code>FALSE</code>, which returns all variables.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p><code>add()</code> returns a new
+<code>data.table</code>,
+with the raw data unchanged.
+</p>
+<p><code>added()</code> returns nothing and has already changed the raw data.
+</p>
+
+
+<h3>Functions</h3>
+
+
+<ul>
+<li> <p><code>add()</code>: Return the <em>new data</em>.
+</p>
+<p>You need to assign the new data to an object:
+</p>
+<pre>data = add(data, {...})</pre>
+</li>
+<li> <p><code>added()</code>: Return nothing and <em>change the raw data immediately</em>.
+</p>
+<p>NO need to assign the new data:
+</p>
+<pre>added(data, {...})</pre>
+</li>
+</ul>
+<h3>Examples</h3>
+
+<pre><code class="language-R">## ====== Usage 1: add() ====== ##
+
+d = as.data.table(within.1)
+d$XYZ = 1:8
+d
+
+# add() does not change the raw data:
+add(d, {B = 1; C = 2})
+d
+
+# new data should be assigned to an object:
+d = d %&gt;% add({
+  ID = str_extract(ID, "\\d")  # modify a variable
+  XYZ = NULL                   # delete a variable
+  A = .mean("A", 1:4)          # create a new variable
+  B = A * 4    # new variable is immediately available
+  C = 1        # never need ,/; at the end of any line
+})
+d
+
+
+## ====== Usage 2: added() ====== ##
+
+d = as.data.table(within.1)
+d$XYZ = 1:8
+d
+
+# added() has already changed the raw data:
+added(d, {B = 1; C = 2})
+d
+
+# raw data has already become the new data:
+added(d, {
+  ID = str_extract(ID, "\\d")
+  XYZ = NULL
+  A = .mean("A", 1:4)
+  B = A * 4
+  C = 1
+})
+d
+
+
+## ====== Using `when` and `by` ====== ##
+
+d = as.data.table(between.2)
+d
+
+added(d, {SCORE2 = SCORE - mean(SCORE)},
+      A == 1 &amp; B %in% 1:2,  # `when`: for what conditions
+      by=B)                 # `by`: by what groups
+d
+na.omit(d)
+
+
+## ====== Return Only New Variables ====== ##
+
+newvars = add(within.1, {
+  ID = str_extract(ID, "\\d")
+  A = .mean("A", 1:4)
+}, drop=TRUE)
+newvars
+
+
+## ====== Better Than `base::within()` ====== ##
+
+d = as.data.table(within.1)
+
+# wrong order: C B A
+within(d, {
+  A = 4
+  B = A + 1
+  C = 6
+})
+
+# correct order: A B C
+add(d, {
+  A = 4
+  B = A + 1
+  C = 6
+})
+
+</code></pre>
+
+
+</div>

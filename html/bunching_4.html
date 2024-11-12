@@ -1,0 +1,566 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>bunchit</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Bunching Estimator</h2>
+
+<h3>Description</h3>
+
+<p>Implement the bunching estimator in a kink or notch setting.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">bunchit(
+  z_vector,
+  binv = "median",
+  zstar,
+  binwidth,
+  bins_l,
+  bins_r,
+  poly = 9,
+  bins_excl_l = 0,
+  bins_excl_r = 0,
+  extra_fe = NA,
+  rn = NA,
+  n_boot = 100,
+  correct = TRUE,
+  correct_above_zu = FALSE,
+  correct_iter_max = 200,
+  t0,
+  t1,
+  notch = FALSE,
+  force_notch = FALSE,
+  e_parametric = FALSE,
+  e_parametric_lb = 1e-04,
+  e_parametric_ub = 3,
+  seed = NA,
+  p_title = "",
+  p_xtitle = deparse(substitute(z_vector)),
+  p_ytitle = "Count",
+  p_title_size = 11,
+  p_axis_title_size = 10,
+  p_axis_val_size = 8.5,
+  p_miny = 0,
+  p_maxy = NA,
+  p_ybreaks = NA,
+  p_freq_color = "black",
+  p_cf_color = "maroon",
+  p_zstar_color = "red",
+  p_grid_major_y_color = "lightgrey",
+  p_freq_size = 0.5,
+  p_freq_msize = 1,
+  p_cf_size = 0.5,
+  p_zstar_size = 0.5,
+  p_b = FALSE,
+  p_e = FALSE,
+  p_b_e_xpos = NA,
+  p_b_e_ypos = NA,
+  p_b_e_size = 3,
+  p_domregion_color = "blue",
+  p_domregion_ltype = "longdash"
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>z_vector</code></td>
+<td>
+<p>a numeric vector of (unbinned) data.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>binv</code></td>
+<td>
+<p>a string setting location of zstar within its bin ("min", "max" or "median" value). Default is median.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>zstar</code></td>
+<td>
+<p>a numeric value for the the bunching point.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>binwidth</code></td>
+<td>
+<p>a numeric value for the width of each bin.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>bins_l</code></td>
+<td>
+<p>number of bins to left of zstar to use in analysis.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>bins_r</code></td>
+<td>
+<p>number of bins to right of zstar to use in analysis.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>poly</code></td>
+<td>
+<p>a numeric value for the order of polynomial for counterfactual fit. Default is 9.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>bins_excl_l</code></td>
+<td>
+<p>number of bins to left of zstar to include in bunching region. Default is 0.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>bins_excl_r</code></td>
+<td>
+<p>number of bins to right of zstar to include in bunching region. Default is 0.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>extra_fe</code></td>
+<td>
+<p>a numeric vector of bin values to control for using fixed effects. Default includes no controls.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>rn</code></td>
+<td>
+<p>a numeric vector of (up to 2) round numbers to control for. Default includes no controls.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>n_boot</code></td>
+<td>
+<p>number of bootstrapped iterations. Default is 100.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>correct</code></td>
+<td>
+<p>implements correction for integration constraint. Default is TRUE.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>correct_above_zu</code></td>
+<td>
+<p>if integration constraint correction is implemented, should counterfactual be shifted only above zu (upper bound of exclusion region)? Default is FALSE (i.e. shift from above zstar).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>correct_iter_max</code></td>
+<td>
+<p>maximum iterations for integration constraint correction. Default is 200.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>t0</code></td>
+<td>
+<p>numeric value setting the marginal (average) tax rate below zstar in a kink (notch) setting.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>t1</code></td>
+<td>
+<p>numeric value setting the marginal (average) tax rate above zstar in a kink (notch) setting.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>notch</code></td>
+<td>
+<p>whether analysis is for a kink or notch. Default is FALSE (kink).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>force_notch</code></td>
+<td>
+<p>whether to enforce user's choice of zu (upper limit of bunching region) in a notch setting. Default is FALSE (zu set by setting bunching equal to missing mass).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>e_parametric</code></td>
+<td>
+<p>whether to estimate elasticity using parametric specification (quasi-linear and iso-elastic utility function). Default is FALSE (which estimates reduced-form approximation).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>e_parametric_lb</code></td>
+<td>
+<p>lower bound for elasticity estimate's solution using parametric specification in notch setting. Default is 1e-04.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>e_parametric_ub</code></td>
+<td>
+<p>upper bound for elasticity estimate's solution using parametric specification in notch setting. Default is 3.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>seed</code></td>
+<td>
+<p>a numeric value for bootstrap seed (random re-sampling of residuals). Default is NA.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>p_title</code></td>
+<td>
+<p>plot's title. Default is empty.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>p_xtitle</code></td>
+<td>
+<p>plot's x_axis label. Default is the name of z_vector.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>p_ytitle</code></td>
+<td>
+<p>plot's y_axis label. Default is "Count".</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>p_title_size</code></td>
+<td>
+<p>size of plot's title. Default is 11.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>p_axis_title_size</code></td>
+<td>
+<p>size of plot's axes' title labels. Default is 10.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>p_axis_val_size</code></td>
+<td>
+<p>size of plot's axes' numeric labels. Default is 8.5.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>p_miny</code></td>
+<td>
+<p>plot's minimum y_axis value. Default is 0.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>p_maxy</code></td>
+<td>
+<p>plot's maximum y_axis value. Default is optimized internally.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>p_ybreaks</code></td>
+<td>
+<p>a numeric vector of y-axis values at which to add horizontal line markers in plot. Default is optimized internally.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>p_freq_color</code></td>
+<td>
+<p>plot's frequency line color. Default is "black".</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>p_cf_color</code></td>
+<td>
+<p>plot's counterfactual line color. Default is "maroon".</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>p_zstar_color</code></td>
+<td>
+<p>plot's bunching region marker lines color. Default is "red".</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>p_grid_major_y_color</code></td>
+<td>
+<p>plot's y-axis major grid line color. Default is "lightgrey".</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>p_freq_size</code></td>
+<td>
+<p>plot's frequency line thickness. Default is 0.5.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>p_freq_msize</code></td>
+<td>
+<p>plot's frequency line marker size. Default is 1.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>p_cf_size</code></td>
+<td>
+<p>plot's counterfactual line thickness. Default is 0.5.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>p_zstar_size</code></td>
+<td>
+<p>plot's bunching region marker line thickness. Default is 0.5.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>p_b</code></td>
+<td>
+<p>whether plot should also include the bunching estimate. Default is FALSE.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>p_e</code></td>
+<td>
+<p>whether plot should also include the elasticity estimate. Only shown if p_b is TRUE. Default is FALSE.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>p_b_e_xpos</code></td>
+<td>
+<p>plot's x-axis coordinate of bunching/elasticity estimate. Default is set internally.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>p_b_e_ypos</code></td>
+<td>
+<p>plot's y-axis coordinate of bunching/elasticity estimate. Default is set internally.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>p_b_e_size</code></td>
+<td>
+<p>size of plot's printed bunching/elasticity estimate. Default is 3.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>p_domregion_color</code></td>
+<td>
+<p>plot's dominated region marker line color in notch setting. Default is "blue".</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>p_domregion_ltype</code></td>
+<td>
+<p>line type for the vertical line type marking the dominated region (zD) in the plot for notch settings. Default is "longdash".</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>bunchit implements the bunching estimator in both kink and notch settings. It bins a given numeric vector, fits a counterfactual density, and estimates the bunching mass (normalized and not), the elasticity and the location of the marginal buncher. In the case of notches, it also finds the dominated region and estimates the fraction of observations located in it.
+</p>
+
+
+<h3>Value</h3>
+
+<p><code>bunchit</code> returns a list of results, both for visualizing and for further analysis of the data underlying the estimates. These include:
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>plot</code></td>
+<td>
+<p>The bunching plot.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+<p>The binned data used for estimation.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>cf</code></td>
+<td>
+<p>The estimated counterfactuals.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>B</code></td>
+<td>
+<p>The estimated excess mass (not normalized).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>B_vector</code></td>
+<td>
+<p>The vector of bootstrapped B's.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>B_sd</code></td>
+<td>
+<p>The standard deviation of B_vector.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>b</code></td>
+<td>
+<p>The estimated excess mass (normalized).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>b_vector</code></td>
+<td>
+<p>The vector of bootstrapped b's.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>b_sd</code></td>
+<td>
+<p>The standard deviation of b_vector.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>e</code></td>
+<td>
+<p>The estimated elasticity.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>e_vector</code></td>
+<td>
+<p>The vector of bootstrapped elasticities (e).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>e_sd</code></td>
+<td>
+<p>The standard deviation of e_vector.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>alpha</code></td>
+<td>
+<p>The estimated fraction of bunchers in dominated region (notch case).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>alpha_vector</code></td>
+<td>
+<p>The vector of bootstrapped alphas.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>alpha_sd</code></td>
+<td>
+<p>The standard deviation of alpha_vector.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>model_fit</code></td>
+<td>
+<p>The model fit on the actual (i.e. not bootstrapped) data.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>zD</code></td>
+<td>
+<p>The value demarcating the dominated region (notch case).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>zD_bin</code></td>
+<td>
+<p>The bin above zstar demarcating the dominated region (notch case).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>zU_bin</code></td>
+<td>
+<p>The location of zU (upper range of excluded region) as estimated from notch setting by setting force_notch = FALSE.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>marginal_buncher</code></td>
+<td>
+<p>The location (z value) of the marginal buncher.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>marginal_buncher_vector</code></td>
+<td>
+<p>The vector of bootstrapped marginal_buncher values.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>marginal_buncher_sd</code></td>
+<td>
+<p>The standard deviation of marginal_buncher_vector.</p>
+</td>
+</tr>
+</table>
+<h3>See Also</h3>
+
+<p><code>plot_hist</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## Not run: 
+# First, load the example data
+data(bunching_data)
+
+# Example 1: Kink with integration constraint correction
+kink1 &lt;- bunchit(z_vector = bunching_data$kink, zstar = 10000, binwidth = 50,
+                 bins_l = 20, bins_r = 20, poly = 4, t0 = 0, t1 = .2,
+                 p_b = TRUE, seed = 1)
+kink1$plot
+kink1$b
+kink1$b_sd
+
+# Example 2: Kink with diffuse bunching
+bpoint &lt;- 10000; binwidth &lt;- 50
+kink2_vector &lt;- c(bunching_data$kink_vector,
+                 rep(bpoint - binwidth,80), rep(bpoint - 2*binwidth,190),
+                 rep(bpoint + binwidth,80), rep(bpoint + 2*binwidth,80))
+kink2 &lt;- bunchit(z_vector = kink2_vector, zstar = 10000, binwidth = 50,
+                 bins_l = 20, bins_r = 20, poly = 4,  t0 = 0, t1 = .2,
+                 bins_excl_l = 2, bins_excl_r = 2, correct = FALSE,
+                 p_b = TRUE, seed = 1)
+kink2$plot
+
+# Example 3: Kink with further bunching at other level in bandwidth
+kink3_vector &lt;- c(bunching_data$kink_vector, rep(10200,540))
+kink3 &lt;- bunchit(kink3_vector, zstar = 10000, binwidth = 50,
+                 bins_l = 40, bins_r = 40, poly = 6, t0 = 0, t1 = .2,
+                 correct = FALSE, p_b = TRUE, extra_fe = 10200, seed = 1)
+kink3$plot
+
+# Example 4: Kink with round number bunching
+rn1 &lt;- 500;  rn2 &lt;- 250
+bpoint &lt;- 10000
+kink4_vector &lt;- c(bunching_data$kink_vector,
+                  rep(bpoint + rn1, 270),
+                  rep(bpoint + 2*rn1,230),
+                  rep(bpoint - rn1,260),
+                  rep(bpoint - 2*rn1,275),
+                  rep(bpoint + rn2, 130),
+                  rep(bpoint + 3*rn2,140),
+                  rep(bpoint - rn2,120),
+                  rep(bpoint - 3*rn2,135))
+kink4 &lt;- bunchit(z_vector = kink4_vector, zstar = bpoint, binwidth = 50,
+                 bins_l = 20, bins_r = 20, poly = 6, t0 = 0, t1 = .2,
+                 correct = FALSE, p_b = TRUE, p_e = TRUE, p_freq_msize = 1.5,
+                 p_b_e_ypos = 880, rn = c(250,500), seed = 1)
+kink4$plot
+
+# Example 5: Notch
+notch &lt;- bunchit(z_vector = bunching_data$notch_vector, zstar = 10000, binwidth = 50,
+                 bins_l = 40, bins_r = 40, poly = 5, t0 = 0.18, t1 = .25,
+                 correct = FALSE, notch = TRUE,p_b = TRUE, p_b_e_xpos = 8900,
+                 n_boot = 0)
+notch$plot
+
+## End(Not run)
+</code></pre>
+
+
+</div>

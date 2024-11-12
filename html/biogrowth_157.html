@@ -1,0 +1,309 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>predict_growth</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Prediction of microbial growth</h2>
+
+<h3>Description</h3>
+
+<p><a href="https://lifecycle.r-lib.org/articles/stages.html#stable"><img src="../help/figures/lifecycle-stable.svg" alt="[Stable]"></a>
+</p>
+<p>This function provides a top-level interface for predicting population growth.
+Predictions can be made either under constant or dynamic environmental conditions.
+See below for details on the calculations.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">predict_growth(
+  times,
+  primary_model,
+  environment = "constant",
+  secondary_models = NULL,
+  env_conditions = NULL,
+  ...,
+  check = TRUE,
+  logbase_mu = logbase_logN,
+  logbase_logN = 10,
+  formula = . ~ time
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>times</code></td>
+<td>
+<p>numeric vector of time points for making the predictions</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>primary_model</code></td>
+<td>
+<p>named list defining the values of the parameters of the primary growth model</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>environment</code></td>
+<td>
+<p>type of environment. Either "constant" (default) or "dynamic" (see below for details
+on the calculations for each condition)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>secondary_models</code></td>
+<td>
+<p>a nested list describing the secondary models. See below for details</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>env_conditions</code></td>
+<td>
+<p>Tibble describing the variation of the environmental
+conditions for dynamic experiments. It must have with the elapsed time (named <code>time</code>
+by default; can be changed with the "formula" argument),
+and as many additional columns as environmental factors. Ignored for "constant" environments.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Additional arguments for <code>ode()</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>check</code></td>
+<td>
+<p>Whether to check the validity of the models. <code>TRUE</code> by default.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>logbase_mu</code></td>
+<td>
+<p>Base of the logarithm the growth rate is referred to.
+By default, the same as logbase_logN. See vignette about units for details.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>logbase_logN</code></td>
+<td>
+<p>Base of the logarithm for the population size. By default,
+10 (i.e. log10). See vignette about units for details.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>formula</code></td>
+<td>
+<p>An object of class "formula" describing the x variable for predictions
+under dynamic conditions. <code>. ~ time</code> as a default.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>To ease data input, the functions can convert between parameters defined in different
+scales. Namely, for predictions in constant environments (environment="constant"):
+</p>
+
+<ul>
+<li>
+<p> "logN0" can be defined as "N0". The function automatically calculates the log-transformation.
+</p>
+</li>
+<li>
+<p> "logNmax" can be defined as "Nmax". The function automatically calculates the log-transformation.
+</p>
+</li>
+<li>
+<p> "mu" can be defined as "mu_opt". The function assumes the prediction is under optimal growth conditions.
+</p>
+</li>
+<li>
+<p> "lambda" can be defined by "Q0". The duration of the lag phase is calculated using <code>Q0_to_lambda()</code>.
+</p>
+</li>
+</ul>
+<p>And, for predictions in dynamic environments (environment="dynamic"):
+</p>
+
+<ul>
+<li>
+<p> "N0" can be defined as "N0". The function automatically calculates the antilog-transformation.
+</p>
+</li>
+<li>
+<p> "Nmax" can be defined as "logNmax". The function automatically calculates the antilog-transformation.
+</p>
+</li>
+<li>
+<p> "mu" can be defined as "mu_opt". The function assumes mu was calculated under optimal growth conditions.
+</p>
+</li>
+<li>
+<p> "Q0" can be defined by the value of "lambda" under dynamic conditions. Then, the
+value of Q0 is calculated using <code>lambda_to_Q0()</code>.
+</p>
+</li>
+</ul>
+<h3>Value</h3>
+
+<p>An instance of GrowthPrediction.
+</p>
+
+
+<h3>Predictions in constant environments</h3>
+
+<p>Predictions under constant environments are calculated using only primary models.
+Consequently, the arguments "secondary_models" and "env_conditions" are ignored.
+If these were passed, the function would return a warning. In this case,
+predictions are calculated using the algebraic form of the primary model (see
+vignette for details).
+</p>
+<p>The growth model is defined through the "primary_model" argument using a named list.
+One of the list elements must be named "model" and must take take one of the valid
+keys returned by <code>primary_model_data()</code>. The remaining entries of the list define the
+values of the parameters of the selected model. A list of valid keys can be retrieved
+using <code>primary_model_data()</code> (see example below). Note that the functions can do
+some operations to facilitate the compatibility between constant and dynamic environments
+(see Details).
+</p>
+
+
+<h3>Predictions in dynamic environments</h3>
+
+<p>Predictions under dynamic environments are calculated by solving numerically
+the differential equation of the Baranyi growth model. The effect of
+changes in the environmental conditions in the growth rate are calculated
+according to the gamma approach. Therefore, one must define both primary
+and secondary models.
+</p>
+<p>The dynamic environmental conditions are defined using a tibble (or data.frame)
+through the "env_conditions" argument. It must include one column named "time" stating the elapsed
+time and as many additional columns as environmental conditions included in the prediction.
+For values of time not included in the tibble, the values of the environmental conditions
+are calculated by linear interpolation.
+</p>
+<p>Primary models are defined as a named list through the "primary_model" argument. It
+must include the following elements:
+</p>
+
+<ul>
+<li>
+<p> N0: initial population size
+</p>
+</li>
+<li>
+<p> Nmax: maximum population size in the stationary growth phase
+</p>
+</li>
+<li>
+<p> mu_opt: growth rate under optimal growth conditions
+</p>
+</li>
+<li>
+<p> Q0: value defining the duration of the lag phase
+Additional details on these parameters can be found in the package vignettes.
+</p>
+</li>
+</ul>
+<p>Secondary models are defined as a nested list through the "secondary_models" argument.
+The list must have one entry per environmental condition, whose name must match
+those used in the "env_conditions" argument. Each of these entries must be a named list
+defining the secondary model for each environmental condition. The model equation is defined
+in an entry named "model" (valid keys can be retrieved from <code>secondary_model_data()</code>). Then,
+additional entries defined the values of each model parameters (valid keys can be retrieved from <code>secondary_model_data()</code>)
+</p>
+<p>For additional details on how to define the secondary models, please see the package vignettes (and examples below).
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+## Example 1 - Growth under constant conditions -----------------------------
+
+## Valid model keys can be retrieved calling primary_model_data()
+
+primary_model_data()
+
+my_model &lt;- "modGompertz"  # we will use the modified-Gompertz
+
+## The keys of the model parameters can also be obtained from primary_model_data()
+
+primary_model_data(my_model)$pars
+
+## We define the primary model as a list
+
+my_model &lt;- list(model = "modGompertz", logN0 = 0, C = 6, mu = .2, lambda = 20)
+
+## We can now make the predictions
+
+my_time &lt;- seq(0, 100, length = 1000)  # Vector of time points for the calculations
+
+my_prediction &lt;- predict_growth(my_time, my_model, environment = "constant")
+
+## The instance of IsothermalGrowth includes several S3 methods 
+
+print(my_prediction)
+plot(my_prediction)
+coef(my_prediction)
+
+## Example 2 - Growth under dynamic conditions ------------------------------
+
+## We will consider the effect of two factors: temperature and pH
+
+my_conditions &lt;- data.frame(time = c(0, 5, 40),
+                            temperature = c(20, 30, 35),
+                            pH = c(7, 6.5, 5)
+                            )
+                            
+## The primary model is defined as a named list
+                            
+my_primary &lt;- list(mu = 2, Nmax = 1e7, N0 = 1, Q0 = 1e-3)
+
+## The secondary model is defined independently for each factor
+
+sec_temperature &lt;- list(model = "Zwietering",
+    xmin = 25, xopt = 35, n = 1)
+
+sec_pH = list(model = "CPM",
+    xmin = 5.5, xopt = 6.5,
+    xmax = 7.5, n = 2)
+    
+## Then, they are assigned to each factor using a named list
+
+my_secondary &lt;- list(
+    temperature = sec_temperature,
+    pH = sec_pH
+    )
+    
+## We can call the function now
+
+my_times &lt;- seq(0, 50, length = 1000)  # Where the output is calculated
+
+dynamic_prediction &lt;- predict_growth(environment = "dynamic", 
+                                     my_times, my_primary, my_secondary,
+                                     my_conditions
+                                     )
+                                     
+## The instance of DynamicGrowth includes several useful S3 methods
+
+print(dynamic_prediction)
+plot(dynamic_prediction)
+plot(dynamic_prediction, add_factor = "pH")
+coef(dynamic_prediction)
+
+## The time_to_size function can predict the time to reach a population size
+
+time_to_size(my_prediction, 3)
+
+
+</code></pre>
+
+
+</div>

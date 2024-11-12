@@ -1,0 +1,160 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>estimate_varcov</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Estimate variance-covariance matrix for marginal estimand based on GLM model</h2>
+
+<h3>Description</h3>
+
+<p>Main variance estimation function. Estimates the variance-covariance
+matrix of a marginal estimand for a generalized linear model (GLM) object
+using specified methods. This function supports both Ge's and Ye's methods
+for variance estimation, accommodating different estimand specifications.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">estimate_varcov(
+  object,
+  strata = NULL,
+  method = c("Ge", "Ye"),
+  type = c("HC0", "model-based", "HC3", "HC", "HC1", "HC2", "HC4", "HC4m", "HC5"),
+  mod = FALSE
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>object</code></td>
+<td>
+<p>a fitted <code>glm</code> object augmented with
+<code>counterfactual.predictions</code>, <code>counterfactual.predictions</code> and <code>counterfactual.means</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>strata</code></td>
+<td>
+<p>an optional string or vector of strings specifying the names
+of stratification variables. Relevant only for Ye's method and used to
+adjust the variance-covariance estimation for stratification.
+If provided, each specified variable must be present in the model.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>method</code></td>
+<td>
+<p>a string indicating the chosen method for variance estimation.
+Supported methods are <code>Ge</code> and <code>Ye</code>. The default method is <code>Ge</code> based on Ge
+et al (2011) which is suitable for the variance estimation of conditional
+average treatment effect. The method <code>Ye</code> is based on Ye et al (2023) and is
+suitable for the variance estimation of population average treatment effect.
+For more details, see <a href="https://osf.io/9mp58/">Magirr et al. (2024)</a>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>type</code></td>
+<td>
+<p>a string indicating the type of
+variance estimator to use (only applicable for Ge's method). Supported types include HC0 (default),
+model-based, HC3, HC, HC1, HC2, HC4, HC4m, and HC5. See vcovHC for heteroscedasticity-consistent estimators.
+This parameter allows for flexibility in handling heteroscedasticity
+and model specification errors.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>mod</code></td>
+<td>
+<p>For Ye's method, the implementation of open-source RobinCar package
+has an additional variance decomposition step when estimating the robust variance,
+which then utilizes different counterfactual outcomes than the original reference.
+Set <code>mod = TRUE</code> to use exactly the implementation method described in
+Ye et al (2022), default to <code>FALSE</code> to use the modified implementation in
+RobinCar and Bannick et al (2023) which improves stability.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The <code>estimate_varcov</code> function facilitates robust variance estimation
+techniques for GLM models, particularly useful in clinical trial analysis
+and other fields requiring robust statistical inference. It allows
+researchers to account for complex study designs,
+including stratification and different treatment contrasts,
+by providing a flexible interface for variance-covariance estimation.
+</p>
+<p>Note: Ensure that the <code>glm</code> object has been adequately prepared with
+<code>predict_counterfactuals</code> and <code>average_predictions</code>
+before applying <code>estimate_varcov()</code>. Failure to do so may result in
+errors indicating missing components.
+</p>
+
+
+<h3>Value</h3>
+
+<p>an updated <code>glm</code> object appended with an
+additional component <code>robust_varcov</code>, which is the estimated variance-covariance matrix
+of the marginal effect. The matrix format and estimation method are
+indicated in the matrix attributes.
+</p>
+
+
+<h3>References</h3>
+
+<p>Ye T. et al. (2023) Robust variance
+estimation for covariate-adjusted unconditional treatment effect in randomized
+clinical trials with binary outcomes. Statistical Theory and Related Fields
+</p>
+<p>Ge M. et al. (2011) Covariate-Adjusted
+Difference in Proportions from Clinical Trials Using Logistic Regression
+and Weighted Risk Differences. Drug Information Journal.
+</p>
+<p>Bannick, M. S., et al. A General Form of Covariate Adjustment in
+Randomized Clinical Trials. arXiv preprint arXiv:2306.10213 (2023).
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>average_predictions()</code> for averaging counterfactual
+predictions.
+</p>
+<p><code>apply_contrast()</code> for computing a summary measure.
+</p>
+<p><code>get_marginal_effect()</code> for estimating marginal effects directly
+from an original <code>glm</code> object
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R"># Example usage with a binary outcome GLM model
+trial01$trtp &lt;- factor(trial01$trtp)
+fit1 &lt;- glm(aval ~ trtp + bl_cov, family = "binomial", data = trial01)
+
+#' # Preprocess fit1 as required by estimate_varcov
+fit2 &lt;- fit1 |&gt;
+  predict_counterfactuals(trt = "trtp") |&gt;
+  average_predictions()
+
+# Estimate variance-covariance using Ge's method
+fit3_ge &lt;- estimate_varcov(fit2, method = "Ge")
+print(fit3_ge$robust_varcov)
+
+
+# Estimate variance-covariance using Ye's method with stratification
+fit4 &lt;- glm(aval ~ trtp + bl_cov_c, family = "binomial", data = trial01) |&gt;
+  predict_counterfactuals(trt = "trtp") |&gt;
+  average_predictions()
+fit4_ye &lt;- estimate_varcov(fit4, method = "Ye", strata = "bl_cov_c")
+print(fit4_ye$robust_varcov)
+
+</code></pre>
+
+
+</div>

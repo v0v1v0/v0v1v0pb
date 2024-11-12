@@ -1,0 +1,101 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>tree_reorder</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Reorder tree tips to best match a desired order</h2>
+
+<h3>Description</h3>
+
+<p>This functions reorganizes the tree structure so that its tips appear in a desired order if possible, or in a reasonably close order when an exact solution is impossible.
+This tip order in the output tree is the same in both the tip labels vector (<code>tree$tip.label</code>) and edge matrix (<code>tree$edge</code>), ensured by using <code>tree_reindex_tips()</code> internally.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">tree_reorder(tree, labels)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>tree</code></td>
+<td>
+<p>A <code>phylo</code> object from the <code>ape</code> package (see <code>ape::read.tree()</code>).
+Works with standard <code>phylo</code> objects, and also with our extended trees (in that additive edges <code>tree$edge.length.add</code> are recalculated after reordering if they were present).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>labels</code></td>
+<td>
+<p>A character vector with all tip labels in the desired order.
+Must contain each tip label in <code>tree</code> exactly once.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>This function has the same goal as <code>ape::rotateConstr()</code>, which implements a different heuristic algorithm that did not perform well in our experience.
+</p>
+
+
+<h3>Value</h3>
+
+<p>The modified <code>tree</code> (<code>phylo</code> object) with reordered edges and tips.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>tree_reindex_tips()</code> to reorder tips in the labels vector to match the edge matrix order, which ensures agreement in plots (assuming plot show desired order already).
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R"># create a random tree
+library(ape)
+k &lt;- 5
+tree &lt;- rtree( k )
+# let's set the current labels as the desired order
+labels &lt;- tree$tip.label
+
+# now let's scramble the edges on purpose
+# to create an example where reordering is needed
+
+tree_rand &lt;- tree
+# new order of edges
+indexes &lt;- sample( Nedge( tree_rand ) )
+# reorder all edge values
+tree_rand$edge &lt;- tree_rand$edge[ indexes, ]
+tree_rand$edge.length &lt;- tree_rand$edge.length[ indexes ]
+# now let's reorder edges slightly so tree is more reasonable-looking
+# (otherwise plot looks tangled)
+tree_rand &lt;- reorder( tree_rand, order = 'postorder' )
+# the order of the tip labels in the vector and on the plot disagree with each other:
+tree_rand$tip.label
+plot( tree_rand )
+
+# now reorder tree object so tips are in the desired order:
+tree_rand &lt;- tree_reorder( tree_rand, labels )
+# now tip labels vector and plot should agree in order:
+# (the original tree was recovered!)
+tree_rand$tip.label
+plot( tree_rand )
+
+# order the tree in a different way than the original order
+labels &lt;- paste0( 't', 1 : k )
+# in this case, it's often impossible to get a perfect output order
+# (because the tree structure constrains the possible plot orders),
+# but this function tries its best to get close to the desired order
+tree2 &lt;- tree_reorder( tree, labels )
+plot(tree2)
+
+</code></pre>
+
+
+</div>

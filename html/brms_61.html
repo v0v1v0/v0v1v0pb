@@ -1,0 +1,481 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>set_prior</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Prior Definitions for <span class="pkg">brms</span> Models</h2>
+
+<h3>Description</h3>
+
+<p>Define priors for specific parameters or classes of parameters.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">set_prior(
+  prior,
+  class = "b",
+  coef = "",
+  group = "",
+  resp = "",
+  dpar = "",
+  nlpar = "",
+  lb = NA,
+  ub = NA,
+  check = TRUE
+)
+
+prior(prior, ...)
+
+prior_(prior, ...)
+
+prior_string(prior, ...)
+
+empty_prior()
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>prior</code></td>
+<td>
+<p>A character string defining a distribution in <span class="pkg">Stan</span> language</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>class</code></td>
+<td>
+<p>The parameter class. Defaults to <code>"b"</code>
+(i.e. population-level effects).
+See 'Details' for other valid parameter classes.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>coef</code></td>
+<td>
+<p>Name of the coefficient within the parameter class.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>group</code></td>
+<td>
+<p>Grouping factor for group-level parameters.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>resp</code></td>
+<td>
+<p>Name of the response variable.
+Only used in multivariate models.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>dpar</code></td>
+<td>
+<p>Name of a distributional parameter.
+Only used in distributional models.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nlpar</code></td>
+<td>
+<p>Name of a non-linear parameter.
+Only used in non-linear models.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>lb</code></td>
+<td>
+<p>Lower bound for parameter restriction. Currently only allowed
+for classes <code>"b"</code>. Defaults to <code>NULL</code>, that is no restriction.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ub</code></td>
+<td>
+<p>Upper bound for parameter restriction. Currently only allowed
+for classes <code>"b"</code>. Defaults to <code>NULL</code>, that is no restriction.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>check</code></td>
+<td>
+<p>Logical; Indicates whether priors
+should be checked for validity (as far as possible).
+Defaults to <code>TRUE</code>. If <code>FALSE</code>, <code>prior</code> is passed
+to the Stan code as is, and all other arguments are ignored.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Arguments passed to <code>set_prior</code>.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p><code>set_prior</code> is used to define prior distributions for parameters
+in <span class="pkg">brms</span> models. The functions <code>prior</code>, <code>prior_</code>, and
+<code>prior_string</code> are aliases of <code>set_prior</code> each allowing
+for a different kind of argument specification.
+<code>prior</code> allows specifying arguments as expression without
+quotation marks using non-standard evaluation.
+<code>prior_</code> allows specifying arguments as one-sided formulas
+or wrapped in <code>quote</code>.
+<code>prior_string</code> allows specifying arguments as strings just
+as <code>set_prior</code> itself.
+</p>
+<p>Below, we explain its usage and list some common
+prior distributions for parameters.
+A complete overview on possible prior distributions is given
+in the Stan Reference Manual available at <a href="https://mc-stan.org/">https://mc-stan.org/</a>.
+</p>
+<p>To combine multiple priors, use <code>c(...)</code> or the <code>+</code> operator
+(see 'Examples'). <span class="pkg">brms</span> does not check if the priors are written
+in correct <span class="pkg">Stan</span> language. Instead, <span class="pkg">Stan</span> will check their
+syntactical correctness when the model is parsed to <code>C++</code> and
+returns an error if they are not.
+This, however, does not imply that priors are always meaningful if they are
+accepted by <span class="pkg">Stan</span>. Although <span class="pkg">brms</span> trys to find common problems
+(e.g., setting bounded priors on unbounded parameters), there is no guarantee
+that the defined priors are reasonable for the model.
+Below, we list the types of parameters in <span class="pkg">brms</span> models,
+for which the user can specify prior distributions.
+</p>
+<p>Below, we provide details for the individual parameter classes that you can
+set priors on. Often, it may not be immediately clear, which parameters are
+present in the model. To get a full list of parameters and parameter
+classes for which priors can be specified (depending on the model) use
+function <code>default_prior</code>.
+</p>
+<p>1. Population-level ('fixed') effects
+</p>
+<p>Every Population-level effect has its own regression parameter
+represents the name of the corresponding population-level effect.
+Suppose, for instance, that <code>y</code> is predicted by <code>x1</code> and <code>x2</code>
+(i.e., <code>y ~ x1 + x2</code> in formula syntax).
+Then, <code>x1</code> and <code>x2</code> have regression parameters
+<code>b_x1</code> and <code>b_x2</code> respectively.
+The default prior for population-level effects (including monotonic and
+category specific effects) is an improper flat prior over the reals.
+Other common options are normal priors or student-t priors.
+If we want to have a normal prior with mean 0 and
+standard deviation 5 for <code>x1</code>, and a unit student-t prior with 10
+degrees of freedom for <code>x2</code>, we can specify this via
+<code>set_prior("normal(0,5)", class = "b", coef = "x1")</code> and <br><code>set_prior("student_t(10, 0, 1)", class = "b", coef = "x2")</code>.
+To put the same prior on all population-level effects at once,
+we may write as a shortcut <code>set_prior("&lt;prior&gt;", class = "b")</code>.
+This also leads to faster sampling, because priors can be vectorized in this case.
+Both ways of defining priors can be combined using for instance
+<code>set_prior("normal(0, 2)", class = "b")</code> and <br><code>set_prior("normal(0, 10)", class = "b", coef = "x1")</code>
+at the same time. This will set a <code>normal(0, 10)</code> prior on
+the effect of <code>x1</code> and a <code>normal(0, 2)</code> prior
+on all other population-level effects.
+However, this will break vectorization and
+may slow down the sampling procedure a bit.
+</p>
+<p>In case of the default intercept parameterization
+(discussed in the 'Details' section of <code>brmsformula</code>),
+general priors on class <code>"b"</code> will <em>not</em> affect
+the intercept. Instead, the intercept has its own parameter class
+named <code>"Intercept"</code> and priors can thus be
+specified via <code>set_prior("&lt;prior&gt;", class = "Intercept")</code>.
+Setting a prior on the intercept will not break vectorization
+of the other population-level effects.
+Note that technically, this prior is set on an intercept that
+results when internally centering all population-level predictors
+around zero to improve sampling efficiency. On this centered
+intercept, specifying a prior is actually much easier and
+intuitive than on the original intercept, since the former
+represents the expected response value when all predictors
+are at their means. To treat the intercept as an ordinary
+population-level effect and avoid the centering parameterization,
+use <code>0 + Intercept</code> on the right-hand side of the model formula.
+</p>
+<p>In non-linear models, population-level effects are defined separately
+for each non-linear parameter. Accordingly, it is necessary to specify
+the non-linear parameter in <code>set_prior</code> so that priors
+we can be assigned correctly.
+If, for instance, <code>alpha</code> is the parameter and <code>x</code> the predictor
+for which we want to define the prior, we can write
+<code>set_prior("&lt;prior&gt;", coef = "x", nlpar = "alpha")</code>.
+As a shortcut we can use <code>set_prior("&lt;prior&gt;", nlpar = "alpha")</code>
+to set the same prior on all population-level effects of <code>alpha</code> at once.
+</p>
+<p>The same goes for specifying priors for specific distributional
+parameters in the context of distributional regression, for example,
+<code>set_prior("&lt;prior&gt;", coef = "x", dpar = "sigma")</code>.
+For most other parameter classes (see below), you need to indicate
+non-linear and distributional parameters in the same way as shown here.
+</p>
+<p>If desired, population-level effects can be restricted to fall only
+within a certain interval using the <code>lb</code> and <code>ub</code> arguments
+of <code>set_prior</code>. This is often required when defining priors
+that are not defined everywhere on the real line, such as uniform
+or gamma priors. When defining a <code>uniform(2,4)</code> prior,
+you should write <code>set_prior("uniform(2,4)", lb = 2, ub = 4)</code>.
+When using a prior that is defined on the positive reals only
+(such as a gamma prior) set <code>lb = 0</code>.
+In most situations, it is not useful to restrict population-level
+parameters through bounded priors
+(non-linear models are an important exception),
+but if you really want to this is the way to go.
+</p>
+<p>2. Group-level ('random') effects
+</p>
+<p>Each group-level effect of each grouping factor has a standard deviation named
+<code>sd_&lt;group&gt;_&lt;coef&gt;</code>. Consider, for instance, the formula
+<code>y ~ x1 + x2 + (1 + x1 | g)</code>.
+We see that the intercept as well as <code>x1</code> are group-level effects
+nested in the grouping factor <code>g</code>.
+The corresponding standard deviation parameters are named as
+<code>sd_g_Intercept</code> and <code>sd_g_x1</code> respectively.
+These parameters are restricted to be non-negative and, by default,
+have a half student-t prior with 3 degrees of freedom and a
+scale parameter that depends on the standard deviation of the response
+after applying the link function. Minimally, the scale parameter is 2.5.
+This prior is used (a) to be only weakly informative in order to influence
+results as few as possible, while (b) providing at least some regularization
+to considerably improve convergence and sampling efficiency.
+To define a prior distribution only for standard deviations
+of a specific grouping factor,
+use <br><code>set_prior("&lt;prior&gt;", class = "sd", group = "&lt;group&gt;")</code>.
+To define a prior distribution only for a specific standard deviation
+of a specific grouping factor, you may write <br><code>set_prior("&lt;prior&gt;", class = "sd", group = "&lt;group&gt;", coef = "&lt;coef&gt;")</code>.
+</p>
+<p>If there is more than one group-level effect per grouping factor,
+the correlations between those effects have to be estimated.
+The prior <code>lkj_corr_cholesky(eta)</code> or in short
+<code>lkj(eta)</code> with <code>eta &gt; 0</code>
+is essentially the only prior for (Cholesky factors) of correlation matrices.
+If <code>eta = 1</code> (the default) all correlations matrices
+are equally likely a priori. If <code>eta &gt; 1</code>, extreme correlations
+become less likely, whereas <code>0 &lt; eta &lt; 1</code> results in
+higher probabilities for extreme correlations.
+Correlation matrix parameters in <code>brms</code> models are named as
+<code>cor_&lt;group&gt;</code>, (e.g., <code>cor_g</code> if <code>g</code> is the grouping factor).
+To set the same prior on every correlation matrix,
+use for instance <code>set_prior("lkj(2)", class = "cor")</code>.
+Internally, the priors are transformed to be put on the Cholesky factors
+of the correlation matrices to improve efficiency and numerical stability.
+The corresponding parameter class of the Cholesky factors is <code>L</code>,
+but it is not recommended to specify priors for this parameter class directly.
+</p>
+<p>4. Smoothing Splines
+</p>
+<p>Smoothing splines are implemented in <span class="pkg">brms</span> using the 'random effects'
+formulation as explained in <code>gamm</code>). Thus, each
+spline has its corresponding standard deviations modeling the variability
+within this term. In <span class="pkg">brms</span>, this parameter class is called <code>sds</code>
+and priors can be specified via
+<code>set_prior("&lt;prior&gt;", class = "sds", coef = "&lt;term label&gt;")</code>.
+The default prior is the same as for standard deviations of group-level effects.
+</p>
+<p>5. Gaussian processes
+</p>
+<p>Gaussian processes as currently implemented in <span class="pkg">brms</span> have two
+parameters, the standard deviation parameter <code>sdgp</code>, and
+characteristic length-scale parameter <code>lscale</code> (see <code>gp</code>
+for more details). The default prior of <code>sdgp</code> is the same as for
+standard deviations of group-level effects. The default prior of
+<code>lscale</code> is an informative inverse-gamma prior specifically tuned to
+the covariates of the Gaussian process (for more details see
+<a href="https://betanalpha.github.io/assets/case_studies/gp_part3/part3.html">https://betanalpha.github.io/assets/case_studies/gp_part3/part3.html</a>).
+This tuned prior may be overly informative in some cases, so please
+consider other priors as well to make sure inference is robust to the prior
+specification. If tuning fails, a half-normal prior is used instead.
+</p>
+<p>6. Autocorrelation parameters
+</p>
+<p>The autocorrelation parameters currently implemented are named <code>ar</code>
+(autoregression), <code>ma</code> (moving average), <code>sderr</code> (standard
+deviation of latent residuals in latent ARMA models), <code>cosy</code> (compound
+symmetry correlation), <code>car</code> (spatial conditional autoregression), as
+well as <code>lagsar</code> and <code>errorsar</code> (spatial simultaneous
+autoregression).
+</p>
+<p>Priors can be defined by <code>set_prior("&lt;prior&gt;", class = "ar")</code> for
+<code>ar</code> and similar for other autocorrelation parameters. By default,
+<code>ar</code> and <code>ma</code> are bounded between <code>-1</code> and <code>1</code>;
+<code>cosy</code>, <code>car</code>, <code>lagsar</code>, and <code>errorsar</code> are bounded
+between <code>0</code> and <code>1</code>. The default priors are flat over the
+respective definition areas.
+</p>
+<p>7. Parameters of measurement error terms
+</p>
+<p>Latent variables induced via measurement error <code>me</code> terms
+require both mean and standard deviation parameters, whose prior classes
+are named <code>"meanme"</code> and <code>"sdme"</code>, respectively. If multiple
+latent variables are induced this way, their correlation matrix will
+be modeled as well and corresponding priors can be specified via the
+<code>"corme"</code> class. All of the above parameters have flat priors over
+their respective definition spaces by default.
+</p>
+<p>8. Distance parameters of monotonic effects
+</p>
+<p>As explained in the details section of <code>brm</code>,
+monotonic effects make use of a special parameter vector to
+estimate the 'normalized distances' between consecutive predictor
+categories. This is realized in <span class="pkg">Stan</span> using the <code>simplex</code>
+parameter type. This class is named <code>"simo"</code> (short for
+simplex monotonic) in <span class="pkg">brms</span>.
+The only valid prior for simplex parameters is the
+dirichlet prior, which accepts a vector of length <code>K - 1</code>
+(K = number of predictor categories) as input defining the
+'concentration' of the distribution. Explaining the dirichlet prior
+is beyond the scope of this documentation, but we want to describe
+how to define this prior syntactically correct.
+If a predictor <code>x</code> with <code>K</code> categories is modeled as monotonic,
+we can define a prior on its corresponding simplex via <br><code>prior(dirichlet(&lt;vector&gt;), class = simo, coef = mox1)</code>.
+The <code>1</code> in the end of <code>coef</code> indicates that this is the first
+simplex in this term. If interactions between multiple monotonic
+variables are modeled, multiple simplexes per term are required.
+For <code>&lt;vector&gt;</code>, we can put in any <code>R</code> expression
+defining a vector of length <code>K - 1</code>. The default is a uniform
+prior (i.e. <code>&lt;vector&gt; = rep(1, K-1)</code>) over all simplexes
+of the respective dimension.
+</p>
+<p>9. Parameters for specific families
+</p>
+<p>Some families need additional parameters to be estimated.
+Families <code>gaussian</code>, <code>student</code>, <code>skew_normal</code>,
+<code>lognormal</code>, and <code>gen_extreme_value</code> need the parameter
+<code>sigma</code> to account for the residual standard deviation.
+By default, <code>sigma</code> has a half student-t prior that scales
+in the same way as the group-level standard deviations.
+Further, family <code>student</code> needs the parameter
+<code>nu</code> representing the degrees of freedom of Student-t distribution.
+By default, <code>nu</code> has prior <code>gamma(2, 0.1)</code>, which is
+close to a penalized complexity prior (see Stan prior choice Wiki),
+and a fixed lower bound of <code>1</code>.
+Family <code>negbinomial</code> needs a <code>shape</code> parameter that has by
+default <code>inv_gamma(0.4, 0.3)</code> prior which is close to a
+penalized complexity prior (see Stan prior choice Wiki).
+Families <code>gamma</code>, <code>weibull</code>, and <code>inverse.gaussian</code>,
+need a <code>shape</code> parameter that has a <code>gamma(0.01, 0.01)</code>
+prior by default.
+For families <code>cumulative</code>, <code>cratio</code>, <code>sratio</code>,
+and <code>acat</code>, and only if <code>threshold = "equidistant"</code>,
+the parameter <code>delta</code> is used to model the distance between
+two adjacent thresholds.
+By default, <code>delta</code> has an improper flat prior over the reals.
+The <code>von_mises</code> family needs the parameter <code>kappa</code>, representing
+the concentration parameter. By default, <code>kappa</code> has prior
+<code>gamma(2, 0.01)</code>.
+</p>
+<p>Every family specific parameter has its own prior class, so that
+<code>set_prior("&lt;prior&gt;", class = "&lt;parameter&gt;")</code> is the right way to go.
+All of these priors are chosen to be weakly informative,
+having only minimal influence on the estimations,
+while improving convergence and sampling efficiency.
+</p>
+<p>10. Shrinkage priors
+</p>
+<p>To reduce the danger of overfitting in models with many predictor terms fit
+on comparably sparse data, brms supports special shrinkage priors, namely
+the (regularized) <code>horseshoe</code> and the <code>R2D2</code> prior.
+These priors can be applied on many parameter classes, either directly on
+the coefficient classes (e.g., class <code>b</code>), if directly setting priors
+on them is supported, or on the corresponding standard deviation
+hyperparameters (e.g., class <code>sd</code>) otherwise. Currently, the following
+classes support shrinkage priors: <code>b</code> (overall regression
+coefficients), <code>sds</code> (SDs of smoothing splines), <code>sdgp</code> (SDs of
+Gaussian processes), <code>ar</code> (autoregressive coefficients), <code>ma</code>
+(moving average coefficients), <code>sderr</code> (SD of latent residuals),
+<code>sdcar</code> (SD of spatial CAR structures), <code>sd</code> (SD of varying
+coefficients).
+</p>
+<p>11. Fixing parameters to constants
+</p>
+<p>Fixing parameters to constants is possible by using the <code>constant</code>
+function, for example, <code>constant(1)</code> to fix a parameter to 1.
+Broadcasting to vectors and matrices is done automatically.
+</p>
+
+
+<h3>Value</h3>
+
+<p>An object of class <code>brmsprior</code> to be used in the <code>prior</code>
+argument of <code>brm</code>.
+</p>
+
+
+<h3>Functions</h3>
+
+
+<ul>
+<li> <p><code>prior()</code>: Alias of <code>set_prior</code> allowing to
+specify arguments as expressions without quotation marks.
+</p>
+</li>
+<li> <p><code>prior_()</code>: Alias of <code>set_prior</code> allowing to specify
+arguments as as one-sided formulas or wrapped in <code>quote</code>.
+</p>
+</li>
+<li> <p><code>prior_string()</code>: Alias of <code>set_prior</code> allowing to
+specify arguments as strings.
+</p>
+</li>
+<li> <p><code>empty_prior()</code>: Create an empty <code>brmsprior</code> object.
+</p>
+</li>
+</ul>
+<h3>See Also</h3>
+
+<p><code>default_prior</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## use alias functions
+(prior1 &lt;- prior(cauchy(0, 1), class = sd))
+(prior2 &lt;- prior_(~cauchy(0, 1), class = ~sd))
+(prior3 &lt;- prior_string("cauchy(0, 1)", class = "sd"))
+identical(prior1, prior2)
+identical(prior1, prior3)
+
+# check which parameters can have priors
+default_prior(rating ~ treat + period + carry + (1|subject),
+             data = inhaler, family = cumulative())
+
+# define some priors
+bprior &lt;- c(prior_string("normal(0,10)", class = "b"),
+            prior(normal(1,2), class = b, coef = treat),
+            prior_(~cauchy(0,2), class = ~sd,
+                   group = ~subject, coef = ~Intercept))
+
+# verify that the priors indeed found their way into Stan's model code
+stancode(rating ~ treat + period + carry + (1|subject),
+         data = inhaler, family = cumulative(),
+         prior = bprior)
+
+# use the horseshoe prior to model sparsity in regression coefficients
+stancode(count ~ zAge + zBase * Trt,
+         data = epilepsy, family = poisson(),
+         prior = set_prior("horseshoe(3)"))
+
+# fix certain priors to constants
+bprior &lt;- prior(constant(1), class = "b") +
+  prior(constant(2), class = "b", coef = "zBase") +
+  prior(constant(0.5), class = "sd")
+stancode(count ~ zAge + zBase + (1 | patient),
+              data = epilepsy, prior = bprior)
+
+# pass priors to Stan without checking
+prior &lt;- prior_string("target += normal_lpdf(b[1] | 0, 1)", check = FALSE)
+stancode(count ~ Trt, data = epilepsy, prior = prior)
+
+# define priors in a vectorized manner
+# useful in particular for categorical or multivariate models
+set_prior("normal(0, 2)", dpar = c("muX", "muY", "muZ"))
+
+</code></pre>
+
+
+</div>

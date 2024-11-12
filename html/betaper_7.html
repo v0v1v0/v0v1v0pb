@@ -1,0 +1,153 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>pertables</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>
+Function to incorporate the effect of taxonomic uncertainty on multivariate analyses of ecological data.
+</h2>
+
+<h3>Description</h3>
+
+<p>This function implements a permutational method to incorporate taxonomic uncertainty on multivariate analyses typically used in the analysis of ecological data. The procedure is based on iterative randomizations that randomly re-assign non identified species in each site to any of the other species found in the remaining sites.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">pertables(data, index = NULL, nsim = 100)
+pertables.p2(data, index = NULL, nsim = 100, ncl=2, iseed = NULL)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+
+<p>Community data matrix. The three first columns are factors referring to the family, genus and species specific names. 
+The remaining columns are numeric vectors indicating species abundances at each site. 
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>index</code></td>
+<td>
+
+<p>List of additional parameters to determine the level at which species have been identified. Default values include 'Indet', 
+'indet', 'sp', 'sp1' to 'sp100', 'sp 1' to 'sp 100', ”, and ' '.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nsim</code></td>
+<td>
+
+<p>Number of simulations of species' identities, i.e., number of data tables to simulate.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ncl</code></td>
+<td>
+
+<p>Number of clusters for parallel simulation.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>iseed</code></td>
+<td>
+
+<p>An integer to be supplied to clusterSetRNGStream, or NULL not to set reproducible seeds.
+</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The procedure is implemented in two sequential steps:
+</p>
+<p>Step 1. Morphospecies identified only to genus are randomly re-assigned with the same probability within the group of species and morphospecies that share the same genus, provided they are not found in the same sites. In the re-assignment of the species identity, the species considered can also receive its own identity. For instance, let's assume we have three floristic inventories. In site A we have <em>Eugenia sp1</em> and <em>E. nesiotica</em>. In site B we have <em>Eugenia nesiotica</em>, <em>E. principium</em> and <em>E. salamensis</em>. In site C we have <em>Eugenia sp2</em> and <em>E. salamensis</em>. <em>Eugenia sp1</em> can be thus re-identified with equal probability as <em>Eugenia sp2, E. principium, E. salamensis</em> or just maintain its own identity (<em>Eugenia sp1</em>). In the latter case, this means that we assume that <em>E. sp1</em> is a completely different species, although we do not know its true identity. On the contrary, we cannot re-identify <em>E. sp1</em> as <em>E. nesiotica</em> because they were found in the same site, so we are quite certain that <em>E. sp1</em> is different from <em>E. nesiotica</em>. The same is applied to species identified only to family and fully unidentified species. Note that when collating inventories from different researchers, we must rename all unidentified species. This is because two researchers can use the same label, e.g. <em>Eugenia sp1</em>, even though this name does not necessarily refer to the same species. For a verification of the biological identity of <em>Eugenia sp1</em> one would need to cross-check the vouchers bearing the same name.
+</p>
+<p>Step 2. Step 1 is iterated <em>nsim</em> times. As a result, <em>nsim</em> matrices are obtained, all of which contain the same number of sites but variable number of species depending on the resulting re-assignment of morphospecies, The process can be time-consuming if community data matrices are large.
+</p>
+<p>Function <code>pertables.p2</code> implements a parallelized version which considerably reduces computation time.
+</p>
+
+
+<h3>Value</h3>
+
+<p>The function return a list of class <code>pertables</code> with the following components
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>taxunc </code></td>
+<td>
+<p>Summary of the number of species fully identified (0), identified to genus (1), identified to family (2), or fully undetermined (3).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>pertables </code></td>
+<td>
+<p>A list with all the simulated data matrices.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>raw</code></td>
+<td>
+<p>The raw data matrix, without the unidentified especies.</p>
+</td>
+</tr>
+</table>
+<h3>Author(s)</h3>
+
+<p>Luis Cayuela and Marcelino de la Cruz
+</p>
+
+
+<h3>References</h3>
+
+<p>Cayuela, L., De la Cruz, M. and Ruokolainen, K. (2011). A method to incorporate the effect of taxonomic uncertainty on multivariate analyses of ecological data. <em>Ecography</em>, 34: 94-102. <a href="http://dx.doi.org/10.1111/j.1600-0587.2009.05899.x">http://dx.doi.org/10.1111/j.1600-0587.2009.05899.x</a>.   
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+data(Amazonia)
+data(soils)
+
+# Define a new index that includes the terms used in the \code{Amazonia} dataset to define
+# undetermined taxa at different taxonomic levels
+
+index.Amazon &lt;- c(paste("sp.", rep(1:20), sep=""), "Indet.", "indet.")
+
+#Generate a pertables object (i.e. a list of biological data tables simulated from taxonomic
+# uncertainty)
+ 
+ ## Not run: 
+# compare prformance of pertables and pertables.p2
+nsim &lt;-100
+ncl &lt;-2
+gc()
+t0&lt;- Sys.time()
+ Amazonia100&lt;- pertables(Amazonia, index=index.Amazon, nsim=nsim)
+ Sys.time()-t0
+gc()
+t0&lt;- Sys.time()
+ Amazonia100.p2&lt;- pertables.p2(Amazonia, index=index.Amazon, nsim=nsim, ncl=ncl)
+ Sys.time()-t0
+
+## End(Not run)
+# Example for Rcheck
+
+Amazonia4.p2&lt;- pertables.p2(Amazonia, index=index.Amazon, nsim=4, ncl=2)
+
+</code></pre>
+
+
+</div>

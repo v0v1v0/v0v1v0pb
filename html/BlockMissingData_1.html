@@ -1,0 +1,148 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>imputeglm.predict</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Imputation using generalized linear models for missing values</h2>
+
+<h3>Description</h3>
+
+<p>The function performs imputation using generalized linear models for missing values in a dataset. It fits these models for each specified response variable separately, utilizing other specified variables, and returns the estimated coefficients and predicted values for each variable. The function handles different distribution families,
+such as Gaussian, Binomial, and Ordinal, for GLM estimation.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">imputeglm.predict(X, ind_y, ind_x = -ind_y, miss, newdata, family = "gaussian")
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>X</code></td>
+<td>
+<p>Data matrix containing all the variables that may contain missing values.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ind_y</code></td>
+<td>
+<p>A vector specifying the indices of response variables in the dataset.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ind_x</code></td>
+<td>
+<p>A vector specifying the indices of predictor variables in the dataset. By default, it is set to -ind_y, which means all variables other than the response variables are considered as predictors.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>miss</code></td>
+<td>
+<p>A logical matrix indicating the missing values in the dataset.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>newdata</code></td>
+<td>
+<p>Data matrix for which imputed values are required. It should have the same column names as the original dataset.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>family</code></td>
+<td>
+<p>A character indicating the distribution family of the GLM. Possible values are "gaussian" (default), "binomial", and "ordinal".</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>A list containing the imputed values for each response variable. </p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>B</code></td>
+<td>
+<p>A matrix of estimated coefficients, where each column contains the coefficients for a response variable, and each row corresponds to a predictor variable (including the intercept term)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>PRED</code></td>
+<td>
+<p>A matrix of predicted values (or imputations), where each column contains the predicted values for a response variable, and each row corresponds to an observation in the newdata (if provided)</p>
+</td>
+</tr>
+</table>
+<h3>Author(s)</h3>
+
+<p>Fei Xue and Annie Qu
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+library(MASS)
+
+# Number of subjects
+n &lt;- 700
+
+# Number of total covariates
+p &lt;- 40
+
+# Number of missing groups of subjects
+ngroup &lt;- 4
+
+# Number of data sources
+nsource &lt;- 4
+
+# Starting indexes of covariates in data sources
+cov_index=c(1, 13, 25, 37)
+
+# Starting indexes of subjects in missing groups
+sub_index=c(1, 31, 251, 471)
+
+# Indexes of missing data sources in missing groups, respectively ('NULL' represents no missing)
+miss_source=list(NULL, 3, 2, 1)
+
+# Create a design matrix
+set.seed(1)
+sigma=diag(1-0.4,p,p)+matrix(0.4,p,p)
+X &lt;- mvrnorm(n,rep(0,p),sigma)
+
+# Introduce some block-wise missing
+for (i in 1:ngroup) {
+  if (!is.null(miss_source[[i]])) {
+    if (i==ngroup) {
+      if (miss_source[[i]]==nsource) {
+        X[sub_index[i]:n, cov_index[miss_source[[i]]]:p] = NA
+      } else {
+        X[sub_index[i]:n, cov_index[miss_source[[i]]]:(cov_index[miss_source[[i]]+1]-1)] = NA
+      }
+    } else {
+      if (miss_source[[i]]==nsource) {
+        X[sub_index[i]:(sub_index[i+1]-1), cov_index[miss_source[[i]]]:p] = NA
+      } else {
+        X[sub_index[i]:(sub_index[i+1]-1), cov_index[miss_source[[i]]]:
+        (cov_index[miss_source[[i]]+1]-1)] = NA
+      }
+    }
+  }
+}
+
+# Define missing data pattern
+miss &lt;- is.na(X)
+# Choose response and predictor variables
+ind_y &lt;- 25:36
+ind_x &lt;- 13:24
+# Data that need imputation
+newdata &lt;- X[31:250,]
+# Use the function
+result &lt;- imputeglm.predict(X = X, ind_y = ind_y, ind_x = ind_x, miss = miss, newdata = newdata)
+</code></pre>
+
+
+</div>

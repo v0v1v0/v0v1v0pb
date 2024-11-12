@@ -1,0 +1,434 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>BinaryEPPM</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>
+Fitting of EPPM models to binary data.
+</h2>
+
+<h3>Description</h3>
+
+<p>Fits regression models to under- and over-dispersed binary data 
+using extended Poisson process models.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">BinaryEPPM(formula, data, subset = NULL, na.action = NULL, 
+       weights = NULL, model.type = "p only", 
+       model.name = "EPPM extended binomial", link = "cloglog", 
+       initial = NULL, method = "Nelder-Mead", 
+       pseudo.r.squared.type = "square of correlation", control = NULL)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>formula</code></td>
+<td>
+
+<p>Formulae for the probability of a success p and scale-factor. The 
+object used is from the package <code>Formula</code> 
+of Zeileis and Croissant (2010) which allows multiple 
+parts and multiple responses. "formula" should consist of a 
+left hand side (lhs) of single response variable and a right hand 
+side (rhs) of one or two sets of variables for the linear predictors 
+for the mean and (if two sets) the variance. This is as used for 
+the R function "glm" and also, for example, as for the package 
+"betareg" (Cribari-Neto and Zeileis, 2010). The function identifies 
+from the argument data whether a data frame (as for use of "glm") 
+or a list has been input. The list should be exactly the same as 
+for a data frame except that the response variable is a list of 
+vectors of frequency distributions rather than two vectors of 
+paired counts of number responding (r) out of number tested as 
+for the data frame. The subordinate functions fit models where 
+the response variables are "p.obs", or "scalef.obs" according 
+to the model type being fitted. The values for these response 
+variables are not input as part of "data", they are calculated 
+within the function from a list of grouped binary data input.
+If the "model.type" is "p only", "formula" consists of a lhs 
+of the response variable and a rhs of the terms of the linear
+predictor for the mean model. If the "model.type" is "p and 
+scale-factor" there are two sets of terms in the rhs of 
+"formula" i.e., "p.obs" and "scalef.obs" together with the 
+two sets of terms for the linear predictors of p and scale-factor.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+
+<p>"data" should be either a data frame (as for use of "glm") 
+or a list. The list should be exactly the same as for a 
+data frame except that the response variable is a list 
+of vectors of frequency distributions rather than a 
+vector of single counts as for the data frame. Only one list
+is allowed within "data" as it is identified as the dependent
+variable. If other lists are in "data", for example for use as
+weights, they should be removed from "data" prior to calling 
+this function. The extracted list can be called using the
+"weights" argument to this function. Within the function 
+a working list "listcounts" and data frames with components 
+such as "p.obs", "scalef.obs", "covariates", "offset.mean", 
+"offset.variance" are set up . The component "covariates" 
+is a data frame of vectors of covariates in the model. 
+The component "listcounts" is a list of vectors of 
+frequency distributions, or the single pairs of r/n in 
+grouped form if "data" is a data frame. 
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>subset</code></td>
+<td>
+
+<p>Subsetting commands.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>na.action</code></td>
+<td>
+
+<p>Action taken for NAs in data.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>weights</code></td>
+<td>
+
+<p>Vector of list of lists of weights.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>model.type</code></td>
+<td>
+
+<p>Takes one of two values i.e. "p only" or "p and scale-factor". 
+The "p only" value fits a linear predictor function to the 
+parameter <em>a</em> in equation (3) of Faddy and Smith (2012). If 
+the model type being fitted is binomial, modeling <em>a</em> is the 
+same as modeling the mean. For the negative binomial the 
+mean is <em>b exp(a)-1)</em>, <em>b</em> also being as in equation (3) 
+of Faddy and Smith (2012). The "p and scale-factor" value 
+fits linear predictor functions to both the probability 
+of a success p and the scale-factor. 
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>model.name</code></td>
+<td>
+
+<p>If model.type is "p only" the model being fitted is one 
+of the four "binomial", "EPPM extended binomial", "beta binomial", "correlated binomial". 
+If model.type is "p and scale-factor" the model being fitted is 
+either "EPPM extended binomial" i.e. as equations (4) and (6) of Faddy and Smith (2012)
+or one of the two "beta binomial", "correlated binomial". 
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>link</code></td>
+<td>
+
+<p>Takes one of nine values i.e., 'logit', 'probit', 'cloglog', 'cauchit', 'log',
+'loglog', 'double exponential', 'double reciprocal', 'power logit'. 
+The default is 'cloglog'. The 'power logit' has an attribute of 'power' for
+which the default is 1 i.e., a logit link.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>initial</code></td>
+<td>
+
+<p>This is a vector of initial values for the parameters. 
+If this vector is NULL then initial values based on a 
+fitting binomial models using "glm" are calculated 
+within the function.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>method</code></td>
+<td>
+
+<p>Takes one of the two values "Nelder-Mead" or "BFGS" these 
+being arguments of <code>optim</code>.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>pseudo.r.squared.type</code></td>
+<td>
+
+<p>Takes one of the three values "square of correlation", "R square" or "max-rescaled R square".
+The "default" is as used in Cribari-Neto and Zeileis (2010) and is the square of the 
+correlation between the observed and predicted values on the GLM linear predictor scale.
+The other two are as described in Cox and Snell (1989), and Nagelkerke (1991) and apply to 
+logistic regression.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>control</code></td>
+<td>
+
+<p>"control" is a list of control parameters as used in 
+"optim". If this list is NULL the defaults for 
+"optim" are set as 
+"control &lt;- list(fnscale=-1, trace=0, maxit=1000)". 
+The control parameters that can be changed 
+by inputting a variable length list are 
+"fnscale, trace, maxit, abstol, reltol, alpha, beta, gamma". 
+Details of "optim" and its control parameters are 
+available in the online R help manuals.
+</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>An object of class "BinaryEPMM" is returned. A list of object items follows.
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>data.type</code></td>
+<td>
+<p>The type of the data i.e., data frame or list</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>list.data</code></td>
+<td>
+<p>Data as a list of lists of frequency distributions</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>call</code></td>
+<td>
+<p>The call of the function</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>formula</code></td>
+<td>
+<p>The formula argument</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>model.type</code></td>
+<td>
+<p>The type of model being fitted</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>model.name</code></td>
+<td>
+<p>The model being fitted</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>link</code></td>
+<td>
+<p>The link function</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>covariates.matrix.p</code></td>
+<td>
+<p>The design matrix for the probability of a success</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>covariates.matrix.scalef</code></td>
+<td>
+<p>The design matrix for the scalefactor</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>offset.p</code></td>
+<td>
+<p>The offset vector for the probability of a success</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>offset.scalef</code></td>
+<td>
+<p>The offset vector for the scalefactor</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>coefficients</code></td>
+<td>
+<p>Estimates of model parameters</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>loglikelihood</code></td>
+<td>
+<p>Loglikelihood</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>vcov</code></td>
+<td>
+<p>The variance/covariance matrix</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>n</code></td>
+<td>
+<p>The number of observations</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nobs</code></td>
+<td>
+<p>The number of observations</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>df.null</code></td>
+<td>
+<p>The degrees of freedom of the null model</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>df.residual</code></td>
+<td>
+<p>The degrees of freedom of the residual</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>vnmax</code></td>
+<td>
+<p>Vector of maximums of grouped count data vectors in list.counts</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>weights</code></td>
+<td>
+<p>Vector or list of weights</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>converged</code></td>
+<td>
+<p>Whether the iterative process converged, TRUE or FALSE</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>iterations</code></td>
+<td>
+<p>Number of iterations taken</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>method</code></td>
+<td>
+<p>Method for optim either Nelder-Mead or BFGS</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>pseudo.r.squared</code></td>
+<td>
+<p>Pseudo R**2 value</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>start</code></td>
+<td>
+<p>Starting values for iterative process</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>optim</code></td>
+<td>
+<p>Estimates of model parameters</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>control</code></td>
+<td>
+<p>Control parameters for <code>optim</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>fitted.values</code></td>
+<td>
+<p>Fitted values for probability of success</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>y</code></td>
+<td>
+<p>Dependent variable</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>terms</code></td>
+<td>
+<p>Terms in model fitted</p>
+</td>
+</tr>
+</table>
+<h3>Author(s)</h3>
+
+<p>David M. Smith &lt;dmccsmith@verizon.net&gt;
+</p>
+
+
+<h3>References</h3>
+
+<p>Cox DR, Snell EJ. (1989). <em>Analysis of Binary Data</em>. Second Edition. Chapman &amp; Hall.
+</p>
+<p>Cribari-Neto F, Zeileis A. (2010). Beta Regression in R.
+<em>Journal of Statistical Software</em>, <b>34</b>(2), 1-24. <a href="https://doi.org/10.18637/jss.v034.i02">doi:10.18637/jss.v034.i02</a>.
+</p>
+<p>Grun B, Kosmidis I, Zeileis A. (2012). Extended Beta Regression in R: Shaken, Stirred, Mixed, and Partitioned.
+<em>Journal of Statistical Software</em>, <b>48</b>(11), 1-25. <a href="https://doi.org/10.18637/jss.v048.i11">doi:10.18637/jss.v048.i11</a>.
+</p>
+<p>Faddy M, Smith D. (2012). Extended Poisson Process Modeling and 
+Analysis of Grouped Binary Data. <em>Biometrical Journal</em>, <b>54</b>, 426-435.
+<a href="https://doi.org/10.1002/bimj.201100214">doi:10.1002/bimj.201100214</a>.
+</p>
+<p>Nagelkerke NJD. (1991). A Note on a General Definition of the Coefficient of Determination.
+<em>Biometrika</em>, <b>78</b>, 691-692.
+</p>
+<p>Smith D, Faddy M. (2019). Mean and Variance Modeling of Under-Dispersed and Over-Dispersed
+Grouped Binary Data. <em>Journal of Statistical Software</em>, <b>90</b>(8), 1-20.
+<a href="https://doi.org/10.18637/jss.v090.i08">doi:10.18637/jss.v090.i08</a>.
+</p>
+<p>Zeileis A, Croissant Y. (2010). Extended Model Formulas in R: Multiple Parts and Multiple Responses.
+<em>Journal of Statistical Software</em>, <b>34</b>(1), 1-13. <a href="https://doi.org/10.18637/jss.v034.i01">doi:10.18637/jss.v034.i01</a>.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>CountsEPPM</code> 
+<code>betareg</code> 
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">data("ropespores.case") 
+output.fn &lt;- BinaryEPPM(data = ropespores.case,
+                  number.spores / number.tested ~ 1 + offset(logdilution),
+                  model.type = "p only", model.name = "binomial")   
+summary(output.fn)
+</code></pre>
+
+
+</div>

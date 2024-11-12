@@ -1,0 +1,135 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>snp_ancestry_summary</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Estimation of ancestry proportions</h2>
+
+<h3>Description</h3>
+
+<p>Estimation of ancestry proportions. Make sure to match summary statistics
+using <code>snp_match()</code> (and to reverse frequencies correspondingly).
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">snp_ancestry_summary(
+  freq,
+  info_freq_ref,
+  projection,
+  correction,
+  min_cor = 0.4,
+  sum_to_one = TRUE
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>freq</code></td>
+<td>
+<p>Vector of frequencies from which to estimate ancestry proportions.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>info_freq_ref</code></td>
+<td>
+<p>A data frame (or matrix) with the set of frequencies to
+be used as reference (one population per column).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>projection</code></td>
+<td>
+<p>Matrix of "loadings" for each variant/PC to be used to
+project allele frequencies.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>correction</code></td>
+<td>
+<p>Coefficients to correct for shrinkage when projecting.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>min_cor</code></td>
+<td>
+<p>Minimum correlation between observed and predicted frequencies.
+Default is 0.4. When correlation is lower, an error is returned.
+For individual genotypes, this should be larger than 0.6.
+For allele frequencies, this should be larger than 0.9.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>sum_to_one</code></td>
+<td>
+<p>Whether to force ancestry coefficients to sum to 1?
+Default is <code>TRUE</code> (otherwise, the sum can be lower than 1).</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>Vector of coefficients representing the ancestry proportions.
+Also (as attributes) <code>cor_each</code>, the correlation between input
+frequencies and each reference frequencies, and <code>cor_pred</code>, the correlation
+between input and predicted frequencies.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## Not run: 
+
+# GWAS summary statistics for Epilepsy (supposedly in EUR+EAS+AFR)
+gz &lt;- runonce::download_file(
+  "http://www.epigad.org/gwas_ilae2018_16loci/all_epilepsy_METAL.gz",
+  dir = "tmp-data")
+readLines(gz, n = 3)
+
+library(dplyr)
+sumstats &lt;- bigreadr::fread2(
+  gz, select = c("CHR", "BP", "Allele2", "Allele1", "Freq1"),
+  col.names = c("chr", "pos", "a0", "a1", "freq")
+) %&gt;%
+  mutate_at(3:4, toupper)
+# It is a good idea to filter for similar per-variant N (when available..)
+
+all_freq &lt;- bigreadr::fread2(
+  runonce::download_file("https://figshare.com/ndownloader/files/31620968",
+                         dir = "tmp-data", fname = "ref_freqs.csv.gz"))
+projection &lt;- bigreadr::fread2(
+  runonce::download_file("https://figshare.com/ndownloader/files/31620953",
+                         dir = "tmp-data", fname = "projection.csv.gz"))
+
+matched &lt;- snp_match(
+  mutate(sumstats, chr = as.integer(chr), beta = 1),
+  all_freq[1:5],
+  return_flip_and_rev = TRUE
+) %&gt;%
+  mutate(freq = ifelse(`_REV_`, 1 - freq, freq))
+
+res &lt;- snp_ancestry_summary(
+  freq = matched$freq,
+  info_freq_ref = all_freq[matched$`_NUM_ID_`, -(1:5)],
+  projection = projection[matched$`_NUM_ID_`, -(1:5)],
+  correction = c(1, 1, 1, 1.008, 1.021, 1.034, 1.052, 1.074, 1.099,
+                 1.123, 1.15, 1.195, 1.256, 1.321, 1.382, 1.443)
+)
+
+# Some ancestry groups are very close to each other, and should be merged
+group &lt;- colnames(all_freq)[-(1:5)]
+group[group %in% c("Scandinavia", "United Kingdom", "Ireland")]   &lt;- "Europe (North West)"
+group[group %in% c("Europe (South East)", "Europe (North East)")] &lt;- "Europe (East)"
+
+tapply(res, factor(group, unique(group)), sum)
+
+## End(Not run)
+</code></pre>
+
+
+</div>

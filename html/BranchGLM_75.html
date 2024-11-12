@@ -1,0 +1,456 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>VariableSelection</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Variable Selection for GLMs</h2>
+
+<h3>Description</h3>
+
+<p>Performs forward selection, multiple different variants of backward
+elimination, and efficient best subset variable selection with information
+criterion for generalized linear models (GLMs). Best subset selection is
+performed with branch and bound algorithms to greatly speed up the process
+and backward elimination can be performed with bounding algorithms to speed it up.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">VariableSelection(object, ...)
+
+## S3 method for class 'formula'
+VariableSelection(
+  object,
+  data = NULL,
+  family,
+  link,
+  offset = NULL,
+  method = "Fisher",
+  type = "switch branch and bound",
+  metric = "AIC",
+  bestmodels = NULL,
+  cutoff = NULL,
+  keep = NULL,
+  keepintercept = TRUE,
+  maxsize = NULL,
+  grads = 10,
+  parallel = FALSE,
+  nthreads = 8,
+  tol = 1e-06,
+  maxit = NULL,
+  contrasts = NULL,
+  showprogress = TRUE,
+  ...
+)
+
+## S3 method for class 'BranchGLM'
+VariableSelection(
+  object,
+  type = "switch branch and bound",
+  metric = "AIC",
+  bestmodels = NULL,
+  cutoff = NULL,
+  keep = NULL,
+  keepintercept = TRUE,
+  maxsize = NULL,
+  parallel = FALSE,
+  nthreads = 8,
+  showprogress = TRUE,
+  ...
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>object</code></td>
+<td>
+<p>a formula or a <code>BranchGLM</code> object.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>further arguments.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+<p>a data.frame, list or environment (or object coercible by
+as.data.frame to a data.frame), containing the variables in formula.
+Neither a matrix nor an array will be accepted. If not found in <code>data</code>, the
+variables are taken from <code>environment(formula)</code>, typically the environment from
+which <code>VariableSelection</code> is called.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>family</code></td>
+<td>
+<p>the distribution used to model the data, one of "gaussian",
+"gamma", "binomial", or "poisson". A <code>family</code> object may also be supplied for
+one of the accepted distributions.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>link</code></td>
+<td>
+<p>the link used to link the mean structure to the linear predictors. One of
+"identity", "logit", "probit", "cloglog", "sqrt", "inverse", or "log". This only needs to be
+supplied if a string is supplied for <code>family</code>. If a family object is supplied
+for the <code>family</code> argument, then the link function is taken from that family
+object.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>offset</code></td>
+<td>
+<p>the offset vector, by default the zero vector is used.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>method</code></td>
+<td>
+<p>one of "Fisher", "BFGS", or "LBFGS". Fisher's scoring is recommended
+for forward selection and the branch and bound algorithms since they will typically
+fit many models with a small number of covariates.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>type</code></td>
+<td>
+<p>one of "forward", "backward", "fast backward", "double backward", "fast double backward",
+"branch and bound", "backward branch and bound", or "switch branch and bound"
+to indicate the type of variable selection to perform. The default value is
+"switch branch and bound". See more about these algorithms in details</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>metric</code></td>
+<td>
+<p>the metric used to choose the best models, the default is "AIC",
+but "BIC" and "HQIC" are also available. AIC is the Akaike information criterion,
+BIC is the Bayesian information criterion, and HQIC is the Hannan-Quinn information
+criterion.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>bestmodels</code></td>
+<td>
+<p>a positive integer to indicate the number of the best models to
+find according to the chosen metric or NULL. If this is NULL, then cutoff is
+used instead. This is only used for the branch and bound algorithms.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>cutoff</code></td>
+<td>
+<p>a non-negative number which indicates that the function
+should return all models that have a metric value within cutoff of the
+best metric value or NULL. Only one of this or bestmodels should be specified and
+when both are NULL a cutoff of 0 is used. This is only used for the branch
+and bound algorithms.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>keep</code></td>
+<td>
+<p>a character vector of names to denote variables that must be in the models.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>keepintercept</code></td>
+<td>
+<p>a logical value to indicate whether to keep the intercept in
+all models, only used if an intercept is included in the formula.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>maxsize</code></td>
+<td>
+<p>a positive integer to denote the maximum number of variables to
+consider in a single model, the default is the total number of variables.
+This number adds onto any variables specified in keep. This argument only works
+for <code>type = "forward"</code> and <code>type = "branch and bound"</code>. This argument is now
+deprecated.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>grads</code></td>
+<td>
+<p>a positive integer to denote the number of gradients used to
+approximate the inverse information with, only for <code>method = "LBFGS"</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>parallel</code></td>
+<td>
+<p>a logical value to indicate if parallelization should be used.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nthreads</code></td>
+<td>
+<p>a positive integer to denote the number of threads used with OpenMP,
+only used if <code>parallel = TRUE</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>tol</code></td>
+<td>
+<p>a positive number to denote the tolerance used to determine model convergence.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>maxit</code></td>
+<td>
+<p>a positive integer to denote the maximum number of iterations performed.
+The default for Fisher's scoring is 50 and for the other methods the default is 200.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>contrasts</code></td>
+<td>
+<p>see <code>contrasts.arg</code> of <code>model.matrix.default</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>showprogress</code></td>
+<td>
+<p>a logical value to indicate whether to show progress updates
+for branch and bound algorithms.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+
+
+<h4>Variable Selection Details</h4>
+
+<p>The supplied formula or the formula from the fitted model is
+treated as the upper model. The variables specified in keep along with an
+intercept (if included in formula and keepintercept = TRUE) is the lower model.
+Factor variables are either kept in their entirety or entirely removed and
+interaction terms are properly handled. All observations that have any missing
+values in the upper model are removed.
+</p>
+
+
+
+<h4>Stepwise Methods</h4>
+
+<p>There are 5 different stepwise variable selection algorithms that are available.
+These are forward selection, backward elimination, fast backward elimination,
+double backward elimination, and fast double backward elimination. All of these
+are heuristic algorithms, so the best model found by them may not be the optimal
+model.
+</p>
+
+
+<h5>Backward Elimination</h5>
+
+<p>Fast backward elimination should give the same results as backward elimination, but it makes
+use of the bounding techniques used by the branch and bound algorithms to make
+it faster. Fast backward elimination can give slightly different results than
+backward elimination if the GLM solver has difficulties fitting some of the
+larger models.
+</p>
+
+
+
+<h5>Double Backward Elimination</h5>
+
+<p>Double backward elimination and fast double backward elimination are a variant of
+backward elimination where up to 2 variables can be removed in one step instead of
+just 1. This typically results in higher quality models, but can also be much
+slower. The bounding algorithm used in fast double backward elimination makes it
+much faster.
+</p>
+
+
+
+
+<h4>Branch and Bound Methods</h4>
+
+<p>The branch and bound algorithm is an efficient algorithm used to find the optimal
+models. The backward branch and bound algorithm is very similar to
+the branch and bound algorithm, except it tends to be faster when the best models
+contain most of the variables. The switch branch and bound algorithm is a
+combination of the two algorithms and is typically the fastest of the 3 branch and
+bound algorithms. All of the branch and bound algorithms are guaranteed to find
+the optimal models (up to numerical precision).
+</p>
+
+
+
+<h4>GLM Fitting</h4>
+
+<p>Fisher's scoring is recommended for branch and bound selection and forward selection.
+L-BFGS may be faster for the backward elimination and double backward elimination
+algorithms, especially when there are many variables.
+</p>
+
+
+
+<h3>Value</h3>
+
+<p>A <code>BranchGLMVS</code> object which is a list with the following components
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>initmodel</code></td>
+<td>
+<p> the <code>BranchGLM</code> object corresponding to the upper model</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>numchecked</code></td>
+<td>
+<p> number of models fit</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>names</code></td>
+<td>
+<p> character vector of the names of the predictor variables</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>order</code></td>
+<td>
+<p> the order the variables were added to the model or removed from the model, this is only included for the stepwise algorithms</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>type</code></td>
+<td>
+<p> type of variable selection employed</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>optType</code></td>
+<td>
+<p> whether the type specified used a heuristic or exact algorithm</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>metric</code></td>
+<td>
+<p> metric used to select the best models</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>bestmodels</code></td>
+<td>
+<p> numeric matrix used to describe the best models for the branch and bound algorithms
+or a numeric matrix describing the models along the path taken for stepwise algorithms</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>bestmetrics</code></td>
+<td>
+<p> numeric vector with the best metrics found in the search for the branch and bound algorithms
+or a numeric vector with the metric values along the path taken for stepwise algorithms</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>beta</code></td>
+<td>
+<p> numeric matrix of beta coefficients for the models in bestmodels</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>cutoff</code></td>
+<td>
+<p> the cutoff that was used, this is set to -1 if bestmodels was used instead or if
+a stepwise algorithm was used</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>keep</code></td>
+<td>
+<p> vector of which variables were kept through the selection process</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>keepintercept</code></td>
+<td>
+<p> a boolean value denoting whether to keep the intercept through the selection process or not</p>
+</td>
+</tr>
+</table>
+<h3>See Also</h3>
+
+<p>plot.BranchGLMVS, coef.BranchGLMVS, predict.BranchGLMVS,
+summary.BranchGLMVS
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">Data &lt;- iris
+Fit &lt;- BranchGLM(Sepal.Length ~ ., data = Data, family = "gaussian", 
+link = "identity")
+
+# Doing branch and bound selection 
+VS &lt;- VariableSelection(Fit, type = "branch and bound", metric = "BIC", 
+bestmodels = 10, showprogress = FALSE)
+VS
+
+## Plotting the BIC of the best models
+plot(VS, type = "b")
+
+## Getting the coefficients of the best model according to BIC
+FinalModel &lt;- coef(VS, which = 1)
+FinalModel
+
+# Now doing it in parallel (although it isn't necessary for this dataset)
+parVS &lt;- VariableSelection(Fit, type = "branch and bound", parallel = TRUE, 
+metric = "BIC", bestmodels = 10, showprogress = FALSE)
+
+## Getting the coefficients of the best model according to BIC
+FinalModel &lt;- coef(parVS, which = 1)
+FinalModel
+
+# Using a formula
+formVS &lt;- VariableSelection(Sepal.Length ~ ., data = Data, family = "gaussian", 
+link = "identity", metric = "BIC", type = "branch and bound", bestmodels = 10, 
+showprogress = FALSE)
+
+## Getting the coefficients of the best model according to BIC
+FinalModel &lt;- coef(formVS, which = 1)
+FinalModel
+
+# Using the keep argument
+keepVS &lt;- VariableSelection(Fit, type = "branch and bound", 
+keep = c("Species", "Petal.Width"), metric = "BIC", bestmodels = 4, 
+showprogress = FALSE)
+keepVS
+
+## Getting the coefficients from the fourth best model according to BIC when 
+## keeping Petal.Width and Species in every model
+FinalModel &lt;- coef(keepVS, which = 4)
+FinalModel
+
+# Treating categorical variable beta parameters separately
+## This function automatically groups together parameters from a categorical variable
+## to avoid this, you need to create the indicator variables yourself
+x &lt;- model.matrix(Sepal.Length ~ ., data = iris)
+Sepal.Length &lt;- iris$Sepal.Length
+Data &lt;- cbind.data.frame(Sepal.Length, x[, -1])
+VSCat &lt;- VariableSelection(Sepal.Length ~ ., data = Data, family = "gaussian", 
+link = "identity", metric = "BIC", bestmodels = 10, showprogress = FALSE)
+VSCat
+
+## Plotting results
+plot(VSCat, cex.names = 0.75)
+
+</code></pre>
+
+
+</div>

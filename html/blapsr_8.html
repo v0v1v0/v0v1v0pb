@@ -1,0 +1,183 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>curelps</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Promotion time cure model with Laplace P-splines.</h2>
+
+<h3>Description</h3>
+
+<p>Fits a promotion time cure model with the Laplace-P-spline methodology. The
+routine can be applied to survival data for which a plateau is observed in
+the Kaplan-Meier curve. In this case, the follow-up period is considered to
+be sufficiently long to intrinsically account for long-term survivors and
+hence a cured fraction. The user can separately specify the model covariates
+influencing the cure probability (long-term survival) and the population
+hazard dynamics (short-term survival).
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">curelps(formula, data, K = 30, penorder = 2, tmax = NULL, constr = 6)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>formula</code></td>
+<td>
+<p>A formula object where the ~ operator separates the response
+from the covariates. In a promotion time cure model, it takes the form
+<em>response ~ covariates</em>, where <em>response</em> is a survival object
+returned by the <code>Surv</code> function of the <em>survival</em> package.
+The model covariates influencing the long-term survival can be specified
+in the function <code>lt(.)</code> separated by '+', while the
+covariates affecting the short-term survival can be specified
+in <code>st(.)</code>. For instance, a promotion time cure model with
+covariates specified as <code>lt(x1+x2)+st(x1)</code>, means that <code>x1</code> will
+jointly influence the long- and short-term survival, while <code>x2</code> will
+only influence the long-term survival.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+<p>Optional. A data frame to match the variable names provided in
+<code>formula</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>K</code></td>
+<td>
+<p>A positive integer specifying the number of cubic B-spline
+functions in the basis. Default is <code>K = 30</code> and allowed values
+are <code>10 &lt;= K &lt;= 60</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>penorder</code></td>
+<td>
+<p>The penalty order used on finite differences of the
+coefficients of contiguous B-splines. Can be either 2 for a second-order
+penalty (the default) or 3 for a third-order penalty.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>tmax</code></td>
+<td>
+<p>A user-specified value for the upper bound of the B-spline
+basis. The default is NULL, so that the B-spline basis is specified
+in the interval <em>[0, tup]</em>, where <em>tup</em> is the upper bound of
+the follow-up times. It is required that <em>tmax</em> &gt; <em>tup</em>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>constr</code></td>
+<td>
+<p>Constraint imposed on last B-spline coefficient
+(default is 6).</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The log-baseline hazard is modeled as a linear combination of
+<code>K</code> cubic B-splines as obtained from <code>cubicbs</code>. A
+robust Gamma prior is imposed on the roughness penalty parameter.
+A grid-based approach is used to explore the posterior penalty space and
+the resulting quadrature points serve to compute the approximate (joint)
+posterior of the latent field vector. Point and set estimates of latent
+field elements are obtained from a finite mixture of Gaussian densities.
+The routine centers the columns of the covariate matrix around their mean
+value for numerical stability. See <code>print.curelps</code> for a
+detailed explanation on the output printed by the curelps
+function.
+</p>
+
+
+<h3>Value</h3>
+
+<p>An object of class <code>curelps</code> containing various components
+from the promotion time cure model fit. Details can be found in
+<code>curelps.object</code>. Estimates on the baseline survival,
+population survival (for a chosen covariate profile) and cure probability
+can be obtained with the <code>plot.curelps</code> and
+<code>curelps.extract</code> routines.
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Oswaldo Gressani <a href="mailto:oswaldo_gressani@hotmail.fr">oswaldo_gressani@hotmail.fr</a>.
+</p>
+
+
+<h3>References</h3>
+
+<p>Cox, D.R. (1972). Regression models and life-tables.
+<em>Journal of the Royal Statistical Society: Series B (Methodological)</em>
+<strong>34</strong>(2): 187-202.
+</p>
+<p>Bremhorst, V. and Lambert, P. (2016). Flexible estimation in
+cure survival models using Bayesian P-splines.
+<em>Computational Statistical &amp; Data Analysis</em> <strong>93</strong>: 270-284.
+</p>
+<p>Gressani, O. and Lambert, P. (2018). Fast Bayesian inference
+using Laplace approximations in a flexible promotion time cure model based
+on P-splines. <em>Computational Statistical &amp; Data Analysis</em> <strong>124</strong>:
+151-167.
+</p>
+<p>Lambert, P. and Bremhorst, V. (2019). Estimation and
+identification issues in the promotion time cure model when the same
+covariates influence long- and short-term survival. <em>Biometrical
+Journal</em> <strong>61</strong>(2): 275-289.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>curelps.object</code>, <code>curelps.extract</code>,
+<code>plot.curelps</code>, <code>print.curelps</code>,
+<code>Surv</code>.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+## Fit a promotion time cure model on malignant melanoma data
+
+data(melanoma)
+medthick &lt;- median(melanoma$thickness)
+
+# Kaplan-Meier estimate to check the existence of a plateau
+KapMeier &lt;- survfit(Surv(time,status) ~ 1, data = melanoma)
+plot(KapMeier, mark.time = TRUE, mark = 4, xlab = "Time (in years)")
+
+# Fit with curelps
+fit &lt;- curelps(Surv(time , status) ~ lt(thickness + ulcer) +
+                   st(thickness + ulcer), data = melanoma, K = 40)
+fit
+
+# Cure prediction for median thickness and absence of ulceration
+curelps.extract(fit, time = c(2, 4 ,6, 8), curvetype = "probacure",
+                cred.int = 0.90, covar.profile = c(medthick, 0, medthick, 0))
+
+# Plot of baseline and population survival functions
+opar &lt;- par(no.readonly = TRUE)
+par(mfrow = c(1, 2))
+# Baseline survival
+plot(fit, curvetype = "baseline", plot.cred = FALSE, ylim = c(0,1))
+# Population survival
+plot(fit, curvetype = "population", covar.profile = c(medthick, 0, medthick, 0),
+plot.cred = FALSE, ylim = c(0,1))
+par(opar)
+
+</code></pre>
+
+
+</div>

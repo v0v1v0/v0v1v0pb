@@ -1,0 +1,131 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>fixedcol</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Extract backbone using the Fixed Column Model</h2>
+
+<h3>Description</h3>
+
+<p><code>fixedcol</code> extracts the backbone of a bipartite projection using the Fixed Column Model.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">fixedcol(
+  B,
+  alpha = 0.05,
+  missing.as.zero = FALSE,
+  signed = FALSE,
+  mtc = "none",
+  class = "original",
+  narrative = FALSE
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>B</code></td>
+<td>
+<p>An unweighted bipartite graph, as: (1) an incidence matrix in the form of a matrix or sparse <code>Matrix</code>; (2) an edgelist in the form of a two-column dataframe; (3) an <code>igraph</code> object.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>alpha</code></td>
+<td>
+<p>real: significance level of hypothesis test(s)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>missing.as.zero</code></td>
+<td>
+<p>boolean: should missing edges be treated as edges with zero weight and tested for significance</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>signed</code></td>
+<td>
+<p>boolean: TRUE for a signed backbone, FALSE for a binary backbone (see details)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>mtc</code></td>
+<td>
+<p>string: type of Multiple Test Correction to be applied; can be any method allowed by <code>p.adjust</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>class</code></td>
+<td>
+<p>string: the class of the returned backbone graph, one of c("original", "matrix", "Matrix", "igraph", "edgelist").
+If "original", the backbone graph returned is of the same class as <code>B</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>narrative</code></td>
+<td>
+<p>boolean: TRUE if suggested text &amp; citations should be displayed.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>This <code>fixedcol</code> function compares an edge's observed weight in the projection <code class="reqn">B*t(B)</code> to the
+distribution of weights expected in a projection obtained from a random bipartite graph where
+the <em>column</em> vertex degrees are fixed but the row vertex degrees are allowed to vary.
+</p>
+<p>When <code>signed = FALSE</code>, a one-tailed test (is the weight stronger?) is performed for each edge. The resulting backbone
+contains edges whose weights are significantly <em>stronger</em> than expected in the null model. When <code>signed = TRUE</code>, a
+two-tailed test (is the weight stronger or weaker?) is performed for each edge. The resulting backbone contains
+positive edges for those whose weights are significantly <em>stronger</em>, and negative edges for those whose weights are
+significantly <em>weaker</em>, than expected in the null model.
+</p>
+
+
+<h3>Value</h3>
+
+<p>If <code>alpha</code> != NULL: Binary or signed backbone graph of class <code>class</code>.
+</p>
+<p>If <code>alpha</code> == NULL: An S3 backbone object containing (1) the weighted graph as a matrix, (2) upper-tail p-values as a
+matrix, (3, if <code>signed = TRUE</code>) lower-tail p-values as a matrix, (4, if present) node attributes as a dataframe, and
+(5) several properties of the original graph and backbone model, from which a backbone can subsequently be extracted
+using <code>backbone.extract()</code>.
+</p>
+
+
+<h3>References</h3>
+
+<p>package: Neal, Z. P. (2022). backbone: An R Package to Extract Network Backbones. <em>PLOS ONE, 17</em>, e0269137. <a href="https://doi.org/10.1371/journal.pone.0269137">doi:10.1371/journal.pone.0269137</a>
+</p>
+<p>fixedcol: Neal, Z. P., Domagalski, R., and Sagan, B. (2021). Comparing Alternatives to the Fixed Degree Sequence Model for Extracting the Backbone of Bipartite Projections. <em>Scientific Reports, 11</em>, 23929. <a href="https://doi.org/10.1038/s41598-021-03238-3">doi:10.1038/s41598-021-03238-3</a>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">#A binary bipartite network of 30 agents &amp; 75 artifacts; agents form three communities
+B &lt;- rbind(cbind(matrix(rbinom(250,1,.8),10),
+                 matrix(rbinom(250,1,.2),10),
+                 matrix(rbinom(250,1,.2),10)),
+           cbind(matrix(rbinom(250,1,.2),10),
+                 matrix(rbinom(250,1,.8),10),
+                 matrix(rbinom(250,1,.2),10)),
+           cbind(matrix(rbinom(250,1,.2),10),
+                 matrix(rbinom(250,1,.2),10),
+                 matrix(rbinom(250,1,.8),10)))
+
+P &lt;- B%*%t(B) #An ordinary weighted projection...
+plot(igraph::graph_from_adjacency_matrix(P, mode = "undirected",
+                                         weighted = TRUE, diag = FALSE)) #...is a dense hairball
+
+bb &lt;- fixedcol(B, alpha = 0.05, narrative = TRUE, class = "igraph") #A fixedcol backbone...
+plot(bb) #...is sparse with clear communities
+</code></pre>
+
+
+</div>

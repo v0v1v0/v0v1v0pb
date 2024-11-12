@@ -1,0 +1,431 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>rbayesBLP</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Bayesian Analysis of Random Coefficient Logit Models Using Aggregate Data</h2>
+
+<h3>Description</h3>
+
+<p><code>rbayesBLP</code> implements a hybrid MCMC algorithm for aggregate level sales data in a market with differentiated products. bayesm version 3.1-0 and prior verions contain an error when using instruments with this function; this will be fixed in a future version.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">rbayesBLP(Data, Prior, Mcmc)</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>Data </code></td>
+<td>
+<p>list(X, share, J, Z)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Prior</code></td>
+<td>
+<p>list(sigmasqR, theta_hat, A, deltabar, Ad, nu0, s0_sq, VOmega)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Mcmc </code></td>
+<td>
+<p>list(R, keep, nprint, H, initial_theta_bar, initial_r, initial_tau_sq, initial_Omega, initial_delta, s, cand_cov, tol)</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>A list containing:
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>thetabardraw </code></td>
+<td>
+<p><code class="reqn">K x R/keep</code> matrix of random coefficient mean draws</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Sigmadraw    </code></td>
+<td>
+<p><code class="reqn">K*K x R/keep</code> matrix of random coefficient variance draws</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>rdraw        </code></td>
+<td>
+<p><code class="reqn">K*K x R/keep</code> matrix of <code class="reqn">r</code> draws (same information as in <code>Sigmadraw</code>)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>tausqdraw    </code></td>
+<td>
+<p><code class="reqn">R/keep x 1</code> vector of aggregate demand shock variance draws</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Omegadraw    </code></td>
+<td>
+<p><code class="reqn">2*2 x R/keep</code> matrix of correlated endogenous shock variance draws</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>deltadraw    </code></td>
+<td>
+<p><code class="reqn">I x R/keep</code> matrix of endogenous structural equation coefficient draws</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>acceptrate   </code></td>
+<td>
+<p>scalor of acceptance rate of Metropolis-Hasting</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>s            </code></td>
+<td>
+<p>scale parameter used for Metropolis-Hasting</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>cand_cov     </code></td>
+<td>
+<p>var-cov matrix used for Metropolis-Hasting</p>
+</td>
+</tr>
+</table>
+<h3>Argument Details</h3>
+
+<p><em><code>Data  = list(X, share, J, Z)</code></em> [<code>Z</code> optional]
+</p>
+
+<table>
+<tr>
+<td style="text-align: left;">
+    <code>J:      </code> </td>
+<td style="text-align: left;"> number of alternatives, excluding an outside option </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+    <code>X:      </code> </td>
+<td style="text-align: left;"> <code class="reqn">J*T x K</code> matrix (no outside option, which is normalized to 0). </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+     </td>
+<td style="text-align: left;"> If IV is used, the last column of <code>X</code> is the endogeneous variable. </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+    <code>share:  </code> </td>
+<td style="text-align: left;"> <code class="reqn">J*T</code> vector (no outside option). </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+     </td>
+<td style="text-align: left;"> Note that both the <code>share</code> vector and the <code>X</code> matrix are organized by the <code class="reqn">jt</code> index. </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+     </td>
+<td style="text-align: left;"> <code class="reqn">j</code> varies faster than <code class="reqn">t</code>, i.e. <code class="reqn">(j=1,t=1), (j=2,t=1), ..., (j=J,T=1), ..., (j=J,t=T)</code> </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+    <code>Z:      </code> </td>
+<td style="text-align: left;"> <code class="reqn">J*T x I</code> matrix of instrumental variables (optional)
+    </td>
+</tr>
+</table>
+<p><em><code>Prior = list(sigmasqR, theta_hat, A, deltabar, Ad, nu0, s0_sq, VOmega)</code> [optional]</em>
+</p>
+
+<table>
+<tr>
+<td style="text-align: left;">
+    <code>sigmasqR:   </code> </td>
+<td style="text-align: left;"> <code class="reqn">K*(K+1)/2</code> vector for <code class="reqn">r</code> prior variance (def: diffuse prior for <code class="reqn">\Sigma</code>) </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+    <code>theta_hat:  </code> </td>
+<td style="text-align: left;"> <code class="reqn">K</code> vector for <code class="reqn">\theta_bar</code> prior mean (def: 0 vector) </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+    <code>A:          </code> </td>
+<td style="text-align: left;"> <code class="reqn">K x K</code> matrix for <code class="reqn">\theta_bar</code> prior precision (def: <code>0.01*diag(K)</code>) </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+    <code>deltabar:   </code> </td>
+<td style="text-align: left;"> <code class="reqn">I</code> vector for <code class="reqn">\delta</code> prior mean (def: 0 vector) </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+    <code>Ad:         </code> </td>
+<td style="text-align: left;"> <code class="reqn">I x I</code> matrix for <code class="reqn">\delta</code> prior precision (def: <code>0.01*diag(I)</code>) </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+    <code>nu0:        </code> </td>
+<td style="text-align: left;"> d.f. parameter for <code class="reqn">\tau_sq</code> and <code class="reqn">\Omega</code> prior (def: K+1) </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+    <code>s0_sq:      </code> </td>
+<td style="text-align: left;"> scale parameter for <code class="reqn">\tau_sq</code> prior (def: 1) </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+    <code>VOmega:     </code> </td>
+<td style="text-align: left;"> <code class="reqn">2 x 2</code> matrix parameter for <code class="reqn">\Omega</code> prior (def: <code>matrix(c(1,0.5,0.5,1),2,2)</code>)
+    </td>
+</tr>
+</table>
+<p><em><code>Mcmc  = list(R, keep, nprint, H, initial_theta_bar, initial_r, initial_tau_sq, initial_Omega, initial_delta, s, cand_cov, tol)</code> [only <code>R</code> and <code>H</code> required]</em>
+</p>
+
+<table>
+<tr>
+<td style="text-align: left;">
+    <code>R:                  </code> </td>
+<td style="text-align: left;"> number of MCMC draws </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+    <code>keep:               </code> </td>
+<td style="text-align: left;"> MCMC thinning parameter -- keep every <code>keep</code>th draw (def: 1) </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+    <code>nprint:             </code> </td>
+<td style="text-align: left;"> print the estimated time remaining for every <code>nprint</code>'th draw (def: 100, set to 0 for no print) </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+    <code>H:                  </code> </td>
+<td style="text-align: left;"> number of random draws used for Monte-Carlo integration </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+    <code>initial_theta_bar:  </code> </td>
+<td style="text-align: left;"> initial value of <code class="reqn">\theta_bar</code> (def: 0 vector) </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+    <code>initial_r:          </code> </td>
+<td style="text-align: left;"> initial value of <code class="reqn">r</code> (def: 0 vector) </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+    <code>initial_tau_sq:     </code> </td>
+<td style="text-align: left;"> initial value of <code class="reqn">\tau_sq</code> (def: 0.1) </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+    <code>initial_Omega:      </code> </td>
+<td style="text-align: left;"> initial value of <code class="reqn">\Omega</code> (def: <code>diag(2)</code>) </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+    <code>initial_delta:      </code> </td>
+<td style="text-align: left;"> initial value of <code class="reqn">\delta</code> (def: 0 vector) </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+    <code>s:                  </code> </td>
+<td style="text-align: left;"> scale parameter of Metropolis-Hasting increment (def: automatically tuned) </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+    <code>cand_cov:           </code> </td>
+<td style="text-align: left;"> var-cov matrix of Metropolis-Hasting increment (def: automatically tuned) </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+    <code>tol:                </code> </td>
+<td style="text-align: left;"> convergence tolerance for the contraction mapping (def: 1e-6)
+    </td>
+</tr>
+</table>
+<h3>Model Details</h3>
+
+
+
+<h4>Model and Priors (without IV):</h4>
+
+ 
+<p><code class="reqn">u_ijt = X_jt \theta_i + \eta_jt + e_ijt</code><br><code class="reqn">e_ijt</code> <code class="reqn">\sim</code> type I Extreme Value (logit)<br><code class="reqn">\theta_i</code> <code class="reqn">\sim</code>  <code class="reqn">N(\theta_bar, \Sigma)</code><br><code class="reqn">\eta_jt</code> <code class="reqn">\sim</code> <code class="reqn">N(0, \tau_sq)</code><br></p>
+<p>This structure implies a logit model for each consumer (<code class="reqn">\theta</code>). 
+Aggregate shares (<code>share</code>) are produced by integrating this consumer level 
+logit model over the assumed normal distribution of <code class="reqn">\theta</code>. 
+</p>
+<p><code class="reqn">r</code> <code class="reqn">\sim</code> <code class="reqn">N(0, diag(sigmasqR))</code><br><code class="reqn">\theta_bar</code> <code class="reqn">\sim</code> <code class="reqn">N(\theta_hat, A^-1)</code><br><code class="reqn">\tau_sq</code> <code class="reqn">\sim</code> <code class="reqn">nu0*s0_sq / \chi^2 (nu0)</code><br></p>
+<p>Note: we observe the aggregate level market share, not individual level choices.<br></p>
+<p>Note: <code class="reqn">r</code> is the vector of nonzero elements of cholesky root of <code class="reqn">\Sigma</code>. 
+Instead of <code class="reqn">\Sigma</code> we draw <code class="reqn">r</code>, which is one-to-one correspondence with the positive-definite <code class="reqn">\Sigma</code>.
+</p>
+
+
+
+<h4>Model and Priors (with IV):</h4>
+
+ 
+<p><code class="reqn">u_ijt = X_jt \theta_i + \eta_jt + e_ijt</code><br><code class="reqn">e_ijt</code> <code class="reqn">\sim</code> type I Extreme Value (logit)<br><code class="reqn">\theta_i</code> <code class="reqn">\sim</code>  <code class="reqn">N(\theta_bar, \Sigma)</code><br></p>
+<p><code class="reqn">X_jt = [X_exo_jt, X_endo_jt]</code><br><code class="reqn">X_endo_jt = Z_jt \delta_jt + \zeta_jt</code><br><code class="reqn">vec(\zeta_jt, \eta_jt)</code> <code class="reqn">\sim</code> <code class="reqn">N(0, \Omega)</code><br></p>
+<p><code class="reqn">r</code> <code class="reqn">\sim</code> <code class="reqn">N(0, diag(sigmasqR))</code><br><code class="reqn">\theta_bar</code> <code class="reqn">\sim</code> <code class="reqn">N(\theta_hat, A^-1)</code><br><code class="reqn">\delta</code> <code class="reqn">\sim</code> <code class="reqn">N(deltabar, Ad^-1)</code><br><code class="reqn">\Omega</code> <code class="reqn">\sim</code> <code class="reqn">IW(nu0, VOmega)</code><br></p>
+
+
+
+<h3>MCMC and Tuning Details:</h3>
+
+
+
+<h4>MCMC Algorithm:</h4>
+
+<p>Step 1 (<code class="reqn">\Sigma</code>):<br>
+Given <code class="reqn">\theta_bar</code> and <code class="reqn">\tau_sq</code>, draw <code class="reqn">r</code> via Metropolis-Hasting.<br>
+Covert the drawn <code class="reqn">r</code> to <code class="reqn">\Sigma</code>.<br></p>
+<p>Note: if user does not specify the Metropolis-Hasting increment parameters 
+(<code>s</code> and <code>cand_cov</code>), <code>rbayesBLP</code> automatically tunes the parameters.
+</p>
+<p>Step 2 without IV (<code class="reqn">\theta_bar</code>, <code class="reqn">\tau_sq</code>):<br>
+Given <code class="reqn">\Sigma</code>, draw <code class="reqn">\theta_bar</code> and <code class="reqn">\tau_sq</code> via Gibbs sampler.<br></p>
+<p>Step 2 with IV (<code class="reqn">\theta_bar</code>, <code class="reqn">\delta</code>, <code class="reqn">\Omega</code>):<br>
+Given <code class="reqn">\Sigma</code>, draw <code class="reqn">\theta_bar</code>, <code class="reqn">\delta</code>, and <code class="reqn">\Omega</code> via IV Gibbs sampler.<br></p>
+
+
+
+<h4>Tuning Metropolis-Hastings algorithm:</h4>
+
+<p>r_cand = r_old + s*N(0,cand_cov)<br>
+Fix the candidate covariance matrix as cand_cov0 = diag(rep(0.1, K), rep(1, K*(K-1)/2)).<br>
+Start from s0 = 2.38/sqrt(dim(r))<br></p>
+<p>Repeat{<br>
+Run 500 MCMC chain.<br>   
+If acceptance rate &lt; 30% =&gt; update s1 = s0/5.<br>
+If acceptance rate &gt; 50% =&gt; update s1 = s0*3.<br>
+(Store r draws if acceptance rate is 20~80%.)<br>
+s0 = s1<br>
+} until acceptance rate is 30~50%
+</p>
+<p>Scale matrix C = s1*sqrt(cand_cov0)<br>
+Correlation matrix R = Corr(r draws)<br>
+Use C*R*C as s^2*cand_cov.
+</p>
+
+
+
+<h3>Author(s)</h3>
+
+<p>Peter Rossi and K. Kim, Anderson School, UCLA, <a href="mailto:perossichi@gmail.com">perossichi@gmail.com</a>.</p>
+
+
+<h3>References</h3>
+
+<p>For further discussion, see <em>Bayesian Analysis of Random Coefficient Logit Models Using Aggregate Data</em> by Jiang, Manchanda, and Rossi, <em>Journal of Econometrics</em>, 2009. <br></p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">if(nchar(Sys.getenv("LONG_TEST")) != 0) {
+
+## Simulate aggregate level data
+simulData &lt;- function(para, others, Hbatch) {
+  # Hbatch does the integration for computing market shares
+  #      in batches of size Hbatch
+
+  ## parameters
+  theta_bar &lt;- para$theta_bar
+  Sigma &lt;- para$Sigma
+  tau_sq &lt;- para$tau_sq
+
+  T &lt;- others$T	
+  J &lt;- others$J	
+  p &lt;- others$p	
+  H &lt;- others$H	
+  K &lt;- J + p	
+
+  ## build X	
+  X &lt;- matrix(runif(T*J*p), T*J, p)
+  inter &lt;- NULL
+  for (t in 1:T) { inter &lt;- rbind(inter, diag(J)) }
+  X &lt;- cbind(inter, X)
+
+  ## draw eta ~ N(0, tau_sq)	
+  eta &lt;- rnorm(T*J)*sqrt(tau_sq)
+  X &lt;- cbind(X, eta)
+
+  share &lt;- rep(0, J*T)
+  for (HH in 1:(H/Hbatch)){
+    ## draw theta ~ N(theta_bar, Sigma)
+    cho &lt;- chol(Sigma)
+    theta &lt;- matrix(rnorm(K*Hbatch), nrow=K, ncol=Hbatch)
+    theta &lt;- t(cho)%*%theta + theta_bar
+
+    ## utility
+    V &lt;- X%*%rbind(theta, 1)
+    expV &lt;- exp(V)
+    expSum &lt;- matrix(colSums(matrix(expV, J, T*Hbatch)), T, Hbatch)
+    expSum &lt;- expSum %x% matrix(1, J, 1)
+    choiceProb &lt;- expV / (1 + expSum)
+    share &lt;- share +  rowSums(choiceProb) / H
+  }
+
+  ## the last K+1'th column is eta, which is unobservable.
+  X &lt;- X[,c(1:K)]	
+  return (list(X=X, share=share))
+}
+
+## true parameter
+theta_bar_true &lt;- c(-2, -3, -4, -5)
+Sigma_true &lt;- rbind(c(3,2,1.5,1), c(2,4,-1,1.5), c(1.5,-1,4,-0.5), c(1,1.5,-0.5,3))
+cho &lt;- chol(Sigma_true)
+r_true &lt;- c(log(diag(cho)), cho[1,2:4], cho[2,3:4], cho[3,4]) 
+tau_sq_true &lt;- 1
+
+## simulate data
+set.seed(66)
+T &lt;- 300
+J &lt;- 3
+p &lt;- 1
+K &lt;- 4
+H &lt;- 1000000
+Hbatch &lt;- 5000
+
+dat &lt;- simulData(para=list(theta_bar=theta_bar_true, Sigma=Sigma_true, tau_sq=tau_sq_true),
+                 others=list(T=T, J=J, p=p, H=H), Hbatch)
+X &lt;- dat$X
+share &lt;- dat$share
+
+## Mcmc run
+R &lt;- 2000
+H &lt;- 50
+Data1 &lt;- list(X=X, share=share, J=J)
+Mcmc1 &lt;- list(R=R, H=H, nprint=0)
+set.seed(66)
+out &lt;- rbayesBLP(Data=Data1, Mcmc=Mcmc1)
+
+## acceptance rate
+out$acceptrate
+
+## summary of draws
+summary(out$thetabardraw)
+summary(out$Sigmadraw)
+summary(out$tausqdraw)
+
+### plotting draws
+plot(out$thetabardraw)
+plot(out$Sigmadraw)
+plot(out$tausqdraw)
+}
+</code></pre>
+
+
+</div>

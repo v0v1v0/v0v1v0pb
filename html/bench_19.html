@@ -1,0 +1,77 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>press</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Run setup code and benchmarks across a grid of parameters</h2>
+
+<h3>Description</h3>
+
+<p><code>press()</code> is used to run <code>mark()</code> across a grid of parameters and
+then <em>press</em> the results together.
+</p>
+<p>The parameters you want to set are given as named arguments and a grid of
+all possible combinations is automatically created.
+</p>
+<p>The code to setup and benchmark is given by one unnamed expression (often
+delimited by <code style="white-space: pre;">⁠\{⁠</code>).
+</p>
+<p>If replicates are desired a dummy variable can be used, e.g. <code>rep = 1:5</code> for
+replicates.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">press(..., .grid = NULL)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>If named, parameters to define, if unnamed the expression to run.
+Only one unnamed expression is permitted.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>.grid</code></td>
+<td>
+<p>A pre-built grid of values to use, typically a data.frame or
+tibble. This is useful if you only want to benchmark a subset of all
+possible combinations.</p>
+</td>
+</tr>
+</table>
+<h3>Examples</h3>
+
+<pre><code class="language-R"># Helper function to create a simple data.frame of the specified dimensions
+create_df &lt;- function(rows, cols) {
+  as.data.frame(setNames(
+    replicate(cols, runif(rows, 1, 1000), simplify = FALSE),
+    rep_len(c("x", letters), cols)))
+}
+
+# Run 4 data sizes across 3 samples with 2 replicates (24 total benchmarks)
+press(
+  rows = c(1000, 10000),
+  cols = c(10, 100),
+  rep = 1:2,
+  {
+    dat &lt;- create_df(rows, cols)
+    bench::mark(
+      min_time = .05,
+      bracket = dat[dat$x &gt; 500, ],
+      which = dat[which(dat$x &gt; 500), ],
+      subset = subset(dat, x &gt; 500)
+    )
+  }
+)
+</code></pre>
+
+
+</div>

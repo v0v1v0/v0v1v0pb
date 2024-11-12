@@ -1,0 +1,309 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>submitJobs</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Submit Jobs to the Batch Systems</h2>
+
+<h3>Description</h3>
+
+<p>Submits defined jobs to the batch system.
+</p>
+<p>After submitting the jobs, you can use <code>waitForJobs</code> to wait for the
+termination of jobs or call <code>reduceResultsList</code>/<code>reduceResults</code>
+to collect partial results.
+The progress can be monitored with <code>getStatus</code>.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">submitJobs(
+  ids = NULL,
+  resources = list(),
+  sleep = NULL,
+  reg = getDefaultRegistry()
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>ids</code></td>
+<td>
+<p>[<code>data.frame</code> or <code>integer</code>]<br>
+A <code>data.frame</code> (or <code>data.table</code>)
+with a column named “job.id”.
+Alternatively, you may also pass a vector of integerish job ids.
+If not set, defaults to the return value of <code>findNotSubmitted</code>.
+Invalid ids are ignored.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>resources</code></td>
+<td>
+<p>[<code>named list</code>]<br>
+Computational  resources for the jobs to submit. The actual elements of this list
+(e.g. something like “walltime” or “nodes”) depend on your template file, exceptions are outlined in the section 'Resources'.
+Default settings for a system can be set in the configuration file by defining the named list <code>default.resources</code>.
+Note that these settings are merged by name, e.g. merging <code>list(walltime = 300)</code> into <code>list(walltime = 400, memory = 512)</code>
+will result in <code>list(walltime = 300, memory = 512)</code>.
+Same holds for individual job resources passed as additional column of <code>ids</code> (c.f. section 'Resources').</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>sleep</code></td>
+<td>
+<p>[<code>function(i)</code> | <code>numeric(1)</code>]<br>
+Parameter to control the duration to sleep between temporary errors.
+You can pass an absolute numeric value in seconds or a <code>function(i)</code> which returns the number of seconds to sleep in the <code>i</code>-th
+iteration between temporary errors.
+If not provided (<code>NULL</code>), tries to read the value (number/function) from the configuration file (stored in <code>reg$sleep</code>) or defaults to
+a function with exponential backoff between 5 and 120 seconds.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>reg</code></td>
+<td>
+<p>[<code>Registry</code>]<br>
+Registry. If not explicitly passed, uses the default registry (see <code>setDefaultRegistry</code>).</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>[<code>data.table</code>] with columns “job.id” and “chunk”.
+</p>
+
+
+<h3>Resources</h3>
+
+<p>You can pass arbitrary resources to <code>submitJobs()</code> which then are available in the cluster function template.
+Some resources' names are standardized and it is good practice to stick to the following nomenclature to avoid confusion:
+</p>
+
+<dl>
+<dt>walltime:</dt>
+<dd>
+<p>Upper time limit in seconds for jobs before they get killed by the scheduler. Can be passed as additional column as part of <code>ids</code> to set per-job resources.</p>
+</dd>
+<dt>memory:</dt>
+<dd>
+<p>Memory limit in Mb. If jobs exceed this limit, they are usually killed by the scheduler. Can be passed as additional column as part of <code>ids</code> to set per-job resources.</p>
+</dd>
+<dt>ncpus:</dt>
+<dd>
+<p>Number of (physical) CPUs to use on the slave. Can be passed as additional column as part of <code>ids</code> to set per-job resources.</p>
+</dd>
+<dt>omp.threads:</dt>
+<dd>
+<p>Number of threads to use via OpenMP. Used to set environment variable “OMP_NUM_THREADS”. Can be passed as additional column as part of <code>ids</code> to set per-job resources.</p>
+</dd>
+<dt>pp.size:</dt>
+<dd>
+<p>Maximum size of the pointer protection stack, see <code>Memory</code>.</p>
+</dd>
+<dt>blas.threads:</dt>
+<dd>
+<p>Number of threads to use for the BLAS backend. Used to set environment variables “MKL_NUM_THREADS” and “OPENBLAS_NUM_THREADS”. Can be passed as additional column as part of <code>ids</code> to set per-job resources.</p>
+</dd>
+<dt>measure.memory:</dt>
+<dd>
+<p>Enable memory measurement for jobs. Comes with a small runtime overhead.</p>
+</dd>
+<dt>chunks.as.arrayjobs:</dt>
+<dd>
+<p>Execute chunks as array jobs.</p>
+</dd>
+<dt>pm.backend:</dt>
+<dd>
+<p>Start a <span class="pkg">parallelMap</span> backend on the slave.</p>
+</dd>
+<dt>foreach.backend:</dt>
+<dd>
+<p>Start a <span class="pkg">foreach</span> backend on the slave.</p>
+</dd>
+<dt>clusters:</dt>
+<dd>
+<p>Resource used for Slurm to select the set of clusters to run <code>sbatch</code>/<code>squeue</code>/<code>scancel</code> on.</p>
+</dd>
+</dl>
+<h3>Chunking of Jobs</h3>
+
+<p>Multiple jobs can be grouped (chunked) together to be executed sequentially on the batch system as a single batch job.
+This is especially useful to avoid overburding the scheduler by submitting thousands of jobs simultaneously.
+To chunk jobs together, job ids must be provided as <code>data.frame</code> with columns “job.id” and “chunk” (integer).
+All jobs with the same chunk number will be executed sequentially inside the same batch job.
+The utility functions <code>chunk</code>, <code>binpack</code> and <code>lpt</code>
+can assist in grouping jobs.
+</p>
+
+
+<h3>Array Jobs</h3>
+
+<p>If your cluster supports array jobs, you can set the resource <code>chunks.as.arrayjobs</code> to <code>TRUE</code> in order
+to execute chunks as job arrays on the cluster.
+For each chunk of size <code>n</code>, <span class="pkg">batchtools</span> creates a <code>JobCollection</code> of (possibly heterogeneous) jobs which is
+submitted to the scheduler as a single array job with <code>n</code> repetitions.
+For each repetition, the <code>JobCollection</code> is first read from the file system, then subsetted to the <code>i</code>-th job using
+the environment variable <code>reg$cluster.functions$array.var</code> (depending on the cluster backend, defined automatically) and finally
+executed.
+</p>
+
+
+<h3>Order of Submission</h3>
+
+<p>Jobs are submitted in the order of chunks, i.e. jobs which have chunk number
+<code>sort(unique(ids$chunk))[1]</code> first, then jobs with chunk number <code>sort(unique(ids$chunk))[2]</code>
+and so on. If no chunks are provided, jobs are submitted in the order of <code>ids$job.id</code>.
+</p>
+
+
+<h3>Limiting the Number of Jobs</h3>
+
+<p>If requested, <code>submitJobs</code> tries to limit the number of concurrent jobs of the user by waiting until jobs terminate
+before submitting new ones.
+This can be controlled by setting “max.concurrent.jobs” in the configuration file (see <code>Registry</code>)
+or by setting the resource “max.concurrent.jobs” to the maximum number of jobs to run simultaneously.
+If both are set, the setting via the resource takes precedence over the setting in the configuration.
+</p>
+
+
+<h3>Measuring Memory</h3>
+
+<p>Setting the resource <code>measure.memory</code> to <code>TRUE</code> turns on memory measurement:
+<code>gc</code> is called  directly before and after the job and the difference is
+stored in the internal database. Note that this is just a rough estimate and does
+neither work reliably for external code like C/C++ nor in combination with threading.
+</p>
+
+
+<h3>Inner Parallelization</h3>
+
+<p>Inner parallelization is typically done via threading, sockets or MPI.
+Two backends are supported to assist in setting up inner parallelization.
+</p>
+<p>The first package is <span class="pkg">parallelMap</span>.
+If you set the resource “pm.backend” to “multicore”, “socket” or “mpi”,
+<code>parallelStart</code> is called on the slave before the first job in the chunk is started
+and <code>parallelStop</code> is called after the last job terminated.
+This way, the resources for inner parallelization can be set and get automatically stored just like other computational resources.
+The function provided by the user just has to call <code>parallelMap</code> to start parallelization using the preconfigured backend.
+</p>
+<p>To control the number of CPUs, you have to set the resource <code>ncpus</code>.
+Otherwise <code>ncpus</code> defaults to the number of available CPUs (as reported by (see <code>detectCores</code>))
+on the executing machine for multicore and socket mode and defaults to the return value of <code>mpi.universe.size-1</code> for MPI.
+Your template must be set up to handle the parallelization, e.g. request the right number of CPUs or start R with <code>mpirun</code>.
+You may pass further options like <code>level</code> to <code>parallelStart</code> via the named list “pm.opts”.
+</p>
+<p>The second supported parallelization backend is <span class="pkg">foreach</span>.
+If you set the resource “foreach.backend” to “seq” (sequential mode), “parallel” (<span class="pkg">doParallel</span>) or
+“mpi” (<span class="pkg">doMPI</span>), the requested <span class="pkg">foreach</span> backend is automatically registered on the slave.
+Again, the resource <code>ncpus</code> is used to determine the number of CPUs.
+</p>
+<p>Neither the namespace of <span class="pkg">parallelMap</span> nor the namespace <span class="pkg">foreach</span> are attached.
+You have to do this manually via <code>library</code> or let the registry load the packages for you.
+</p>
+
+
+<h3>Note</h3>
+
+<p>If you a large number of jobs, disabling the progress bar (<code>options(batchtools.progress = FALSE)</code>)
+can significantly increase the performance of <code>submitJobs</code>.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+### Example 1: Submit subsets of jobs
+tmp = makeRegistry(file.dir = NA, make.default = FALSE)
+
+# toy function which fails if x is even and an input file does not exists
+fun = function(x, fn) if (x %% 2 == 0 &amp;&amp; !file.exists(fn)) stop("file not found") else x
+
+# define jobs via batchMap
+fn = tempfile()
+ids = batchMap(fun, 1:20, reg = tmp, fn = fn)
+
+# submit some jobs
+ids = 1:10
+submitJobs(ids, reg = tmp)
+waitForJobs(ids, reg = tmp)
+getStatus(reg = tmp)
+
+# create the required file and re-submit failed jobs
+file.create(fn)
+submitJobs(findErrors(ids, reg = tmp), reg = tmp)
+getStatus(reg = tmp)
+
+# submit remaining jobs which have not yet been submitted
+ids = findNotSubmitted(reg = tmp)
+submitJobs(ids, reg = tmp)
+getStatus(reg = tmp)
+
+# collect results
+reduceResultsList(reg = tmp)
+
+### Example 2: Using memory measurement
+tmp = makeRegistry(file.dir = NA, make.default = FALSE)
+
+# Toy function which creates a large matrix and returns the column sums
+fun = function(n, p) colMeans(matrix(runif(n*p), n, p))
+
+# Arguments to fun:
+args = data.table::CJ(n = c(1e4, 1e5), p = c(10, 50)) # like expand.grid()
+print(args)
+
+# Map function to create jobs
+ids = batchMap(fun, args = args, reg = tmp)
+
+# Set resources: enable memory measurement
+res = list(measure.memory = TRUE)
+
+# Submit jobs using the currently configured cluster functions
+submitJobs(ids, resources = res, reg = tmp)
+
+# Retrive information about memory, combine with parameters
+info = ijoin(getJobStatus(reg = tmp)[, .(job.id, mem.used)], getJobPars(reg = tmp))
+print(unwrap(info))
+
+# Combine job info with results -&gt; each job is aggregated using mean()
+unwrap(ijoin(info, reduceResultsDataTable(fun = function(res) list(res = mean(res)), reg = tmp)))
+
+### Example 3: Multicore execution on the slave
+tmp = makeRegistry(file.dir = NA, make.default = FALSE)
+
+# Function which sleeps 10 seconds, i-times
+f = function(i) {
+  parallelMap::parallelMap(Sys.sleep, rep(10, i))
+}
+
+# Create one job with parameter i=4
+ids = batchMap(f, i = 4, reg = tmp)
+
+# Set resources: Use parallelMap in multicore mode with 4 CPUs
+# batchtools internally loads the namespace of parallelMap and then
+# calls parallelStart() before the job and parallelStop() right
+# after the job last job in the chunk terminated.
+res = list(pm.backend = "multicore", ncpus = 4)
+
+## Not run: 
+# Submit both jobs and wait for them
+submitJobs(resources = res, reg = tmp)
+waitForJobs(reg = tmp)
+
+# If successfull, the running time should be ~10s
+getJobTable(reg = tmp)[, .(job.id, time.running)]
+
+# There should also be a note in the log:
+grepLogs(pattern = "parallelMap", reg = tmp)
+
+## End(Not run)
+</code></pre>
+
+
+</div>

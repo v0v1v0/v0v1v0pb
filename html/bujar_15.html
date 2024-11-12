@@ -1,0 +1,502 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>bujar</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2> Buckley-James Regression </h2>
+
+<h3>Description</h3>
+
+<p>Buckley-James regression for right-censoring survival data with high-dimensional covariates. Including L_2 boosting with componentwise linear least squares, componentwise P-splines, regression trees. Other Buckley-James methods including elastic net, MCP, SCAD, MARS and ACOSSO (ACOSSO not supported for the current version). 
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">bujar(y, cens, x, valdata = NULL, degree = 1, learner = "linear.regression",
+center=TRUE, mimpu = NULL, iter.bj = 20, max.cycle = 5, nu = 0.1, mstop = 50, 
+twin = FALSE, mstop2= 100, tuning = TRUE, cv = FALSE, nfold = 5, method = "corrected", 
+vimpint = TRUE,gamma = 3, lambda=NULL, whichlambda=NULL, lamb = 0, s = 0.5, nk = 4, 
+wt.pow = 1, theta = NULL, rel.inf = FALSE, tol = .Machine$double.eps, n.cores= 2, 
+rng=123, trace = FALSE)
+## S3 method for class 'bujar'
+print(x, ...)
+## S3 method for class 'bujar'
+predict(object, newx=NULL, ...)
+## S3 method for class 'bujar'
+plot(x, ...)
+## S3 method for class 'bujar'
+coef(object, ...)
+## S3 method for class 'bujar'
+summary(object, ...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>y</code></td>
+<td>
+<p> survival time</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>cens</code></td>
+<td>
+<p> censoring indicator, must be 0 or 1 with 0=alive, 1=dead</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p> covariate matrix</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>object</code></td>
+<td>
+<p> an object of class <code>"bujar"</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>newx</code></td>
+<td>
+<p> covariate matrix for prediction</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>valdata</code></td>
+<td>
+<p> test data, which must have the first column as survival time, second column as censoring indicator, and the remaining columns similar to same x.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>degree</code></td>
+<td>
+<p> mars/tree/linear regression degree of interaction; if 2, second-order interaction,
+if degree=1, additive model;</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>learner</code></td>
+<td>
+<p> methods used for BJ regression.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>center</code></td>
+<td>
+<p> center covariates</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>mimpu</code></td>
+<td>
+<p> initial estimate. If TRUE, mean-imputation;
+FALSE, imputed with the marginal best variable linear regression; if NULL, 0.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>iter.bj</code></td>
+<td>
+<p> number of B-J iteration</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>max.cycle</code></td>
+<td>
+<p> max cycle allowed </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nu</code></td>
+<td>
+<p> step-size boosting parameter</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>mstop</code></td>
+<td>
+<p> boosting tuning parameters. It can be one number or have the length <code>iter.bj</code>+<code>max.cycle</code>. If <code>cv=TRUE</code>, then <code>mstop</code> is the maximum number of tuning parameter</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>twin</code></td>
+<td>
+<p> logical, if TRUE, twin boosting</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>mstop2</code></td>
+<td>
+<p> twin boosting tuning parameter</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>tuning</code></td>
+<td>
+<p> logical value. if TRUE, the tuning parameter will be selected by cv or AIC/BIC methods. Ignored if <code>twin=TRUE</code> for which no tuning parameter selection is implemented </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>cv</code></td>
+<td>
+<p> logical value. if TRUE, cross-validation for tuning parameter, only used if <code>tuning=TRUE</code>. If <code>tuning=FALSE</code> or <code>twin=TRUE</code>, then ignored</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nfold</code></td>
+<td>
+<p> number of fold of cv</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>method</code></td>
+<td>
+<p> boosting tuning parameter selection method in AIC</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>vimpint</code></td>
+<td>
+<p> logical value. If TRUE, compute variable importance and interaction measures for MARS if <code>learner="mars"</code> and <code>degree</code> &gt; 1. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>gamma</code></td>
+<td>
+<p> MCP, or SCAD gamma tuning parameter</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>lambda</code></td>
+<td>
+<p> MCP, or SCAD lambda tuning parameter</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>whichlambda</code></td>
+<td>
+<p> which lambda used for MCP or SCAD lambda tuning parameter </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>lamb</code></td>
+<td>
+<p> elastic net lambda tuning parameter, only used if <code>learner="enet"</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>s</code></td>
+<td>
+<p> the second enet tuning parameter, which is a fraction between (0, 1), only used if <code>learne="enet"</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nk</code></td>
+<td>
+<p> number of basis function for <code>learner="mars"</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>wt.pow</code></td>
+<td>
+<p> not used but kept for historical reasons, only for <code>learner=ACOSSO</code>. This is a parameter (power of weight). It might be chosen by CV from c(0, 1.0, 1.5, 2.0, 2.5, 3.0). If wt.pow=0, then this is COSSO method</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>theta</code></td>
+<td>
+<p> For <code>learner="acosso"</code>, not used now. A numerical vector with 0 or 1. 0 means the variable not included and 1 means included. See Storlie et al. (2009).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>rel.inf</code></td>
+<td>
+<p> logical value. if TRUE, variable importance measure and interaction importance measure computed</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>tol</code></td>
+<td>
+<p> convergency criteria </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>n.cores</code></td>
+<td>
+<p>The number of CPU cores to use. The cross-validation loop
+will attempt to send different CV folds off to different cores. Used for <code>learner="tree"</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>rng</code></td>
+<td>
+<p> a number to be used for random number generation in boosting trees </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>trace</code></td>
+<td>
+<p> logical value. If TRUE, print out interim computing results</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p> additional arguments used in estimation methods, for instance, trees. </p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>Buckley-James regression for right-censoring survival data with high-dimensional covariates. Including L_2 boosting with componentwise linear least squares, componentwise P-splines, regression trees. Other Buckley-James methods including elastic net, SCAD and MCP. <code>learner="enet"</code> and <code>learner="enet2"</code> use two different implementations of LASSO. Some of these methods are discussed in Wang and Wang (2010) and the references therein. Also see the references below.
+</p>
+
+
+<h3>Value</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p> original covariates</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>y</code></td>
+<td>
+<p> survival time</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>cens</code></td>
+<td>
+<p> censoring indicator</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ynew</code></td>
+<td>
+<p> imputed y</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>yhat</code></td>
+<td>
+<p> estimated y from ynew</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>pred.bj</code></td>
+<td>
+<p> estimated y from the testing sample</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>res.fit</code></td>
+<td>
+<p> model fitted with the learner</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>learner</code></td>
+<td>
+<p> original learner used</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>degree</code></td>
+<td>
+<p> =1, additive model, degree=2, second-order interaction</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>mse</code></td>
+<td>
+<p> MSE at each BJ iteration, only available in simulations, or when valdata provided</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>mse.bj</code></td>
+<td>
+<p> MSE from training data at the BJ termination</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>mse.bj.val</code></td>
+<td>
+<p>MSE with valdata</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>mse.all</code></td>
+<td>
+<p> a vector of MSE for uncensoring data at BJ iteration</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nz.bj.iter</code></td>
+<td>
+<p> number of selected covariates at each BJ iteration</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nz.bj</code></td>
+<td>
+<p> number of selected covariates at the claimed BJ termination</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>xselect</code></td>
+<td>
+<p> a vector of dimension of covariates, either 1 (covariate selected) or 0 (not selected)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>coef.bj</code></td>
+<td>
+<p> estimated coefficients with linear model</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>vim</code></td>
+<td>
+<p> a vector of length of number of column of x, variable importance, between 0 to 100</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>interactions</code></td>
+<td>
+<p> measure of strength of interactions</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ybstdiff</code></td>
+<td>
+<p> largest absolute difference of estimated y. Useful to monitor convergency</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ybstcon</code></td>
+<td>
+<p> a vector with length of BJ iteration each is a convergency measure</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>cycleperiod</code></td>
+<td>
+<p> number of cycle of BJ iteration</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>cycle.coef.diff</code></td>
+<td>
+<p> within cycle of BJ, the maximum difference of coefficients for BJ boosting</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nonconv</code></td>
+<td>
+<p> logical value. if TRUE, non-convergency</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>fnorm2</code></td>
+<td>
+<p> value of L_2 norm, can be useful to access convergency</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>mselect</code></td>
+<td>
+<p> a vector of length of BJ iteration, each element is the tuning parameter mstop</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>contype</code></td>
+<td>
+<p> 0 (converged), 1, not converged but cycle found, 2, not converged and max iteration reached.</p>
+</td>
+</tr>
+</table>
+<h3>Author(s)</h3>
+
+<p> Zhu Wang </p>
+
+
+<h3>References</h3>
+
+ 
+<p>Zhu Wang and C.Y. Wang (2010),
+Buckley-James Boosting for Survival Analysis with High-Dimensional
+Biomarker Data.
+<em>Statistical Applications in Genetics and Molecular Biology</em>,
+Vol. 9 : Iss. 1, Article 24.
+</p>
+<p>Peter Buhlmann and Bin Yu (2003),
+Boosting with the L2 loss: regression and classification.
+<em>Journal of the American Statistical Association</em>, <b>98</b>,
+324–339.
+</p>
+<p>Peter Buhlmann (2006), Boosting for high-dimensional linear models.
+<em>The Annals of Statistics</em>, <b>34</b>(2), 559–583.
+</p>
+<p>Peter Buhlmann and Torsten Hothorn (2007),
+Boosting algorithms: regularization, prediction and model fitting.
+<em>Statistical Science</em>, <b>22</b>(4), 477–505.
+</p>
+<p>J. Friedman (1991), Multivariate Adaptive Regression Splines (with
+discussion) .
+<em>Annals of Statistics</em>, <b>19</b>/1, 1–141.
+</p>
+<p>J.H. Friedman, T. Hastie and R. Tibshirani (2000), Additive Logistic Regression:
+a Statistical View of Boosting. <em>Annals of Statistics</em> <b>28</b>(2):337-374.
+</p>
+<p>C. Storlie, H. Bondell, B. Reich and H. H. Zhang (2009),
+Surface Estimation, Variable Selection, and the Nonparametric Oracle
+Property.
+<em>Statistica Sinica</em>, to appear.
+</p>
+<p>Sijian Wang, Bin Nan, Ji Zhu, and David G. Beer (2008),
+Doubly penalized Buckley-James Method for Survival Data with High-Dimensional
+Covariates.
+<em>Biometrics</em>,
+<b>64</b>:132-140.
+</p>
+<p>H. Zou and T. Hastie (2005), Regularization and variable selection via the elastic net.
+<em>Journal of the Royal Statistical Society</em>, Series B, <b>67</b>, 301-320.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">data("wpbc", package = "TH.data")
+wpbc2 &lt;- wpbc[, 1:12]
+wpbc2$status &lt;- as.numeric(wpbc2$status) - 1
+fit &lt;- bujar(y=log(wpbc2$time),cens=wpbc2$status, x= wpbc2[, -(1:2)])
+print(fit)
+coef(fit)
+pr &lt;- predict(fit)
+plot(fit)
+fit &lt;- bujar(y=log(wpbc2$time),cens=wpbc2$status, x= wpbc2[, -(1:2)], tuning = TRUE)
+## Not run: 
+fit &lt;- bujar(y=log(wpbc2$time),cens=wpbc2$status, x=wpbc2[, -(1:2)], learner="pspline")
+fit &lt;- bujar(y=log(wpbc2$time),cens=wpbc2$status, x=wpbc2[, -(1:2)], 
+ learner="tree", degree=2)
+### select tuning parameter for "enet"
+tmp &lt;- gcv.enet(y=log(wpbc2$time), cens=wpbc2$status, x=wpbc2[, -(1:2)])
+fit &lt;- bujar(y=log(wpbc2$time),cens=wpbc2$status, x=wpbc2[, -(1:2)], learner="enet", 
+lamb = tmp$lambda, s=tmp$s)
+
+fit &lt;- bujar(y=log(wpbc2$time),cens=wpbc2$status, x=wpbc2[, -(1:2)], learner="mars", 
+degree=2)
+summary(fit)
+
+## End(Not run)
+</code></pre>
+
+
+</div>

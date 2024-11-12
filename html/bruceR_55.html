@@ -1,0 +1,210 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>model_summary</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Tidy report of regression models.</h2>
+
+<h3>Description</h3>
+
+<p>Tidy report of regression models (most model types are supported).
+This function uses:
+</p>
+
+<ul>
+<li> <p><code>texreg::screenreg()</code>
+</p>
+</li>
+<li> <p><code>texreg::htmlreg()</code>
+</p>
+</li>
+<li> <p><code>MuMIn::std.coef()</code>
+</p>
+</li>
+<li> <p><code>MuMIn::r.squaredGLMM()</code>
+</p>
+</li>
+<li> <p><code>performance::r2_mcfadden()</code>
+</p>
+</li>
+<li> <p><code>performance::r2_nagelkerke()</code>
+</p>
+</li>
+</ul>
+<h3>Usage</h3>
+
+<pre><code class="language-R">model_summary(
+  model.list,
+  std = FALSE,
+  digits = 3,
+  file = NULL,
+  check = TRUE,
+  zero = ifelse(std, FALSE, TRUE),
+  modify.se = NULL,
+  modify.head = NULL,
+  line = TRUE,
+  bold = 0,
+  ...
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>model.list</code></td>
+<td>
+<p>A single model or a list of (various types of) models.
+Most types of regression models are supported!</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>std</code></td>
+<td>
+<p>Standardized coefficients? Defaults to <code>FALSE</code>.
+Only applicable to linear models and linear mixed models.
+Not applicable to generalized linear (mixed) models.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>digits</code></td>
+<td>
+<p>Number of decimal places of output. Defaults to <code>3</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>file</code></td>
+<td>
+<p>File name of MS Word (<code>.doc</code>).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>check</code></td>
+<td>
+<p>If there is only one model in <code>model.list</code>, it checks for multicollinearity
+using <code>performance::check_collinearity()</code>.
+You may turn it off by setting <code>check=FALSE</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>zero</code></td>
+<td>
+<p>Display "0" before "."? Defaults to <code>TRUE</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>modify.se</code></td>
+<td>
+<p>Replace standard errors.
+Useful if you need to replace raw SEs with robust SEs.
+New SEs should be provided as a list of numeric vectors.
+See usage in <code>texreg::screenreg()</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>modify.head</code></td>
+<td>
+<p>Replace model names.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>line</code></td>
+<td>
+<p>Lines look like true line (<code>TRUE</code>) or <code>=== --- ===</code> (<code>FALSE</code>).
+Only relevant to R Console output.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>bold</code></td>
+<td>
+<p>The <em>p</em>-value threshold below which the coefficients will be formatted in bold.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Other arguments passed to
+<code>texreg::screenreg()</code> or
+<code>texreg::htmlreg()</code>.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>Invisibly return the output (character string).
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>print_table</code> (print simple table)
+</p>
+<p><code>GLM_summary</code>
+</p>
+<p><code>HLM_summary</code>
+</p>
+<p><code>med_summary</code>
+</p>
+<p><code>lavaan_summary</code>
+</p>
+<p><code>PROCESS</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">#### Example 1: Linear Model ####
+lm1 = lm(Temp ~ Month + Day, data=airquality)
+lm2 = lm(Temp ~ Month + Day + Wind + Solar.R, data=airquality)
+model_summary(lm1)
+model_summary(lm2)
+model_summary(list(lm1, lm2))
+model_summary(list(lm1, lm2), std=TRUE, digits=2)
+model_summary(list(lm1, lm2), file="OLS Models.doc")
+unlink("OLS Models.doc")  # delete file for code check
+
+#### Example 2: Generalized Linear Model ####
+glm1 = glm(case ~ age + parity,
+           data=infert, family=binomial)
+glm2 = glm(case ~ age + parity + education + spontaneous + induced,
+           data=infert, family=binomial)
+model_summary(list(glm1, glm2))  # "std" is not applicable to glm
+model_summary(list(glm1, glm2), file="GLM Models.doc")
+unlink("GLM Models.doc")  # delete file for code check
+
+#### Example 3: Linear Mixed Model ####
+library(lmerTest)
+hlm1 = lmer(Reaction ~ (1 | Subject), data=sleepstudy)
+hlm2 = lmer(Reaction ~ Days + (1 | Subject), data=sleepstudy)
+hlm3 = lmer(Reaction ~ Days + (Days | Subject), data=sleepstudy)
+model_summary(list(hlm1, hlm2, hlm3))
+model_summary(list(hlm1, hlm2, hlm3), std=TRUE)
+model_summary(list(hlm1, hlm2, hlm3), file="HLM Models.doc")
+unlink("HLM Models.doc")  # delete file for code check
+
+#### Example 4: Generalized Linear Mixed Model ####
+library(lmerTest)
+data.glmm = MASS::bacteria
+glmm1 = glmer(y ~ trt + week + (1 | ID), data=data.glmm, family=binomial)
+glmm2 = glmer(y ~ trt + week + hilo + (1 | ID), data=data.glmm, family=binomial)
+model_summary(list(glmm1, glmm2))  # "std" is not applicable to glmm
+model_summary(list(glmm1, glmm2), file="GLMM Models.doc")
+unlink("GLMM Models.doc")  # delete file for code check
+
+#### Example 5: Multinomial Logistic Model ####
+library(nnet)
+d = airquality
+d$Month = as.factor(d$Month)  # Factor levels: 5, 6, 7, 8, 9
+mn1 = multinom(Month ~ Temp, data=d, Hess=TRUE)
+mn2 = multinom(Month ~ Temp + Wind + Ozone, data=d, Hess=TRUE)
+model_summary(mn1)
+model_summary(mn2)
+model_summary(mn2, file="Multinomial Logistic Model.doc")
+unlink("Multinomial Logistic Model.doc")  # delete file for code check
+
+</code></pre>
+
+
+</div>

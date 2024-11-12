@@ -1,0 +1,170 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>GLM design</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Create a design matrix for linear model analysis</h2>
+
+<h3>Description</h3>
+
+<p><code>brainGraph_GLM_design</code> takes a <code>data.table</code> of covariates and
+returns a <em>design matrix</em> to be used in linear model analysis.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">brainGraph_GLM_design(covars, coding = c("dummy", "effects",
+  "cell.means"), factorize = TRUE, binarize = NULL, int = NULL,
+  mean.center = FALSE, center.how = c("all", "within-groups"),
+  center.by = getOption("bg.group"))
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>covars</code></td>
+<td>
+<p>A <code>data.table</code> of covariates</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>coding</code></td>
+<td>
+<p>Character string indicating how factor variables will be coded.
+Default: <code>'dummy'</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>factorize</code></td>
+<td>
+<p>Logical indicating whether to convert <em>character</em>
+columns into <em>factor</em>. Default: <code>TRUE</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>binarize</code></td>
+<td>
+<p>Character vector specifying the column name(s) of the
+covariate(s) to be converted from type <code>factor</code> to <code>numeric</code>.
+Default: <code>NULL</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>int</code></td>
+<td>
+<p>Character vector specifying the column name(s) of the
+covariate(s) to test for an interaction. Default: <code>NULL</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>mean.center</code></td>
+<td>
+<p>Logical indicating whether to mean center non-factor
+variables. Default: <code>FALSE</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>center.how</code></td>
+<td>
+<p>Character string indicating whether to use the grand mean
+or groupwise means. Default: <code>'all'</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>center.by</code></td>
+<td>
+<p>Character string indicating which grouping variable to use
+for calculating means (if applicable). Default: <code>'Group'</code></p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>There are three different ways to code factors: <em>dummy</em>, <em>effects</em>,
+or <em>cell-means</em> (chosen by the argument <code>coding</code>). <em>Effects</em>
+coding is sometimes referred to as <em>deviation</em> coding. <em>Dummy</em>
+coding is the default when calling <code>lm</code>. To understand the difference
+between these, see Chapter 8 of the User Guide.
+</p>
+
+
+<h3>Value</h3>
+
+<p>A numeric matrix. Rownames are subject ID's and column names are the
+variable names. There will be additional attributes recording the
+<code>coding</code>, <code>factorize</code>, and <code>mean.center</code> function arguments.
+There will also be attributes for <code>binarize</code> and <code>int</code> if they
+are not <code>NULL</code>, and <code>center.how</code> and <code>center.by</code> if
+<code>mean.center=TRUE</code>.
+</p>
+
+
+<h3>Character variables</h3>
+
+<p>The default behavior is to convert all character columns (excluding the Study
+ID column and any that you list in the <code>binarize</code> argument) to factor
+variables. To change this, set <code>factorize=FALSE</code>. So, if your covariates
+include multiple character columns, but you want to convert <em>Scanner</em> to
+binary instead of a factor, you may still specify <code>binarize='Scanner'</code>
+and get the expected result. <code>binarize</code> will convert the given factor
+variable(s) into numeric variable(s), which is performed <em>before</em>
+centering (if applicable).
+</p>
+
+
+<h3>Centering</h3>
+
+<p>The argument <code>mean.center</code> will mean-center (i.e., subtract the mean of
+from each variable) any non-factor variables (including any dummy/indicator
+covariates). This is done <em>after</em> “factorizing” and
+“binarizing”. If <code>center.how='all'</code>, then the “grand mean”
+will be used; otherwise, the groupwise means will be used. The grouping
+variable is determined by <code>center.by</code> and is by default <code>'Group'</code>.
+</p>
+
+
+<h3>Interactions</h3>
+
+<p><code>int</code> specifies which variables should interact with one another. This
+argument accepts both numeric/continuous (e.g., <em>Age</em>) and factor
+variables (e.g., <em>Sex</em>). All interaction combinations will be generated:
+if you supply 3 variables, all two-way and the single three-way interaction
+will be generated. This variable <em>must</em> have at least two elements; it
+is otherwise ignored. It is generally recommended that centering be performed
+when including interaction terms.
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Christopher G. Watson, <a href="mailto:cgwatson@bu.edu">cgwatson@bu.edu</a>
+</p>
+
+
+<h3>See Also</h3>
+
+<p>Other GLM functions: <code>GLM fits</code>,
+<code>GLM</code>, <code>mtpc</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## Not run: 
+# Recreate design matrix when "outcome == measure"
+DT &lt;- res.glm$DT.Xy[region == levels(region)[1L],
+                    !c('region', res.glm$outcome),
+                    with=FALSE]
+X &lt;- do.call(brainGraph_GLM_design, c(list(covars=DT),
+                                      attributes(res.glm$X)[-c(1L, 2L)]))
+all.equal(X, res.glm$X)
+
+## End(Not run)
+</code></pre>
+
+
+</div>

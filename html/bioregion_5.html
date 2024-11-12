@@ -1,0 +1,329 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>find_optimal_n</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Search for an optimal number of clusters in a list of partitions</h2>
+
+<h3>Description</h3>
+
+<p>This function aims at optimizing one or several criteria on a set of
+ordered partitions. It is usually applied to find one (or several) optimal
+number(s) of clusters on, for example, a hierarchical tree to cut, or a
+range of partitions obtained from k-means or PAM. Users are advised to be
+careful if applied in other cases (e.g., partitions which are not ordered in
+an increasing or decreasing sequence, or partitions which are not related
+to each other).
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">find_optimal_n(
+  partitions,
+  metrics_to_use = "all",
+  criterion = "elbow",
+  step_quantile = 0.99,
+  step_levels = NULL,
+  step_round_above = TRUE,
+  metric_cutoffs = c(0.5, 0.75, 0.9, 0.95, 0.99, 0.999),
+  n_breakpoints = 1,
+  plot = TRUE
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>partitions</code></td>
+<td>
+<p>a <code>bioregion.partition.metrics</code> object (output from
+<code>partition_metrics()</code> or a <code>data.frame</code> with the first two
+columns named "K" (partition name) and "n_clusters" (number of clusters) and
+the following columns containing evaluation metrics (numeric values)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>metrics_to_use</code></td>
+<td>
+<p>character string or vector of character strings
+indicating upon which metric(s) in <code>partitions</code> the optimal number of
+clusters should be calculated. Defaults to <code>"all"</code> which means all
+metrics available in <code>partitions</code> will be used</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>criterion</code></td>
+<td>
+<p>character string indicating the criterion to be used to
+identify optimal number(s) of clusters. Available methods currently include
+<code>"elbow"</code>,
+<code>"increasing_step"</code>, <code>"decreasing_step"</code>, <code>"cutoff"</code>,
+<code>"breakpoints"</code>, <code>"min"</code> or
+<code>"max"</code>. Default is <code>"elbow"</code>. See details.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>step_quantile</code></td>
+<td>
+<p>if <code>"increasing_step"</code> or <code>"decreasing_step"</code>,
+specify here the quantile
+of differences between two consecutive k to be used as the cutoff to
+identify the most important steps in <code>eval_metric</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>step_levels</code></td>
+<td>
+<p>if <code>"increasing_step"</code> or <code>"decreasing_step"</code>, specify
+here the number of largest steps to keep as cutoffs.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>step_round_above</code></td>
+<td>
+<p>a <code>boolean</code> indicating if the optimal number of
+clusters should be picked above or below the identified steps. Indeed, each
+step will correspond to a sudden increase or decrease between partition X &amp;
+partition X+1: should the optimal partition be X+1
+(<code>step_round_above = TRUE</code>) or X (<code>step_round_above = FALSE</code>?
+Defaults to <code>TRUE</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>metric_cutoffs</code></td>
+<td>
+<p>if <code>criterion = "cutoff"</code>, specify here the cutoffs
+of <code>eval_metric</code> at which the number of clusters should be extracted</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>n_breakpoints</code></td>
+<td>
+<p>specify here the number of breakpoints to look for in
+the curve. Defaults to 1</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>plot</code></td>
+<td>
+<p>a boolean indicating if a plot of the first <code>eval_metric</code>
+should be drawn with the identified optimal numbers of cutoffs</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<script id="MathJax-script" async src="../../mathjaxr/doc/mathjax/es5/tex-chtml-full.js"></script><p>This function explores the relationship evaluation metric ~ number of
+clusters, and a criterion is applied to search an optimal number of
+clusters.
+</p>
+<p><strong>Please read the note section about the following criteria.</strong>
+</p>
+<p>Foreword:
+</p>
+<p>Here we implemented a set of criteria commonly found in the literature or
+recommended in the bioregionalisation literature. Nevertheless, we also
+advocate to move
+beyond the "Search one optimal number of clusters" paradigm, and consider
+investigating "multiple optimal numbers of clusters". Indeed, using only one
+optimal number of clusters may simplify the natural complexity of biological
+datasets, and, for example, ignore the often hierarchical / nested nature of
+bioregionalisations. Using multiple partitions likely avoids this
+oversimplification bias and may convey more information.
+See, for example, the reanalysis of Holt et al. (2013)
+by (Ficetola et al. 2017), where they used deep, intermediate
+and shallow cuts.
+</p>
+<p>Following this rationale, several of the criteria implemented here can/will
+return multiple "optimal" numbers of clusters, depending on user choices.
+</p>
+<p><strong>Criteria to find optimal number(s) of clusters</strong>
+</p>
+
+<ul>
+<li>
+<p><code>elbow</code>:
+This method consists in finding one elbow in the evaluation metric curve, as
+is commonly done in clustering analyses. The idea is to approximate the
+number of clusters at which the evaluation metric no longer increments.It is
+based on a fast method finding the maximum distance between the curve and a
+straight line linking the minimum and maximum number of points. The code we
+use here is based on code written by Esben Eickhardt available here
+<a href="https://stackoverflow.com/questions/2018178/finding-the-best-trade-off-point-on-a-curve/42810075#42810075">https://stackoverflow.com/questions/2018178/finding-the-best-trade-off-point-on-a-curve/42810075#42810075</a>.
+The code has been modified to work on both increasing and decreasing
+evaluation metrics.
+</p>
+</li>
+<li>
+<p><code>increasing_step</code> or <code>decreasing_step</code>:
+This method consists in identifying clusters at the most important changes,
+or steps, in the evaluation metric. The objective can be to either look for
+largest increases (<code>increasing_step</code>) or largest decreases
+<code>decreasing_step</code>. Steps are calculated based on the pairwise differences
+between partitions. Therefore, this is relative to the distribution of
+differences in the evaluation metric over the tested partitions. Specify
+<code>step_quantile</code> as the quantile cutoff above which steps will be selected as
+most important (by default, 0.99, i.e. the largest 1\
+selected).Alternatively, you can also choose to specify the number of top
+steps to keep, e.g. to keep the largest three steps, specify
+<code>step_level = 3</code>. Basically this method will emphasize the most important
+changes in the evaluation metric as a first approximation of where important
+cuts can be chosen.
+</p>
+<p>**Please note that you should choose between <code>increasing_step</code> and
+<code>decreasing_step</code> depending on the nature of your evaluation metrics. For
+example, for metrics that are monotonously decreasing (e.g., endemism
+metrics <code>"avg_endemism" &amp; "tot_endemism"</code>) with the number of clusters
+should n_clusters, you should choose <code>decreasing_step</code>. On the contrary, for
+metrics that are monotonously increasing with the number of clusters (e.g.,
+<code>"pc_distance"</code>), you should choose <code>increasing_step</code>. **
+
+</p>
+</li>
+<li>
+<p><code>cutoffs</code>:
+This method consists in specifying the cutoff value(s) in the evaluation
+metric from which the number(s) of clusters should be derived. This is the
+method used by (Holt et al. 2013). Note, however, that the
+cut-offs suggested by Holt et al. (0.9, 0.95, 0.99, 0.999) may be only
+relevant at very large spatial scales, and lower cut-offs should be
+considered at finer spatial scales.
+
+</p>
+</li>
+<li>
+<p><code>breakpoints</code>:
+This method consists in finding break points in the curve using a segmented
+regression. Users have to specify the number of expected break points in
+<code>n_breakpoints</code> (defaults to 1). Note that since this method relies on a
+regression model, it should probably not be applied with a low number of
+partitions.
+</p>
+</li>
+<li>
+<p><code>min</code> &amp; <code>max</code>:
+Picks the optimal partition(s) respectively at the minimum or maximum value
+of the evaluation metric.
+</p>
+</li>
+</ul>
+<h3>Value</h3>
+
+<p>a <code>list</code> of class <code>bioregion.optimal.n</code> with three elements:
+</p>
+
+<ul>
+<li>
+<p><code>args</code>: input arguments
+
+</p>
+</li>
+<li>
+<p><code>evaluation_df</code>: the input evaluation data.frame appended with
+<code>boolean</code> columns identifying the optimal numbers of clusters
+
+</p>
+</li>
+<li>
+<p><code>optimal_nb_clusters</code>: a list containing the optimal number(s)
+of cluster(s) for each metric specified in <code>"metrics_to_use"</code>, based on
+the chosen <code>criterion</code>
+
+</p>
+</li>
+<li>
+<p><code>plot</code>: if requested, the plot will be stored in this slot</p>
+</li>
+</ul>
+<h3>Note</h3>
+
+<p>Please note that finding the optimal number of clusters is a procedure
+which normally requires decisions from the users, and as such can hardly be
+fully automatized. Users are strongly advised to read the references
+indicated below to look for guidance on how to choose their optimal
+number(s) of clusters. Consider the "optimal" numbers of clusters returned
+by this function as first approximation of the best numbers for your
+bioregionalisation.
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Boris Leroy (<a href="mailto:leroy.boris@gmail.com">leroy.boris@gmail.com</a>),
+Maxime Lenormand (<a href="mailto:maxime.lenormand@inrae.fr">maxime.lenormand@inrae.fr</a>) and
+Pierre Denelle (<a href="mailto:pierre.denelle@gmail.com">pierre.denelle@gmail.com</a>)
+</p>
+
+
+<h3>References</h3>
+
+<p>Castro-Insua A, Gómez-Rodríguez C, Baselga A (2018).
+“Dissimilarity measures affected by richness differences yield biased delimitations of biogeographic realms.”
+<em>Nature Communications</em>, <b>9</b>(1), 9–11.
+</p>
+<p>Ficetola GF, Mazel F, Thuiller W (2017).
+“Global determinants of zoogeographical boundaries.”
+<em>Nature Ecology &amp; Evolution</em>, <b>1</b>, 0089.
+</p>
+<p>Holt BG, Lessard J, Borregaard MK, Fritz SA, Araújo MB, Dimitrov D, Fabre P, Graham CH, Graves GR, Jønsson Ka, Nogués-Bravo D, Wang Z, Whittaker RJ, Fjeldså J, Rahbek C (2013).
+“An update of Wallace's zoogeographic regions of the world.”
+<em>Science</em>, <b>339</b>(6115), 74–78.
+</p>
+<p>Kreft H, Jetz W (2010).
+“A framework for delineating biogeographical regions based on species distributions.”
+<em>Journal of Biogeography</em>, <b>37</b>, 2029–2053.
+</p>
+<p>Langfelder P, Zhang B, Horvath S (2008).
+“Defining clusters from a hierarchical cluster tree: the Dynamic Tree Cut package for R.”
+<em>BIOINFORMATICS</em>, <b>24</b>(5), 719–720.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">comat &lt;- matrix(sample(0:1000, size = 500, replace = TRUE, prob = 1/1:1001),
+20, 25)
+rownames(comat) &lt;- paste0("Site",1:20)
+colnames(comat) &lt;- paste0("Species",1:25)
+
+comnet &lt;- mat_to_net(comat)
+
+dissim &lt;- dissimilarity(comat, metric = "all")
+
+# User-defined number of clusters
+tree1 &lt;- hclu_hierarclust(dissim,
+                          n_clust = 2:15,
+                          index = "Simpson")
+tree1
+
+a &lt;- partition_metrics(tree1,
+                   dissimilarity = dissim,
+                   net = comnet,
+                   species_col = "Node2",
+                   site_col = "Node1",
+                   eval_metric = c("tot_endemism",
+                                   "avg_endemism",
+                                   "pc_distance",
+                                   "anosim"))
+                                   
+find_optimal_n(a)
+find_optimal_n(a, criterion = "increasing_step")
+find_optimal_n(a, criterion = "decreasing_step")
+find_optimal_n(a, criterion = "decreasing_step",
+               step_levels = 3) 
+find_optimal_n(a, criterion = "decreasing_step",
+               step_quantile = .9) 
+find_optimal_n(a, criterion = "decreasing_step",
+               step_levels = 3) 
+find_optimal_n(a, criterion = "decreasing_step",
+               step_levels = 3)                 
+find_optimal_n(a, criterion = "breakpoints")             
+
+</code></pre>
+
+
+</div>

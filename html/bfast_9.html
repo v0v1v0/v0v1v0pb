@@ -1,0 +1,363 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>bfastmonitor</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Near Real-Time Disturbance Detection Based on BFAST-Type Models</h2>
+
+<h3>Description</h3>
+
+<p>Monitoring disturbances in time series models (with trend/season/regressor
+terms) at the end of time series (i.e., in near real-time). Based on a model
+for stable historical behaviour abnormal changes within newly acquired data
+can be detected. Different models are available for modeling the stable
+historical behavior. A season-trend model (with harmonic seasonal pattern)
+is used as a default in the regresssion modelling.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">bfastmonitor(
+  data,
+  start,
+  formula = response ~ trend + harmon,
+  order = 3,
+  lag = NULL,
+  slag = NULL,
+  history = c("ROC", "BP", "all"),
+  type = "OLS-MOSUM",
+  h = 0.25,
+  end = 10,
+  level = c(0.05, 0.05),
+  hpc = "none",
+  verbose = FALSE,
+  plot = FALSE,
+  sbins = 1
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+<p>A time series of class <code>ts</code>, or another
+object that can be coerced to such. For seasonal components, a frequency
+greater than 1 is required.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>start</code></td>
+<td>
+<p>numeric. The starting date of the monitoring period. Can either
+be given as a float (e.g., <code>2000.5</code>) or a vector giving period/cycle
+(e.g., <code>c(2000, 7)</code>).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>formula</code></td>
+<td>
+<p>formula for the regression model. The default is
+<code>response ~ trend + harmon</code>, i.e., a linear trend and a harmonic season
+component. Other specifications are possible using all terms set up by
+<code>bfastpp</code>, i.e., <code>season</code> (seasonal pattern with
+dummy variables), <code>lag</code> (autoregressive terms), <code>slag</code> (seasonal
+autoregressive terms), or <code>xreg</code> (further covariates). See
+<code>bfastpp</code> for details.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>order</code></td>
+<td>
+<p>numeric. Order of the harmonic term, defaulting to <code>3</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>lag</code></td>
+<td>
+<p>numeric. Order of the autoregressive term, by default omitted.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>slag</code></td>
+<td>
+<p>numeric. Order of the seasonal autoregressive term, by default
+omitted.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>history</code></td>
+<td>
+<p>specification of the start of the stable history period. Can
+either be a character, numeric, or a function. If character, then selection
+is possible between reverse-ordered CUSUM (<code>"ROC"</code>, default), Bai and
+Perron breakpoint estimation (<code>"BP"</code>), or all available observations
+(<code>"all"</code>). If numeric, the start date can be specified in the same form
+as <code>start</code>. If a function is supplied it is called as
+<code>history(formula, data)</code> to compute a numeric start date.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>type</code></td>
+<td>
+<p>character specifying the type of monitoring process. By default,
+a MOSUM process based on OLS residuals is employed. See
+<code>mefp</code> for alternatives.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>h</code></td>
+<td>
+<p>numeric scalar from interval (0,1) specifying the bandwidth
+relative to the sample size in MOSUM/ME monitoring processes.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>end</code></td>
+<td>
+<p>numeric. Maximum time (relative to the history period) that will
+be monitored (in MOSUM/ME processes). Default is 10 times the history
+period.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>level</code></td>
+<td>
+<p>numeric vector. Significance levels of the monitoring and ROC (if
+selected) procedure, i.e., probability of type I error.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>hpc</code></td>
+<td>
+<p>character specifying the high performance computing support.
+Default is <code>"none"</code>, can be set to <code>"foreach"</code>. See
+<code>breakpoints</code> for more details.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>verbose</code></td>
+<td>
+<p>logical. Should information about the monitoring be printed
+during computation?</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>plot</code></td>
+<td>
+<p>logical. Should the result be plotted?</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>sbins</code></td>
+<td>
+<p>numeric. Number of seasonal dummies, passed to
+<code>bfastpp</code>.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p><code>bfastmonitor</code> provides monitoring of disturbances (or structural
+changes) in near real-time based on a wide class of time series regression
+models with optional season/trend/autoregressive/covariate terms. See
+Verbesselt at al. (2011) for details.
+</p>
+<p>Based on a given time series (typically, but not necessarily, with frequency
+greater than 1), the data is first preprocessed for regression modeling.
+Trend/season/autoregressive/covariate terms are (optionally) computed using
+<code>bfastpp</code>. Second, the data is split into a history and
+monitoring period (starting with <code>start</code>). Third, a subset of the
+history period is determined which is considered to be stable (see also
+below).  Fourth, a regression model is fitted to the preprocessed data in
+the stable history period.  Fifth, a monitoring procedure is used to
+determine whether the observations in the monitoring period conform with
+this stable regression model or whether a change is detected.
+</p>
+<p>The regression model can be specified by the user. The default is to use a
+linear trend and a harmonic season: <code>response ~ trend + harmon</code>.
+However, all other terms set up by <code>bfastpp</code> can also be omitted/added,
+e.g., <code>response ~ 1</code> (just a constant), <code>response ~ season</code>
+(seasonal dummies for each period), etc. Further terms precomputed by
+<code>bfastpp</code> can be <code>lag</code> (autoregressive terms of specified order),
+<code>slag</code> (seasonal autoregressive terms of specified order), <code>xreg</code>
+(covariates, if <code>data</code> has more than one column).
+</p>
+<p>For determining the size of the stable history period, various approaches
+are available.  First, the user can set a start date based on subject-matter
+knowledge. Second, data-driven methods can be employed. By default, this is
+a reverse-ordered CUSUM test (ROC). Alternatively, breakpoints can be
+estimated (Bai and Perron method) and only the data after the last
+breakpoint are employed for the stable history. Finally, the user can also
+supply a function for his/her own data-driven method.
+</p>
+
+
+<h3>Value</h3>
+
+<p><code>bfastmonitor</code> returns an object of class
+<code>"bfastmonitor"</code>, i.e., a list with components as follows.
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+<p>original <code>"ts"</code> time series,</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>tspp</code></td>
+<td>
+<p>preprocessed
+<code>"data.frame"</code> for regression modeling,</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>model</code></td>
+<td>
+<p>fitted
+<code>"lm"</code> model for the stable history period,</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>mefp</code></td>
+<td>
+<p>fitted
+<code>"mefp"</code> process for the monitoring period,</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>history</code></td>
+<td>
+<p>start and
+end time of history period,</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>monitor</code></td>
+<td>
+<p>start and end time of monitoring
+period,</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>breakpoint</code></td>
+<td>
+<p>breakpoint detected (if any).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>magnitude</code></td>
+<td>
+<p>median of the difference between the data and the model
+prediction in the monitoring period.</p>
+</td>
+</tr>
+</table>
+<h3>Author(s)</h3>
+
+<p>Achim Zeileis, Jan Verbesselt
+</p>
+
+
+<h3>References</h3>
+
+<p>Verbesselt J, Zeileis A, Herold M (2012).
+“Near real-time disturbance detection using satellite image time series.”
+<em>Remote Sensing of Environment</em>, <b>123</b>, 98–108.
+ISSN 0034-4257, doi: <a href="https://doi.org/10.1016/j.rse.2012.02.022">10.1016/j.rse.2012.02.022</a>, <a href="https://doi.org/10.1016/j.rse.2012.02.022">https://doi.org/10.1016/j.rse.2012.02.022</a>.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>monitor</code>,
+<code>mefp</code>, <code>breakpoints</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">NDVIa &lt;- as.ts(zoo::zoo(som$NDVI.a, som$Time))
+plot(NDVIa)
+## apply the bfast monitor function on the data
+## start of the monitoring period is c(2010, 13)
+## and the ROC method is used as a method to automatically identify a stable history
+mona &lt;- bfastmonitor(NDVIa, start = c(2010, 13))
+mona
+plot(mona)
+## fitted season-trend model in history period
+summary(mona$model)
+## OLS-based MOSUM monitoring process
+plot(mona$mefp, functional = NULL)
+## the pattern in the running mean of residuals
+## this illustrates the empirical fluctuation process
+## and the significance of the detected break.
+
+NDVIb &lt;- as.ts(zoo(som$NDVI.b, som$Time))
+plot(NDVIb)
+monb &lt;- bfastmonitor(NDVIb, start = c(2010, 13))
+monb
+plot(monb)
+summary(monb$model)
+plot(monb$mefp, functional = NULL)
+
+## set the stable history period manually and use a 4th order harmonic model
+bfastmonitor(NDVIb, start = c(2010, 13),
+  history = c(2008, 7), order = 4, plot = TRUE)
+
+## just use a 6th order harmonic model without trend
+mon &lt;- bfastmonitor(NDVIb, formula = response ~ harmon,
+    start = c(2010, 13), order = 6, plot = TRUE)
+summary(mon$model)
+AIC(mon$model)
+
+## use a custom number of seasonal dummies (11/yr) instead of harmonics
+mon &lt;- bfastmonitor(NDVIb, formula = response ~ season,
+    start = c(2010, 13), sbins = 11, plot = TRUE)
+summary(mon$model)
+AIC(mon$model)
+
+## Example for processing raster bricks (satellite image time series of 16-day NDVI images)
+f &lt;- system.file("extdata/modisraster.grd", package = "bfast")
+library("raster")
+modisbrick &lt;- raster::brick(f)
+data &lt;- as.vector(modisbrick[1])
+ndvi &lt;- bfastts(data, dates, type = c("16-day"))
+plot(ndvi/10000)
+
+## derive median NDVI of a NDVI raster brick
+medianNDVI &lt;- raster::calc(modisbrick, fun = function(x) median(x, na.rm = TRUE))
+raster::plot(medianNDVI)
+
+## helper function to be used with the calc() function
+xbfastmonitor &lt;- function(x, timestamps = dates) {
+	ndvi &lt;- bfastts(x, timestamps, type = c("16-day"))
+	ndvi &lt;- window(ndvi, end = c(2011, 14))/10000
+	## delete end of the time to obtain a dataset similar to RSE paper (Verbesselt et al.,2012)
+	bfm &lt;- bfastmonitor(data = ndvi, start = c(2010, 12), history = c("ROC"))
+	return(c(breakpoint = bfm$breakpoint, magnitude = bfm$magnitude))
+}
+
+## apply on one pixel for testing
+ndvi &lt;- bfastts(as.numeric(modisbrick[1])/10000, dates, type = c("16-day"))
+plot(ndvi)
+
+bfm &lt;- bfastmonitor(data = ndvi, start = c(2010, 12), history = c("ROC"))
+bfm$magnitude
+plot(bfm)
+xbfastmonitor(modisbrick[1], dates) ## helper function applied on one pixel
+
+## apply the bfastmonitor function onto a raster brick
+timeofbreak &lt;- raster::calc(modisbrick, fun=xbfastmonitor)
+
+raster::plot(timeofbreak) ## time of break and magnitude of change
+raster::plot(timeofbreak,2) ## magnitude of change
+</code></pre>
+
+
+</div>

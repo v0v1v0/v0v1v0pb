@@ -1,0 +1,174 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>dlm_close</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>DLM: Fitting the advanced ages of the life tables</h2>
+
+<h3>Description</h3>
+
+<p>This function receives an object of the class <code>DLM</code> fitted by the dlm() function
+and fits a closing method to expand the life tables dataset to a maximum age argument inputed
+by the user.
+There are three closing methods available: 'linear', 'gompertz' and 'plateau'.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">dlm_close(fit, method = c("linear", "gompertz", "plateau"),
+          x0 = max(fit$info$ages), max_age = 120, k = 7,
+          weights = seq(from = 0, to = 1, length.out = k),
+          new_data = NULL)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>fit</code></td>
+<td>
+<p>Object of the class <code>DLM</code> adjusted by the dlm() function.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>method</code></td>
+<td>
+<p>Character string specifying the closing method to be fitted, with them being: 'plateau', 'linear' or 'gompertz'.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>x0</code></td>
+<td>
+<p>Integer with the starting age the closing method will be fitted from. Default is the last age fitted by the 'DLM' object.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>max_age</code></td>
+<td>
+<p>Integer with the maximum age the closing method will be fitted. Default age is '120'.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>k</code></td>
+<td>
+<p>Integer representing the size of the age-interval to be mixed with the 'linear' or 'gompertz' closing methods for a smooth graduation. If k = 0, no mixing will be made. Default: 7.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>weights</code></td>
+<td>
+<p>Vector of weights of the closing method used in the mixture of the closing method and the fitted model made in the mixing age group. The vector's size should be equal to 2k+1. For a better understanding of this parameter and the mixture applied in this function, see Details.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>new_data</code></td>
+<td>
+<p>Vector containing the log mortality rates of ages after the x0 input. This is an optional argument used in the 'linear' and 'Gompertz' closing methods.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>#' There are three types of age groups when the closing method is applied: a group
+where only the fitted model (DLM) computes the death probabilities, followed by a
+group in which the death probabilities are a mix (or more precise a weighted mean)
+from the HP model and the closing method and followed by a group in which the
+death probabilities are computed just by the closing method. The mix is applied
+so the transition of the death probabilities of the ages between the fitted model
+and the closing method occurs smoothly.
+</p>
+<p>The parameters 'x0' and 'k' define the mixing group age. The parameter 'x0'
+indicates the center age of the group. The parameter 'k' is the range of ages
+before 'x0' and after 'x0', so this group has a total of <code class="reqn">2k + 1</code> age. Therefore,
+the parameter 'weights' must have a length size equal to <code class="reqn">2k + 1</code>. In this case,
+the death probability is calculated as follows. Consider <code class="reqn">model_x</code> and <code class="reqn">close_x</code>
+as the death probability of the fitted model and closing method in the age <code class="reqn">x</code>,
+respectively. Then, the resulting death probability of the mix is calculated as:
+</p>
+<p><code class="reqn">q_x = w_x model_x + (1-w_x)close_x</code>,
+</p>
+<p>where <code class="reqn">w_x</code> represents the weight of the closing method in the age <code class="reqn">x</code>. This
+procedure is applied only in the linear and Gompertz methods.
+</p>
+<p>The three closing methods implemented by the function are:
+</p>
+<p>1.'linear' method: Fits a linear regression starting at age x0 - k until the last age with data available
+</p>
+<p>2.'gompertz' method: Used as the closing method of the 2010-2012 English Life Table No. 17, fits the Gompertz mortality law via SIR using the same available data as the 'linear' method.
+</p>
+<p>3.'plateau' method: Keeps the death probability (qx) constant after the x0 argument.
+</p>
+
+
+<h3>Value</h3>
+
+<p>Returns a <code>ClosedDLM</code> class object with the predictive chains of the death probability
+(qx) from first fitted age to max_age argument, the data information utilized by the function and the
+closing method chosen.
+</p>
+
+
+<h3>References</h3>
+
+<p>Dodd, Erengul, Forster, Jonathan, Bijak, Jakub, &amp; Smith, Peter 2018. “Smoothing mortality data: the English life table, 2010-12.” <em>Journal of the Royal Statistical Society: Series A (Statistics in Society)</em>, 181(3), 717-735.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>fitted.DLM()</code>, <code>plot.DLM()</code>, <code>print.DLM()</code> and <code>summary.DLM()</code> for <code>ClosedDLM</code> methods to native R functions <code>fitted()</code>,
+<code>plot()</code>, <code>print()</code> and <code>summary()</code>.
+</p>
+<p><code>expectancy.DLM()</code> and <code>Heatmap.DLM()</code> for <code>ClosedDLM</code> methods to compute and visualise the truncated life expectancy
+via <code>expectancy()</code> and <code>Heatmap()</code> functions.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## Importing mortality data from the USA available on the Human Mortality Database (HMD):
+data(USA)
+
+## Selecting the exposure and the death count of the year 2010, ranging from 0 to 90 years old:
+USA2010 = USA[USA$Year == 2010,]
+x = 0:100
+Ex = USA2010$Ex.Male[x+1]
+Dx = USA2010$Dx.Male[x+1]
+y &lt;- log(Dx/Ex)
+
+fit &lt;- dlm(y, M = 100)
+
+## Applying the closing function with different methods:
+close1 = dlm_close(fit, method = "plateau")
+
+### Getting new data for the linear and gompertz methods:::
+x2 = 101:110
+Ex2 = USA2010$Ex.Male[x2+1]
+Dx2 = USA2010$Dx.Male[x2+1]
+y2 &lt;- log(Dx2/Ex2)
+
+close2 = dlm_close(fit, method = "linear",
+                  new_data = y2)
+
+#### Using the other functions available in the package with the 'ClosedDLM' object:
+
+## qx estimation (See "?fitted" in the BayesMortalityPlus package for more options):
+fitted(close2)
+
+## life expectancy (See "?expectancy.DLM" for more options)
+expectancy(close2, age = seq(0,120,by=20), graph = FALSE)
+
+## plotting (See "?plot" in the BayesMortalityPlus package for more options):
+plot(list(close1, close2, fit),
+     colors = c("red4","seagreen", "blue"),
+     labels = c("Plateau method","Linear method", "DLM fitted"),
+     plotData = FALSE)
+
+
+</code></pre>
+
+
+</div>

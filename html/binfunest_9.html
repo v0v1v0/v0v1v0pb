@@ -1,0 +1,155 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>mleB2B</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>mleB2B  Estimates Back-to-Back "Q" and Offsets to a bit error rate function.</h2>
+
+<h3>Description</h3>
+
+<p>Bit error counts modeled as independent binary decisions result in a
+log-likelihood dependent on the bit error probability.  This function
+inserts the supplied bit error probability function into the binomial
+log-likelihood function, and passes that to stats4::mle, which ultimately
+calls stats::optim.  The function will optimize a binomial probability
+of the form $r = N * P( x_1, x_2, ..., x_n, a_1, a_2, ... a_k)$, where the
+$x_i$ are variables from <code>data</code>, and the $a_j$ are parameters to be
+estimated.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">mleB2B(data = NULL, Errors, N, f, fparms, start, method = "Nelder-Mead", ...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+<p>a data frame or list with named components. If a list, each
+component must be the same length (just like a data frame). This is not
+checked, so usual rules of recycling will apply.  Partial matching not
+performed, so you must use full column names.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Errors</code></td>
+<td>
+<p>A vector of error counts, or a string identifying a column of
+<code>data</code> from which to draw the error counts</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>N</code></td>
+<td>
+<p>A single number, or a vector of the same length as
+<code>data</code>, or a string identifying a column of <code>data</code> specifying the number
+of trials used to measure the error counts
+in <code>Errors</code>.  If a single number, then that number is used as the number
+of trials for all error counts.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>f</code></td>
+<td>
+<p>A function that predicts the probability of errors.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>fparms</code></td>
+<td>
+<p>a list of named components that are the arguments of <code>f</code>.
+Each component can be a string, a single number, or a vector. If a
+string that names a column of <code>data</code>, that column will be used,
+otherwise the string will be passed to <code>f</code>.  Note the potential for
+errors if a column name was misspelled. A single number or vector
+will be passed to <code>f</code>. Between <code>fparms</code>, <code>start</code>, and function defaults,
+all parameters that need to be supplied to <code>f</code> should be specified, and
+(except for defaults) not duplicated.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>start</code></td>
+<td>
+<p>Named list of initial values for the parameters of <code>f</code> to be
+estimated.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>method</code></td>
+<td>
+<p>Optimization method.  See <code>stats::optim()</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Optional arguments to be passed to mle.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The function estimates the parameters identified in <code>start</code> in the
+constructed call to <code>f</code>. For a function <code>f</code> of the form
+<code>fun( SNR, x2, x3, B2B, offset)</code>
+A call of the form
+</p>
+<p><code>
+mleB2B( data=df, Errors="r", N="trials", f=fun,
+        fparm=list( SNR="s", x2=1, x3="noise"), start=list(B2B=1, offset=2))
+</code>
+</p>
+<p>will construct a call to <code>mle</code> of the form:
+</p>
+<p><code>
+mle( minuslogl=ll, start=start, nobs=length( Errors), method=method)</code>
+</p>
+<p>where the function <code>ll</code> is defined as
+</p>
+<p><code>
+  ll &lt;- function( a, b) -sum( dbinom( df$r, df$n,
+                fun( SNR=df$s, x2=1, x3=df$noise, B2B=B2B, offset=offset),
+                log=TRUE))
+</code>
+</p>
+
+
+<h3>Value</h3>
+
+<p>An object of class stats4::mle with the parameters
+identified in <code>start</code> estimated.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>stats4::mle()</code>, <code>stats::optim()</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">QPSKdB.B2B &lt;- B2BConvert( QPSKdB)
+O1 &lt;- 3
+B1 &lt;- 16
+s &lt;- 0:20
+N &lt;- 1000000
+r &lt;- rbinom( length( s), N, QPSKdB.B2B( s, B1, O1))
+df &lt;- data.frame( Errors=r, SNR=s, N=N)
+llsb2 &lt;- function( b2b, offset)
+         -sum( dbinom( r, N, QPSKdB.B2B( s, b2b, offset), log=TRUE))
+mle1 &lt;- stats4::mle( llsb2, start=c( b2b=20, offset=0), nobs=length(s),
+                     method="Nelder-Mead")
+est1 &lt;-  mleB2B( data=df, Errors="Errors", N=N, f=QPSKdB.B2B,
+                 fparms=list( x="SNR"), start=c(b2b=20, offset=0))
+
+</code></pre>
+
+
+</div>

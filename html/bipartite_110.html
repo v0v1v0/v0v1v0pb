@@ -1,0 +1,119 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>swap.web</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2> Creates null model for bipartite networks</h2>
+
+<h3>Description</h3>
+
+<p>Function to generate null model webs under the following constraints: 1. marginal 
+totals are identical to those observed (as in <code>r2dtable</code>), 2. connectance is as observed (as in <code>shuffle.web</code>.)
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">swap.web(N, web, verbose=FALSE, c.crit=1e4)</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>N</code></td>
+<td>
+<p> Number of desired null model matrices. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>web</code></td>
+<td>
+<p>An interaction matrix.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>verbose</code></td>
+<td>
+<p>Should various verbal outputs of this function be shown? Defaults to FALSE, since it was
+mainly used during the debugging period.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>c.crit</code></td>
+<td>
+<p>Sometimes the algorithm gets stuck in a very sparse matrix. Then <span class="option">c.crit</span> sets the number of
+swaps it shall attempt before giving up and starting over on a new random matrix. Defaults to 10000.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>This function is designed to behave similar to <code>r2dtable</code>, i.e. it returns a list of randomised matrices.  In addition to <code>r2dtable</code> is also keeps the connectance constant! 
+</p>
+<p>This function is thought of as a very constrained null model for the analysis of bipartite webs.  It keeps two web properties constant: The marginal totals (as in <code>r2dtable</code> and the  number of links (and hence connectance). A comparison of <code>swap.web</code>- and <code>r2dtable</code>-based  webs allows to elucidate the effect of evolutionary specialisation, since the unrealised connections may represent “forbidden links”. 
+</p>
+<p>This null model is similar to the one employed by Vázquez et al. But while Vázquez starts by assigning 1s to the  allowed connections and then fills the web, <code>swap.web</code> starts with an <code>r2dtable</code>-web and successively  “empties” it. The two approaches should result in very similar null models, since both constrain marginal  totals and connectance.
+</p>
+<p>A few words on the way <code>swap.web</code> works. It starts with a random web created by <code>r2dtable</code>. Then, it finds, randomly, 2x2 submatrices with entries all larger than 0. Next, it subtracts the minimum value from the diagonal and adds it to the off-diagonal (minor diagonal). Thereby one cell becomes 0, but the column and row sums do not change. This idea is adapted from the swap-algorithm used in various binary null models by Nick Gotelli. If the random web has  too few 0s (which is I have yet to encounter), then the opposite strategy is applied.
+</p>
+<p>The algorithm in our implementation has some variations on finding the submatrix and constraining the number of  unsuccessfull trials before starting on a new random matrix, but they are only for speeding up the process.
+</p>
+
+
+<h3>Value</h3>
+
+<p>A list of N randomised matrices with the same dimensions as the initial web.
+</p>
+
+
+<h3>Note</h3>
+
+ 
+<p>Long stories can be told about the swap algorithm. I am not the right person to do so, but for a much more detailed coverage of the topic, for many more ways to implement null models for <b>binary</b> matrices, with various flavours of the swap and possible alternatives, first brew yourself a cup of tea and then check out the help pages of <code>simulate</code> in <span class="pkg">vegan</span>. (As usual, Jari Oksanen has spend considerable care to implement even the most bizarre and abstruse way to move 0s and 1s around. His ecological advise between the lines make his package worthwhile already! I, personally, would use <span class="option">method="quasiswap"</span>, as is done in the example to <code>discrepancy</code>.)
+</p>
+<p>When comparing the <code>swap.web</code> algorithm with that proposed by Vázquez et al. (2007, implemented in <code>vaznull</code>), we found that <code>swap.web</code> contains a certain bias. The subtraction of the swap will reduce the value of low-value cells, and increase that of high-value cells. As a consequence, it produces somewhat of a dichotomy between very high and very low values. Using e.g. H2' to quantify this pattern, <code>swap.web</code> will produce very specialised networks (around 0.5), while the Vazquez-algorithm yields lower H2' values and a more even distribution of interactions within cells.
+The ramifications are that <code>swap.web</code> will predict higher-than-necessary expectations. (Date of this entry: 15.1.2010)
+</p>
+<p>In fact, Artzy-Randrup &amp; Stone (2005) have shown that the swap algorithm is <em>fundamentally biased</em>, because some swaps are more likely than others. This applies to this version of the swap as well as to the one implemented in <code>vaznull</code>. So, despite heavy citation, the approach of Miklós &amp; Podani (2004) is thus also not ideal, as often claimed.
+</p>
+<p><code>swap.web</code> is a very constraint null model. You need to consider if it is the right one for your application!
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p> Carsten F. Dormann &lt;carsten.dormann@biom.uni-freiburg.de&gt; </p>
+
+
+<h3>References</h3>
+
+<p>Artzy-Randrup, Y., and Stone, L. (2005) Generating uniformly distributed random networks. <em>Physical Review E</em> <b>72</b>, 1–7
+</p>
+<p>Miklós, I. and Podani, J. (2004) Randomization of presence-absence matrices: comments and new algorithms. <em>Ecology</em> <b>85</b>, 86–92
+</p>
+<p>Vázquez, D. P., and M. A. Aizen (2003) Null model analyses of specialization in plant-pollinator interactions. <em>Ecology</em> <b>84</b>, 2493–2501
+</p>
+<p>Vázquez, D. P., C. J. Melian, N. M. Williams, N. Blüthgen, B. R. Krasnov, and R. Poulin (2007) Species abundance and asymmetric interaction strength in ecological networks. <em>Oikos</em> <b>116</b>, 1120–1127
+</p>
+<p>For a very nice and thorough overview of null models in general see:
+</p>
+<p>Gotelli, N. J., and G. R. Graves (1996) Null Models in Ecology. Smithsonian Institution Press, Washington D.C.
+</p>
+
+
+<h3>See Also</h3>
+
+ <p><code>r2dtable</code>, <code>vaznull</code> and <code>shuffle.web</code></p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+swap.web(Safariland, N=2)
+
+</code></pre>
+
+
+</div>

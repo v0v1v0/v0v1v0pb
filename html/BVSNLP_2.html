@@ -1,0 +1,155 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>CoefEst</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Coefficient estimation for a specific set of covariates</h2>
+
+<h3>Description</h3>
+
+<p>This function estimates coefficient vector for a given set of
+covariates in a logistic regression and Cox proportional hazard models. It
+uses the inverse moment nonlocal prior (iMOM) for non zero coefficients.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">CoefEst(
+  X,
+  resp,
+  mod_cols,
+  nlptype = "piMOM",
+  tau,
+  r,
+  family = c("logistic", "survival")
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>X</code></td>
+<td>
+<p>The design matrix. It is assumed that the preprocessing steps have
+been done on this matrix. It is recommended that to use the output of
+<code>PreProcess</code> function of the package. Also note that the
+<code>X</code> should NOT have a vector of $1$'s as the first column. If the
+coefficients of a selected model by <code>bvs</code> is to be estimated, it
+is highly recommended that the design matrix that is one of the outputs of
+the <code>bvs</code> function and is reported as <code>des_mat</code> to be used here.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>resp</code></td>
+<td>
+<p>For logistic regression models, this variable is the binary
+response vector. For Cox proportional hazard models this is a two column
+matrix where the first column contains the survival time vector and the
+second column is the censoring status for each observation.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>mod_cols</code></td>
+<td>
+<p>A vector of column indices of the design matrix,
+representing the selected model.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nlptype</code></td>
+<td>
+<p>Determines the type of nonlocal prior that is used in the
+analyses. It can be "piMOM" for product inverse moment prior, or "pMOM" for
+product moment prior. The default is set to piMOM prior.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>tau</code></td>
+<td>
+<p>Hyperparameter <code>tau</code> of the iMOM prior.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>r</code></td>
+<td>
+<p>Hyperparameter <code>r</code> of the iMOM prior.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>family</code></td>
+<td>
+<p>Determines the type of data analysis. <code>logistic</code> is for
+binary outcome and logistic regression model whereas,
+<code>survival</code> represents survival outcomes and the Cox proportional
+hazard model.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>It returns the vector of coefficients for the given model.
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Amir Nikooienejad
+</p>
+
+
+<h3>References</h3>
+
+<p>Nikooienejad, A., Wang, W., and Johnson, V. E. (2016). Bayesian
+variable selection for binary outcomes in high dimensional genomic studies
+using non-local priors. Bioinformatics, 32(9), 1338-1345.<br><br>
+Nikooienejad, A., Wang, W., &amp; Johnson, V. E. (2020). Bayesian variable
+selection for survival data using inverse moment priors. Annals of Applied
+Statistics, 14(2), 809-828.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>ModProb</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">### Simulating Survival Data
+n &lt;- 400
+p &lt;- 1000
+lambda &lt;- 0.8
+cens_rate &lt;- 0.27
+set.seed(123)
+Sigma &lt;- diag(p)
+full &lt;- matrix(c(rep(0.5, p*p)), ncol=p)
+Sigma &lt;- full + 0.5*Sigma
+cholS &lt;- chol(Sigma)
+Beta &lt;- c(-1.8, 1.2, -1.7, 1.4, -1.4, 1.3)
+X = matrix(rnorm(n*p), ncol=p)
+X = X%*%cholS
+X &lt;- scale(X)
+beta &lt;- numeric(p)
+beta[c(1:length(Beta))] &lt;- Beta
+XB &lt;- X%*%beta
+uvector &lt;- -log(runif(n));
+times &lt;- uvector/(lambda*exp(XB))
+cens_time &lt;- quantile(times,1-cens_rate)
+status &lt;- as.numeric(times &lt; cens_time)
+TS &lt;- cbind(times,status)
+
+### Estimating coeffcients of the true model and an arbitrary hyper
+### parameter for the iMOM prior density
+mod &lt;- c(1:6)
+coef &lt;- CoefEst(X, TS, mod, tau = 1.8, r = 2, family = "survival")
+coef
+
+</code></pre>
+
+
+</div>

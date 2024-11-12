@@ -1,0 +1,131 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>BayesPPD-package</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Bayesian sample size determination using the power and normalized power prior for generalized linear models</h2>
+
+<h3>Description</h3>
+
+<p>The <span class="pkg">BayesPPD</span> (Bayesian Power Prior Design) package provides two categories of functions:
+functions for Bayesian power/type I error calculation and functions for model fitting.
+Supported distributions include normal, binary (Bernoulli/binomial), Poisson and exponential.
+The power parameter <code class="reqn">a_0</code> can be fixed or modeled as random using a normalized power prior.
+</p>
+
+
+<h3>Details</h3>
+
+<p>Following Chen et al.(2011), for two group models (i.e., treatment and control group with no covariates), denote the parameter for the treatment group by <code class="reqn">\mu_t</code>
+and the parameter for the control group by <code class="reqn">\mu_c</code>. Suppose there are <code class="reqn">K</code> historical datasets <code class="reqn">D_0 = (D_{01},\cdots, D_{0K})'</code>. We consider the following normalized power prior
+for <code class="reqn">\mu_c</code> given multiple historical datasets <code class="reqn">D_0</code>
+</p>
+<p style="text-align: center;"><code class="reqn">\pi(\mu_c|D_0,a_0) = \frac{1}{C(a_0)}\prod_{k=1}^K \left[L(\mu_c|D_{0k})^{a_{0k}}\right]\pi_0(\mu_c)</code>
+</p>
+
+<p>where <code class="reqn">a_0 = (a_{01},\cdots,a_{0K})'</code>, <code class="reqn">0\le a_{0k} \le 1</code> for <code class="reqn">k=1,\cdots,K</code>, <code class="reqn">L(\mu_c|D_{0k})</code> is the historical data likelihood,
+<code class="reqn">\pi_0(\mu_c)</code> is an initial prior, and <code class="reqn">C(a_0)=\int \prod_{k=1}^K [L(\mu_c|D_{0k})^{a_{0k}}]\pi_0(\mu_c)d\mu_c</code>. When <code class="reqn">a_0</code> is fixed,
+the normalized power prior is equivalent to the power prior
+</p>
+<p style="text-align: center;"><code class="reqn">\pi(\mu_c|D_0,a_0) = \prod_{k=1}^K \left[L(\mu_c|D_{0k})^{a_{0k}}\right]\pi_0(\mu_c).</code>
+</p>
+
+<p>By default, the power/type I error calculation algorithm assumes the null and alternative hypotheses are given by
+</p>
+<p style="text-align: center;"><code class="reqn">H_0: \mu_t - \mu_c \ge \delta</code>
+</p>
+<p> and </p>
+<p style="text-align: center;"><code class="reqn">H_1: \mu_t - \mu_c &lt; \delta,</code>
+</p>
+<p> where <code class="reqn">\delta</code> is a prespecified constant. To test hypotheses of
+the opposite direction, i.e., <code class="reqn">H_0: \mu_t - \mu_c \le \delta</code> and <code class="reqn">H_1: \mu_t - \mu_c &gt; \delta</code> , one can set the parameter <code>nullspace.ineq</code> to "&lt;".
+To determine Bayesian sample size, we estimate the quantity </p>
+<p style="text-align: center;"><code class="reqn">\beta_{sj}^{(n)}=E_s[I\{P(\mu_t-\mu_c&lt;\delta|y^{(n)}, \pi^{(f)})\ge \gamma\}]</code>
+</p>
+
+<p>where <code class="reqn">\gamma &gt; 0</code> is a prespecified posterior probability threshold for rejecting the null hypothesis (e.g., <code class="reqn">0.975</code>), the probability is computed with respect to the posterior distribution given the data
+<code class="reqn">y^{(n)}</code> and the fitting prior <code class="reqn">\pi^{(f)}</code>, and the expectation is taken with respect to the marginal distribution of <code class="reqn">y^{(n)}</code>
+defined based on the sampling prior <code class="reqn">\pi^{(s)}(\theta)</code>, where <code class="reqn">\theta=(\mu_t, \mu_c, \eta)</code> and <code class="reqn">\eta</code> denotes any nuisance parameter in the model.
+Let <code class="reqn">\Theta_0</code> and <code class="reqn">\Theta_1</code> denote the parameter spaces corresponding to <code class="reqn">H_0</code> and <code class="reqn">H_1</code>.
+Let <code class="reqn">\pi_0^{(s)}(\theta)</code> denote a sampling prior that puts mass in the null region, i.e., <code class="reqn">\theta \subset \Theta_0</code>.
+Let <code class="reqn">\pi_1^{(s)}(\theta)</code> denote a sampling prior that puts mass in the alternative region, i.e., <code class="reqn">\theta \subset \Theta_1</code>.
+Then <code class="reqn">\beta_{s0}^{(n)}</code> corresponding to <code class="reqn">\pi^{(s)}(\theta)=\pi_0^{(s)}(\theta)</code> is a Bayesian type I error,
+while <code class="reqn">\beta_{s1}^{(n)}</code> corresponding to <code class="reqn">\pi^{(s)}(\theta)=\pi_1^{(s)}(\theta)</code> is a Bayesian power.
+We compute <code class="reqn">n_{\alpha_0} = \min\{n: \beta_{s0}^{(n)} \le \alpha_0\}</code> and <code class="reqn">n_{\alpha_1} = \min\{n: \beta_{s1}^{(n)} \ge 1-\alpha_1\}</code>.
+Then Bayesian sample size is max<code class="reqn">\{n_{\alpha_0}, n_{\alpha_1}\}</code>. Choosing <code class="reqn">\alpha_0=0.05</code> and <code class="reqn">\alpha_1=0.2</code>
+guarantees that the Bayesian type I error rate is at most <code class="reqn">0.05</code> and the Bayesian power is at least <code class="reqn">0.8</code>.
+</p>
+<p>To compute <code class="reqn">\beta_{sj}^{(n)}</code>, the following algorithm is used:
+</p>
+
+<dl>
+<dt>Step 1:</dt>
+<dd>
+<p>Generate <code class="reqn">\theta \sim \pi_j^{(s)}(\theta)</code></p>
+</dd>
+<dt>Step 2:</dt>
+<dd>
+<p>Generate <code class="reqn">y^{(n)} \sim f(y^{(n)}|\theta)</code></p>
+</dd>
+<dt>Step 3:</dt>
+<dd>
+<p>Compute <code class="reqn">P(\mu_t &lt; \mu_c + \delta|y^{(n)}, \pi^{(f)})</code></p>
+</dd>
+<dt>Step 4:</dt>
+<dd>
+<p>Check whether <code class="reqn">P(\mu_t &lt; \mu_c + \delta|y^{(n)}, \pi^{(f)}) \ge \gamma</code></p>
+</dd>
+<dt>Step 5:</dt>
+<dd>
+<p>Repeat Steps 1-4 <code class="reqn">N</code> times</p>
+</dd>
+<dt>Step 6:</dt>
+<dd>
+<p>Compute the proportion of times that <code class="reqn">\{\mu_t &lt; \mu_c + \delta|y^{(n)}, \pi^{(f)} \ge \gamma\}</code> is true out of the <code class="reqn">N</code> simulated datasets, which gives an estimate of <code class="reqn">\beta_{sj}^{(n)}</code>.</p>
+</dd>
+</dl>
+<p>For positive continuous data assumed to follow exponential distribution, the hypotheses are given by
+</p>
+<p style="text-align: center;"><code class="reqn">H_0: \mu_t/\mu_c \ge \delta</code>
+</p>
+<p> and </p>
+<p style="text-align: center;"><code class="reqn">H_1: \mu_t/\mu_c &lt; \delta,</code>
+</p>
+<p> where <code class="reqn">\mu_t</code> and <code class="reqn">\mu_c</code> are the hazards for the treatment and the control group, respectively.
+The definition of <code class="reqn">\beta_{sj}^{(n)}</code> and the algorithm change accordingly.
+</p>
+<p>If there are covariates to adjust for, we assume the first column of the covariate matrix is the treatment indicator,
+and the corresponding parameter is <code class="reqn">\beta_1</code>, which, for example, corresponds to a difference in means for the linear regression model and a log hazard ratio for the exponential regression model.
+The hypotheses are given by
+</p>
+<p style="text-align: center;"><code class="reqn">H_0: \beta_1 \ge \delta</code>
+</p>
+<p> and </p>
+<p style="text-align: center;"><code class="reqn">H_1: \beta_1 &lt; \delta.</code>
+</p>
+
+<p>The definition of <code class="reqn">\beta_{sj}^{(n)}</code> and the algorithm change accordingly.
+</p>
+<p>By default, the package assumes the historical data is
+composed of control group subjects only. If the user wants to use historical data to inform treatment effect, one can set <code>borrow.treat=TRUE</code>
+and include the treatment indicator in the historical covariate matrix.
+</p>
+<p>This implementation of the method does not assume any particular distribution for the sampling priors.
+The user is allowed to specify a vector or matrix of samples for <code class="reqn">\theta</code> (matrix if <code class="reqn">\theta</code> is of dimension &gt;1) from any distribution, and the algorithm samples with replacement
+from the vector or matrix at each iteration of data simulation. In order to accurately approximate a joint distribution
+for multiple parameters, the number of iterations should be large (e.g., 10,000).
+</p>
+<p>Gibbs sampling is used for normally distributed data. Slice sampling is used for all other data distributions.
+For two group models with fixed <code class="reqn">a_0</code>,
+numerical integration using the <span class="pkg">RcppNumerical</span> package is used.
+</p>
+
+
+<h3>References</h3>
+
+<p>Chen, Ming-Hui, et al. "Bayesian design of noninferiority trials for medical devices using historical data." Biometrics 67.3 (2011): 1163-1170.
+</p>
+
+
+</div>

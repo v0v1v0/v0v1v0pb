@@ -1,0 +1,657 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>bentcable.ar</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2> Bent-Cable Regression for Independent and Autoregressive Data </h2>
+
+<h3>Description</h3>
+
+<p>These two functions are the main interfaces in the
+<code>bentcableAR</code> package. They perform bent-cable (including
+broken-stick) regression to AR(p) time-series data or independent
+data (time-series or otherwise) and produce diagnostic plots.
+Confidence intervals for the <em>critical time point</em> (CTP) are
+included in some cases.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">bentcable.ar(y.vect, tgdev = NULL, p = 0, stick = FALSE, t.vect = NULL,
+	init.cable = NULL, init.phi = NULL, tol = 1e-04,
+	method0 = "css", method1 = "yw", ci.level = 0.95,
+	main = NULL)
+bentcable.dev.plot(tau.vect, gamma.vect = NULL, y.vect, t.vect = NULL,
+	stick = FALSE, p = 0)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>y.vect</code></td>
+<td>
+<p> A numeric vector of response data. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>t.vect</code></td>
+<td>
+<p> A numeric vector of design points, which <b>MUST</b>
+be equidistant with unit increments if p&gt;0 is assumed. They need
+not be equidistant for independent data. Specifying
+<code>t.vect=NULL</code> is equivalent to specifying the default time
+points <code>c(0,1,2,...)</code>. Also see <b>Warnings</b> below. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>tau.vect, gamma.vect</code></td>
+<td>
+<p> Numeric vectors specifying a
+<code class="reqn">(\tau,\gamma)</code>-grid over which the bent-cable profile
+deviance surface / function is to be evaluated. If
+<code>stick=TRUE</code>, then <code>gamma.vect</code> is overwritten by
+<code>c(0)</code> in <code>bentcable.dev.plot</code>. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>tgdev</code></td>
+<td>
+<p> A <code>bentcable.dev.plot</code> object. An error results
+if this is supplied together with <code>init.cable</code> or
+<code>init.phi</code>. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>p</code></td>
+<td>
+<p> The autoregressive order (non-negative integer).
+<code>p=0</code> specifies independent data that may or may not be
+from a time series context. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>stick</code></td>
+<td>
+<p> A logical value; if <code>TRUE</code> then a broken stick
+(i.e. bent cable with <code class="reqn">\gamma</code>=0.) is fitted. Also see
+<code>gamma.vect</code> above. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>init.cable</code></td>
+<td>
+<p> A numeric vector of initial values for the
+bent-cable parameters. If <code>stick=FALSE</code>, then <code>init.cable</code>
+should have the form <code>c(b0,b1,b2,tau,gamma,...)</code>. If
+<code>stick=TRUE</code>, then <code>init.cable</code> should have the form
+<code>c(b0,b1,b2,tau,...)</code>. In either case, <code>...</code>
+will be ignored. An error results if this is supplied together
+with <code>tgdev</code>. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>init.phi</code></td>
+<td>
+<p> A numeric vector of initial values for the AR
+coefficients. If not provided, then a default value is assigned,
+consisting of the first <code>p</code> elements of the vector
+<code>c(0.5,-0.5,0.5,-0.5,...)</code>. When provided and its
+dimension does not match <code>p</code>, then the function determines
+which to reject depending on the situation, and reports its
+decision in the screen output. An error results if this is
+supplied together with <code>tgdev</code>. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>tol</code></td>
+<td>
+<p> Tolerance for determining convergence. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>method0, method1</code></td>
+<td>
+<p> The fitting method when p&gt;0. <code>"css"</code>
+stands for <em>conditional sum-of-squares</em> and corresponds to
+conditional maximum likelihood. <code>"yw"</code> stands for
+<em>Yule-Walker</em>, and <code>"mle"</code> for (full) <em>maximum
+likelihood estimation</em>. If <code>method0</code> fails to converge,
+then <code>method1</code> is attempted. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ci.level</code></td>
+<td>
+<p> A numeric value between 0 and 1, exclusive. Used to
+compute the CTP confidence interval when <code>p</code> is
+greater than 0. See <code>cable.change.conf</code> and
+<b>Warnings</b> below. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>main</code></td>
+<td>
+<p> A title for the set of diagnostic plots. </p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p><code>bentcable.dev.plot</code> involves bent-cable regression assuming a
+known transition. It plots a profile deviance surface over a fixed
+grid (see <b>References</b>). It also returns the grid and the
+profile deviance surface matrix, which can be used to generate
+initial values for an overall bent-cable regression (no known
+parameters).
+</p>
+<p><code>bentcable.ar</code> is used mainly for overall bent-cable
+regression, with one exception. Different scenarios
+determine the behaviour of <code>bentcable.ar</code>, as follows.
+</p>
+<p><b>(1) Independent data and <code>tgdev</code> is supplied.</b> In this case,
+<code>bentcable.ar</code> calls <code>cable.ar.0.fit</code> which identifies
+the best grid-based fit from <code>tgdev</code>, then feeds it through an
+internal engine <code>cable.ar.p.iter</code> or <code>stick.ar.0</code> that
+performs overall bent-cable regression. This best fit is returned
+but not plotted, and the autocorrelation is diagnosed (even for
+non-time-series data) by a PACF plot and a suggested value of p
+based on the AIC (see <code>ar</code>). As stated in the screen
+output, these diagnostics should be used only for time-series data,
+where the returned best AR(0) estimates are intended to be supplied
+as <code>init.cable</code> in a subsequent call of <code>bentcable.ar</code>
+for an AR(p&gt;0) fit. To produce a plot of the returned
+best AR(0) fit and/or the corresponding CTP confidence interval,
+the user can supply the returned parameter estimates as
+<code>init.cable</code> in another call of <code>bentcable.ar</code> with
+<code>p=0</code> (see Scenario (3)).
+</p>
+<p><b>(2) AR(p&gt;0) data and <code>tgdev</code> is supplied.</b> In this case, no
+graphics are produced; <code>bentcable.ar</code> simply locates the
+highest point on the grid-based profile deviance surface and
+returns the corresponding (crude) parameter estimates to be used as
+<code>init.cable</code> and <code>init.phi</code> in subsequent overall
+bent-cable fits. If multiple peaks exist (such as along a ridge),
+then only that at the smallest <code class="reqn">\tau</code> and smallest <code class="reqn">\gamma</code>
+is used.
+</p>
+<p><b>(3) Independent data (time series or otherwise) and
+<code>init.cable</code> are supplied.</b> In this case, <code>bentcable.ar</code>
+performs overall bent-cable regression and produces a
+scatterplot of the data superimposed with the best fit and
+estimated transition. For time series data where the CTP is
+applicable (see <b>Warnings</b>), the CTP confidence interval is
+additionally computed and superimposed in blue. No other plots are
+produced. Since <code>init.cable</code> is supposed to have come from a
+reasonable source (such as grid-based), this fit is not intended to
+be fed to another round of <code>bentcable.ar</code>, except when the
+user wishes to explore using a positive p (but this should be
+performed in conjunction with another round of grid-based approach
+in Scenario (2)).
+</p>
+<p><b>(4) AR(p&gt;0) data and <code>init.cable</code> are supplied.</b> In this
+case, <code>bentcacble.ar</code> computes the overall bent-cable fit and
+CTP confidence interval (see <code>cable.change.conf</code>). Also
+included are the following diagnostics: a scatterplot of the data
+superimposed with the best fit and estimated transition
+<code class="reqn">(\tau-\gamma,\tau,\tau+\gamma)</code> (in red) and the CTP
+confidence interval (in blue, if it exists - see <b>Warnings</b>),
+and ACF and PACF plots for the fitted residuals and innovations
+(see <code>cable.ar.p.resid</code> for their difference). Since
+<code>init.cable</code> is supposed to have come from a reasonable
+source (such as grid-based), this fit is not intended to be fed
+to another round of <code>bentcable.ar</code>, except when the user
+wishes to explore using an alternative p (but this should be
+performed in conjunction with another round of grid-based approach
+in Scenario (1) or (2)), or when the <code>"css"</code> algorithm fails
+to converge but the SSE value is desired (see <b>Details</b>).
+</p>
+<p>Below is a summary of the bent-cable regression methodology, and
+how one may apply it by using the <code>bentcableAR</code> package. 
+</p>
+<p>The <em>bent cable</em> is a linear-quadratic-linear function, where
+the quadratic bend is regarded as the transition from the incoming
+linear phase to the outgoing linear phase. A bent cable has the form
+<code class="reqn">f(t) = b_0 + b_1 t + b_2 q(t)</code>, where <code class="reqn">q(t)</code> is the
+<em>basic bent cable</em> with incoming slope 0 and outgoing slope 1,
+and a quadratic bend that is centred at <code class="reqn">\tau</code> with half-width
+<code class="reqn">\gamma\ge 0</code>:
+</p>
+<p style="text-align: center;"><code class="reqn">q(t)=\frac{(t-\tau+\gamma)^2}{4\gamma} I\{|t-\tau|\le\gamma\}
+	+ (t-\tau) I\{t&gt;\tau+\gamma\}.</code>
+</p>
+
+<p>The <em>broken stick</em> is a special bent cable with no quadratic
+bend (i.e. <code class="reqn">\gamma</code>=0). The term <em>bent-cable regression</em>
+implicitly includes <em>broken-stick regression</em>.
+</p>
+<p>For independent data (time series or otherwise), bent-cable
+regression by maximum likelihood is performed via nonlinear
+least-squares estimation of <code class="reqn">\theta=(b_0,b_1,b_2,\tau,\gamma)</code>.
+For AR(p) data, the AR coefficients are
+<code class="reqn">\phi=(\phi_1,\phi_2,\ldots,\phi_p)</code>, and conditional maximum
+likelihood (CML) estimation of <code class="reqn">(\theta,\phi)</code> (conditioned on
+the first p data points) is performed by nonlinear conditional
+least squares (i.e. minimizing the conditional sum-of-squares error
+(SSE)). In this time-series context, time points are assumed to be
+equidistant with unit increments.
+</p>
+<p>Minimization of the (conditional) SSE is specified as <code>"css"</code>
+by default for <code>method0</code>. However, <code>"css"</code> sometimes
+fails to converge, or the resulting <code class="reqn">\phi</code> estimate sometimes
+corresponds to non-stationarity.  In this case, the alternative
+estimation approach specified for <code>method1</code> is attempted.
+<code>"mle"</code> specifies the <em>CML-ML hybrid</em> algorithm, and
+<code>"yw"</code> the <em>CML-ML-MM hybrid</em> algorithm (<em>MM</em> stands
+for <em>method of moments</em>; see <b>References</b>.) Both
+<code>"yw"</code> and <code>"mle"</code> guarantee stationarity, but often take
+much longer than <code>"css"</code> to converge.
+</p>
+<p>Due to nonlinearity, initial values must be supplied for proper
+parameter estimation. Also, bent-cable regression is a notoriously
+irregular estimation problem (due to low-order differentiability),
+and the estimation algorithms (mainly the built-in <span style="font-family: Courier New, Courier; color: #666666;"><b>R</b></span>
+functions <code>nls</code> and <code>optim</code>) may fail to converge from
+initial values that are unrefined guesses of the parameters. When
+this happens, the user is advised to generate an initial value from
+a grid-based procedure.
+</p>
+<p>The grid-based procedure involves specifying a
+<code class="reqn">(\tau,\gamma)</code>-grid over which the bent-cable profile deviance
+surface is evaluated and plotted, such as by
+<code>bentcable.dev.plot</code>. At each grid
+point, the transition is fixed, and bent-cable regression involves
+only linear parameters <code class="reqn">b_0, b_1, b_2</code> and AR coefficients
+<code class="reqn">\phi</code>, all of which can be estimated using standard
+time-series algorithms (mainly the built-in <span style="font-family: Courier New, Courier; color: #666666;"><b>R</b></span> functions <code>ar</code>
+and <code>arima</code>). Regression at each grid point yields a point on
+the profile deviance surface. The grid point at which the profile
+deviance is maximum corresponds to a bent-cable fit (given a known
+transition) that is best among the specified grid points. Thus, for
+a high-resolution grid, this <em>best grid point</em> together with
+the corresponding estimates of <code class="reqn">b_0, b_1, b_2</code> and <code class="reqn">\phi</code>
+may be regarded as the ML or CML estimate for the model. However,
+high-resolution grid-based estimation may be computationally
+infeasible. Instead, the <em>best grid point</em> on a coarser grid
+can give good initial values for the true ML or CML estimate that
+is trapped between grid points.
+</p>
+<p>However, the <em>true</em> ML or CML estimate may not easily come by
+even with good initial values. Irregularity of bent-cable
+regression often manifests itself in the form of multiple peaks on
+the deviance surface. Thus, the user should be aware of different
+local maxima on which the optimization algorithm can converge
+despite initial values for <code class="reqn">\theta</code> that are very similar. The
+user is advised to combine several exploratory analyses as well as
+model diagnoses before settling on a <em>best</em> fit.
+</p>
+<p>For example, one may first fix p=0 as the AR order, then use
+<code>bentcable.dev.plot</code> to conduct a visual inspection of the
+profile deviance surface over a fine <code class="reqn">(\tau,\gamma)</code>-grid. This
+is to identify the neighbourhood of the global maximum for p=0. If
+necessary, one can <em>zoom in</em> to this neighbourhood by placing
+over it an even finer grid to hone the grid-based approximation.
+The resulting <code>bentcable.dev.plot</code> object can then be fed to
+<code>bentcable.ar</code> to produce a best overall fit for the AR(0)
+assumption in that neighbourhood. If p=0 is deemed inadequate based
+on the <code>bentcable.ar</code> diagnostics, then the regression must
+now be repeated for a newly chosen p. Since the bent-cable
+parameter estimates will differ for different values of p, the
+earlier AR(0) estimates may or may not be good initial values for
+this new AR(p) fit. The user is advised to try several additional
+initial values, possibly repeating the grid-based procedure, but
+this time using the new p. To further screen out local maxima, the
+SSE values for these AR(p) fits (with common p) should be compared.
+For a <code>"css"</code> fit, the SSE is stored in
+<code>$cable$ar.p.fit$value</code> of the returned object. The SSE is not
+directly retrievable for a <code>"yw"</code> or <code>"mle"</code> fit, but the
+user can apply the estimates returned in <code>$cable$est</code> as the initial
+values to a subsequent <code>"yw"</code> fit, and the SSE will appear in
+the screen output as <em>initial value</em> while the <code>"css"</code>
+algorithm iterates.
+</p>
+<p>As with any numerical optimization procedure, there is no guarantee
+that the fit observed to have the smallest SSE value indeed
+corresponds to the global maximum.
+</p>
+
+
+<h3>Value</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>cable</code></td>
+<td>
+<p> An object that is compatible with a
+<code>cable.ar.p.iter</code> object. Returned by <code>bentcable.ar</code>
+in Scenarios (3) and (4). Note the different components of
+<code>cable</code> depending on the scenario. See
+<code>cable.ar.p.iter</code> and <code>stick.ar.0</code>. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ctp</code></td>
+<td>
+<p> A <code>cable.change.conf</code> object, if the CTP is
+successfully estimated; returned by <code>bentcable.ar</code> in
+Scenarios (3) and (4). This object has three components: the CTP
+estimate, its estimated asymptotic variance, and the
+corresponding Wald confidence interval. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>fit</code></td>
+<td>
+<p> Returned by <code>bentcable.ar</code> in Scenarios (1) and (2).
+In (1), the returned <code>bentcable.ar</code> object is a
+<code>cable.ar.0.fit</code> object (largely compatible with
+<code>cable.ar.p.iter</code> objects); thus, <code>fit</code> is an
+<code>nls</code> object containing the overall independent-data
+bent-cable fit. In (2), the returned <code>bentcable.ar</code> object is a
+<code>cable.fit.known.change</code> object; thus, <code>fit</code>
+is an <code>arima</code> object containing the AR(p&gt;0) bent-cable fit
+at the known transition grid point. In either scenario,
+<code>fit</code> is intended to be fed through another round of
+<code>bentcable.ar</code> for subsequent overall AR(p&gt;0) fits. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>init</code></td>
+<td>
+<p> Returned by <code>bentcable.ar</code> in Scenario (2). It is
+the vector of parameter estimates extracted from <code>fit</code> and
+intended to be used as initial values in subsequent calls to
+<code>bentcable.ar</code> for overall bent-cable regression. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>y, t, n, p, stick</code></td>
+<td>
+<p> Returned by <code>bentcable.ar</code>
+explicitly in Scenario (1) (but embedded in <code>cable</code> of
+Scenarios (3) and (4)). They are <code>y.vect</code>, <code>t.vect</code>,
+<code>n</code>, <code>p</code>, and <code>stick</code> as supplied by the user. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>dev, tau, gamma</code></td>
+<td>
+<p> Returned by <code>bentcable.dev.plot</code>. Note
+that <code>dev</code> is a <code>cable.dev</code> object, i.e. a matrix of
+profile deviance values evaluated at the grid specified by
+<code>tau</code> and <code>gamma</code>. </p>
+</td>
+</tr>
+</table>
+<h3>Warnings</h3>
+
+<p>For time-series data, <code>t.vect</code> <em>MUST</em> be 
+equidistant with unit increments; otherwise, these 
+functions will return meaningless values. (For 
+independent data, <code>t.vect</code> can be non-equidistant.)   
+</p>
+<p>Computations for the CTP estimate and confidence interval are based on a time
+vector of the form <code>c(0,1,2,...)</code>. For any other form for the time
+vector, the CTP will not be computed, and on-screen warnings
+will appear. To ensure compatibility between the model fit and CTP
+estimates, the user is advised to fit the model using the default
+time vector. Then, if necessary, the user may transform the results
+to the preferred time scale after the model and CTP estimates have
+been produced.
+</p>
+<p>The above computational issue implies that the CTP cannot
+be computed for non-time-series data. <b>Rationale</b>:
+In a non-time-series context design points are often
+non-equidistant, and the cable's slope often never changes sign;
+even with a sign change, the point at which this takes place may be
+less interpretable. In such a context, the user is advised to rely
+on confidence regions for <code class="reqn">(\tau,\gamma)</code> (see
+<b>References</b>).
+</p>
+
+
+<h3>Note</h3>
+
+<p>The major engines for <code>bentcable.dev.plot</code> are
+<code>cable.dev</code> and <code>cable.fit.known.change</code>.
+The computational engines for <code>bentcable.ar</code> are
+<code>cable.ar.p.iter</code>, <code>cable.ar.0.fit</code>,
+<code>stick.ar.0</code>, and <code>cable.change.conf</code>,
+while the plotting engine is <code>cable.ar.p.diag</code>.
+Although these and other <em>lesser</em> functions are called
+internally by the two main interfaces described here, they can be
+used as stand-alone functions, and the user is advised to
+refer to their documentation. Type
+<code>library(help="bentcableAR")</code> for a full list of available
+functions.
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p> Grace Chiu </p>
+
+
+<h3>References</h3>
+
+<p>Chiu, G.S. and Lockhart, R.A. (2010), Bent-Cable Regression with
+Autoregressive Noise, <em>Canadian Journal of Statistics</em>,
+<b>38</b>, 386–407. DOI: 10.1002/cjs.10070. URL:  
+<a href="https://www.researchgate.net/publication/227652258_Bent-cable_regression_with_autoregressive_noise">https://www.researchgate.net/publication/227652258_Bent-cable_regression_with_autoregressive_noise</a>
+</p>
+<p>Chiu, G., Lockhart, R. and Routledge, R. (2006), Bent-Cable Regression
+Theory and Applications, <em>Journal of the American Statistical
+Association</em>, <b>101</b>, 542–553. DOI: 10.1198/016214505000001177. URL:  
+<a href="https://www.researchgate.net/publication/4742466_Bent-Cable_Regression_Theory_and_Applications">https://www.researchgate.net/publication/4742466_Bent-Cable_Regression_Theory_and_Applications</a>
+</p>
+
+
+<h3>See Also</h3>
+
+ 	<p><code>cable.lines</code>, <code>lm</code>, <code>nls</code>, <code>optim</code>,
+<code>ar</code>, <code>arima</code>, <code>plot</code>,
+<code>par</code>, <code>contour</code>, <code>persp</code> </p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+## Not run: 
+
+# Scenario (1)
+##############
+
+# independent non-time-series cable:
+
+data(stagnant)
+
+bentcable.dev.plot( seq(-1,1,length=20),
+	seq(.1,1,length=20), stagnant$loght, stagnant$logflow )
+
+	# zoom in to global max
+	dev0 &lt;- bentcable.dev.plot( seq(-.04,.16,length=20), 
+		seq(.2,.65,length=20), stagnant$loght, stagnant$logflow )
+			# locally smooth deviance surface
+
+	cable &lt;- bentcable.ar( stagnant$loght, tgdev=dev0, t.vect=stagnant$logflow )
+		# ignore time-series diagnostics
+		# local regularity - expect to be true best fit
+		# SSE=0.005
+		# feed 'cable' in Scenario (3) to get fitted plot:
+		#	bentcable.ar( cable$y, init.cable=coef(cable$fit),
+		#		t.vect=cable$t )
+
+
+# AR(0) stick, start time at 80:
+dev0 &lt;- bentcable.dev.plot( seq(85,97,length=15), 0,
+	sockeye$logReturns, sockeye$year, TRUE )  # obvious global max
+stick0 &lt;- bentcable.ar( sockeye$logReturns, tgdev=dev0, stick=TRUE,
+	t.vect=sockeye$year )
+		# local regularity - should be true best fit
+		# SSE=8.85
+		# diagnostics: take p=0 to 4 ??
+
+# AR(0) cable, start at time 0:
+bentcable.dev.plot( seq(1,20,length=25), 
+	seq(.1,15,length=25), sockeye$logReturns )
+
+	# zoom in to global max
+	dev0 &lt;- bentcable.dev.plot( seq(10,15,length=25),
+		seq(2,10,length=20), sockeye$logReturns )
+			# surface has ridge - expect some trouble locating true peak
+
+	cable0 &lt;- bentcable.ar( sockeye$logReturns, tgdev=dev0 )
+		# apparent best AR(0) fit: SSE=8.68
+		# diagnostics: take p=2 to 6
+
+		# compare to this:
+		# dev1 &lt;- bentcable.dev.plot( seq(10,15,length=25),
+		#	seq(2,10,length=15), sockeye$logReturns )
+		# bentcable.ar( sockeye$logReturns, tgdev=dev1 ) # SSE=8.683
+		#	# not an obvious local max!
+
+		# feed 'cable0' in Scenario (3) to get fitted plot:
+		#	bentcable.ar( cable0$y, init.cable=coef(cable0$fit) )
+
+
+## End(Not run)
+
+
+
+
+# Scenario (2)
+##############
+
+data(sockeye)
+
+# AR(2) cable, start time at 0:
+bentcable.dev.plot( seq(6,18,length=15),
+	seq(.01,12,length=15), sockeye$logReturns, p=2 )
+
+	# zoom in to global max
+	dev2 &lt;- bentcable.dev.plot( seq(10,12,length=15),
+		seq(1,5,length=15), sockeye$logReturns, p=2 )
+
+	# best grid-based fit
+	gr.cable2 &lt;- bentcable.ar( sockeye$logReturns, tgdev=dev2, p=2 )
+		# to be used in Scenario (4)
+		# local regularity - expect little trouble
+
+# AR(2) stick, start time at 80:
+bentcable.dev.plot( seq(86,98,length=15), y.vect=sockeye$logReturns, 
+	p=2, stick=TRUE, t.vect=sockeye$year )
+
+	# zoom in to global max
+	dev3 &lt;- bentcable.dev.plot( seq(88.5,93,length=25),
+		y.vect=sockeye$logReturns, 
+		p=2, stick=TRUE, t.vect=sockeye$year )
+			# camel hump - double peaks!
+
+	# best grid-based fit
+	gr.stick2 &lt;- bentcable.ar( sockeye$logReturns, tgdev=dev3, p=2, stick=TRUE,
+		t.vect=sockeye$year )
+			# irregularity - expect some trouble if used in Scenario (4)
+
+
+
+## Not run: 
+
+# AR(4) cable, start time at 0:
+bentcable.dev.plot( seq(6,18,length=15), seq(.01,12,length=15), 
+	sockeye$logReturns, p=4 )
+
+	# zoom in to global max
+	dev4 &lt;- bentcable.dev.plot( seq(10,12,length=15),
+		seq(1,7,length=25), sockeye$logReturns, p=4 )
+			# slight ridge
+
+	# best grid-based fit
+	gr.cable4 &lt;- bentcable.ar( sockeye$logReturns, tgdev=dev4, p=4 )
+		# to be used in Scenario (4)
+		# will ridge be problem???
+
+
+
+
+# Scenario (3)
+##############
+
+# independent non-time-series cable:
+
+data(stagnant)
+
+bentcable.ar( stagnant$loght, t.vect=stagnant$logflow,
+	init.cable=c(.6,-.4,-.7,0,.5) )   # SSE=0.005
+		# identical to 'cable' in Scenario (1)
+		# no irregularity, no ambiguity!
+
+
+
+# AR(0) stick, start time at 80:
+bentcable.ar( sockeye$logReturns, init.cable=c(10,.1,-.5,90),
+	stick=TRUE, t.vect=sockeye$year )
+		# identical to 'stick0' in Scenario (1)
+		# local regularity, no trouble
+
+
+# AR(0) stick, start time at 0:
+bentcable.ar( sockeye$logReturns, init.cable=coef(cable0$fit)[1:5],
+	stick=TRUE )
+		# identical to 'cable0' in Scenario (1)
+		# here you get plot of fit and CTP confidence interval
+
+
+## End(Not run)
+
+
+
+
+# Scenario (4)
+##############
+
+# AR(2) cable, start time at 0:
+# use 'gr.cable2' from Scenario (2)
+cable2 &lt;- bentcable.ar( sockeye$logReturns,
+	init.cable=gr.cable2$init[1:5], init.phi=gr.cable2$init[-c(1:5)] )
+		# "css" successful
+		# best AR(2) fit, SSE=4.868
+	
+	# compare to this:
+	# bentcable.ar( sockeye$logReturns,
+	#	init.cable=c(13,.1,-.5,11,4), p=2 )
+			# "css" successful, same SSE, virtually same fit
+			# recall local regularity from 'dev2'
+
+# AR(2) stick, start time at 80:
+# use 'gr.stick2' from Scenario (2)
+stick2 &lt;- bentcable.ar( sockeye$logReturns, init.cable=gr.stick2$init[1:4],
+		init.phi=gr.stick2$init[-c(1:4)], stick=TRUE, t.vect=sockeye$year )
+			# "css" successful, best AR(2) fit, SSE=5.0
+
+			# compare this to the other peak shown in 'dev3'
+			#	bentcable.ar( sockeye$logReturns,
+			#	init.cable=c(10,0,-.5,91.5), p=2, stick=TRUE,
+			#		t.vect=sockeye$year )
+						# "css" successful, SSE=5.1, not best fit!
+
+
+## Not run: 
+
+# AR(4) cable, start time at 0:
+cable4 &lt;- bentcable.ar( sockeye$logReturns,
+	init.cable=gr.cable4$init[1:5], init.phi=gr.cable4$init[-c(1:5)] )
+		# "css" unsuccessful, switched to "yw"
+		# feed 'cable4' in Scenario (4) to get SSE from screen output:
+
+		bentcable.ar( cable4$cable$y, init.cable=cable4$cable$est[1:5],
+			init.phi=cable4$cable$est[-c(1:5)] )
+				# SSE=2.47 from screen output
+
+## End(Not run)
+</code></pre>
+
+
+</div>

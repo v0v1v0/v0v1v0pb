@@ -1,0 +1,104 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>post_process</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Post-process a Posterior Sample</h2>
+
+<h3>Description</h3>
+
+<p>Post-process the results of <code>ggumMCMC</code> or <code>ggumMC3</code>
+using an artificial identifiability constraint (AIC).
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">post_process(sample, constraint, expected_sign)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>sample</code></td>
+<td>
+<p>A numeric matrix of posterior draws as returned by
+<code>ggumMCMC</code> or <code>ggumMC3</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>constraint</code></td>
+<td>
+<p>An integer vector of length one giving the column number
+of the parameter to constrain, or a character vector of length one giving
+the column name for the constraint.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>expected_sign</code></td>
+<td>
+<p>A character vector of length one giving the sign for
+the constraint; it should be either "-" if the constrained parameter is
+to be negative or "+" if the constrained parameter is to be positive.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>Since under the GGUM the probability of a response is the same for any given
+choice of theta and delta parameters and the negative of that choice; i.e.
+</p>
+<p style="text-align: center;"><code class="reqn">Pr(z | \theta, \alpha, \delta, \tau) = Pr(z | -\theta, \alpha, -\delta, \tau),</code>
+</p>
+
+<p>if symmetric priors are used, the posterior has a reflective mode.
+This function transforms a posterior sample by enforcing a constraint
+that a particular parameter is of a given sign, essentially transforming
+it into a sample from only one of the reflective modes if a suitable
+constraint is chosen; using a sufficiently extreme parameter is suggested.
+</p>
+<p>Please see the vignette (via <code>vignette("bggum")</code>) for a full in-depth
+practical guide to Bayesian estimation of GGUM parameters.
+</p>
+
+
+<h3>Value</h3>
+
+<p>A numeric matrix, the post-processed sample.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>ggumMCMC</code>, <code>ggumMC3</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## NOTE: This is a toy example just to demonstrate the function, which uses
+## a small dataset and an unreasonably low number of sampling interations.
+## For a longer practical guide on Bayesian estimation of GGUM parameters,
+## please see the vignette ( via vignette("bggum") ).
+## We'll simulate data to use for this example:
+set.seed(123)
+sim_data &lt;- ggum_simulation(100, 10, 2)
+## Now we can generate posterior draws
+## (for the purposes of example, we use 100 iterations,
+## though in practice you would use much more)
+draws &lt;- ggumMC3(data = sim_data$response_matrix, n_temps = 2,
+                 sd_tune_iterations = 100, temp_tune_iterations = 100,
+                 temp_n_draws = 50,
+                 burn_iterations = 100, sample_iterations = 100)
+## Then you can post-process the output
+processed_draws &lt;- post_process(sample = draws,
+                                constraint = which.min(sim_data$theta),
+                                expected_sign = "-")
+
+</code></pre>
+
+
+</div>

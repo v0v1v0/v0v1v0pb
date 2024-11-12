@@ -1,0 +1,223 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>BIFIE.waldtest</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>
+Wald Tests for BIFIE Methods
+</h2>
+
+<h3>Description</h3>
+
+<p>This function performs a Wald test for objects of classes
+<code>BIFIE.by</code>,
+<code>BIFIE.correl</code>, <code>BIFIE.crosstab</code>, <code>BIFIE.freq</code>,
+<code>BIFIE.linreg</code>, <code>BIFIE.logistreg</code> and <code>BIFIE.univar</code>.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">BIFIE.waldtest(BIFIE.method, Cdes, rdes, type=NULL)
+
+## S3 method for class 'BIFIE.waldtest'
+summary(object,digits=4,...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>BIFIE.method</code></td>
+<td>
+
+<p>Object of classes <code>BIFIE.by</code>,
+<code>BIFIE.correl</code>, <code>BIFIE.crosstab</code>,
+<code>BIFIE.freq</code>,  <code>BIFIE.linreg</code>,
+<code>BIFIE.logistreg</code> or <code>BIFIE.univar</code>
+(see <code>parnames</code> in the Output of these methods for saved parameters)
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Cdes</code></td>
+<td>
+<p>Design matrix <code class="reqn">C</code> (see Details)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>rdes</code></td>
+<td>
+<p>Design vector <code class="reqn">r</code> (see Details)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>type</code></td>
+<td>
+<p>Only applies to <code>BIFIE.correl</code>. In case of <code>type="cov"</code>
+covariances instead of correlations are used for parameter tests.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>object</code></td>
+<td>
+<p>Object of class <code>BIFIE.waldtest</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>digits</code></td>
+<td>
+<p>Number of digits for rounding output</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Further arguments to be passed</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The Wald test is conducted for a parameter vector <code class="reqn">\bold{\theta}</code>,
+specifying the hypothesis <code class="reqn">C \bold{\theta}=r</code>. Statistical inference
+is performed by using the <code class="reqn">D_1</code> and the <code class="reqn">D_2</code> statistic
+(Enders, 2010, Ch. 8).
+</p>
+<p>For objects of class <code>bifie.univar</code>, only hypotheses with respect
+to means are implemented.
+</p>
+
+
+<h3>Value</h3>
+
+<p>A list with following entries
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>stat.D</code></td>
+<td>
+<p>Data frame with <code class="reqn">D_1</code> and <code class="reqn">D_2</code> statistic, degrees of freedom
+and p value</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>More values</p>
+</td>
+</tr>
+</table>
+<h3>References</h3>
+
+<p>Enders, C. K. (2010). <em>Applied missing data analysis</em>. Guilford Press.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>survey::regTermTest</code>,
+<code>survey::anova.svyglm</code>,
+<code>car::linearHypothesis</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">#############################################################################
+# EXAMPLE 1: Imputed TIMSS dataset
+#############################################################################
+
+data(data.timss1)
+data(data.timssrep)
+
+# create BIFIE.dat object
+bdat &lt;- BIFIEsurvey::BIFIE.data( data.list=data.timss1, wgt=data.timss1[[1]]$TOTWGT,
+           wgtrep=data.timssrep[, -1 ] )
+
+#******************
+#*** Model 1: Linear regression
+res1 &lt;- BIFIEsurvey::BIFIE.linreg( bdat, dep="ASMMAT", pre=c("one","books","migrant"),
+         group="female" )
+summary(res1)
+
+#*** Wald test which tests whether sigma and R^2 values are the same
+res1$parnames    # parameter names
+pn &lt;- res1$parnames ; PN &lt;- length(pn)
+Cdes &lt;- matrix(0,nrow=2, ncol=PN)
+colnames(Cdes) &lt;- pn
+# equality of R^2  ( R^2(female0) - R^2(female1)=0 )
+Cdes[ 1, c("R^2_NA_female_0", "R^2_NA_female_1" ) ] &lt;- c(1,-1)
+# equality of sigma ( sigma(female0) - sigma(female1)=0)
+Cdes[ 2, c("sigma_NA_female_0", "sigma_NA_female_1" ) ] &lt;- c(1,-1)
+# design vector
+rdes &lt;- rep(0,2)
+# perform Wald test
+wmod1 &lt;- BIFIEsurvey::BIFIE.waldtest( BIFIE.method=res1, Cdes=Cdes, rdes=rdes )
+summary(wmod1)
+
+## Not run: 
+#******************
+#*** Model 2: Correlations
+
+# compute some correlations
+res2a &lt;- BIFIEsurvey::BIFIE.correl( bdat, vars=c("ASMMAT","ASSSCI","migrant","books"))
+summary(res2a)
+
+# test whether r(MAT,migr)=r(SCI,migr) and r(MAT,books)=r(SCI,books)
+pn &lt;- res2a$parnames; PN &lt;- length(pn)
+Cdes &lt;- matrix( 0, nrow=2, ncol=PN )
+colnames(Cdes) &lt;- pn
+Cdes[ 1, c("ASMMAT_migrant", "ASSSCI_migrant") ] &lt;- c(1,-1)
+Cdes[ 2, c("ASMMAT_books", "ASSSCI_books") ] &lt;- c(1,-1)
+rdes &lt;- rep(0,2)
+# perform Wald test
+wres2a &lt;- BIFIEsurvey::BIFIE.waldtest( res2a, Cdes, rdes )
+summary(wres2a)
+
+#******************
+#*** Model 3: Frequencies
+
+# Number of books splitted by gender
+res3a &lt;- BIFIEsurvey::BIFIE.freq( bdat, vars=c("books"), group="female" )
+summary(res3a)
+
+# test whether book(cat4,female0)+book(cat5,female0)=book(cat4,female1)+book(cat5,female5)
+pn &lt;- res3a$parnames
+PN &lt;- length(pn)
+Cdes &lt;- matrix( 0, nrow=1, ncol=PN )
+colnames(Cdes) &lt;- pn
+Cdes[ 1, c("books_4_female_0", "books_5_female_0",
+    "books_4_female_1", "books_5_female_1" ) ] &lt;- c(1,1,-1,-1)
+rdes &lt;- c(0)
+# Wald test
+wres3a &lt;- BIFIEsurvey::BIFIE.waldtest( res3a, Cdes, rdes )
+summary(wres3a)
+
+#******************
+#*** Model 4: Means
+
+# math and science score splitted by gender
+res4a &lt;- BIFIEsurvey::BIFIE.univar( bdat, vars=c("ASMMAT","ASSSCI"), group="female")
+summary(res4a)
+
+# test whether there are significant gender differences in math and science
+#=&gt; multivariate ANOVA
+pn &lt;- res4a$parnames
+PN &lt;- length(pn)
+Cdes &lt;- matrix( 0, nrow=2, ncol=PN )
+colnames(Cdes) &lt;- pn
+Cdes[ 1, c("ASMMAT_female_0", "ASMMAT_female_1"  ) ] &lt;- c(1,-1)
+Cdes[ 2, c("ASSSCI_female_0", "ASSSCI_female_1"  ) ] &lt;- c(1,-1)
+rdes &lt;- rep(0,2)
+# Wald test
+wres4a &lt;- BIFIEsurvey::BIFIE.waldtest( res4a, Cdes, rdes )
+summary(wres4a)
+
+## End(Not run)
+</code></pre>
+
+
+</div>

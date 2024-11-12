@@ -1,0 +1,157 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>densityplot.angmcmc</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Density plots for angmcmc objects</h2>
+
+<h3>Description</h3>
+
+<p>Plot fitted angular mixture model density surfaces or curves.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">## S3 method for class 'angmcmc'
+densityplot(
+  x,
+  data = NULL,
+  fn = mean,
+  type = "point-est",
+  log.density = FALSE,
+  xpoints = seq(0, 2 * pi, length.out = 35),
+  ypoints = seq(0, 2 * pi, length.out = 35),
+  plot = TRUE,
+  show.hist = ifelse(log.density, FALSE, TRUE),
+  xlab,
+  ylab,
+  zlab = ifelse(log.density, "Log Density", "Density"),
+  main,
+  ...
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>angmcmc object.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+<p>unused. The parameter is already filled with results from fitted angular model. It is kept
+to ensure compatibility with the lattice S3 generic <code>densityplot</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>fn</code></td>
+<td>
+<p>function, or a single character string specifying its name, to evaluate on MCMC samples to estimate
+parameters.  Defaults to <code>mean</code>, which computes the estimated posterior mean.
+Note that if <code>fn = "MODE"</code> (warning: not <code>"mode"</code>) or <code>fn = "MAP"</code>, then the maximum aposteriori estimate (MAP) is
+calculated.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>type</code></td>
+<td>
+<p>Passed to d_fitted. Possible choices are "point-est" and "post-pred".</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>log.density</code></td>
+<td>
+<p>logical. Should log density be used for the plot?</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>xpoints, ypoints</code></td>
+<td>
+<p>Points on the  x and y coordinates (if bivariate) or only x coordinate
+(if univariate) where the density is to be evaluated. Each defaults to seq(0, 2*pi, length.out=100).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>plot</code></td>
+<td>
+<p>logical. Should the density surface (if the fitted data is bivariate) or the density
+curve (if univariate) be plotted?</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>show.hist</code></td>
+<td>
+<p>logical. Should a histogram for the data
+points be added to the plot, if the fitted data is univariate? Ignored if data is
+bivariate.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>xlab, ylab, zlab, main</code></td>
+<td>
+<p>graphical parameters passed to <code>lattice::wireframe</code> (if
+bivariate) or plot (if univariate). If the data is univariate, <code>zlab</code> and <code>ylab</code> can be
+used interchangeably (both correspond to the density).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>additional arguments passed to <code>lattice::wireframe</code> if
+fitted data is bivariate, or to hist (if (<code>show.hist == TRUE</code>)), if the fitted data is univariate</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>When <code>plot==TRUE</code>, <code>densityplot.angmcmc</code> calls <code>lattice::wireframe</code> or
+plot from graphics to draw the surface or curve.
+</p>
+<p>To estimate the mixture density, first the parameter vector <code class="reqn">\eta</code> is estimated
+by applying <code>fn</code> on the MCMC samples, yielding the (consistent) Bayes estimate <code class="reqn">\hat{\eta}</code>. Then the mixture density
+<code class="reqn">f(x|\eta)</code> at any point <code class="reqn">x</code> is (consistently) estimated by <code class="reqn">f(x|\hat{\eta})</code>.
+</p>
+<p>Note that <code>densityplot.angmcmc</code> <strong>does not</strong> plot the kernel densitie estimates
+of the MCMC parameters. (These plots can be obtained by first converting an <code>angmcmc</code>
+object to an <code>mcmc</code> object via as.mcmc.list, and then
+by using <code>densplot</code> from package coda on the resulting <code>mcmc.list</code> object. Instead,
+<code>densityplot.angmcmc</code> returns the surface (if 2-D) or the curve (if 1-D)
+of the fitted model density evaluated at the estimated parameter vector (obtain through pointest).
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R"># first fit a vmsin mixture model
+# illustration only - more iterations needed for convergence
+fit.vmsin.20 &lt;- fit_vmsinmix(tim8, ncomp = 3, n.iter =  20,
+                             n.chains = 1)
+# now create density surface with the default first 1/3 as burn-in and thin = 1
+library(lattice)
+densityplot(fit.vmsin.20)
+# the viewing angles can be changed through the argument 'screen'
+# (passed to lattice::wireframe)
+densityplot(fit.vmsin.20, screen = list(z=-30, x=-60))
+densityplot(fit.vmsin.20, screen = list(z=30, x=-60))
+# the colors can be changed through 'col.regions'
+cols &lt;- grDevices::colorRampPalette(c("blue", "green",
+                                      "yellow", "orange", "red"))(100)
+densityplot(fit.vmsin.20, col.regions = cols)
+
+# Now fit a vm mixture model
+# illustration only - more iterations needed for convergence
+fit.vm.20 &lt;- fit_vmmix(wind$angle, ncomp = 3, n.iter =  20,
+                             n.chains = 1)
+densityplot(fit.vm.20)
+
+</code></pre>
+
+
+</div>

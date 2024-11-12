@@ -1,0 +1,374 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>BayesGLM_cifti</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>BayesGLM for CIFTI</h2>
+
+<h3>Description</h3>
+
+<p>Performs spatial Bayesian GLM on the cortical surface for fMRI task activation
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">BayesGLM_cifti(
+  cifti_fname,
+  surfL_fname = NULL,
+  surfR_fname = NULL,
+  brainstructures = c("left", "right"),
+  design = NULL,
+  onsets = NULL,
+  TR = NULL,
+  nuisance = NULL,
+  dHRF = c(0, 1, 2),
+  dHRF_as = c("auto", "nuisance", "task"),
+  hpf = NULL,
+  DCT = if (is.null(hpf)) {
+     4
+ } else {
+     NULL
+ },
+  resamp_res = 10000,
+  task_names = NULL,
+  session_names = NULL,
+  combine_sessions = TRUE,
+  scale_BOLD = c("auto", "mean", "sd", "none"),
+  scale_design = TRUE,
+  Bayes = TRUE,
+  ar_order = 6,
+  ar_smooth = 5,
+  aic = FALSE,
+  num.threads = 4,
+  return_INLA = c("trimmed", "full", "minimal"),
+  verbose = 1,
+  meanTol = 1e-06,
+  varTol = 1e-06
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>cifti_fname</code></td>
+<td>
+<p>fMRI timeseries data in CIFTI format ("*.dtseries.nii").
+For single-session analysis this can be a file path to a CIFTI file or a
+<code>"xifti"</code> object from the <code>ciftiTools</code> package. For multi-session
+analysis this can be a vector of file paths or a list of <code>"xifti"</code>
+objects.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>surfL_fname</code></td>
+<td>
+<p>Left cortex surface geometry in GIFTI format
+("*.surf.gii"). This can be a file path to a GIFTI file or a <code>"surf"</code>
+object from the <code>ciftiTools</code> package. This argument is only used if
+<code>brainstructures</code> includes <code>"left"</code> and <code>Bayes==TRUE</code>. If
+it's not provided, the HCP group-average inflated surface included in the
+<code>ciftiTools</code> package will be used.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>surfR_fname</code></td>
+<td>
+<p>Right cortex surface geometry in GIFTI format
+("*.surf.gii"). This can be a file path to a GIFTI file or a <code>"surf"</code>
+object from the <code>ciftiTools</code> package. This argument is only used if
+<code>brainstructures</code> includes <code>"right"</code> and <code>Bayes==TRUE</code>. If
+it's not provided, the HCP group-average inflated surface included in the
+<code>ciftiTools</code> package will be used.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>brainstructures</code></td>
+<td>
+<p>Character vector indicating which brain structure(s)
+to analyze: <code>"left"</code> (left cortical surface) and/or <code>"right"</code>
+(right cortical surface). Default: <code>c("left","right")</code> (both
+hemispheres). Note that the subcortical models have not yet been implemented.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>design, onsets, TR</code></td>
+<td>
+<p>Either provide <code>design</code> directly, or provide
+both <code>onsets</code> and <code>TR</code> from which the design matrix or matrices
+will be constructed.
+</p>
+<p><code>design</code> is a <code class="reqn">T \times K</code> task design matrix. Each column
+represents the expected BOLD response due to each task, a convolution of
+the hemodynamic response function (HRF) and the task stimulus. Note that
+the scale of the regressors will affect the scale and interpretation of the
+beta coefficients, so imposing a proper scale is recommended; see the
+<code>scale_design</code> argument, which by default is <code>TRUE</code>. Task names
+should be the column names, if not provided by the <code>task_names</code>
+argument. For multi-session modeling, this argument should be a list of
+such matrices. To model HRF derivatives, calculate the derivatives of the
+task columns beforehand (see the helper function <code>cderiv</code> which
+computes the discrete central derivative) and either add them to
+<code>design</code> to model them as tasks, or <code>nuisance</code> to model them as
+nuisance signals; it's recommended to then drop the first and last
+timepoints because the discrete central derivative doesn't exist at the
+time series boundaries. Do note that INLA computation times increase
+greatly if the design matrix has more than five columns, so it might be
+required to add these derivatives to <code>nuisance</code> rather than
+<code>design</code>.
+</p>
+<p><code>onsets</code> is an <code class="reqn">L</code>-length list in which the name of each element is
+the name of the corresponding task, and the value of each element is a
+matrix of onsets (first column) and durations (second column) for each
+stimuli (each row) of the corresponding task. The units of both columns
+is seconds. For multi-session modeling, this argument should be a list of
+such lists. To model HRF derivatives, use the arguments <code>dHRF</code> and
+<code>dHRF_as</code>. If <code>dHRF==0</code> or <code>dHRF_as=="nuisance"</code>, the total
+number of columns in the design matrix, <code class="reqn">K</code>, will equal <code class="reqn">L</code>.
+If <code>dHRF_as=="task"</code>, <code class="reqn">K</code> will equal <code class="reqn">L</code> times <code>dHRF+1</code>.
+</p>
+<p><code>TR</code> is the temporal resolution of the data, in seconds.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nuisance</code></td>
+<td>
+<p>(Optional) A <code class="reqn">T \times J</code> matrix of nuisance signals.
+These are regressed from the fMRI data and the design matrix prior to the
+GLM computation. For multi-session modeling, this argument should be a list
+of such matrices.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>dHRF, dHRF_as</code></td>
+<td>
+<p>Only applicable if <code>onsets</code> and <code>TR</code> are
+provided. These arguments enable the modeling of HRF derivatives.
+</p>
+<p>Set <code>dHRF</code> to <code>1</code> to model the temporal derivatives of each task,
+<code>2</code> to add the second derivatives too, or <code>0</code> to not model the
+derivatives. Default: <code>1</code>.
+</p>
+<p>If <code>dHRF &gt; 0</code>, <code>dHRF_as</code> controls whether the derivatives are
+modeled as <code>"nuisance"</code> signals to regress out, <code>"tasks"</code>, or
+<code>"auto"</code> (default) to treat them as tasks unless the total number of
+columns in the design matrix would exceed five.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>hpf, DCT</code></td>
+<td>
+<p>Add DCT bases to <code>nuisance</code> to apply a temporal
+high-pass filter to the data? Only one of these arguments should be provided.
+<code>hpf</code> should be the filter frequency; if it is provided, <code>TR</code>
+must be provided too. The number of DCT bases to include will be computed
+to yield a filter with as close a frequency to <code>hpf</code> as possible.
+Alternatively, <code>DCT</code> can be provided to directly specify the number
+of DCT bases to include.
+</p>
+<p>Default: <code>DCT=4</code>. For typical <code>TR</code>, four DCT bases amounts to a
+lower frequency cutoff than the approximately .01 Hz used in most studies.
+We selected this default to err on the side of retaining more low-frequency
+information, but we recommend setting these arguments to values most
+appropriate for the data analysis at hand.
+</p>
+<p>Using at least two DCT bases is as sufficient as using linear and quadratic
+drift terms in the design matrix. So if DCT detrending is being used, there
+is no need to add linear and quadratic drift terms to <code>nuisance</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>resamp_res</code></td>
+<td>
+<p>The number of vertices to which each cortical surface
+should be resampled, or <code>NULL</code> to not resample. For computational
+feasibility, a value of <code>10000</code> or lower is recommended.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>task_names</code></td>
+<td>
+<p>(Optional) Names of tasks represented in design matrix.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>session_names</code></td>
+<td>
+<p>(Optional, and only relevant for multi-session modeling)
+Names of each session. Default: <code>NULL</code>. In <code>BayesGLM</code> this
+argument will overwrite the names of the list entries in <code>data</code>, if
+both exist.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>combine_sessions</code></td>
+<td>
+<p>If multiple sessions are provided, should their data
+be combined and analyzed as a single session?
+</p>
+<p>If <code>TRUE</code> (default), the multiple sessions will be concatenated along
+time after scaling and nuisance regression, but before prewhitening. If
+<code>FALSE</code>, each session will be analyzed separately, except that a single
+estimate of the AR model coefficients for prewhitening is used, estimated
+across all sessions.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>scale_BOLD</code></td>
+<td>
+<p>Option for scaling the BOLD response.
+</p>
+<p><code>"auto"</code> (default) will use <code>"mean"</code> scaling except if demeaned
+data is detected (if any mean is less than one), in which case <code>"sd"</code>
+scaling will be used instead.
+</p>
+<p><code>"mean"</code> scaling will scale the data to percent local signal change.
+</p>
+<p><code>"sd"</code> scaling will scale the data by local standard deviation.
+</p>
+<p><code>"none"</code> will only center the data, not scale it.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>scale_design</code></td>
+<td>
+<p>Scale the design matrix by dividing each column by its
+maximum and then subtracting the mean? Default: <code>TRUE</code>. If
+<code>FALSE</code>, the design matrix is centered but not scaled.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Bayes</code></td>
+<td>
+<p>If <code>TRUE</code> (default), will fit a spatial Bayesian GLM in
+addition to the classical GLM. (The classical GLM is always returned.)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ar_order</code></td>
+<td>
+<p>(numeric) Controls prewhitening. If greater than zero, this
+should be a number indicating the order of the autoregressive model to use
+for prewhitening. If zero, do not prewhiten. Default: <code>6</code>. For
+multi-session models, note that a single AR model is used; the parameters
+are estimated by averaging the estimates from each session.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ar_smooth</code></td>
+<td>
+<p>(numeric) FWHM parameter for smoothing the AR model
+coefficient estimates for prewhitening. Remember that
+<code class="reqn">\sigma = \frac{FWHM}{2*sqrt(2*log(2)}</code>. Set to <code>0</code> or <code>NULL</code>
+to not do any smoothing. Default: <code>5</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>aic</code></td>
+<td>
+<p>Use the AIC to select AR model order between <code>0</code> and
+<code>ar_order</code>? Default: <code>FALSE</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>num.threads</code></td>
+<td>
+<p>The maximum number of threads to use for parallel
+computations: prewhitening parameter estimation, and the inla-program model
+estimation. Default: <code>4</code>. Note that parallel prewhitening requires the
+<code>parallel</code> package.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>return_INLA</code></td>
+<td>
+<p>Return the INLA model object? (It can be large.) Use
+<code>"trimmed"</code> (default) to return only the more relevant results, which
+is enough for both <code>id_activations</code> and <code>BayesGLM2</code>,
+<code>"minimal"</code> to return just enough for <code>BayesGLM2</code> but not
+<code>id_activations</code>, or <code>"full"</code> to return the full output of
+<code>inla</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>verbose</code></td>
+<td>
+<p>Should updates be printed? Use <code>1</code> (default) for
+occasional updates, <code>2</code> for occasional updates as well as running INLA
+in verbose mode (if applicable), or <code>0</code> for no updates.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>meanTol, varTol</code></td>
+<td>
+<p>Tolerance for mean and variance of each data location.
+Locations which do not meet these thresholds are masked out of the analysis.
+Default: <code>1e-6</code> for both.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>An object of class <code>"BayesGLM_cifti"</code>: a list with elements
+</p>
+
+<dl>
+<dt>betas_Bayesian</dt>
+<dd>
+<p>The task coefficients for the Bayesian model.</p>
+</dd>
+<dt>betas_classical</dt>
+<dd>
+<p>The task coefficients for the classical model.</p>
+</dd>
+<dt>GLMs_Bayesian</dt>
+<dd>
+<p>The entire list of GLM results, except for parameters estimated for the classical model.</p>
+</dd>
+<dt>GLMs_classical</dt>
+<dd>
+<p>Parameters estimated for the classical model from the GLM.</p>
+</dd>
+<dt>session_names</dt>
+<dd>
+<p>The names of the sessions.</p>
+</dd>
+<dt>n_sess_orig</dt>
+<dd>
+<p>The number of sessions (before averaging, if applicable).</p>
+</dd>
+<dt>task_names</dt>
+<dd>
+<p>The task part of the design matrix, after centering and scaling, but before any nuisance regression or prewhitening.</p>
+</dd>
+</dl>
+<h3>INLA latent fields limit</h3>
+
+<p>INLA computation times increase greatly when the number of columns in the
+design matrix exceeds five. So if there are more than five tasks, or
+three or more tasks each with its temporal derivative being modeled as a
+task, <code>BayesGLM</code> will raise a warning. In cases like the latter, we
+recommend modeling the temporal derivatives as nuisance signals using the
+<code>nuisance</code> argument, rather than modeling them as tasks.
+</p>
+
+
+<h3>Connectome Workbench Requirement</h3>
+
+<p>This function uses a system wrapper for the 'wb_command' executable. The
+user must first download and install the Connectome Workbench, available
+from https://www.humanconnectome.org/software/get-connectome-workbench .
+</p>
+
+
+<h3>INLA Requirement</h3>
+
+<p>This function requires the <code>INLA</code> package, which is not a CRAN package.
+See <a href="https://www.r-inla.org/download-install">https://www.r-inla.org/download-install</a> for easy installation instructions.
+</p>
+
+
+</div>

@@ -1,0 +1,155 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>evalBraidModel</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Evaluate the BRAID response surface model</h2>
+
+<h3>Description</h3>
+
+<p>Evaluate the BRAID response surface model
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">evalBraidModel(DA, DB, bpar, calcderivs = FALSE)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>DA</code></td>
+<td>
+<p>A vector of concentrations of drug A in a combination (values 0
+and <code>Inf</code> are permitted). Must be length 1 or the same length as <code>DB</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>DB</code></td>
+<td>
+<p>A vector of concentrations of drug B in a combination (values 0
+and <code>Inf</code> are permitted). Must be length 1 or the same length as <code>DA</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>bpar</code></td>
+<td>
+<p>A BRAID response surface parameter vector (see Details)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>calcderivs</code></td>
+<td>
+<p>Primarily used by fitting functions for non-linear
+optimization.  If <code>FALSE</code> (the default), the function returns a vector of
+response values; if <code>TRUE</code>, it returns a list including the partial
+derivatives of the BRAID parameters.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The BRAID response model is, in total, described by nine response surface
+parameters.  A BRAID parameter vector should uniquely determine all these
+values. They are
+</p>
+
+<ul>
+<li>
+<p> IDMA: The dose of median effect of drug A, also called the EC50
+</p>
+</li>
+<li>
+<p> IDMB: The dose of median effect of drug B
+</p>
+</li>
+<li>
+<p> na: The Hill slope, or sigmoidicity, of drug A
+</p>
+</li>
+<li>
+<p> nb: The Hill slope of drug B
+</p>
+</li>
+<li>
+<p> kappa: The BRAID interaction parameter, indicating additivity (kappa = 0),
+antagonism (2 &lt; kappa &lt; 0), or synergy (kappa &gt; 0)
+</p>
+</li>
+<li>
+<p> E0: The minimal effect, the effect observed when neither drug is present
+</p>
+</li>
+<li>
+<p> EfA: The maximal effect of drug A, the effect theoretically observed when
+drug B is absent and drug A is present at infinite concentration
+</p>
+</li>
+<li>
+<p> EfB: The maximal effect of drug B,
+</p>
+</li>
+<li>
+<p> Ef: The maximal effect of the combination, theoretically observed when
+both drugs are present at infinite concentration. It may be (but often is
+not) further from E0 than either EfA or EfB.
+</p>
+</li>
+</ul>
+<p>In many cases, however, it is easier to specify only some of the final three
+parameters.  braidrm functions therefore support BRAID parameter vectors
+of length 7 (in which the sixth and seventh values are assumed to be E0 and
+Ef, and EfA and EfB are assumed to be equal to Ef), length 8 (in which the
+seventh and eighth values are EfA and EfB, and Ef is assumed to be equal to
+whichever of these two values is further from E0), or the full length 9
+parameter vector.
+</p>
+
+
+<h3>Value</h3>
+
+<p>If <code>calcderivs</code> is <code>FALSE</code>, a numeric vector the same length as <code>DA</code>
+and/or <code>DB</code> with the predicted BRAID response surface values.  If
+<code>calcderivs</code> is <code>TRUE</code>, a list with two elements: <code>value</code>, containing the
+response surface values, and <code>derivatives</code>, a matrix with as many rows as
+<code>value</code> has elements, and nine columns containing the partial derivatives of
+the response surface with respect to the nine BRAID response surface
+parameters
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">concentrations &lt;- c(0, 2^(-3:3))
+surface &lt;- data.frame(
+    concA = rep(concentrations,each=length(concentrations)),
+    concB = rep(concentrations,times=length(concentrations))
+)
+
+surface$additive &lt;- evalBraidModel(
+    surface$concA,
+    surface$concB,
+    c(1, 1, 3, 3, 0, 0, 100, 100, 100)
+)
+
+surface$synergy &lt;- evalBraidModel(
+    surface$concA,
+    surface$concB,
+    c(1, 1, 3, 3, 2, 0, 80, 90)
+)
+
+surface$antagonism &lt;- evalBraidModel(
+    surface$concA,
+    surface$concB,
+    c(1, 1, 3, 3, -1, 0, 100)
+)
+
+head(surface)
+</code></pre>
+
+
+</div>

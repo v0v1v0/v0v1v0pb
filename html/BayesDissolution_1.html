@@ -1,0 +1,114 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>bmn</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Bayesian Multivariate Normal Model for Dissolution Profile Modeling</h2>
+
+<h3>Description</h3>
+
+<p>This function implements the Bayesian multivariate normal model described in Pourmohamad et al (2022).
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">bmn(dis_data, B = 10000)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>dis_data</code></td>
+<td>
+<p>A data frame containing the dissolution data. The first column of the data frame should denote
+the group labels identifying whether a given dissolution belongs to the "reference" or "test" formulation group.
+For a given dissolution run, the remaining columns of the data frame contains the individual run's dissolution
+measurements sorted in time. Alternatively, the user may provide a data object of class dis_data containing the
+dissolution data. See the <code>make_dis_data()</code> function for the particular structure of the data object.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>B</code></td>
+<td>
+<p>A positive integer specifying the number of posterior samples to draw. By default <code>B</code> is set to 10000.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>The function returns a list of B posterior samples for the following parameters:
+</p>
+
+<ul>
+<li>
+<p> delta: A vector of posterior samples of delta as defined in Novick et. al 2015
+</p>
+</li>
+<li>
+<p> f2: A vector of posterior values of f2
+</p>
+</li>
+<li>
+<p> muR: A matrix of posterior samples for the reference group mean. Each row of the matrix corresponds to an observed time point, and each column of the matrix corresponds to a posterior sample.
+</p>
+</li>
+<li>
+<p> muT: A matrix of posterior samples for the test group mean. Each row of the matrix corresponds to an observed time point, and each column of the matrix corresponds to a posterior sample.
+</p>
+</li>
+</ul>
+<h3>Note</h3>
+
+<p>You should always check MCMC diagnostics on the posterior samples before drawing conclusions.
+</p>
+
+
+<h3>References</h3>
+
+<p>Novick, S., Shen, Y., Yang, H., Peterson, J., LeBlond, D., and Altan, S. (2015). Dissolution Curve Comparisons Through the F2 Parameter, a Bayesian Extension of the f2 Statistic. Journal of Biopharmaceutical Statistics, 25(2):351-371.
+</p>
+<p>Pourmohamad, T., Oliva Aviles, C.M., and Richardson, R. Gaussian Process Modeling for Dissolution Curve Comparisons. Journal of the Royal Statistical Society, Series C, 71(2):331-351.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">### dis_data comes loaded with the package
+### We set B = 1000 to obtain 1000 posterior samples
+B &lt;- 1000
+post &lt;- bmn(dis_data, B = B)
+
+### We can check how well the posterior samples of the means are mixing by
+### plotting the individual chains by time point
+burnin &lt;- B * 0.1     # A 10% burn-in
+post$mu_R &lt;- post$muR[,-(1:burnin)]
+post$mu_T &lt;- post$muT[,-(1:burnin)]
+
+N &lt;- B - burnin      # Number of posterior samples after burn-in
+chains &lt;- data.frame(samples = rep(c(1:N, 1:N), each = ncol(dis_data) - 1),
+                     group = rep(c("muR", "muT"), each = (ncol(dis_data) - 1) * N),
+                     timepoint = paste("Time Point", rep(1:(ncol(dis_data) - 1), 2 * N)),
+                     values = c(c(post$mu_R), c(post$mu_T)))
+
+g &lt;- ggplot2::ggplot(chains, ggplot2::aes(samples, values)) +
+                     ggplot2::geom_line() +
+                     ggplot2::labs(x = "Iterations", y = "Posterior Sample Values") +
+                     ggplot2::facet_wrap(group ~ timepoint) +
+                     ggplot2::theme(text = ggplot2::element_text(size = 16))
+
+### If we want to calculate the Pr(f2 &gt; 50)
+post$f2&lt;- post$f2[-(1:burnin)]
+prob &lt;- sum(post$f2 &gt; 50) / (B - burnin)
+
+### Or if we want calculate a 95% credible interval for f2
+alpha &lt;- 0.05
+f2_cred &lt;- c(quantile(post$f2, alpha / 2),quantile(post$f2, 1 - alpha / 2))
+
+</code></pre>
+
+
+</div>

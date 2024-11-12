@@ -1,0 +1,120 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>apply_contrast</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Apply contrast to calculate marginal estimate of treatment effect and corresponding standard error</h2>
+
+<h3>Description</h3>
+
+<p>Calculates the marginal estimate of treatment effect and its corresponding
+standard error based on a fitted GLM object using specified contrast (summary
+measure) methods
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">apply_contrast(
+  object,
+  contrast = c("diff", "rr", "or", "logrr", "logor"),
+  reference
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>object</code></td>
+<td>
+<p>a fitted <code>glm</code> object augmented with
+<code>counterfactual.predictions</code>, <code>counterfactual.means</code> and <code>robust_varcov</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>contrast</code></td>
+<td>
+<p>a string specifying the type of contrast to apply.
+Accepted values are "diff" (risk difference), "rr" (risk ratio),
+"or" (odds ratio), "logrr" (log risk ratio), "logor" (log odds ratio).
+Note: log-transformed ratios (logrr and logor) work better compared to rr
+and or when computing confidence intervals using normal approximation.
+The choice of contrast affects how treatment effects are calculated and
+interpreted. Default is <code>diff</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>reference</code></td>
+<td>
+<p>a string indicating which treatment group should be considered as
+the reference level. Accepted values are one of the levels in the treatment
+variable. Default to the first level used in the <code>glm</code> object.
+</p>
+<p>This parameter influences the calculation of treatment effects
+relative to the chosen reference group.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The <code>apply_constrast()</code> functions computes the summary measure between two arms
+based on the estimated marginal effect and its variance-covariance matrix using
+the Delta method.
+</p>
+<p>Note: Ensure that the <code>glm</code> object has been adequately prepared with
+<code>average_predictions()</code> and <code>estimate_varcov()</code>
+before applying <code>apply_contrast()</code>. Failure to do so may result in
+errors indicating missing components.
+</p>
+
+
+<h3>Value</h3>
+
+<p>An updated <code>glm</code> object with two additional components
+appended: <code>marginal_est</code> (marginal estimate of the treatment effect)
+and <code>marginal_se</code> (standard error of the marginal estimate).
+These appended component provide crucial information for interpreting
+the treatment effect using the specified contrast method.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>get_marginal_effect()</code> for estimating marginal effects directly
+from an original <code>glm</code> object
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">trial01$trtp &lt;- factor(trial01$trtp)
+fit1 &lt;- glm(aval ~ trtp + bl_cov, family = "binomial", data = trial01) |&gt;
+  predict_counterfactuals(trt = "trtp") |&gt;
+  average_predictions() |&gt;
+  estimate_varcov(method = "Ye") |&gt;
+  apply_contrast("diff", reference = "0")
+
+# Assuming `trial01` is a dataset with treatment (`trtp`)
+# and baseline covariate (`bl_cov`)
+trial01$trtp &lt;- factor(trial01$trtp)
+fit1 &lt;- glm(aval ~ trtp + bl_cov, family = "binomial", data = trial01)
+
+# Preprocess fit1 as required by apply_contrast
+fit2 &lt;- fit1 |&gt;
+  predict_counterfactuals(trt = "trtp") |&gt;
+  average_predictions() |&gt;
+  estimate_varcov(method = "Ye")
+
+# Apply contrast to calculate marginal estimates
+fit3 &lt;- apply_contrast(fit2, contrast = "diff", reference = "0")
+
+fit3$marginal_est
+fit3$marginal_se
+
+</code></pre>
+
+
+</div>

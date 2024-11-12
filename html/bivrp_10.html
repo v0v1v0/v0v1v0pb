@@ -1,0 +1,337 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>bivrp</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Bivariate Residual Plots with Simulation Polygons</h2>
+
+<h3>Description</h3>
+
+<p>Produces a bivariate residual plot with simulation polygons to assess goodness-of-fit of bivariate statistical models, provided the user supplies three functions: one to obtain model diagnostics, one to simulate data from a fitted model object, and one to refit the model to simulated data.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">bivrp(obj, sim = 99, conf = .95, diagfun, simfun, fitfun, verb = FALSE,
+      sort.res = TRUE, closest.angle = TRUE, angle.ref = - pi,
+      counter.clockwise = TRUE, xlab, ylab, main,
+      clear.device = FALSE, point.col, point.pch, ...)
+      
+## S3 method for class 'bivrp'
+print(x, ...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>obj</code></td>
+<td>
+<p>fitted model object</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>sim</code></td>
+<td>
+<p>number of simulations used to compute envelope. Default is 99</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>conf</code></td>
+<td>
+<p>confidence level of the simulated polygons. Default is 0.95</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>diagfun</code></td>
+<td>
+<p>user-defined function used to obtain the diagnostic measures from the fitted model object</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>simfun</code></td>
+<td>
+<p>user-defined function used to simulate a random sample from the model estimated parameters</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>fitfun</code></td>
+<td>
+<p>user-defined function used to re-fit the model to simulated data</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>verb</code></td>
+<td>
+<p>logical. If <code>TRUE</code>, prints each step of the simulation procedure</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>sort.res</code></td>
+<td>
+<p>logical. If <code>TRUE</code>, points will be sorted using angles formed with the origin (type of ordering can be fine-tuned with arguments <code>closest.angle</code>, <code>angle.ref</code> and <code>counter.clockwise</code>).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>closest.angle</code></td>
+<td>
+<p>logical. If <code>FALSE</code>, points will be sorted starting from the angle defined in <code>angle.ref</code>, if <code>TRUE</code>, points will be sorted starting from the closest angle to the observed bivariate sample ranked as first</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>angle.ref</code></td>
+<td>
+<p>the reference angle from which points will be sorted starting from the closest angle to the input (in radians). Defaults to <code>- pi</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>counter.clockwise</code></td>
+<td>
+<p>logical. Should the points be ordered counter-clockwise or clockwise from the reference angle?</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>xlab</code></td>
+<td>
+<p>argument passed to <code>par</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ylab</code></td>
+<td>
+<p>argument passed to <code>par</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>main</code></td>
+<td>
+<p>argument passed to <code>par</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>clear.device</code></td>
+<td>
+<p>logical. If <code>TRUE</code>, clears the plotting device after producing the bivariate residual plot with simulation polygons</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>point.col</code></td>
+<td>
+<p>a vector of length 2 with the colors of the points that are inside and outside of the simulated polygons</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>point.pch</code></td>
+<td>
+<p>a vector of length 2 with the point characters of the points that are inside and outside of the simulated polygons</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>further arguments passed to <code>plot.bivrp</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>an object of class <code>bivrp</code></p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>This approach relies on the same strategy used for producing half-normal plots with simulation envelopes. Given a vector of bivariate model diagnostics, the angle each point makes with the origin is calculated to order them. This can be fine-tuned using the logical arguments <code>closest.angle</code>, <code>angle.ref</code>, and <code>counter.clockwise</code>, see the Arguments section above.
+</p>
+<p>Then, <code>sim</code> bivariate response variables are simulated from the fitted model, using the same model matrices, error distribution and fitted parameters, using the function defined as <code>simfun</code>. The model is refitted to each simulated sample, using the function defined as <code>fitfun</code>. Next, we obtain the same type of model diagnostics, using <code>diagfun</code>, again ordered the same way the original bivariate sample was. We have, for each bivariate diagnostic, <code>sim</code> simulated bivariate diagnostics forming the whole cloud of simulated diagnostics.
+</p>
+<p>By default, we then obtain the convex hulls of each set of the $s$ sets of points and obtain a reduced polygon whose area is (<code>conf * 100</code>)% of the original convex hull's area, forming the simulated polygon. This is equivalent to passing the argument <code>reduce.polygon = "proportional"</code> to <code>plot.bivrp</code>. The argument <code>reduce.polygon = "bag"</code> can be used to obtain a (<code>conf * 100</code>)% bagplot as the simulated polygon instead of a convex hull. The points are then connected to the centroids of their respective simulated polygons and, if they lie outside the polygons, they are drawn in red. For the final display, the polygons are erased so as to ease visualization.
+</p>
+<p>There is no automatic implementation of a bivariate model in this function, and hence users must provide three functions for <code>bivrp</code>. The first function, <code>diagfun</code>, must extract the desired model diagnostics from a model fit object. The second function, <code>simfun</code>, must return the response variable, simulated using the same error distributions and estimated parameters from the fitted model. The third and final function, <code>fitfun</code>, must return a fitted model object. See the Examples section.
+</p>
+<p>This function produces a plot by passing the computed object to <code>plot.bivrp</code>. The <code>print</code> method returns a <code>data.frame</code> containing all ordered simulated bivariate diagnostics. 
+</p>
+
+
+<h3>Value</h3>
+
+<p>The function returns an object of class "bivrp", which is a list containing the following components:
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>reslist.ord </code></td>
+<td>
+<p>list of ordered diagnostics from model refitting to each simulated dataset</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>res.original.ord </code></td>
+<td>
+<p>original model diagnostics</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>res1 </code></td>
+<td>
+<p>diagnostics from variable 1</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>res2 </code></td>
+<td>
+<p>diagnostics from variable 2</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>res.original1 </code></td>
+<td>
+<p>original model diagnostics for variable 1</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>res.original2 </code></td>
+<td>
+<p>original model diagnostics for variable 2</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>conf </code></td>
+<td>
+<p>confidence level of the simulated polygons</p>
+</td>
+</tr>
+</table>
+<h3>Author(s)</h3>
+
+<p>Rafael A. Moral &lt;rafael.deandrademoral@mu.ie&gt; and John Hinde
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>plot.bivrp</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## simulating a bivariate normal response variable
+
+require(mvtnorm)
+
+n &lt;- 40
+beta1 &lt;- c(2, .4)
+beta2 &lt;- c(.2, .2)
+x &lt;- seq(1, 10, length = n)
+X &lt;- model.matrix(~ x)
+mu1 &lt;- X%*%beta1
+mu2 &lt;- X%*%beta2
+sig1 &lt;- 2
+sig2 &lt;- 3
+sig12 &lt;- -1.7
+Sig1 &lt;- diag(rep(sig1), n)
+Sig2 &lt;- diag(rep(sig2), n)
+Sig12 &lt;- diag(rep(sig12), n)
+V &lt;- rbind(cbind(Sig1, Sig12),
+           cbind(Sig12, Sig2))
+
+set.seed(2016)
+Y &lt;- as.numeric(rmvnorm(1, c(mu1, mu2), V))
+
+## code for fitting the model estimating covariance or not
+bivnormfit &lt;- function(Y, X, covariance) {
+  n &lt;- nrow(X)
+  p &lt;- ncol(X)
+  y &lt;- cbind(Y[1:n],Y[(n+1):(2*n)])
+  XtXinv &lt;- solve(crossprod(X, X))
+  beta.hat &lt;- XtXinv %*% crossprod(X, y)
+  mu.hat &lt;- X%*%beta.hat
+  sigma.hat &lt;- 1/n * t(y - mu.hat) %*% (y - mu.hat)
+  if(!covariance) sigma.hat &lt;- diag(diag(sigma.hat))
+  cov.betas &lt;- sigma.hat %x% XtXinv
+  se.s1 &lt;- sqrt(2*sigma.hat[1]^2/(n-p+1))
+  se.s2 &lt;- sqrt(2*sigma.hat[4]^2/(n-p+1))
+  if(!covariance) se.s12 &lt;- NA else {
+    rho &lt;- sigma.hat[2]/sqrt(sigma.hat[1]*sigma.hat[4])
+    se.s12 &lt;- sqrt((1+rho^2)*sigma.hat[1]*sigma.hat[4]/(n-p+1))
+  }
+  se.betas &lt;- sqrt(diag(cov.betas))
+  se.sigma &lt;- c(se.s1, se.s2, se.s12)
+  coefs &lt;- c(beta.hat, sigma.hat[1], sigma.hat[4], sigma.hat[2])
+  names(coefs) &lt;- c("beta1.0", "beta1.1", "beta2.0", "beta2.1", "sig1", "sig2", "sig12")
+  fitted &lt;- c(mu.hat)
+  resid &lt;- Y - fitted
+  Sig1 &lt;- diag(rep(sigma.hat[1]), n)
+  Sig2 &lt;- diag(rep(sigma.hat[4]), n)
+  Sig12 &lt;- diag(rep(sigma.hat[2]), n)
+  V &lt;- rbind(cbind(Sig1, Sig12),
+             cbind(Sig12, Sig2))
+  llik &lt;- dmvnorm(Y, c(mu.hat), V, log = TRUE)
+  ret &lt;- list("coefs" = coefs, "covariance" = covariance, "n" = n, 
+              "X" = X, "fitted" = fitted, "resid" = resid, "loglik" = llik,
+              "Y" = Y, "se" = c(se.betas, se.sigma))
+  class(ret) &lt;- "bivnormfit"
+  return(ret)
+}
+
+## fitting bivariate models with and without estimating covariance
+fit0 &lt;- bivnormfit(Y, X, covariance=FALSE)
+fit1 &lt;- bivnormfit(Y, X, covariance=TRUE)
+## likelihood-ratio test
+2*(fit0$loglik - fit1$loglik)
+pchisq(54.24, 1, lower=FALSE)
+
+## function for extracting diagnostics (raw residuals)
+dfun &lt;- function(obj) {
+  r &lt;- obj$resid
+  n &lt;- obj$n
+  return(list(r[1:n], r[(n+1):(2*n)]))
+}
+
+## function for simulating new response variables
+sfun &lt;- function(obj) {
+  n &lt;- obj$n
+  fitted &lt;- obj$fitted
+  sig1 &lt;- obj$coefs[5]
+  sig2 &lt;- obj$coefs[6]
+  if(obj$covariance) sig12 &lt;- obj$coefs[7] else sig12 &lt;- 0
+  Sig1 &lt;- diag(rep(sig1), n)
+  Sig2 &lt;- diag(rep(sig2), n)
+  Sig12 &lt;- diag(rep(sig12), n)
+  V &lt;- rbind(cbind(Sig1, Sig12),
+             cbind(Sig12, Sig2))
+  Y &lt;- as.numeric(rmvnorm(1, c(mu1, mu2), V))
+  return(list(Y[1:n], Y[(n+1):(2*n)], "X" = obj$X, 
+              "covariance" = obj$covariance))
+}
+
+## function for refitting the model to simulated data
+ffun &lt;- function(new.obj) {
+  Ynew &lt;- c(new.obj[[1]], new.obj[[2]])
+  bivnormfit(Ynew, new.obj$X, new.obj$covariance)
+}
+
+## Bivariate residual plot for model 1 (without estimating covariance)
+plot1 &lt;- bivrp(fit0, diagfun=dfun, simfun=sfun, fitfun=ffun, verb=TRUE)
+## without polygon area reduction
+plot(plot1, conf=1)
+## drawing polygons
+plot(plot1, add.polygon=TRUE)
+## without ordering
+plot(plot1, theta.sort=FALSE, kernel=TRUE, add.dplots=TRUE, superpose=TRUE)
+
+## Bivariate residual plot for model 2 (estimating covariance)
+plot2 &lt;- bivrp(fit1, diagfun=dfun, simfun=sfun, fitfun=ffun, verb=TRUE)
+## without polygon area reduction
+plot(plot2, conf=1)
+## drawing polygons
+plot(plot2, add.polygon=TRUE, conf=1)
+## without ordering
+plot(plot2, theta.sort=FALSE, kernel=TRUE, add.dplots=TRUE, superpose=TRUE)
+</code></pre>
+
+
+</div>

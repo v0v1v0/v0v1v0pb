@@ -1,0 +1,80 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>getImpLegacyRf</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>randomForest importance adapters</h2>
+
+<h3>Description</h3>
+
+<p>Those function is intended to be given to a <code>getImp</code> argument of <code>Boruta</code> function to be called by the Boruta algorithm as an importance source.
+<code>getImpLegacyRfZ</code> generates default, normalized permutation importance, <code>getImpLegacyRfRaw</code> raw permutation importance, finally <code>getImpLegacyRfGini</code> generates Gini index importance, all using <code>randomForest</code> as a Random Forest algorithm implementation.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">getImpLegacyRfZ(x, y, ...)
+
+getImpLegacyRfRaw(x, y, ...)
+
+getImpLegacyRfGini(x, y, ...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>data frame of predictors including shadows.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>y</code></td>
+<td>
+<p>response vector.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>parameters passed to the underlying <code>randomForest</code> call; they are relayed from <code>...</code> of <code>Boruta</code>.</p>
+</td>
+</tr>
+</table>
+<h3>Note</h3>
+
+<p>The <code>getImpLegacyRfZ</code> function was a default importance source in Boruta versions prior to 5.0; since then <code>ranger</code> Random Forest implementation is used instead of <code>randomForest</code>, for speed, memory conservation and an ability to utilise multithreading.
+Both importance sources should generally lead to the same results, yet there are differences.
+</p>
+<p>Most notably, ranger by default treats factor attributes as ordered (and works very slow if instructed otherwise with <code>respect.unordered.factors=TRUE</code>); on the other hand it lifts 32 levels limit specific to <code>randomForest</code>.
+To this end, Boruta decision for factor attributes may be different.
+</p>
+<p>Random Forest methods has two main parameters, number of attributes tried at each split and the number of trees in the forest; first one is called <code>mtry</code> in both implementations, but the second <code>ntree</code> in <code>randomForest</code> and <code>num.trees</code> in <code>ranger</code>.
+To this end, to maintain compatibility, <code>getImpRf*</code> functions still accept <code>ntree</code> parameter relaying it into <code>num.trees</code>.
+Still, both parameters take the same defaults in both implementations (square root of the number all all attributes and 500 respectively).
+</p>
+<p>Moreover, <code>ranger</code> brings some addition capabilities to Boruta, like analysis of survival problems or sticky variables which are always considered on splits.
+</p>
+<p>Finally, the results for the same PRNG seed will be different.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">set.seed(777)
+#Add some nonsense attributes to iris dataset by shuffling original attributes
+iris.extended&lt;-data.frame(iris,apply(iris[,-5],2,sample))
+names(iris.extended)[6:9]&lt;-paste("Nonsense",1:4,sep="")
+#Run Boruta on this data
+Boruta(Species~.,getImp=getImpLegacyRfZ,
+ data=iris.extended,doTrace=2)-&gt;Boruta.iris.extended
+#Nonsense attributes should be rejected
+print(Boruta.iris.extended)
+</code></pre>
+
+
+</div>

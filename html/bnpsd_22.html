@@ -1,0 +1,158 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>undiff_af</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Undifferentiate an allele distribution</h2>
+
+<h3>Description</h3>
+
+<p>This function takes a vector of allele frequencies and a mean kinship value, and returns a new distribution of allele frequencies that is consistent with reversing differentiation with the given kinship, in the sense that the new distribution is more concentrated around the middle (0.5) than the input/original by an amount predicted from theory.
+The new distribution is created by weighing the input distribution with a random mixing distribution with a lower variance.
+An automatic method is provided that always selects a Beta distribution with just the right concentration to work for the given data and kinship.
+Explicit methods are also provided for more control, but are more likely to result in errors when mixing variances are not small enough (see details below).
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">undiff_af(
+  p,
+  kinship_mean,
+  distr = c("auto", "uniform", "beta", "point"),
+  alpha = 1,
+  eps = 10 * .Machine$double.eps
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>p</code></td>
+<td>
+<p>A vector of observed allele frequencies.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>kinship_mean</code></td>
+<td>
+<p>The mean kinship value of the differentiation to reverse.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>distr</code></td>
+<td>
+<p>Name of the mixing distribution to use.
+</p>
+
+<ul>
+<li>
+<p> "auto" picks a symmetric Beta distribution with parameters that ensure a small enough variance to succeed.
+</p>
+</li>
+<li>
+<p> "beta" is a symmetric Beta distribution with parameter <code>alpha</code> as provided below.
+</p>
+</li>
+<li>
+<p> "uniform" is a uniform distribution (same as "beta" with <code>alpha = 1</code>).
+</p>
+</li>
+<li>
+<p> "point" is a distribution fully concentrated/fixed at 0.5 (same as the limit of "beta" with <code>alpha = Inf</code>, which has zero variance).
+</p>
+</li>
+</ul>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>alpha</code></td>
+<td>
+<p>Shape parameter for <code>distr = "beta"</code>, ignored otherwise.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>eps</code></td>
+<td>
+<p>If <code>distr = "auto"</code>, this small value is added to the calculated <code>alpha</code> to avoid roundoff errors and ensuring that the mixing variance is smaller than the maximum allowed.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>Model: Suppose we started from an allele frequency <code>p0</code> with expectation 0.5 and variance <code>V0</code>.
+Differentiation creates a new (sample) allele frequency <code>p1</code> without changing its mean (<code>E(p1|p0) = p0</code>) and with a conditional variance given by the mean kinship <code>phi</code>: <code>Var(p1|p0) = p0*(1-p0)*phi</code>.
+The total variance of the new distribution (calculated using the law of total variance) equals
+<code>V1 = Var(p1) = phi/4 + (1-phi)*V0</code>.
+(Also <code>E(p1) = 0.5</code>).
+So the new variance is greater for <code>phi&gt;0</code> (note <code>V0 &lt;= 1/4</code> for any distribution bounded in (0,1)).
+Thus, given <code>V1</code> and <code>phi</code>, the goal is to construct a new distribution with the original, lower variance of <code>V0 = (V1-phi/4)/(1-phi)</code>.
+An error is thrown if <code>V1 &lt; phi/4</code> in input data, which is inconsistent with this assumed model.
+</p>
+<p>Construction of "undifferentiated" allele frequencies:
+<code>p_out = w*p_in + (1-w)*p_mix</code>, where <code>p_in</code> is the input with sample variance <code>V_in</code> (<code>V1</code> in above model) and <code>p_mix</code> is a random draw from the mixing distribution <code>distr</code> with expectation 0.5 and known variance <code>V_mix</code>.
+The output variance is <code>V_out = w^2*V_in + (1-w)^2*V_mix</code>, which we set to the desired <code>V_out = (V_in-phi/4)/(1-phi)</code> (<code>V0</code> in above model) and solve for <code>w</code> (the largest of the two quadratic roots is used).
+An error is thrown if <code>V_mix &gt; V_out</code> (the output variance must be larger than the mixing variance).
+This error is avoided by manually adjusting choice of <code>distr</code> and <code>alpha</code> (for <code>distr = "beta"</code>), or preferably with <code>distr = "auto"</code> (default), which selects a Beta distribution with <code>alpha = (1/(4*V_out)-1)/2 + eps</code> that is guaranteed to work for any valid <code>V_out</code> (assuming <code>V_in &lt; phi/4</code>).
+</p>
+
+
+<h3>Value</h3>
+
+<p>A list with the new distribution and several other informative statistics, which are named elements:
+</p>
+
+<ul>
+<li> <p><code>p</code>: A new vector of allele frequencies with the same length as input <code>p</code>, with the desired variance (see details) obtained by weighing the input <code>p</code> with new random data from distribution <code>distr</code>.
+</p>
+</li>
+<li> <p><code>w</code>: The weight used for the input data (<code>1-w</code> for the mixing distribution).
+</p>
+</li>
+<li> <p><code>kinship_mean_max</code>: The maximum mean kinship possible for undifferentiating this data (equals four times the input variance (see details), which results in zero output variance).
+</p>
+</li>
+<li> <p><code>V_in</code>: sample variance of input <code>p</code>, assuming its expectation is 0.5.
+</p>
+</li>
+<li> <p><code>V_out</code>: target variance of output <code>p</code>.
+</p>
+</li>
+<li> <p><code>V_mix</code>: variance of mixing distribution.
+</p>
+</li>
+<li> <p><code>alpha</code>: the value of <code>alpha</code> used for symmetric Beta mixing distribution, informative if <code>distr = "auto"</code>.
+</p>
+</li>
+</ul>
+<h3>Examples</h3>
+
+<pre><code class="language-R"># create random uniform data for these many loci
+m &lt;- 100
+p &lt;- runif( m )
+# differentiate the distribution using Balding-Nichols model
+F &lt;- 0.1
+nu &lt;- 1 / F - 1
+p2 &lt;- rbeta( m, p * nu, (1 - p) * nu )
+
+# now undifferentiate with this function
+# NOTE in this particular case `F` is also the mean kinship
+# default "automatic" distribution recommended
+# (avoids possible errors for specific distributions)
+p3 &lt;- undiff_af( p2, F )$p
+
+# note p3 does not equal p exactly (original is unrecoverable)
+# but variances (assuming expectation is 0.5 for all) should be close to each other,
+# and both be lower than p2's variance:
+V1 &lt;- mean( ( p - 0.5 )^2 )
+V2 &lt;- mean( ( p2 - 0.5 )^2 )
+V3 &lt;- mean( ( p3 - 0.5 )^2 )
+# so p3 is stochastically consistent with p as far as the variance is concerned
+
+</code></pre>
+
+
+</div>

@@ -1,0 +1,141 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>psi_to_priorSR</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Mapping <code class="reqn">\psi</code> (<code>psi0</code>) to the prior Sharpe ratio of factors (<code>priorSR</code>), and vice versa.</h2>
+
+<h3>Description</h3>
+
+<p>This function provides the one-to-one mapping between <code class="reqn">\psi</code> and the prior Sharpe ratio of factors.
+See Section II.A.3 in Bryzgalova et al. (2023).
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">psi_to_priorSR(R, f, psi0 = NULL, priorSR = NULL, aw = 1, bw = 1)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>R</code></td>
+<td>
+<p>A matrix of test assets with dimension <code class="reqn">t \times N</code>, where <code class="reqn">t</code> is the number of periods
+and <code class="reqn">N</code> is the number of test assets;</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>f</code></td>
+<td>
+<p>A matrix of factors with dimension <code class="reqn">t \times k</code>, where <code class="reqn">k</code> is the number of factors
+and <code class="reqn">t</code> is the number of periods;</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>psi0</code></td>
+<td>
+<p>The hyper-parameter in the prior distribution of risk prices (see <b>Details</b> in the function <code>continuous_ss_sdf</code>);</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>priorSR</code></td>
+<td>
+<p>The prior Sharpe ratio of all factors (see <b>Details</b>);</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>aw</code></td>
+<td>
+<p>The hyper-parameter in the prior of <code class="reqn">\gamma</code> (default value = 1, see <b>Details</b>);</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>bw</code></td>
+<td>
+<p>The hyper-parameter in the prior of <code class="reqn">\gamma</code> (default value = 1, see <b>Details</b>);</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>According to equation (27) in Bryzgalova et al. (2023), we learn that
+</p>
+<p style="text-align: center;"><code class="reqn">\frac{E_{\pi} [ SR^2_f \mid \gamma, \sigma^2 ] }{E_{\pi} [ SR^2_{\alpha} \mid \sigma^2] } = \frac{\psi \sum^K_{k=1} r(\gamma_k) \tilde{\rho}^\top_k \tilde{\rho}_k }{N}, </code>
+</p>
+
+<p>where <code class="reqn">SR^2_f</code> and <code class="reqn">SR^2_{\alpha}</code> denote the Sharpe ratios of all factors (<code class="reqn">f_t</code>) and of the pricing errors
+(<code class="reqn">\alpha</code>), and <code class="reqn">E_{\pi}</code> denotes prior expectations.
+</p>
+<p>The prior <code class="reqn">\pi (\omega)</code> encodes the belief about the sparsity of the true model using the prior distribution
+<code class="reqn">\pi (\gamma_j = 1 | \omega_j) = \omega_j, \ \ \omega_j \sim Beta(a_\omega, b_\omega) .</code> We further integrate out
+<code class="reqn">\gamma_j</code> in <code class="reqn">E_{\pi} [ SR^2_f \mid \gamma, \sigma^2 ]</code> and show the following:
+</p>
+<p style="text-align: center;"><code class="reqn">\frac{E_{\pi} [ SR^2_f \mid \sigma^2 ] }{E_{\pi} [ SR^2_{\alpha} \mid \sigma^2 ] } \approx \frac{a_\omega}{a_\omega+b_\omega} \psi \frac{ \sum^K_{k=1} \tilde{\rho}^\top_k \tilde{\rho}_k }{N}, \ as \ r \to 0 .</code>
+</p>
+
+<p>Since we can decompose the Sharpe ratios of all test assets, <code class="reqn">SR^2_R</code>, into <code class="reqn">SR^2_f</code> and <code class="reqn">SR^2_{\alpha}</code> (i.e., <code class="reqn">SR^2_R = SR^2_f + SR^2_{\alpha}</code>), we can
+represent <code class="reqn">SR^2_f</code> as follows:
+</p>
+<p style="text-align: center;"><code class="reqn"> E_{\pi} [ SR^2_f \mid \sigma^2 ] \approx \frac{\frac{a_\omega}{a_\omega+b_\omega} \psi \frac{ \sum^K_{k=1} \tilde{\rho}^\top_k \tilde{\rho}_k }{N}}{1 + \frac{a_\omega}{a_\omega+b_\omega} \psi \frac{ \sum^K_{k=1} \tilde{\rho}^\top_k \tilde{\rho}_k }{N}} SR^2_R.</code>
+</p>
+
+<p>We define the prior Sharpe ratio implied by the factor models as <code class="reqn">\sqrt{E_{\pi} [ SR^2_f \mid \sigma^2 ]}</code>.
+Given <code class="reqn">a_\omega</code>, <code class="reqn">b_\omega</code>, <code class="reqn">\frac{ \sum^K_{k=1} \tilde{\rho}^\top_k \tilde{\rho}_k }{N}</code>, and the observed
+Sharpe ratio of test assets, we have one-to-one mapping between <code class="reqn">\psi</code> and <code class="reqn">\sqrt{E_{\pi} [ SR^2_f \mid \sigma^2 ]}</code>.
+</p>
+<p>If the user aims to convert <code class="reqn">\psi</code> to the prior Sharpe ratio, she should input only <code>psi0</code>.
+In contrast, if she wants to convert the prior Sharpe ratio to <code class="reqn">\psi</code>, <code>priorSR</code> should be entered.
+</p>
+
+
+<h3>Value</h3>
+
+<p>The return of <code>psi_to_priorSR</code> is:
+</p>
+
+<ul><li> <p><code>psi0</code> or <code>priorSR</code>.
+</p>
+</li></ul>
+<h3>References</h3>
+
+<p>Bryzgalova S, Huang J, Julliard C (2023).
+“Bayesian solutions for the factor zoo: We just ran two quadrillion models &lt;https://doi.org/10.1111/jofi.13197&gt;.”
+<em>Journal of Finance</em>, <b>78</b>(1), 487–557.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+## Load the example data
+data("BFactor_zoo_example")
+HML &lt;- BFactor_zoo_example$HML
+lambda_ols &lt;- BFactor_zoo_example$lambda_ols
+R2.ols.true &lt;- BFactor_zoo_example$R2.ols.true
+sim_f &lt;- BFactor_zoo_example$sim_f
+sim_R &lt;- BFactor_zoo_example$sim_R
+uf &lt;- BFactor_zoo_example$uf
+
+## If the user aims to convert \eqn{\psi} to the prior Sharpe ratio:
+print(psi_to_priorSR(sim_R, sim_f, priorSR=0.1))
+
+## If the user  wants to convert the prior Sharpe ratio to \eqn{\psi}:
+psi0_to_map &lt;- psi_to_priorSR(sim_R, sim_f, priorSR=0.1)
+print(psi_to_priorSR(sim_R, sim_f, psi0=psi0_to_map))
+
+## If we enter both psi0 and priorSR (or forget to input them simultaneously),
+## a warning will be printed:
+print(psi_to_priorSR(sim_R, sim_f))
+print(psi_to_priorSR(sim_R, sim_f, priorSR=0.1, psi0=2))
+
+
+
+</code></pre>
+
+
+</div>

@@ -1,0 +1,289 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>BTdecayLasso</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Bradley-Terry Model with Exponential Decayed weighted likelihood and Adaptive Lasso</h2>
+
+<h3>Description</h3>
+
+<p>Bradley-Terry model is applied for paired comparison data. Teams' ability score is estimated by maximizing log-likelihood function.
+</p>
+<p>To achieve a better track of current abilities, we apply an exponential decay rate to weight the log-likelihood function.
+The most current matches will weight more than previous matches. Parameter "decay.rate" in most functions of this package is used
+to set the amount of exponential decay rate. decay.rate should be non-negative and the appropriate range of it depends on time scale in original dataframe.
+(see <code>BTdataframe</code> and parameter "dataframe"'s definition of fifth column) For example,
+a unit of week with a "decay.rate" 0.007 is equivalent to the unit of day with "decay.rate" 0.001. Usually, for sports matches,
+if we take the unit of day, it's ranging from 0 to 0.01. The higher choice of "decay.rate", the better track of current teams' ability
+with a side effect of higher variance.
+</p>
+<p>If "decay.rate" is too large, for example "0.1" with a unit of day, <code class="reqn">\exp(-0.7)</code> = 0.50. Only half weight will be add to the likelihood for matches played
+one week ago and <code class="reqn">\exp(-3.1)</code> = 0.05 suggests that previous matches took place one month ago will have little effect. Therefore, Only a few matches are
+accounted for ability's estimation. It will lead to a very high variance and uncertainty. Since standard Bradley-Terry model
+can not handle the case where there is a team who wins or loses all matches, such estimation may not provide convergent results. 
+Thus, if our estimation provides divergent result, an error will be returned and we suggest user to chose a smaller "decay.rate"
+or adding more match results into the same modeling period.
+</p>
+<p>By default, the Adaptive Lasso is implemented for variance reduction and team's grouping. Adaptive Lasso is proved to have good grouping property.
+Apart from adaptive lasso, user can define own weight for different
+Lasso constraint <code class="reqn">\left|\mu_{i}-\mu_{j}\right|</code> where <code class="reqn">\mu_{i}</code> is team i's ability.
+</p>
+<p>Also by default, the whole Lasso path will be run. Similar to package "glmnet", user can provide their own choice of Lasso penalty "lambda" and determine whether the
+whole Lasso path will be run (since such run is time-consuming). However, we suggest that if user is not familiar with the actual relationship among
+lambda, the amount of penalty, the amount of shrinkage and grouping effect, a whole Lasso path should be run and selection of an
+appropriate lambda is done by AIC or BIC criteria using <code>BTdecayLassoC</code> (since this model is time related, cross-validation method cannot be applied). Also, users can
+use <code>BTdecayLassoF</code> to run with a specific Lasso penalty ranging from 0 to 1 (1 penalty means all estimators will shrink to 0).
+</p>
+<p>Two sets of estimated abilities will be given, the biased Lasso estimation and the HYBRID Lasso's estimation.
+HYBRID Lasso estimation solves the restricted Maximum Likelihood optimization based on the group determined by Lasso's estimation (Different team's ability will converges to
+the same value if Lasso penalty is added and these teams' ability is setting to be equal as a restriction).
+</p>
+<p>In addition, summary() using S3 method can be applied to view the outputs.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">BTdecayLasso(
+  dataframe,
+  ability,
+  lambda = NULL,
+  weight = NULL,
+  path = TRUE,
+  decay.rate = 0,
+  fixed = 1,
+  thersh = 1e-05,
+  max = 100,
+  iter = 100
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>dataframe</code></td>
+<td>
+<p>Generated using <code>BTdataframe</code> given raw data.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ability</code></td>
+<td>
+<p>A column vector of teams ability, the last row is the home parameter.
+The row number is consistent with the team's index shown in dataframe. It can be generated using <code>BTdataframe</code> given raw data.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>lambda</code></td>
+<td>
+<p>The amount of Lasso penalty induced. The input should be a positive scalar or a sequence.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>weight</code></td>
+<td>
+<p>Weight for Lasso penalty on different abilities.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>path</code></td>
+<td>
+<p>whether the whole Lasso path will be run (plot.BTdecayLasso is enabled only if path = TRUE)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>decay.rate</code></td>
+<td>
+<p>A non-negative exponential decay rate. Usually ranging from (0, 0.01), A larger decay rate weights more
+importance to most recent matches and the estimated parameters reflect more on recent behaviour.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>fixed</code></td>
+<td>
+<p>A teams index whose ability will be fixed as 0. The worstTeam's index
+can be generated using <code>BTdataframe</code> given raw data.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>thersh</code></td>
+<td>
+<p>Threshold for convergence used for Augmented Lagrangian Method.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>max</code></td>
+<td>
+<p>Maximum weight for <code class="reqn">w_{ij}</code> (weight used for Adaptive Lasso)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>iter</code></td>
+<td>
+<p>Number of iterations used in L-BFGS-B algorithm.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>According to <code>BTdecay</code>, the objective likelihood function to be optimized is,
+</p>
+<p style="text-align: center;"><code class="reqn">\sum_{k=1}^{n}\sum_{i&lt;j}\exp(-\alpha t_{k})\cdot(y_{ij}(\tau h_{ij}^{t_{k}}+\mu_{i}-\mu_{j})-\log(1+\exp(\tau h_{ij}^{t_{k}}+\mu_{i}-\mu_{j})))</code>
+</p>
+
+<p>The Lasso constraint is given as,
+</p>
+<p style="text-align: center;"><code class="reqn">\sum_{i&lt;j}w_{ij}\left|\mu_{i}-\mu_{j}\right|\leq s</code>
+</p>
+
+<p>where <code class="reqn">w_{ij}</code> are predefined weight. For Adaptive Lasso, <code class="reqn">\left|w_{ij}=1/(\mu_{i}^{MLE}-\mu_{j}^{MLE})\right|</code>.
+</p>
+<p>Maximize this constraint objective function is equivalent to minimizing the following equation,
+</p>
+<p style="text-align: center;"><code class="reqn">-l(\mu,\tau)+\lambda\sum_{i&lt;j}w_{ij}|\mu_{i}-\mu_{j}|</code>
+</p>
+
+<p>Where <code class="reqn">-l(\mu,\tau)</code> is taking negative value of objective function above.  Increase "lambda" will decrease "s", their relationship is
+monotone. Here, we define "penalty" as <code class="reqn">1-s/\max(s)</code>. Thus, "lambda" and "penalty" has a positive correlation.
+</p>
+
+
+<h3>Value</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>ability</code></td>
+<td>
+<p>Estimated ability scores with user given lambda</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>likelihood</code></td>
+<td>
+<p>Negative likelihood of objective function with user given lambda</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>df</code></td>
+<td>
+<p>Degree of freedom with user given lambda(number of distinct <code class="reqn">\mu</code>)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>penalty</code></td>
+<td>
+<p><code class="reqn">s/max(s)</code> with user given lambda</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Lambda</code></td>
+<td>
+<p>User given lambda</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ability.path</code></td>
+<td>
+<p>if path = TRUE, estimated ability scores on whole Lasso path</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>likelihood.path</code></td>
+<td>
+<p>if path = TRUE, negative likelihood of objective function on whole Lasso path</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>df.path</code></td>
+<td>
+<p>if path = TRUE, degree of freedom on whole Lasso path(number of distinct <code class="reqn">\mu</code>)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>penalty.path</code></td>
+<td>
+<p>if path = TRUE, <code class="reqn">s/max(s)</code> on whole Lasso path</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Lambda.path</code></td>
+<td>
+<p>if path = TRUE, Whole Lasso path</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>path</code></td>
+<td>
+<p>Whether whole Lasso path will be run</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>HYBRID.ability.path</code></td>
+<td>
+<p>If path = TRUE, the whole path of evolving of HYBRID ability</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>HYBRID.likelihood.path</code></td>
+<td>
+<p>if path = TRUE, the whole path of HYBRID likelihood</p>
+</td>
+</tr>
+</table>
+<h3>References</h3>
+
+<p>Masarotto, G. and Varin, C.(2012) The Ranking Lasso and its Application to Sport Tournaments. 
+*The Annals of Applied Statistics* **6** 1949–1970.
+</p>
+<p>Zou, H. (2006) The adaptive lasso and its oracle properties. 
+*J.Amer.Statist.Assoc* **101** 1418–1429.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>BTdataframe</code> for dataframe initialization,
+<code>plot.swlasso</code>,  <code>plot.wlasso</code> are used for Lasso path plot if path = TRUE in this function's run
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">##Initializing Dataframe
+x &lt;- BTdataframe(NFL2010)
+
+##The following code runs the main results
+##Usually a single lambda's run will take 1-20 s
+##The whole Adaptive Lasso run will take 5-20 min
+
+##BTdecayLasso run with exponential decay rate 0.005 and 
+##lambda 0.1, use path = TRUE if you want to run whole LASSO path
+y1 &lt;- BTdecayLasso(x$dataframe, x$ability, lambda = 0.1, path = FALSE,
+                   decay.rate = 0.005, fixed = x$worstTeam)
+summary(y1)
+
+##Defining equal weight
+##Note that comparing to Adaptive weight, the user defined weight may not be 
+##efficient in groupiing. Therefore, to run the whole Lasso path 
+##(evolving of distinct ability scores), it may take a much longer time. 
+##We recommend the user to apply the default setting,
+##where Adaptive Lasso will be run.
+
+n &lt;- nrow(x$ability) - 1
+w2 &lt;- matrix(1, nrow = n, ncol = n)
+w2[lower.tri(w2, diag = TRUE)] &lt;- 0
+
+##BTdecayLasso run with exponential decay rate 0.005 and with a specific lambda 0.1
+y2 &lt;- BTdecayLasso(x$dataframe, x$ability, lambda = 0.1, weight = w2, 
+                   path = FALSE, decay.rate = 0.005, fixed = x$worstTeam)
+
+summary(y2)
+
+
+</code></pre>
+
+
+</div>

@@ -1,0 +1,115 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>bootSVD_LD</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Calculate bootstrap distribution of <code class="reqn">n</code>-dimensional PCs</h2>
+
+<h3>Description</h3>
+
+<p><code>bootSVD_LD</code> Calculates the bootstrap distribution of the principal components (PCs) of a low dimensional matrix. If the score matrix is inputted, the output of <code>bootSVD_LD</code> can be used to to calculate bootstrap standard errors, confidence regions, or the full bootstrap distribution of the high dimensional components. Most users may want to instead consider using <code>bootSVD</code>, which also calculates descriptions of the high dimensional components. Note that <code>bootSVD</code> calls <code>bootSVD_LD</code>.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">bootSVD_LD(UD, DUt = t(UD), bInds = genBootIndeces(B = 1000, n =
+  dim(DUt)[2]), K, warning_type = "silent", verbose = getOption("verbose"),
+  centerSamples = TRUE)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>UD</code></td>
+<td>
+<p>(optional) a (<code class="reqn">n</code> by <code class="reqn">n</code>) matrix of scores, were rows denote individuals, and columns denote measurements in the PC space.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>DUt</code></td>
+<td>
+<p>the transpose of <code>UD</code>. If both <code>UD</code> and <code>UDt</code> are entered and <code>t(UD)!=DUt</code>, the <code>DUt</code> argument will override the <code>UD</code> argument.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>bInds</code></td>
+<td>
+<p>a (<code class="reqn">B</code> by <code class="reqn">n</code>) matrix of bootstrap indeces, where <code>B</code> is the number of bootstrap samples, and <code>n</code> is the sample size. Each row should be an indexing vector that can be used to generate a new bootstrap sample (i.e. <code>sample(n,replace=TRUE)</code>). The matrix of bootstrap indeces is taken as input, rather than being calculated within <code>bootSVD_LD</code>, so that this method can be more easily compared against traditional bootstrap SVD methods on the exact same bootstrap samples. The <code>bInds</code> matrix can be calculated using the helper function <code>genBootIndeces</code>).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>K</code></td>
+<td>
+<p>the number of PCs to be estimated.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>warning_type</code></td>
+<td>
+<p>passed to <code>qrSVD</code>, when taking the SVD of the low dimensional bootstrap score matrices.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>verbose</code></td>
+<td>
+<p>if <code>TRUE</code>, a progress bar will appear.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>centerSamples</code></td>
+<td>
+<p>whether each bootstrap sample should be centered before calculating the SVD.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>For each bootstrap matrix <code class="reqn">(DU')^b</code>, let <code class="reqn">svd(DU')=:A^b D^b U^b</code>, where <code class="reqn">A^b</code> and <code class="reqn">U^b</code> are (<code class="reqn">n</code> by <code class="reqn">n</code>) orthonormal matrices, and <code class="reqn">D^b</code> is a (<code class="reqn">n</code> by <code class="reqn">n</code>) diagonal matrix <code class="reqn">K</code>. Here we calculate only the first <code>K</code> columns of <code class="reqn">A^b</code>, but all <code>n</code> columns of <code class="reqn">U^b</code>. The results are stored as a list containing
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>As</code></td>
+<td>
+<p>a <code>B</code>-length list of the (<code>n</code> by <code>K</code>) matrices containing the first <code>K</code> PCs from each bootstrap sample. This list is indexed by <code>b</code>, with the <code class="reqn">b^{th}</code> element containing the results from the <code class="reqn">b^{th}</code> bootstrap sample.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ds</code></td>
+<td>
+<p>a <code>B</code>-length list of vectors, indexed by the bootstrap index <code>b</code>, with each vector containing the singular values of the corresponding bootstrap sample.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Us</code></td>
+<td>
+<p>a <code>B</code>-length list, indexed by the bootstrap index <code>b</code>, of the (<code class="reqn">n</code> by <code class="reqn">n</code>) matrices <code class="reqn">U^b</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>time</code></td>
+<td>
+<p>The computation time required for the procedure, taken using <code>system.time</code>.</p>
+</td>
+</tr>
+</table>
+<p>If the score matrix is inputted to <code>bootSVD_LD</code>, the results can be transformed to get the PCs on the original space by multiplying each matrix <code class="reqn">A^b</code> by the PCs of the original sample, <code class="reqn">V</code> (see <code>As2Vs</code>). The bootstrap scores of the original sample are equal to <code class="reqn">U^b D^b</code>.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">#use small n, small B, for a quick illustration
+set.seed(0)
+Y&lt;-simEEG(n=100, centered=TRUE, wide=TRUE) 
+svdY&lt;-fastSVD(Y)
+DUt&lt;- tcrossprod(diag(svdY$d),svdY$u)
+bInds&lt;-genBootIndeces(B=50,n=dim(DUt)[2])
+bootSVD_LD_output&lt;-bootSVD_LD(DUt=DUt,bInds=bInds,K=3,verbose=interactive())
+</code></pre>
+
+
+</div>

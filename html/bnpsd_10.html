@@ -1,0 +1,92 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>draw_genotypes_admix</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Draw genotypes from the admixture model</h2>
+
+<h3>Description</h3>
+
+<p>Given the Individual-specific Allele Frequency (IAF) matrix <code>p_ind</code> for <code>m</code> loci (rows) and <code>n</code> individuals (columns), the genotype matrix <code>X</code> (same dimensions as <code>p_ind</code>) is drawn from the Binomial distribution equivalent to
+<code>X[ i, j ] &lt;- rbinom( 1, 2, p_ind[ i, j ] )</code>,
+except the function is more efficient.
+If <code>admix_proportions</code> is provided as the second argument (a matrix with <code>n</code> individuals along rows and <code>k</code> intermediate subpopulations along the columns), the first argument <code>p_ind</code> is treated as the intermediate subpopulation allele frequency matrix (must be <code>m</code>-by-<code>k</code>) and the IAF matrix is equivalent to
+<code>p_ind %*% t( admix_proportions )</code>.
+However, in this case the function computes the IAF matrix in parts only, never stored in full, greatly reducing memory usage.
+If <code>admix_proportions</code> is missing, then <code>p_ind</code> is treated as the IAF matrix.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">draw_genotypes_admix(p_ind, admix_proportions = NULL)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>p_ind</code></td>
+<td>
+<p>The <code>m</code>-by-<code>n</code> IAF matrix (if <code>admix_proportions</code> is missing) or the <code>m</code>-by-<code>k</code> intermediate subpopulation allele frequency matrix (if <code>admix_proportions</code> is present).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>admix_proportions</code></td>
+<td>
+<p>The optional <code>n</code>-by-<code>k</code> admixture proportion matrix (to draw data from the admixture model using reduced memory, by not fully forming the IAF matrix).
+If provided, and if both <code>admix_proportions</code> and <code>p_ind</code> have column names, and if they disagree, the function stops as a precaution, as this suggests the data is misaligned or inconsistent in some way.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>The <code>m</code>-by-<code>n</code> genotype matrix.
+If <code>admix_proportions</code> is missing, the row and column names of <code>p_ind</code> are copied to this output.
+If <code>admix_proportions</code> is present, the row names of the output are the row names of <code>p_ind</code>, while the column names of the output are the row names of <code>admix_proportions</code>.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R"># dimensions
+# number of loci
+m_loci &lt;- 10
+# number of individuals
+n_ind &lt;- 5
+# number of intermediate subpops
+k_subpops &lt;- 2
+
+# define population structure
+# FST values for k = 2 subpops
+inbr_subpops &lt;- c(0.1, 0.3)
+# non-trivial admixture proportions
+admix_proportions &lt;- admix_prop_1d_linear(n_ind, k_subpops, sigma = 1)
+
+# draw allele frequencies
+# vector of ancestral allele frequencies
+p_anc &lt;- draw_p_anc(m_loci)
+
+# matrix of intermediate subpop allele freqs
+p_subpops &lt;- draw_p_subpops(p_anc, inbr_subpops)
+
+# matrix of individual-specific allele frequencies
+p_ind &lt;- make_p_ind_admix(p_subpops, admix_proportions)
+
+# draw genotypes from intermediate subpops (one individual each)
+X_subpops &lt;- draw_genotypes_admix(p_subpops)
+
+# and genotypes for admixed individuals
+X_ind &lt;- draw_genotypes_admix(p_ind)
+
+# draw genotypes for admixed individuals without p_ind intermediate
+# (p_ind is computed internally in parts, never stored in full,
+# reducing memory use substantially)
+X_ind &lt;- draw_genotypes_admix(p_subpops, admix_proportions)
+
+</code></pre>
+
+
+</div>

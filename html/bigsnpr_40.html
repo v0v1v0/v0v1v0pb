@@ -1,0 +1,229 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>SCT</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Stacked C+T (SCT)</h2>
+
+<h3>Description</h3>
+
+<p>Polygenic Risk Scores for a grid of clumping and thresholding parameters.
+</p>
+<p>Stacking over many Polygenic Risk Scores, corresponding to a grid of many
+different parameters for clumping and thresholding.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">snp_grid_clumping(
+  G,
+  infos.chr,
+  infos.pos,
+  lpS,
+  ind.row = rows_along(G),
+  grid.thr.r2 = c(0.01, 0.05, 0.1, 0.2, 0.5, 0.8, 0.95),
+  grid.base.size = c(50, 100, 200, 500),
+  infos.imp = rep(1, ncol(G)),
+  grid.thr.imp = 1,
+  groups = list(cols_along(G)),
+  exclude = NULL,
+  ncores = 1
+)
+
+snp_grid_PRS(
+  G,
+  all_keep,
+  betas,
+  lpS,
+  n_thr_lpS = 50,
+  grid.lpS.thr = 0.9999 * seq_log(max(0.1, min(lpS, na.rm = TRUE)), max(lpS, na.rm =
+    TRUE), n_thr_lpS),
+  ind.row = rows_along(G),
+  backingfile = tempfile(),
+  type = c("float", "double"),
+  ncores = 1
+)
+
+snp_grid_stacking(
+  multi_PRS,
+  y.train,
+  alphas = c(1, 0.01, 1e-04),
+  ncores = 1,
+  ...
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>G</code></td>
+<td>
+<p>A FBM.code256
+(typically <code style="white-space: pre;">⁠&lt;bigSNP&gt;$genotypes⁠</code>).<br><strong>You shouldn't have missing values.</strong> Also, remember to do quality control,
+e.g. some algorithms in this package won't work if you use SNPs with 0 MAF.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>infos.chr</code></td>
+<td>
+<p>Vector of integers specifying each SNP's chromosome.<br>
+Typically <code style="white-space: pre;">⁠&lt;bigSNP&gt;$map$chromosome⁠</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>infos.pos</code></td>
+<td>
+<p>Vector of integers specifying the physical position
+on a chromosome (in base pairs) of each SNP.<br>
+Typically <code style="white-space: pre;">⁠&lt;bigSNP&gt;$map$physical.pos⁠</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>lpS</code></td>
+<td>
+<p>Numeric vector of <code>-log10(p-value)</code> associated with <code>betas</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ind.row</code></td>
+<td>
+<p>An optional vector of the row indices (individuals) that
+are used. If not specified, all rows are used.<br><strong>Don't use negative indices.</strong></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>grid.thr.r2</code></td>
+<td>
+<p>Grid of thresholds over the squared correlation between
+two SNPs for clumping. Default is <code>c(0.01, 0.05, 0.1, 0.2, 0.5, 0.8, 0.95)</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>grid.base.size</code></td>
+<td>
+<p>Grid for base window sizes. Sizes are then computed as
+<code>base.size / thr.r2</code> (in kb). Default is <code>c(50, 100, 200, 500)</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>infos.imp</code></td>
+<td>
+<p>Vector of imputation scores. Default is all <code>1</code> if you do
+not provide it.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>grid.thr.imp</code></td>
+<td>
+<p>Grid of thresholds over <code>infos.imp</code> (default is <code>1</code>), but
+you should change it (e.g. <code>c(0.3, 0.6, 0.9, 0.95)</code>) if providing <code>infos.imp</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>groups</code></td>
+<td>
+<p>List of vectors of indices to define your own categories.
+This could be used e.g. to derive C+T scores using two different GWAS
+summary statistics, or to include other information such as functional
+annotations. Default just makes one group with all variants.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>exclude</code></td>
+<td>
+<p>Vector of SNP indices to exclude anyway.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ncores</code></td>
+<td>
+<p>Number of cores used. Default doesn't use parallelism.
+You may use <code>bigstatsr::nb_cores()</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>all_keep</code></td>
+<td>
+<p>Output of <code>snp_grid_clumping()</code> (indices passing clumping).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>betas</code></td>
+<td>
+<p>Numeric vector of weights (effect sizes from GWAS) associated
+with each variant (column of <code>G</code>). If alleles are reversed, make sure to
+multiply corresponding effects by <code>-1</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>n_thr_lpS</code></td>
+<td>
+<p>Length for default <code>grid.lpS.thr</code>. Default is <code>50</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>grid.lpS.thr</code></td>
+<td>
+<p>Sequence of thresholds to apply on <code>lpS</code>.
+Default is a grid (of length <code>n_thr_lpS</code>) evenly spaced on a logarithmic
+scale, i.e. on a log-log scale for p-values.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>backingfile</code></td>
+<td>
+<p>Prefix for backingfiles where to store scores of C+T.
+As we typically use a large grid, this can result in a large matrix so that
+we store it on disk. Default uses a temporary file.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>type</code></td>
+<td>
+<p>Type of backingfile values. Either <code>"float"</code> (the default) or
+<code>"double"</code>. Using <code>"float"</code> requires half disk space.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>multi_PRS</code></td>
+<td>
+<p>Output of <code>snp_grid_PRS()</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>y.train</code></td>
+<td>
+<p>Vector of phenotypes. If there are two levels (binary 0/1),
+it uses <code>bigstatsr::big_spLogReg()</code> for stacking, otherwise <code>bigstatsr::big_spLinReg()</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>alphas</code></td>
+<td>
+<p>Vector of values for grid-search. See <code>bigstatsr::big_spLogReg()</code>.
+Default for this function is <code>c(1, 0.01, 0.0001)</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Other parameters to be passed to <code>bigstatsr::big_spLogReg()</code>. For example,
+using <code>covar.train</code>, you can add covariates in the model with all C+T scores.
+You can also use <code>pf.covar</code> if you do not want to penalize these covariates.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p><code>snp_grid_PRS()</code>: An <code>FBM</code> (matrix on disk) that stores the C+T scores
+for all parameters of the grid (and for each chromosome separately).
+It also stores as attributes the input parameters <code>all_keep</code>, <code>betas</code>,
+<code>lpS</code> and <code>grid.lpS.thr</code> that are also needed in <code>snp_grid_stacking()</code>.
+</p>
+
+
+</div>

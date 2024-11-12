@@ -1,0 +1,550 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>bama</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Bayesian Mediation Analysis</h2>
+
+<h3>Description</h3>
+
+<p><code>bama</code> is a Bayesian inference method that uses continuous shrinkage priors
+for high-dimensional Bayesian mediation analysis, developed by Song et al
+(2019, 2020). <code>bama</code> provides estimates for the regression coefficients as
+well as the posterior inclusion probability for ranking mediators.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">bama(
+  Y,
+  A,
+  M,
+  C1,
+  C2,
+  method,
+  burnin,
+  ndraws,
+  weights = NULL,
+  inits = NULL,
+  control = list(k = 2, lm0 = 1e-04, lm1 = 1, lma1 = 1, l = 1, lambda0 = 0.04, lambda1 =
+    0.2, lambda2 = 0.2, phi0 = 0.01, phi1 = 0.01, a0 = 0.01 * ncol(M), a1 = 0.05 *
+    ncol(M), a2 = 0.05 * ncol(M), a3 = 0.89 * ncol(M)),
+  seed = NULL
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>Y</code></td>
+<td>
+<p>Length <code>n</code> numeric outcome vector</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>A</code></td>
+<td>
+<p>Length <code>n</code> numeric exposure vector</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>M</code></td>
+<td>
+<p><code>n x p</code> numeric matrix of mediators of Y and A</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>C1</code></td>
+<td>
+<p><code>n x nc1</code> numeric matrix of extra covariates to include in the
+outcome model</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>C2</code></td>
+<td>
+<p><code>n x nc2</code> numeric matrix of extra covariates to include in the
+mediator model</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>method</code></td>
+<td>
+<p>String indicating which method to use. Options are
+</p>
+
+<ul>
+<li>
+<p>"BSLMM" - mixture of two normal components; Song et al. 2019
+</p>
+</li>
+<li>
+<p>"PTG" - product threshold Gaussian prior; Song et al. 2020
+</p>
+</li>
+<li>
+<p>"GMM" - NOTE: GMM not currently supported. Instead, use method = 'PTG'. four-component Gaussian mixture prior; Song et al. 2020
+</p>
+</li>
+</ul>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>burnin</code></td>
+<td>
+<p>number of iterations to run the MCMC before sampling</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ndraws</code></td>
+<td>
+<p>number of draws to take from MCMC (includes burnin draws)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>weights</code></td>
+<td>
+<p>Length <code>n</code> numeric vector of weights</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>inits</code></td>
+<td>
+<p>list of initial values for the Gibbs sampler. Options are
+</p>
+
+<ul>
+<li>
+<p>beta.m - Length <code>p</code> numeric vector of initial <code>beta.m</code> in the
+outcome model. See details for equation
+</p>
+</li>
+<li>
+<p>alpha.a - Length <code>p</code> numeric vector of initial <code>alpha.a</code> in
+the mediator model. See details for equation
+</p>
+</li>
+</ul>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>control</code></td>
+<td>
+<p>list of Gibbs algorithm control options. These include prior
+and hyper-prior parameters. Options vary by method selection. If
+<code>method = "BSLMM"</code>
+</p>
+
+<ul>
+<li>
+<p>k - Shape parameter prior for inverse gamma
+</p>
+</li>
+<li>
+<p>lm0 - Scale parameter prior for inverse gamma for the small normal
+components
+</p>
+</li>
+<li>
+<p>lm1 - Scale parameter prior for inverse gamma for the large normal
+components of beta_m
+</p>
+</li>
+<li>
+<p>lma1 - Scale parameter prior for inverse gamma for the large normal
+component of alpha_a
+</p>
+</li>
+<li>
+<p>l - Scale parameter prior for the other inverse gamma distributions
+</p>
+</li>
+</ul>
+<p>If <code>method = "PTG"</code>
+</p>
+
+<ul>
+<li>
+<p>lambda0 - threshold parameter for product of alpha.a and beta.m effect
+</p>
+</li>
+<li>
+<p>lambda1 - threshold parameter for beta.m effect
+</p>
+</li>
+<li>
+<p>lambda2 - threshold parameter for alpha.a effect
+</p>
+</li>
+<li>
+<p>ha - inverse gamma shape prior for sigma.sq.a
+</p>
+</li>
+<li>
+<p>la - inverse gamma scale prior for sigma.sq.a
+</p>
+</li>
+<li>
+<p>h1 - inverse gamma shape prior for sigma.sq.e
+</p>
+</li>
+<li>
+<p>l1 - inverse gamma scale prior for sigma.sq.e
+</p>
+</li>
+<li>
+<p>h2 - inverse gamma shape prior for sigma.sq.g
+</p>
+</li>
+<li>
+<p>l2 - inverse gamma scale prior for sigma.sq.g
+</p>
+</li>
+<li>
+<p>km - inverse gamma shape prior for tau.sq.b
+</p>
+</li>
+<li>
+<p>lm - inverse gamma scale prior for tau.sq.b
+</p>
+</li>
+<li>
+<p>kma - inverse gamma shape prior for tau.sq.a
+</p>
+</li>
+<li>
+<p>lma - inverse gamma scale prior for tau.sq.a
+</p>
+</li>
+</ul>
+<p>If <code>method = "GMM". NOTE: GMM not currently supported. Instead, use method = 'PTG'.</code>
+</p>
+
+<ul>
+<li>
+<p>phi0 - prior beta.m variance
+</p>
+</li>
+<li>
+<p>phi1 - prior alpha.a variance
+</p>
+</li>
+<li>
+<p>a0 - prior count of non-zero beta.m and alpha.a effects
+</p>
+</li>
+<li>
+<p>a1 - prior count of non-zero beta.m and zero alpha.a effects
+</p>
+</li>
+<li>
+<p>a2 - prior count of zero beta.m and non-zero alpha.a effects
+</p>
+</li>
+<li>
+<p>a3 - prior count of zero beta.m and zero alpha.a effects
+</p>
+</li>
+<li>
+<p>ha - inverse gamma shape prior for sigma.sq.a
+</p>
+</li>
+<li>
+<p>la - inverse gamma scale prior for sigma.sq.a
+</p>
+</li>
+<li>
+<p>h1 - inverse gamma shape prior for sigma.sq.e
+</p>
+</li>
+<li>
+<p>l1 - inverse gamma scale prior for sigma.sq.e
+</p>
+</li>
+<li>
+<p>h2 - inverse gamma shape prior for sigma.sq.g
+</p>
+</li>
+<li>
+<p>l2 - inverse gamma scale prior for sigma.sq.g
+</p>
+</li>
+</ul>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>seed</code></td>
+<td>
+<p>numeric seed for GIBBS sampler</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p><code>bama</code> uses two regression models for the two conditional relationships,
+<code class="reqn">Y | A, M, C</code> and <code class="reqn">M | A, C</code>. For the outcome model, <code>bama</code>
+uses
+</p>
+<p style="text-align: center;"><code class="reqn">Y = M \beta_M  + A * \beta_A + C* \beta_C + \epsilon_Y</code>
+</p>
+
+<p>For the mediator model, <code>bama</code> uses the model
+</p>
+<p style="text-align: center;"><code class="reqn">M = A * \alpha_A + C * \alpha_C + \epsilon_M</code>
+</p>
+
+<p>For high dimensional tractability, <code>bama</code> employs continuous Bayesian
+shrinkage priors to select mediators and makes the two following assumptions:
+First, it assumes that all the potential mediators contribute small effects
+in mediating the exposure-outcome relationship. Second, it assumes
+that only a small proportion of mediators exhibit large effects
+("active" mediators). <code>bama</code> uses a Metropolis-Hastings within Gibbs
+MCMC to generate posterior samples from the model.
+</p>
+<p>NOTE: GMM not currently supported. Instead, use method = 'PTG'.
+</p>
+
+
+<h3>Value</h3>
+
+<p>If method = "BSLMM", then <code>bama</code> returns a object of type "bama" with 12 elements:
+</p>
+
+<dl>
+<dt>beta.m</dt>
+<dd>
+<p><code>ndraws x p</code> matrix containing outcome model mediator
+coefficients.
+</p>
+</dd>
+<dt>r1</dt>
+<dd>
+<p><code>ndraws x p</code> matrix indicating whether or not each beta.m
+belongs to the larger normal component (1) or smaller normal
+component (0).
+</p>
+</dd>
+<dt>alpha.a</dt>
+<dd>
+<p><code>ndraws x p</code> matrix containing the mediator model
+exposure coefficients.
+</p>
+</dd>
+<dt>r3</dt>
+<dd>
+<p><code>ndraws x p</code> matrix indicating whether or not each alpha.a
+belongs to the larger normal component (1) or smaller normal component (0).
+</p>
+</dd>
+<dt>beta.a</dt>
+<dd>
+<p>Vector of length <code>ndraws</code> containing the beta.a coefficient.</p>
+</dd>
+<dt>pi.m</dt>
+<dd>
+<p>Vector of length <code>ndraws</code> containing the proportion of
+non zero beta.m coefficients.
+</p>
+</dd>
+<dt>pi.a</dt>
+<dd>
+<p>Vector of length <code>ndraws</code> containing the proportion of
+non zero alpha.a coefficients.
+</p>
+</dd>
+<dt>sigma.m0</dt>
+<dd>
+<p>Vector of length <code>ndraws</code> containing the standard
+deviation of the smaller normal component for mediator-outcome
+coefficients (beta.m).
+</p>
+</dd>
+<dt>sigma.m1</dt>
+<dd>
+<p>Vector of length <code>ndraws</code> containing standard deviation
+of the larger normal component for mediator-outcome coefficients (beta.m).
+</p>
+</dd>
+<dt>sigma.ma0</dt>
+<dd>
+<p>Vector of length <code>ndraws</code> containing standard
+deviation of the smaller normal component for exposure-mediator
+coefficients (alpha.a).
+</p>
+</dd>
+<dt>sigma.ma1</dt>
+<dd>
+<p>Vector of length <code>ndraws</code> containing standard deviation
+of the larger normal component for exposure-mediator coefficients
+(alpha.a).
+</p>
+</dd>
+<dt>call</dt>
+<dd>
+<p>The R call that generated the output.</p>
+</dd>
+</dl>
+<p>NOTE: GMM not currently supported. Instead, use method = 'PTG'
+If method = "GMM", then <code>bama</code> returns a object of type "bama" with:
+</p>
+
+<dl>
+<dt>beta.m</dt>
+<dd>
+<p><code>ndraws x p</code> matrix containing outcome model mediator
+coefficients.</p>
+</dd>
+<dt>alpha.a</dt>
+<dd>
+<p><code>ndraws x p</code> matrix containing the mediator model
+exposure coefficients.</p>
+</dd>
+<dt>betam_member</dt>
+<dd>
+<p><code>ndraws x p</code> matrix of 1's and 0's where
+item = 1 only if beta.m is non-zero.</p>
+</dd>
+<dt>alphaa_member</dt>
+<dd>
+<p><code>ndraws x p</code> matrix of 1's and 0's where
+item = 1 only if alpha.a is non-zero.</p>
+</dd>
+<dt>alpha.c</dt>
+<dd>
+<p><code>ndraws x (q2 + p)</code> matrix containing alpha_c coefficients.
+Since alpha.c is a matrix of dimension q2 x p, the draws are indexed as
+alpha_c(w, j) = w * p + j</p>
+</dd>
+<dt>beta.c</dt>
+<dd>
+<p><code>ndraws x q1</code> matrix containing beta_c coefficients.
+Since beta.c is a matrix of dimension q1 x p</p>
+</dd>
+<dt>beta.a</dt>
+<dd>
+<p>Vector of length <code>ndraws</code> containing the beta.a coefficient.</p>
+</dd>
+<dt>sigma.sq.a</dt>
+<dd>
+<p>Vector of length <code>ndraws</code> variance of beta.a effect</p>
+</dd>
+<dt>sigma.sq.e</dt>
+<dd>
+<p>Vector of length <code>ndraws</code> variance of outcome model error</p>
+</dd>
+<dt>sigma.sq.g</dt>
+<dd>
+<p>Vector of length <code>ndraws</code> variance of mediator model error</p>
+</dd>
+</dl>
+<p>If method = "PTG", then <code>bama</code> returns a object of type "bama" with:
+</p>
+
+<dl>
+<dt>beta.m</dt>
+<dd>
+<p><code>ndraws x p</code> matrix containing outcome model mediator
+coefficients.</p>
+</dd>
+<dt>alpha.a</dt>
+<dd>
+<p><code>ndraws x p</code> matrix containing the mediator model
+exposure coefficients.</p>
+</dd>
+<dt>alpha.c</dt>
+<dd>
+<p><code>ndraws x (q2 + p)</code> matrix containing alpha_c coefficients.
+Since alpha.c is a matrix of dimension q2 x p, the draws are indexed as
+alpha_c(w, j) = w * p + j</p>
+</dd>
+<dt>beta.c</dt>
+<dd>
+<p><code>ndraws x q1</code> matrix containing beta_c coefficients.
+Since beta.c is a matrix of dimension q1 x p</p>
+</dd>
+<dt>betam_member</dt>
+<dd>
+<p><code>ndraws x p</code> matrix of 1's and 0's where
+item = 1 only if beta.m is non-zero.</p>
+</dd>
+<dt>alphaa_member</dt>
+<dd>
+<p><code>ndraws x p</code> matrix of 1's and 0's where
+item = 1 only if alpha.a is non-zero.</p>
+</dd>
+<dt>beta.a</dt>
+<dd>
+<p>Vector of length <code>ndraws</code> containing the beta.a coefficient.</p>
+</dd>
+<dt>sigma.sq.a</dt>
+<dd>
+<p>Vector of length <code>ndraws</code> variance of beta.a effect</p>
+</dd>
+<dt>sigma.sq.e</dt>
+<dd>
+<p>Vector of length <code>ndraws</code> variance of outcome model error</p>
+</dd>
+<dt>sigma.sq.g</dt>
+<dd>
+<p>Vector of length <code>ndraws</code> variance of mediator model error</p>
+</dd>
+</dl>
+<h3>References</h3>
+
+<p>Song, Y, Zhou, X, Zhang, M, et al. Bayesian shrinkage estimation of high
+dimensional causal mediation effects in omics studies. Biometrics. 2019;
+1-11. <a href="https://doi.org/10.1111/biom.13189">doi:10.1111/biom.13189</a>
+</p>
+<p>Song, Yanyi, Xiang Zhou, Jian Kang, Max T. Aung, Min Zhang, Wei Zhao,
+Belinda L. Needham et al. "Bayesian Sparse Mediation Analysis with
+Targeted Penalization of Natural Indirect Effects."
+arXiv preprint arXiv:2008.06366 (2020).
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">library(bama)
+
+Y &lt;- bama.data$y
+A &lt;- bama.data$a
+
+# grab the mediators from the example data.frame
+M &lt;- as.matrix(bama.data[, paste0("m", 1:100)], nrow(bama.data))
+
+# We just include the intercept term in this example as we have no covariates
+C1 &lt;- matrix(1, 1000, 1)
+C2 &lt;- matrix(1, 1000, 1)
+beta.m  &lt;- rep(0, 100)
+alpha.a &lt;- rep(0, 100)
+
+out &lt;- bama(Y = Y, A = A, M = M, C1 = C1, C2 = C2, method = "BSLMM", seed = 1234,
+            burnin = 100, ndraws = 110, weights = NULL, inits = NULL, 
+            control = list(k = 2, lm0 = 1e-04, lm1 = 1, lma1 = 1, l = 1))
+
+# The package includes a function to summarise output from 'bama'
+summary &lt;- summary(out)
+head(summary)
+
+
+# Product Threshold Gaussian 
+ptgmod = bama(Y = Y, A = A, M = M, C1 = C1, C2 = C2, method = "PTG", seed = 1234,
+              burnin = 100, ndraws = 110, weights = NULL, inits = NULL, 
+              control = list(lambda0 = 0.04, lambda1 = 0.2, lambda2 = 0.2))
+
+mean(ptgmod$beta.a)
+apply(ptgmod$beta.m, 2, mean)
+apply(ptgmod$alpha.a, 2, mean)
+apply(ptgmod$betam_member, 2, mean)
+apply(ptgmod$alphaa_member, 2, mean)
+
+
+
+</code></pre>
+
+
+</div>

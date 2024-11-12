@@ -1,0 +1,356 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>iterativeMCMC</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Structure learning with an iterative order MCMC algorithm on an expanded search space</h2>
+
+<h3>Description</h3>
+
+<p>This function implements an iterative search for the maximum a posteriori (MAP) DAG, 
+by means of order MCMC (arXiv:1803.07859v3).  At each iteration, the current search space is expanded by 
+allowing each node to have up to one additional parent not already included in the search space. 
+By default the initial search space is obtained through the PC-algorithm (using the functions <code>skeleton</code> and <code>pc</code> from the ‘pcalg’ package [Kalisch et al, 2012]).  
+At each iteration order MCMC is employed to search for the MAP DAG.  
+The edges in the MAP DAG are added to the initial search space to provide 
+the search space for the next iteration.  The algorithm iterates until no 
+further score improvements can be achieved by expanding the search space.  
+The final search space may be used for the sampling versions of <code>orderMCMC</code> and <code>partitionMCMC</code>.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">iterativeMCMC(
+  scorepar,
+  MAP = TRUE,
+  posterior = 0.5,
+  softlimit = 9,
+  hardlimit = 12,
+  alpha = 0.05,
+  gamma = 1,
+  verbose = TRUE,
+  chainout = FALSE,
+  scoreout = FALSE,
+  cpdag = FALSE,
+  mergetype = "skeleton",
+  iterations = NULL,
+  moveprobs = NULL,
+  stepsave = NULL,
+  startorder = NULL,
+  accum = FALSE,
+  compress = TRUE,
+  plus1it = NULL,
+  startspace = NULL,
+  blacklist = NULL,
+  addspace = NULL,
+  scoretable = NULL,
+  alphainit = NULL
+)
+
+## S3 method for class 'iterativeMCMC'
+plot(
+  x,
+  ...,
+  main = "iterative MCMC, DAG scores",
+  xlab = "MCMC step",
+  ylab = "DAG logscore",
+  type = "l",
+  col = "blue"
+)
+
+## S3 method for class 'iterativeMCMC'
+print(x, ...)
+
+## S3 method for class 'iterativeMCMC'
+summary(object, ...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>scorepar</code></td>
+<td>
+<p>an object of class <code>scoreparameters</code>, containing the data and scoring parameters; see constructor function <code>scoreparameters</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>MAP</code></td>
+<td>
+<p>logical, if TRUE (default) the search targets the MAP DAG (a DAG with maximum score),
+if FALSE at each MCMC step a DAG is sampled from the order proportionally to its score; when expanding a search space when MAP=TRUE all edges from the maximum scoring DAG are added
+to the new space, when MAP=FALSE only edges with posterior probability higher than defined by parameter <code>posterior</code> are added to the search space</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>posterior</code></td>
+<td>
+<p>logical, when <code>MAP</code> set to FALSE defines posterior probability threshold for adding the edges to the search space</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>softlimit</code></td>
+<td>
+<p>integer, limit on the size of parent sets beyond which adding undirected edges is restricted; below this
+limit edges are added to expand the parent sets based on the undirected skeleton of the MAP DAG (or from its CPDAG, depending
+on the parameter <code>mergecp</code>), above the limit only the directed edges are added from the MAP DAG;  the limit is 9 by default</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>hardlimit</code></td>
+<td>
+<p>integer, limit on the size of parent sets beyond which the search space is not further expanded to prevent long runtimes; the limit is 12 by default</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>alpha</code></td>
+<td>
+<p>numerical significance value in <code>{0,1}</code> for the conditional independence tests in the PC-stage</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>gamma</code></td>
+<td>
+<p>tuning parameter which transforms the score by raising it to this power, 1 by default</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>verbose</code></td>
+<td>
+<p>logical, if TRUE (default) prints messages on the progress of execution</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>chainout</code></td>
+<td>
+<p>logical, if TRUE the saved MCMC steps are returned, FALSE by default</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>scoreout</code></td>
+<td>
+<p>logical, if TRUE the search space from the last plus1 iterations and the corresponding score tables are returned, FALSE by default</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>cpdag</code></td>
+<td>
+<p>logical, if set to TRUE the equivalence class (CPDAG) found by the PC algorithm is used as a search
+space, when FALSE (default) the undirected skeleton used as a search space</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>mergetype</code></td>
+<td>
+<p>defines which edges are added to the search space at each expansion iteration; three options are available 'dag', 'cpdag', 'skeleton'; 'skeleton' by default</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>iterations</code></td>
+<td>
+<p>integer, the number of MCMC steps, the default value is <code class="reqn">3.5n^{2}\log{n}</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>moveprobs</code></td>
+<td>
+<p>a numerical vector of 4 values in <code>{0,1}</code> corresponding to the probabilities of the following MCMC moves in the order space:
+</p>
+
+<ul>
+<li>
+<p> exchanging 2 random nodes in the order
+</p>
+</li>
+<li>
+<p> exchanging 2 adjacent nodes in the order
+</p>
+</li>
+<li>
+<p> placing a single node elsewhere in the order
+</p>
+</li>
+<li>
+<p> staying still
+</p>
+</li>
+</ul>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>stepsave</code></td>
+<td>
+<p>integer, thinning interval for the MCMC chain, indicating the number of steps between two output iterations, the default is <code>iterations</code>/1000</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>startorder</code></td>
+<td>
+<p>integer vector of length n, which will be used as the starting order in the MCMC algorithm, the default order is random</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>accum</code></td>
+<td>
+<p>logical, when TRUE at each search step expansion new edges are added to the current search space; when FALSE (default) the new edges are added to the starting space</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>compress</code></td>
+<td>
+<p>logical, if TRUE adjacency matrices representing sampled graphs will be stored as a sparse Matrix (recommended); TRUE by default</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>plus1it</code></td>
+<td>
+<p>(optional) integer, a number of iterations of search space expansion; by default the algorithm iterates until no score improvement can be achieved by further expanding the search space</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>startspace</code></td>
+<td>
+<p>(optional) a square matrix, of dimensions equal to the number of nodes, which defines the search space for the order MCMC in the form of an adjacency matrix; if NULL, the skeleton obtained from the PC-algorithm will be used; if <code>startspace[i,j]</code> equals to 1 (0) it means that the edge from node <code>i</code> to node <code>j</code> is included (excluded) from the search space; to include an edge in both directions, both <code>startspace[i,j]</code> and <code>startspace[j,i]</code> should be 1</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>blacklist</code></td>
+<td>
+<p>(optional) a square matrix, of dimensions equal to the number of nodes, which defines edges to exclude from the search space; if <code>blacklist[i,j]</code> equals to 1 it means that the edge from node <code>i</code> to node <code>j</code> is excluded from the search space
+</p>
+
+<ul>
+<li>
+<p> "dag", then edges from maximum scoring DAG are added;
+</p>
+</li>
+<li>
+<p> "cpdag", then the maximum scoring DAG is first converted to the CPDAG, from which all edges are added to the search space;
+</p>
+</li>
+<li>
+<p> "skeleton", then the maximum scoring DAG is first converted to the skeleton, from which all edges are added to the search space
+</p>
+</li>
+</ul>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>addspace</code></td>
+<td>
+<p>(optional) a square matrix, of dimensions equal to the number of nodes, which defines the edges, which are added at to the search space only at the first iteration of iterative seach and do not necessarily stay afterwards; defined in the form of an adjacency matrix;  if <code>addspace[i,j]</code> equals to 1 (0) it means that the edge from node <code>i</code> to node <code>j</code> is included (excluded) from the search space; to include an edge in both directions, both <code>addspace[i,j]</code> and <code>addspace[j,i]</code> should be 1</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>scoretable</code></td>
+<td>
+<p>(optional) object of class <code>scorespace</code>. When not NULL, parameters <code>startspace</code> and <code>addspace</code> are ignored.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>alphainit</code></td>
+<td>
+<p>(optional) numerical, defines alpha that is used by the PC algorithm to learn initial structure of a DBN, ignored in static case</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>object of class 'iterativeMCMC'</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>ignored</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>main</code></td>
+<td>
+<p>name of the graph; "iterative MCMC, DAG scores" by default</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>xlab</code></td>
+<td>
+<p>name of x-axis; "MCMC step"</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ylab</code></td>
+<td>
+<p>name of y-axis; "DAG logscore"</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>type</code></td>
+<td>
+<p>type of line in the plot; "l" by default</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>col</code></td>
+<td>
+<p>colour of line in the plot; "blue" by default</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>object</code></td>
+<td>
+<p>object of class 'iterativeMCMC'</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>Object of class <code>iterativeMCMC</code>, which contains log-score trace as well as adjacency matrix of the maximum scoring DAG, its score and the order score. 
+The output can optionally include DAGs sampled in MCMC iterations and the score tables. Optional output is regulated by the parameters <code>chainout</code> and <code>scoreout</code>. See <code>iterativeMCMC class</code> for a detailed class structure.
+</p>
+
+
+<h3>Note</h3>
+
+<p>see also extractor functions <code>getDAG</code>, <code>getTrace</code>, <code>getSpace</code>, <code>getMCMCscore</code>.
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Polina Suter, Jack Kuipers
+</p>
+
+
+<h3>References</h3>
+
+<p>P. Suter, J. Kuipers, G. Moffa, N.Beerenwinkel (2023) &lt;doi:10.18637/jss.v105.i09&gt;
+</p>
+<p>Kuipers J, Super P and Moffa G (2020). Efficient Sampling and Structure Learning of Bayesian Networks. (arXiv:1803.07859v3)
+</p>
+<p>Friedman N and Koller D (2003). A Bayesian approach to structure discovery in bayesian networks. Machine Learning 50, 95-125.
+</p>
+<p>Kalisch M, Maechler M, Colombo D, Maathuis M and Buehlmann P (2012). Causal inference using graphical models with the R package pcalg. Journal of Statistical Software 47, 1-26.
+</p>
+<p>Geiger D and Heckerman D (2002). Parameter priors for directed acyclic graphical models and the characterization of several probability distributions. The Annals of Statistics 30, 1412-1440.
+</p>
+<p>Kuipers J, Moffa G and Heckerman D (2014). Addendum on the scoring of Gaussian directed acyclic graphical models. The Annals of Statistics 42, 1689-1691.
+</p>
+<p>Spirtes P, Glymour C and Scheines R (2000). Causation, Prediction, and Search, 2nd edition. The MIT Press.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## Not run: 
+Bostonpar&lt;-scoreparameters("bge",Boston)
+itfit&lt;-iterativeMCMC(Bostonpar, chainout=TRUE, scoreout=TRUE)
+plot(itfit)
+
+## End(Not run)
+</code></pre>
+
+
+</div>

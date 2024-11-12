@@ -1,0 +1,139 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>BayesMultMeta</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Interface for the BayesMultMeta class</h2>
+
+<h3>Description</h3>
+
+<p>The BayesMultMeta package implements two methods of constructing Markov
+chains to assess the posterior distribution of the model parameters, namely
+the overall mean vector <code class="reqn">\mathbf{\mu}</code> and the between-study covariance matrix
+<code class="reqn">\mathbf{\Psi}</code>, of the generalized marginal multivariate random effects models.
+The Bayesian inference procedures are performed when the model parameters are
+endowed with the Berger and Bernardo reference prior
+(Berger and Bernardo 1992) and the Jeffreys prior
+(Jeffreys 1946). This is achieved by
+constructing Markov chains using the Metropolis-Hastings algorithms developed
+in (Bodnar and Bodnar 2021). The convergence
+properties of the generated Markov chains are investigated by the rank plots
+and the split-<code class="reqn">\hat{R}</code> estimate based on the rank normalization, which are
+proposed in (Vehtari et al. 2021).
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">BayesMultMeta(X, U, N, burn_in, likelihood, prior, algorithm_version, d = NULL)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>X</code></td>
+<td>
+<p>A <code class="reqn">p \times n</code> matrix which contains <code class="reqn">n</code> observation vectors
+of dimension <code class="reqn">p</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>U</code></td>
+<td>
+<p>A <code class="reqn">pn \times pn</code> block-diagonal matrix which contains the
+covariance matrices of observation vectors.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>N</code></td>
+<td>
+<p>Length of the generated Markov chain.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>burn_in</code></td>
+<td>
+<p>Number of burn-in samples</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>likelihood</code></td>
+<td>
+<p>Likelihood to use. It currently supports "normal" and
+"t".</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>prior</code></td>
+<td>
+<p>Prior to use. It currently supports "reference" and
+"jeffrey".</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>algorithm_version</code></td>
+<td>
+<p>One of "mu" or "Psi". Both algorithms samples the
+same quantities.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>d</code></td>
+<td>
+<p>Degrees of freedom for the t-distribution when the "t" option is
+used for the likelihood.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>a BayesMultMeta class which contains simulations from the MCMC
+inference procedure as well as many of the input parameters. The elements
+'psi' and 'mu' in the list contains simulations from the posterior
+distribution. All other elements are input parameters to the class.
+</p>
+
+
+<h3>References</h3>
+
+<p>Berger JO, Bernardo JM (1992).
+“On the development of the reference prior method.”
+<em>Bayesian statistics</em>, <b>4</b>(4), 35–60.<br><br> Bodnar O, Bodnar T (2021).
+“Objective Bayesian meta-analysis based on generalized multivariate random effects model.”
+2104.02105.<br><br> Jeffreys H (1946).
+“An invariant form for the prior probability in estimation problems.”
+<em>Proceedings of the Royal Society of London Series A</em>, <b>186</b>(1007), 453-461.
+doi: <a href="https://doi.org/10.1098/rspa.1946.0056">10.1098/rspa.1946.0056</a>.<br><br> Vehtari A, Gelman A, Simpson D, Carpenter B, BÃ¼rkner P (2021).
+“Rank-normalization, folding, and localization: An improved hatR for assessing convergence of MCMC (with Discussion).”
+<em>Bayesian analysis</em>, <b>16</b>(2), 667–718.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">dataREM&lt;-mvmeta::hyp
+# Observation matrix X
+X&lt;-t(cbind(dataREM$sbp,dataREM$dbp))
+p&lt;-nrow(X)  # model dimension
+n&lt;-ncol(X)  # sample size
+# Matrix U
+U&lt;-matrix(0,n*p,n*p)
+for (i_n in 1:n) {
+  Use&lt;-diag(c(dataREM$sbp_se[i_n],dataREM$dbp_se[i_n]))
+  Corr_mat&lt;-matrix(c(1,dataREM$rho[i_n],dataREM$rho[i_n],1),p,p)
+  U[(p*(i_n-1)+1):(p*i_n),(p*(i_n-1)+1):(p*i_n)]&lt;- Use%*%Corr_mat%*%Use
+}
+
+bmgmr_run &lt;- BayesMultMeta(X, U, 1e2, burn_in = 100,
+                   likelihood = "normal", prior="jeffrey",
+                   algorithm_version = "mu")
+summary(bmgmr_run)
+plot(bmgmr_run)
+
+</code></pre>
+
+
+</div>

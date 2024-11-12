@@ -1,0 +1,504 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>process_data</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Data Pre-Processor</h2>
+
+<h3>Description</h3>
+
+<p>A helper function to assist in pre-processing the user-supplied
+input data in a standardized format for use with other functions in the <code>bp</code> package.
+See Vignette for further details.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">process_data(
+  data,
+  bp_type = c("hbpm", "abpm", "ap"),
+  ap = NULL,
+  time_elap = NULL,
+  sbp = NULL,
+  dbp = NULL,
+  date_time = NULL,
+  id = NULL,
+  group = NULL,
+  wake = NULL,
+  visit = NULL,
+  hr = NULL,
+  pp = NULL,
+  map = NULL,
+  rpp = NULL,
+  DoW = NULL,
+  ToD_int = NULL,
+  eod = NULL,
+  data_screen = TRUE,
+  SUL = 240,
+  SLL = 50,
+  DUL = 140,
+  DLL = 40,
+  HRUL = 220,
+  HRLL = 27,
+  inc_low = TRUE,
+  inc_crisis = TRUE,
+  agg = FALSE,
+  agg_thresh = 3,
+  collapse_df = FALSE,
+  dt_fmt = "ymd HMS",
+  chron_order = FALSE,
+  tz = "UTC"
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+<p>User-supplied dataset containing blood pressure data. Must
+contain data for Systolic blood pressure and Diastolic blood pressure at a
+minimum.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>bp_type</code></td>
+<td>
+<p>Required argument specifying which of the three BP data types
+("HBPM", "ABPM", or "AP") the input data is. Default <code>bp_type</code> set to "HBPM".
+This argument determines which processing steps are necessary to yield sensible
+output.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ap</code></td>
+<td>
+<p>(For AP data only) Required column name (character string) corresponding
+to continuous Arterial Pressure (AP) (mmHg). Note that this is a required argument
+so long as bp_type = "AP". Ensure that bp_type is set accordingly.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>time_elap</code></td>
+<td>
+<p>(For AP data only) Column name corresponding to the time elapsed
+for the given AP waveform data.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>sbp</code></td>
+<td>
+<p>Required column name (character string) corresponding to Systolic Blood
+Pressure (mmHg)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>dbp</code></td>
+<td>
+<p>Required column name (character string) corresponding to Diastolic Blood
+Pressure (mmHg)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>date_time</code></td>
+<td>
+<p>Optional column name (character string) corresponding to Date/Time,
+but HIGHLY recommended to supply if available.
+</p>
+<p>For DATE-only columns (with no associated time), leave date_time = NULL. DATE-only
+adjustments are automatic. Dates can be automatically calculated off DATE_TIME column
+provided that it is called "DATE_TIME" exactly.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>id</code></td>
+<td>
+<p>Optional column name (character string) corresponding to subject ID. Typically
+needed for data corresponding to more than one subject. For one-subject datasets, ID
+will default to 1 (if ID column not found in dataset)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>group</code></td>
+<td>
+<p>Optional column name (character string) corresponding to an additional
+grouping variable that can be used to further break down data. NOTE that this simply
+sets the column as "GROUP" so that other functions recognize which column to use as
+the grouping variable.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>wake</code></td>
+<td>
+<p>Optional column name (character string) corresponding to sleep status. A
+WAKE value of 1 indicates that the subject is awake and 0 implies asleep.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>visit</code></td>
+<td>
+<p>Optional column name (character string) corresponding to Visit number</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>hr</code></td>
+<td>
+<p>Optional column name (character string) corresponding to Heart Rate (bpm)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>pp</code></td>
+<td>
+<p>Optional column name (character string) corresponding to Pulse Pressure
+(SBP - DBP). If not supplied, it will be calculated automatically.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>map</code></td>
+<td>
+<p>Optional column name (character string) corresponding to Mean Arterial
+Pressure</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>rpp</code></td>
+<td>
+<p>Optional column name (character string) corresponding to Rate Pulse
+Pressure (SBP * HR). If not supplied, but HR column available, then
+RPP will be calculated automatically.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>DoW</code></td>
+<td>
+<p>Optional column name (character string) corresponding to the Day of the Week.
+If not supplied, but DATE or DATE_TIME columns available, then DoW will be created
+automatically. DoW values must be abbreviated as such <code>c("Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat")</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ToD_int</code></td>
+<td>
+<p>Optional vector of length 4, acceptable values are from 0 to 23 in a an order corresponding to hour for Morning, Afternoon, Evening, Night). This vector allows to override the default interval for the Time-of-Day periods: if NULL, the Morning, Afternoon, Evening, and Night periods are set at 6, 12, 18, 0 respectively,
+where 0 corresponds to the 24th hour of the day (i.e. Midnight).
+For example, ToD_int = c(5, 13, 18, 23) would correspond to a period for
+Morning starting at 5:00 (until 13:00), Afternoon starting at 13:00 (until 18:00),
+Evening starting at 18:00 (until 23:00), and Night starting at 23:00 (until 5:00)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>eod</code></td>
+<td>
+<p>Optional argument to adjust the delineation for the end of day (eod). The supplied value should be a character string with 4 characters representing the digits of 24-hour time, e.g. "1310" corresponds to 1:10pm. For individuals who
+do not go to bed early or work night-shifts, this argument adjusts the <code>DATE</code> column so that the days change at specified time. <code>eod = "0000"</code> means no change. <code>eod = "1130"</code> will adjust the date of the readings up to 11:30am to the previous date. <code>eod = "1230"</code> will adjust the date of the readings after 12:30pm to the next date.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>data_screen</code></td>
+<td>
+<p>Optional logical argument; default set to TRUE. Screens for extreme values in the data
+for both <code>SBP</code> and <code>DBP</code> according to Omboni, et al (1995) paper - Calculation of Trough:Peak
+Ratio of Antihypertensive Treatment from Ambulatory Blood Pressure: Methodological Aspects</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>SUL</code></td>
+<td>
+<p>Systolic Upper Limit (SUL). If <code>data_screen = TRUE</code>, then <code>SUL</code> sets the upper limit by which
+to exclude any <code>SBP</code> values that exceed this threshold. The default is set to 240 per Omboni, et al (1995)
+paper - Calculation of Trough:Peak Ratio of Antihypertensive Treatment from Ambulatory Blood Pressure:
+Methodological Aspects</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>SLL</code></td>
+<td>
+<p>Systolic Lower Limit (SLL). If <code>data_screen = TRUE</code>, then <code>SLL</code> sets the lower limit by which
+to exclude any <code>SBP</code> values that fall below this threshold. The default is set to 50 per Omboni, et al (1995)
+paper - Calculation of Trough:Peak Ratio of Antihypertensive Treatment from Ambulatory Blood Pressure:
+Methodological Aspects</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>DUL</code></td>
+<td>
+<p>Diastolic Upper Limit (DUL). If <code>data_screen = TRUE</code>, then <code>DUL</code> sets the upper limit by which
+to exclude any <code>DBP</code> values that exceed this threshold. The default is set to 140 per Omboni, et al (1995)
+paper - Calculation of Trough:Peak Ratio of Antihypertensive Treatment from Ambulatory Blood Pressure:
+Methodological Aspects</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>DLL</code></td>
+<td>
+<p>Diastolic Lower Limit (DLL). If <code>data_screen = TRUE</code>, then <code>DLL</code> sets the lower limit by which
+to exclude any <code>DBP</code> values that fall below this threshold. The default is set to 40 per Omboni, et al (1995)
+paper - Calculation of Trough:Peak Ratio of Antihypertensive Treatment from Ambulatory Blood Pressure:
+Methodological Aspects</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>HRUL</code></td>
+<td>
+<p>Heart Rate Upper Limit (HRUL). If <code>data_screen = TRUE</code>, then <code>HRUL</code> sets the upper limit
+by which to exclude any <code>HR</code> values that exceed this threshold. The default is set to 220 per the upper limit
+of the common max heart rate formula: 220 - age
+</p>
+<p>see https://www.cdc.gov/physicalactivity/basics/measuring/heartrate.htm</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>HRLL</code></td>
+<td>
+<p>Heart Rate Upper Limit (HRUL). If <code>data_screen = TRUE</code>, then <code>HRUL</code> sets the upper limit
+by which to exclude any <code>HR</code> values that exceed this threshold. The default is set to 27 per Guinness
+World Records - lowest heart rate (https://www.guinnessworldrecords.com/world-records/lowest-heart-rate)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>inc_low</code></td>
+<td>
+<p>Optional logical argument dictating whether or not to include the "Low" category for BP
+classification column (and the supplementary SBP/DBP Category columns). Default set to TRUE.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>inc_crisis</code></td>
+<td>
+<p>Optional logical argument dictating whether or not to include the "Crisis" category for BP
+classification column (and the supplementary SBP/DBP Category columns). Default set to TRUE.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>agg</code></td>
+<td>
+<p>Optional argument specifying whether or not to aggregate the data based on the amount of time
+between observations. If <code>agg = TRUE</code> then any two (or more) observations within the amount of
+time alloted by the agg_thresh argument will be averaged together.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>agg_thresh</code></td>
+<td>
+<p>Optional argument specifying the threshold of how many minutes can pass between readings
+(observations) and still be considered part of the same sitting. The default is set to 3 minutes. This implies
+that if two or more readings are within 3 minutes of each other, they will be averaged together (if agg is
+set to TRUE).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>collapse_df</code></td>
+<td>
+<p>Optional argument that collapses the dataframe to eliminate repeating rows after
+aggregation.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>dt_fmt</code></td>
+<td>
+<p>Optional argument that specifies the input date/time format (dt_fmt). Default set to "ymd HMS"
+but can take on any format specified by the lubridate package.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>chron_order</code></td>
+<td>
+<p>Optional argument that specifies whether to order the data in chronological (Oldest
+dates &amp; times at the top / first) or reverse chronological order (Most recent dates &amp; times at the top / first).
+TRUE refers to chronological order; FALSE refers to reverse chronological order. The default is set to
+FALSE (i.e. most recent observations listed first in the dataframe).
+</p>
+<p>See https://lubridate.tidyverse.org/reference/parse_date_time.html for more details.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>tz</code></td>
+<td>
+<p>Optional argument denoting the respective time zone. Default time zone set to "UTC". See
+Use <code>OlsonNames()</code> for a complete listing of all available time zones that can be used in this
+argument.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>A processed dataframe object with standardized column names and formats to use with the rest of bp package functions. The following standardized column names are used throughout
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>BP_TYPE</code></td>
+<td>
+<p>One of AP, HBPM or ABPM</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ID</code></td>
+<td>
+<p>Subject ID</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>SBP</code></td>
+<td>
+<p>Systolic Blood Pressure</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>DBP</code></td>
+<td>
+<p>Diastolic Blood Pressure</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>SBP_CATEGORY</code></td>
+<td>
+<p>Ordinal, SBP characterization into "Low" &lt; "Normal"&lt;"Elevated"&lt;"Stage 1"&lt; "Stage 2" &lt; "Crisis". "Low" is not included if <code>inc_low = FALSE</code>. "Crisis" is not included if <code>inc_crisis = FALSE</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>DBP_CATEGORY</code></td>
+<td>
+<p>Ordinal, DBP characterization into "Low" &lt; "Normal"&lt;"Elevated"&lt;"Stage 1"&lt; "Stage 2" &lt; "Crisis". "Low" is not included if <code>inc_low = FALSE</code>. "Crisis" is not included if <code>inc_crisis = FALSE</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>BP_CLASS</code></td>
+<td>
+<p>Blood pressure categorization based on paired values (SBP, DBP) into one of the 8 stages according to Lee et al. 2020. See <code>bp_scatter</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>HR</code></td>
+<td>
+<p>Heart Rate</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>MAP</code></td>
+<td>
+<p>Mean Arterial Pressure</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>PP</code></td>
+<td>
+<p>Pulse Pressure, SBP-DBP</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>DATE_TIME</code></td>
+<td>
+<p>Date and time in POSIXct format</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>DATE</code></td>
+<td>
+<p>Date only in Date format</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>MONTH</code></td>
+<td>
+<p>Month, integer from 1 to 12</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>DAY</code></td>
+<td>
+<p>Day, integer from 1 to 31</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>YEAR</code></td>
+<td>
+<p>Four digit year</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>DAY_OF_WEEK</code></td>
+<td>
+<p>Ordinal, with "Sun"&lt;"Mon"&lt;"Tue"&lt;"Wed"&lt;"Thu"&lt;"Fri"&lt;"Sat"</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>TIME</code></td>
+<td>
+<p>Time in character format</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>HOUR</code></td>
+<td>
+<p>Integer, from 0 to 23</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>TIME_OF_DAY</code></td>
+<td>
+<p>One of "Morning", "Afternoon", "Evening" or "Night"</p>
+</td>
+</tr>
+</table>
+<h3>References</h3>
+
+<p>Lee H, Yano Y, Cho SMJ, Park JH, Park S, Lloyd-Jones DM, Kim HC. Cardiovascular risk of isolated
+systolic or diastolic hypertension in young adults. <em>Circulation</em>. 2020; 141:1778–1786.
+doi: <a href="https://doi.org/10.1161/CIRCULATIONAHA.119.044838">10.1161/CIRCULATIONAHA.119.044838</a>
+</p>
+<p>Omboni, S., Parati, G*., Zanchetti, A., Mancia, G. Calculation of trough: peak ratio of
+antihypertensive treatment from ambulatory blood pressure: methodological aspects
+<em>Journal of Hypertension</em>. October 1995 - Volume 13 - Issue 10 - p 1105-1112
+doi: <a href="https://doi.org/10.1097/00004872-199510000-00005">10.1097/00004872-199510000-00005</a>
+</p>
+<p>Unger, T., Borghi, C., Charchar, F., Khan, N. A., Poulter, N. R., Prabhakaran, D., ... &amp; Schutte,
+A. E. (2020). 2020 International Society of Hypertension global hypertension practice guidelines.
+<em>Hypertension</em>, 75(6), 1334-1357.
+doi: <a href="https://doi.org/10.1161/HYPERTENSIONAHA.120.15026">10.1161/HYPERTENSIONAHA.120.15026</a>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R"># Load bp_hypnos
+data("bp_hypnos")
+
+# Process data for bp_hypnos
+hypnos_proc &lt;- process_data(bp_hypnos,
+                              bp_type = 'abpm',
+                              sbp = 'syst',
+                              dbp = 'diast',
+                              date_time = 'date.time',
+                              hr = 'hr',
+                              pp = 'PP',
+                              map = 'MaP',
+                              rpp = 'Rpp',
+                              id = 'id',
+                              visit = 'Visit',
+                              wake = 'wake',
+                              data_screen = FALSE)
+
+hypnos_proc
+
+
+# Load bp_jhs data
+data("bp_jhs")
+
+# Process data for bp_jhs
+# Note that bp_type defaults to "hbpm" and is therefore not specified
+jhs_proc &lt;- process_data(bp_jhs,
+                         sbp = "Sys.mmHg.",
+                         dbp = "Dias.mmHg.",
+                         date_time = "DateTime",
+                         hr = "Pulse.bpm.")
+
+jhs_proc
+
+</code></pre>
+
+
+</div>

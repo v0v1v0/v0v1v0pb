@@ -1,0 +1,366 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>block</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Block units into homogeneous experimental blocks</h2>
+
+<h3>Description</h3>
+
+<p>Block units into experimental blocks, with one unit per treatment
+condition.  Blocking begins by creating a measure of
+multivariate distance between all possible pairs of units.  Maximum,
+minimum, or an allowable range of differences between units on one
+variable can be set.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">block(data, vcov.data = NULL, groups = NULL, n.tr = 2, id.vars,
+  block.vars = NULL, algorithm = "optGreedy", distance = "mahalanobis",
+  weight = NULL, optfactor = 10^7, row.sort = NULL, level.two = FALSE, 
+  valid.var = NULL, valid.range = NULL, seed.dist, namesCol = NULL, verbose = FALSE, ...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+<p>a dataframe or matrix, with units in rows and variables in
+columns.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>vcov.data</code></td>
+<td>
+<p>an optional matrix of data used to estimate the
+variance-covariance matrix for calculating multivariate distance.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>groups</code></td>
+<td>
+<p>an optional column name from <code>data</code>, specifying subgroups
+within which blocking occurs.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>n.tr</code></td>
+<td>
+<p>the number of treatment conditions per block.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>id.vars</code></td>
+<td>
+<p>a required string or vector of two strings specifying which
+column(s) of <code>data</code> contain identifying information.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>block.vars</code></td>
+<td>
+<p>an optional string or vector of strings specifying which
+column(s) of <code>data</code> contain the numeric blocking variables.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>algorithm</code></td>
+<td>
+<p>a string specifying the blocking algorithm.
+<code>"optGreedy"</code>, <code>"optimal"</code>, <code>"naiveGreedy"</code>, <code>"randGreedy"</code>, and
+<code>"sortGreedy"</code> algorithms are currently available.  See Details
+for more information.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>distance</code></td>
+<td>
+<p>either a) a string defining how the multivariate
+distance used for blocking is calculated (options include
+<code>"mahalanobis"</code>, <code>"mcd"</code>, <code>"mve"</code>, and <code>"euclidean"</code>), or b) a
+user-defined $k$-by-$k$ matrix of distances, where $k$ is the number of rows in 
+<code>data</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>weight</code></td>
+<td>
+<p>either a vector of length equal to the number of blocking 
+variables or a square matrix with dimensions equal to the number of 
+blocking variables used to explicitly weight blocking variables.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>optfactor</code></td>
+<td>
+<p>a number by which distances are multiplied then divided when <code>algorithm = "optimal"</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>row.sort</code></td>
+<td>
+<p>an optional vector of integers from 1 to
+<code>nrow(data)</code> used to sort the rows of data when
+<code>algorithm = "sortGreedy"</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>level.two</code></td>
+<td>
+<p>a logical defining the level of blocking.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>valid.var</code></td>
+<td>
+<p>an optional string defining a variable on which
+units in the same block must fall within the range defined by
+<code>valid.range</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>valid.range</code></td>
+<td>
+<p>an optional vector defining the range of
+<code>valid.var</code> within which units in the same block must fall.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>seed.dist</code></td>
+<td>
+<p>an optional integer value for the random seed set in
+<code>cov.rob</code>, used to calculate measures of the
+variance-covariance matrix robust to outliers.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>namesCol</code></td>
+<td>
+<p>an optional vector of column names for the output
+table.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>verbose</code></td>
+<td>
+<p>a logical specifying whether <code>groups</code> names and 
+block numbers are printed as blocks are created.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>additional arguments passed to <code>cov.rob</code>.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>If <code>vcov.data = NULL</code>, then <code>block</code> calculates the
+variance-covariance matrix using the <code>block.vars</code> from
+<code>data</code>. 
+</p>
+<p>If <code>groups</code> is not user-specified, <code>block</code> temporarily creates
+a variable in <code>data</code> called <code>groups</code>, which takes the value
+1 for every unit.
+</p>
+<p>Where possible, one unit is assigned to each condition in each block.
+If there are fewer available units than treatment conditions, available
+units are used.
+</p>
+<p>If <code>n.tr</code> $&gt; 2$, then the <code>optGreedy</code> algorithm finds the best
+possible pair match, then the best match to either member of the pair,
+then the best match to any member of the triple, etc.  After finding the best pair match to a given unit, the other greedy algorithms proceed by finding the third, fourth, etc. best match to that given unit.
+</p>
+<p>An example of <code>id.vars</code> is <code>id.vars = c("id", "id2")</code>.  If
+two-level blocking is selected, <code>id.vars</code> should be ordered 
+(unit id, subunit id).  See details for <code>level.two</code> below for more 
+information.
+</p>
+<p>If <code>block.vars = NULL</code>, then all variables in <code>data</code> except
+the <code>id.vars</code> are taken as blocking variables.  E.g.,
+<code>block.vars = c("b1", "b2")</code>.  
+</p>
+<p>The algorithm <code>optGreedy</code> calls an optimal-greedy algorithm, repeatedly
+finding the best remaining match in the entire dataset;
+<code>optimal</code> finds the set of blocks that minimizes the sum of the
+distances in all blocks; <code>naiveGreedy</code> finds the best match
+proceeding down the dataset from the first unit to the last;
+<code>randGreedy</code> randomly selects a unit, finds its best match, and
+repeats; <code>sortGreedy</code> resorts the dataset according to
+<code>row.sort</code>, then implements the <code>naiveGreedy</code> algorithm.
+</p>
+<p>The <code>optGreedy</code> algorithm breaks ties by randomly selecting one of
+the minimum-distance pairs.  The <code>naiveGreedy</code>, <code>sortGreedy</code>,
+and <code>randGreedy</code> algorithms break ties by randomly selecting one of
+the minimum-distance matches to the particular unit in question.
+</p>
+<p>As of version 0.5-1, blocking is done in C for all algorithms except
+<code>optimal</code> (see following paragraphs for more details on the
+<code>optimal</code> algorithm implementation).
+</p>
+<p>The <code>optimal</code> algorithm uses two functions from the
+<span class="pkg">nbpMatching</span> package: <code>distancematrix</code> prepares a distance
+matrix for optimal blocking, and <code>nonbimatch</code> performs the
+optimal blocking by minimizing the sum of distances in blocks.
+<code>nonbimatch</code>, and thus the <code>block</code> algorithm
+<code>optimal</code>, requires that <code>n.tr = 2</code>.
+</p>
+<p>Because <code>distancematrix</code> takes the integer <code>floor</code> of the
+distances, and one may want much finer precision, the multivariate
+distances calculated within <code>block</code> are multiplied by
+<code>optfactor</code> prior to optimal blocking.  Then
+<code>distancematrix</code> prepares the resulting distance matrix, and
+<code>nonbimatch</code> is called on the output.  The distances are then
+untransformed by dividing by <code>optfactor</code> before being returned by
+<code>block</code>.
+</p>
+<p>The choice of <code>optfactor</code> can determine whether the Fortran code
+can allocate enough memory to solve the optimization problem.  For
+example, blocking the first 14 units of <code>x100</code> by executing
+<code>block(x100[1:14, ], id.vars = "id", block.vars = c("b1", "b2"),
+algorithm = "optimal", optfactor = 10^8)</code> fails for Fortran memory
+reasons, while the same code with <code>optfactor = 10^5</code> runs
+successfully.  Smaller values of <code>optfactor</code> imply easier
+computation, but less precision.
+</p>
+<p>Most of the algorithms in <code>block</code> make prohibited blockings by
+using a distance of <code>Inf</code>.  However, the optimal algorithm calls
+<code>Fortran</code> code from <span class="pkg">nbpMatching</span> and requires integers.
+Thus, a distance of <code>99999*max(dist.mat)</code> is used to effectively
+prohibit blockings.  This follows the procedure demonstrated in the
+example of <code>help(nonbimatch)</code>.
+</p>
+<p>In order to enable comparisons of block-quality across groups, when
+<code>distance</code> is a string, $Sigma$ is calculated using units from
+all groups.
+</p>
+<p>The <code>distance = "mcd"</code> and <code>distance = "mve"</code> options call
+<code>cov.rob</code> to calculate measures of multivariate spread robust to
+outliers.  The <code>distance = "mcd"</code> option calculates the Minimum
+Covariance Determinant estimate (Rousseeuw 1985); the <code>distance = "mve"</code> option
+calculates the Minimum Volume Ellipsoid estimate (Rousseeuw and van Zomeren 1990).  When <code>distance = "mcd"</code>, the interquartile range on blocking variables should not be zero.
+</p>
+<p>A user-specified distance matrix must have diagonals equal to 0,
+indicating zero distance between a unit and itself.  Only the lower
+triangle of the matrix is used.
+</p>
+<p>If <code>weight</code> is a vector, then it is used as the diagonal of a square 
+weighting matrix with non-diagonal elements equal to zero.  The
+weighting is done by using as the Mahalanobis distance scaling matrix
+$((((chol(Sigma))')^{-1})'W((chol(Sigma))')^{-1})^{-1}$, where 
+$chol(Sigma)$ is the Cholesky decomposition of the usual variance-covariance 
+matrix and $W$ is the weighting matrix.  Differences should be smaller 
+on covariates given higher weights.
+</p>
+<p>If <code>level.two = TRUE</code>, then the best subunit block-matches in
+different units are found.  E.g., provinces could be matched based on
+the most similar cities within them.  All subunits in the data should
+have unique names.  Thus, if subunits are numbered 1 to (number of
+subunits in unit) within each unit, then they should be renumbered,
+e.g., 1 to (total number of subunits in all units).  <code>level.two</code>
+blocking is not currently implemented for <code>algorithm =
+"optimal"</code>.  Units with no blocked subunit are put into their own
+blocks.  However, unblocked subunits within a unit that does have a
+blocked subunit are not put into their own blocks.
+</p>
+<p>An example of a variable restriction is <code>valid.var = "b2"</code>,
+<code>valid.range = c(10,50)</code>, which requires that units in the same
+block be at least 10 units apart, but no more than 50 units apart, on
+variable <code>"b2"</code>.  As of version 0.5-3, variable restrictions are
+implemented in all algorithms except <code>optimal</code>.  Note that
+employing a variable restriction may result in fewer than the maximum possible number of blocks.  See 
+<a href="https://www.ryantmoore.org/html/software.blockTools.html">https://www.ryantmoore.org/html/software.blockTools.html</a> for details.
+</p>
+<p>If <code>namesCol = NULL</code>, then “Unit 1”,
+“Unit 2”, ... are used.  If <code>level.two = FALSE</code>, then <code>namesCol</code> should be of length <code>n.tr</code>; if <code>level.two = TRUE</code>, then <code>namesCol</code> should be of length 2*<code>n.tr</code>, and in the order shown in the example below.
+</p>
+
+
+<h3>Value</h3>
+
+<p> A list with elements
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>blocks</code></td>
+<td>
+<p>a list of dataframes, each containing a group's blocked
+units.  If there are two treatment conditions, then the last column
+of each dataframe displays the multivariate distance between the two
+units.  If there are more than two treatment conditions, then the
+last column of each dataframe displays the largest of the
+multivariate distances between all possible pairs in the block.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>level.two</code></td>
+<td>
+<p>a logical indicating whether <code>level.two =
+      TRUE</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>call</code></td>
+<td>
+<p>the orginal call to <code>block</code>.</p>
+</td>
+</tr>
+</table>
+<h3>Author(s)</h3>
+
+<p>Ryan T. Moore <a href="mailto:rtm@american.edu">rtm@american.edu</a> and Keith Schnakenberg <a href="mailto:keith.schnakenberg@gmail.com">keith.schnakenberg@gmail.com</a></p>
+
+
+<h3>References</h3>
+
+<p>King, Gary, Emmanuela Gakidou, Nirmala Ravishankar, Ryan T. Moore, Jason
+Lakin, Manett Vargas, Martha Mar\'ia T\'ellez-Rojo and Juan Eugenio
+Hern\'andez \'Avila and Mauricio Hern\'andez \'Avila and H\'ector
+Hern\'andez Llamas.  2007.  "A 'Politically Robust' Experimental Design
+for Public Policy Evaluation, with Application to the Mexican Universal
+Health Insurance Program". <em>Journal of Policy Analysis and
+Management</em> 26(3):  479-509.
+</p>
+<p>Moore, Ryan T. 2012. "Multivariate Continuous Blocking to Improve Political Science
+Experiments." <em>Political Analysis</em> 20(4):460-479.
+</p>
+<p>Rousseeuw, Peter J. 1985. "Multivariate Estimation with High Breakdown Point". <em>Mathematical Statistics and Applications</em> 8:283-297.
+</p>
+<p>Rousseeuw, Peter J. and Bert C. van Zomeren. 1990. "Unmasking Multivariate Outliers and Leverage Points". <em>Journal of the American Statistical Association</em> 85(411):633-639.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>assignment</code>, <code>diagnose</code></p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">data(x100)
+out &lt;- block(x100, groups = "g", n.tr = 2, id.vars = c("id"), block.vars
+             = c("b1", "b2"), algorithm="optGreedy", distance =
+             "mahalanobis", level.two = FALSE, valid.var = "b1",
+             valid.range = c(0,500), verbose = TRUE)
+## out$blocks contains 3 data frames
+
+## To illustrate two-level blocking, with multiple level two units per
+##  level one unit:
+for(i in (1:nrow(x100))){if((i %% 2) == 0){x100$id[i] &lt;- x100$id[i-1]}}
+
+out2 &lt;- block(x100, groups = "g", n.tr = 2, id.vars = c("id", "id2"),
+              block.vars = c("b1", "b2"), algorithm="optGreedy",
+              distance = "mahalanobis", level.two = TRUE, valid.var =
+              "b1", valid.range = c(0,500), namesCol = c("State 1", "City 1", 
+	      "State 2", "City 2"), verbose = TRUE) 
+</code></pre>
+
+
+</div>

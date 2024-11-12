@@ -1,0 +1,333 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>bestNormalize</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Calculate and perform best normalizing transformation</h2>
+
+<h3>Description</h3>
+
+<p>Performs a suite of normalizing transformations, and selects the
+best one on the basis of the Pearson P test statistic for normality. The
+transformation that has the lowest P (calculated on the transformed data)
+is selected. See details for more information.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">bestNormalize(
+  x,
+  standardize = TRUE,
+  allow_orderNorm = TRUE,
+  allow_lambert_s = FALSE,
+  allow_lambert_h = FALSE,
+  allow_exp = TRUE,
+  out_of_sample = TRUE,
+  cluster = NULL,
+  k = 10,
+  r = 5,
+  loo = FALSE,
+  warn = FALSE,
+  quiet = FALSE,
+  tr_opts = list(),
+  new_transforms = list(),
+  norm_stat_fn = NULL,
+  ...
+)
+
+## S3 method for class 'bestNormalize'
+predict(object, newdata = NULL, inverse = FALSE, ...)
+
+## S3 method for class 'bestNormalize'
+print(x, ...)
+
+## S3 method for class 'bestNormalize'
+tidy(x, ...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>A 'bestNormalize' object.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>standardize</code></td>
+<td>
+<p>If TRUE, the transformed values are also centered and
+scaled, such that the transformation attempts a standard normal. This will
+not change the normality statistic.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>allow_orderNorm</code></td>
+<td>
+<p>set to FALSE if orderNorm should not be applied</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>allow_lambert_s</code></td>
+<td>
+<p>Set to FALSE if the lambertW of type "s"  should not be
+applied (see details). Expect about 2-3x elapsed computing time if TRUE.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>allow_lambert_h</code></td>
+<td>
+<p>Set to TRUE if the lambertW of type "h"  should be
+applied (see details). Expect about 2-3x elapsed computing time.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>allow_exp</code></td>
+<td>
+<p>Set to TRUE if the exponential transformation should be
+applied (sometimes this will cause errors with heavy right skew)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>out_of_sample</code></td>
+<td>
+<p>if FALSE, estimates quickly in-sample performance</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>cluster</code></td>
+<td>
+<p>name of cluster set using <code>makeCluster</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>k</code></td>
+<td>
+<p>number of folds</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>r</code></td>
+<td>
+<p>number of repeats</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>loo</code></td>
+<td>
+<p>should leave-one-out CV be used instead of repeated CV? (see
+details)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>warn</code></td>
+<td>
+<p>Should bestNormalize warn when a method doesn't work?</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>quiet</code></td>
+<td>
+<p>Should a progress-bar not be displayed for cross-validation
+progress?</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>tr_opts</code></td>
+<td>
+<p>a list (of lists), specifying options to be passed to each
+transformation (see details)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>new_transforms</code></td>
+<td>
+<p>a named list of new transformation functions and their
+predict methods (see details)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>norm_stat_fn</code></td>
+<td>
+<p>if specified, a function to calculate to assess normality
+(default is the Pearson chi-squared statistic divided by its d.f.)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>not used</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>object</code></td>
+<td>
+<p>an object of class 'bestNormalize'</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>newdata</code></td>
+<td>
+<p>a vector of data to be (reverse) transformed</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>inverse</code></td>
+<td>
+<p>if TRUE, performs reverse transformation</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p><code>bestNormalize</code> estimates the optimal normalizing
+transformation. This transformation can be performed on new data, and
+inverted, via the <code>predict</code> function.
+</p>
+<p>This function currently estimates the Yeo-Johnson transformation,
+the Box Cox transformation (if the data is positive), the log_10(x+a)
+transformation, the square-root (x+a) transformation, and the arcsinh
+transformation. a is set to max(0, -min(x) + eps) by default.  If
+allow_orderNorm == TRUE and if out_of_sample == FALSE then the ordered
+quantile normalization technique will likely be chosen since it essentially
+forces the data to follow a normal distribution. More information on the
+orderNorm technique can be found in the package vignette, or using
+<code>?orderNorm</code>.
+</p>
+<p>Repeated cross-validation is used by default to estimate the out-of-sample
+performance of each transformation if out_of_sample = TRUE. While this can
+take some time, users can speed it up by creating a cluster via the
+<code>parallel</code> package's <code>makeCluster</code> function, and passing the name
+of this cluster to <code>bestNormalize</code> via the cl argument. For best
+performance, we recommend the number of clusters to be set to the number of
+repeats r. Care should be taken to account for the number of observations
+per fold; too small a number and the estimated normality statistic could be
+inaccurate, or at least suffer from high variability.
+</p>
+<p>As of version 1.3, users can use leave-one-out cross-validation as well for
+each method by setting <code>loo</code> to <code>TRUE</code>.  This will take a lot of
+time for bigger vectors, but it will have the most accurate estimate of
+normalization efficacy. Note that if this method is selected, arguments
+<code>k, r</code> are ignored. This method will still work in parallel with the
+<code>cl</code> argument.
+</p>
+<p>Note that the Lambert transformation of type "h" can be done by setting
+allow_lambert_h = TRUE, however this can take significantly longer to run.
+</p>
+<p>Use <code>tr_opts</code> in order to set options for each transformation. For
+instance, if you want to overide the default a selection for <code>log_x</code>,
+set <code>tr_opts$log_x = list(a = 1)</code>.
+</p>
+<p>See the package's vignette on how to use custom functions with
+bestNormalize. All it takes is to create an S3 class and predict method for
+the new transformation and load it into the environment, then the new
+custom function (and its predict method) can be passed to bestNormalize
+with <code>new_transform</code>.
+</p>
+
+
+<h3>Value</h3>
+
+<p>A list of class <code>bestNormalize</code> with elements
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>x.t</code></td>
+<td>
+<p>transformed original data</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>original data</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>norm_stats</code></td>
+<td>
+<p>Pearson's Pearson's P / degrees of freedom</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>method</code></td>
+<td>
+<p>out-of-sample or in-sample, number of folds + repeats</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>chosen_transform</code></td>
+<td>
+<p>the chosen transformation (of appropriate class)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>other_transforms</code></td>
+<td>
+<p>the other transformations (of appropriate class)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>oos_preds</code></td>
+<td>
+<p>Out-of-sample predictions (if loo == TRUE) or
+normalization stats</p>
+</td>
+</tr>
+</table>
+<p>The <code>predict</code> function returns the numeric value of the transformation
+performed on new data, and allows for the inverse transformation as well.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>boxcox</code>, <code>orderNorm</code>,
+<code>yeojohnson</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+x &lt;- rgamma(100, 1, 1)
+
+## Not run: 
+# With Repeated CV
+BN_obj &lt;- bestNormalize(x)
+BN_obj
+p &lt;- predict(BN_obj)
+x2 &lt;- predict(BN_obj, newdata = p, inverse = TRUE)
+
+all.equal(x2, x)
+
+## End(Not run)
+
+
+## Not run: 
+# With leave-one-out CV
+BN_obj &lt;- bestNormalize(x, loo = TRUE)
+BN_obj
+p &lt;- predict(BN_obj)
+x2 &lt;- predict(BN_obj, newdata = p, inverse = TRUE)
+
+all.equal(x2, x)
+
+## End(Not run)
+
+# Without CV
+BN_obj &lt;- bestNormalize(x, allow_orderNorm = FALSE, out_of_sample = FALSE)
+BN_obj
+p &lt;- predict(BN_obj)
+x2 &lt;- predict(BN_obj, newdata = p, inverse = TRUE)
+
+all.equal(x2, x)
+
+</code></pre>
+
+
+</div>

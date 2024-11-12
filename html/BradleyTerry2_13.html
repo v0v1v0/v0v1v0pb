@@ -1,0 +1,106 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>football</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>English Premier League Football Results 2008/9 to 2012/13</h2>
+
+<h3>Description</h3>
+
+<p>The win/lose/draw results for five seasons of the English Premier League
+football results, from 2008/9 to 2012/13
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">football
+</code></pre>
+
+
+<h3>Format</h3>
+
+<p>A data frame with 1881 observations on the following 4 variables.
+</p>
+
+<dl>
+<dt>season</dt>
+<dd>
+<p>a factor with levels <code>2008-9</code>,
+<code>2009-10</code>, <code>2010-11</code>, <code>2011-12</code>, <code>2012-13</code></p>
+</dd>
+<dt>home</dt>
+<dd>
+<p>a factor specifying the home team, with 29 levels
+<code>Ars</code> (Arsenal), ... , <code>Wol</code> (Wolverhampton)</p>
+</dd>
+<dt>away</dt>
+<dd>
+<p>a factor specifying the away team, with the same levels
+as <code>home</code>.</p>
+</dd>
+<dt>result</dt>
+<dd>
+<p>a numeric vector giving the result
+for the home team: 1 for a win, 0 for a draw, -1 for a loss.</p>
+</dd> </dl>
+<h3>Details</h3>
+
+<p>In each season, there are 20 teams, each of which plays one home game and
+one away game against all the other teams in the league. The results in 380
+games per season.
+</p>
+
+
+<h3>Source</h3>
+
+<p>These data were downloaded from http://soccernet.espn.go.com in
+2013. The site has since moved and the new site does not appear to have an
+equivalent source.
+</p>
+
+
+<h3>References</h3>
+
+<p>Davidson, R. R. (1970). On extending the Bradley-Terry model to
+accommodate ties in paired comparison experiments. <em>Journal of the
+American Statistical Association</em>, <strong>65</strong>, 317–328.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>GenDavidson()</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+### example requires gnm
+if (require(gnm)) {
+    ### convert to trinomial counts
+    football.tri &lt;- expandCategorical(football, "result", idvar = "match")
+    head(football.tri)
+
+    ### add variable to indicate whether team playing at home
+    football.tri$at.home &lt;- !logical(nrow(football.tri))
+
+    ### fit Davidson model for ties
+    ###  - subset to first and last season for illustration
+    Davidson &lt;- gnm(count ~
+        GenDavidson(result == 1, result == 0, result == -1,
+                    home:season, away:season,
+                    home.adv = ~1, tie.max = ~1,
+                    at.home1 = at.home, at.home2 = !at.home) - 1,
+        eliminate = match, family = poisson, data = football.tri,
+        subset = season %in% c("2008-9", "2012-13"))
+
+    ### see ?GenDavidson for further analysis
+}
+
+</code></pre>
+
+
+</div>

@@ -1,0 +1,155 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>export_bscui_to_image</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Save a bscui widget to an image file</h2>
+
+<h3>Description</h3>
+
+<p>Save a bscui widget to an image file
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">export_bscui_to_image(
+  widget,
+  file,
+  selector = ".bscui",
+  zoom = 1,
+  quiet = TRUE,
+  ...
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>widget</code></td>
+<td>
+<p>a <code>bscui</code> object</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>file</code></td>
+<td>
+<p>name of output file. Should end with an image file type
+(.png, .jpg, .jpeg, or .webp) or .pdf.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>selector</code></td>
+<td>
+<p>(<code>webshot2::webshot()</code>) one or more CSS selectors specifying
+a DOM element to set the clipping rectangle to (default: ".bscui").</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>zoom</code></td>
+<td>
+<p>(<code>webshot2::webshot()</code>) If TRUE (default),
+status updates via console messages are suppressed.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>quiet</code></td>
+<td>
+<p>(<code>webshot2::webshot()</code>) a number specifying the zoom factor.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>additional parameters for <code>webshot2::webshot()</code>
+suppressed.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>Invisibly returns the normalized path to the image.
+The character vector will have a class of "webshot".
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>webshot2::webshot()</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">##################################@
+### Preparing data ----
+
+library(bscui)
+library(xml2)
+library(readr)
+library(dplyr)
+
+svg &lt;- xml2::read_xml(system.file(
+   "examples", "Animal_cells.svg.gz",
+   package="bscui"
+))
+info &lt;- readr::read_tsv(system.file(
+   "examples", "uniprot_cellular_locations.txt.gz",
+   package="bscui"
+), col_types=strrep("c", 6)) |&gt;
+   mutate(id = sub("-", "", `Subcellular location ID`))
+
+##################################@
+### Building the figure ----
+
+figure &lt;- bscui(svg) |&gt;
+   set_bscui_ui_elements(
+      info |&gt;
+         mutate(
+            ui_type = "selectable",
+            title = Name
+         ) |&gt;
+         select(id, ui_type, title)
+   ) |&gt;
+   set_bscui_styles(
+      info |&gt;
+         filter(Name == "Cytosol") |&gt;
+         mutate(fill = "#FF7F7F") |&gt;
+         select(id, fill)
+   ) |&gt;
+   set_bscui_attributes(
+      info |&gt;
+         filter(Name == "Cytoskeleton") |&gt;
+         mutate(display = "none") |&gt;
+         select(id, display)
+   ) |&gt;
+   set_bscui_selection("SL0188") |&gt;
+   set_bscui_options(zoom_min=1, clip=TRUE)
+figure
+
+##################################@
+### Saving the figure ----
+
+if(interactive()){
+   ## Temporary directory to save example file
+   tdir &lt;- tempdir()
+
+   ## Interactive html file
+   f_path &lt;- file.path(tdir, "figure.html")
+   figure |&gt; htmlwidgets::saveWidget(file=f_path)
+   cat(f_path)
+
+   ## PNG image
+   f_path &lt;- file.path(tdir, "figure.png")
+   figure |&gt;
+      set_bscui_options(show_menu = FALSE) |&gt;
+      export_bscui_to_image(file=f_path, zoom=2)
+   cat(f_path)
+}
+</code></pre>
+
+
+</div>

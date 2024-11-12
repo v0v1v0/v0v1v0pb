@@ -1,0 +1,196 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>brace</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Bias Reduction through Analysis of Competing Events</h2>
+
+<h3>Description</h3>
+
+<p><code>brace</code> is used to estimate the treatment effect with adjusted
+confounders on the composite hazard
+for primary or competing events, and adjust for bias from residual
+confounding in non-randomized data by BRACE method
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">brace(
+  ftime,
+  fstatus,
+  covs = NA,
+  trt,
+  failcode = 1,
+  cencode = 0,
+  PS = 0,
+  B = 1000
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>ftime</code></td>
+<td>
+<p>vector of failure/censoring times</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>fstatus</code></td>
+<td>
+<p>vector with a unique code for each failure type and a
+separate code for censored observations (default is primary event = 1,
+competing event = 2, censored = 0)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>covs</code></td>
+<td>
+<p>matrix (nobs x ncovs) of fixed covariates. If no covariates,
+set covs = NA (default is NA)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>trt</code></td>
+<td>
+<p>vector of treatment indicator (1 for treatment group)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>failcode</code></td>
+<td>
+<p>code of fstatus that denotes the failure type of interest</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>cencode</code></td>
+<td>
+<p>code of fstatus that denotes censored observations</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>PS</code></td>
+<td>
+<p>whether to use propensity score method for adjusting the
+confounding effect (1 for propensity score method, default is 0)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>B</code></td>
+<td>
+<p>bootstrap sample size for calculating the Confidence interval,
+default is 1000</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>a list of class <code>brace</code>, with components:
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>$Summary</code></td>
+<td>
+<p>summary table of BRACE method</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>$'BRACE HR Distribution'</code></td>
+<td>
+<p>the estimated regression coefficients in
+each bootstrap sample</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>$'Omega Estimate'</code></td>
+<td>
+<p>estimate of relative hazards for
+primary events vs. combined events</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>$Epsilon</code></td>
+<td>
+<p>the estimated bias</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>$'Combined Endpoint Model'</code></td>
+<td>
+<p>the regression model for combined events</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>$'Primary Endpoint Model'</code></td>
+<td>
+<p>the regression model for primary events</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>$'Competing Endpoint Model'</code></td>
+<td>
+<p>the regression model for competing events</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>$'Omega Curve'</code></td>
+<td>
+<p>estimate of omega over time</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>$'Combined Endpoint Curve'</code></td>
+<td>
+<p>survival curve for combined events</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>$'Primary Endpoint Curve'</code></td>
+<td>
+<p>survival curve for primary events</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>$'Competing Endpoint Curve'</code></td>
+<td>
+<p>survival curve for competing events</p>
+</td>
+</tr>
+</table>
+<h3>References</h3>
+
+<p>Williamson, Casey W., et al. "Bias Reduction through Analysis of
+Competing Events (BRACE) Correction to Address Cancer Treatment Selection
+Bias in Observational Data." Clinical Cancer Research 28.9 (2022): 1832-1840.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">nsims = 1; nobs = 1500
+f = 0.5; g = 0.333; b = 8; w1 = w2 = 0.667
+theta1 = 0.5; theta2 = 1; omegaplus = 1; k3 = 0.333
+sim1 = gendat(nsims,nobs,f,g,b,w1,w2,omegaplus,theta1,theta2,k3)
+ftime = sim1$time
+fstatus = sim1$pfs_ci
+covs = NA
+trt = sim1$group
+braceoutput = brace(ftime, fstatus, covs, trt, PS=0, B=10)
+
+nsims = 1; nobs = 1500
+f1 = f2 = 0.5; g = 0.333; b1 = 8; b2 = 4; w1 = w2 = 0.667
+theta1 = 0.5; theta2 = 1; omegaplus = 1; k3 = 0.333
+sim1 = gendat2(nsims,nobs,f1,f2,g,b1,b2,w1,w2,omegaplus,theta1,theta2,k3)
+ftime = sim1$time
+fstatus = sim1$pfs_ci
+covs = sim1$factor2
+trt = sim1$group
+braceoutput = brace(ftime, fstatus, covs, trt, PS=1, B=10)
+</code></pre>
+
+
+</div>

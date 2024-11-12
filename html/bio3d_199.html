@@ -1,0 +1,208 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>plot.fluct</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2> Plot Fluctuations </h2>
+
+<h3>Description</h3>
+
+<p>Produces a plot of atomic fluctuations obtained from ensemble normal mode analysis or
+molecular dynamics simulations.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">## S3 method for class 'fluct'
+plot(x,
+        col = NULL, label = rownames(x), signif = FALSE,
+        p.cutoff = 0.005, q.cutoff = 0.04,
+        s.cutoff = 5, n.cutoff = 2, mean = FALSE, polygon = FALSE,
+        spread = FALSE, offset = 1,
+        ncore = NULL, ...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p> a numeric vector or matrix containing atomic fluctuation data obtained
+from e.g. <code>nma.pdbs</code> or <code>rmsf</code>. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>col</code></td>
+<td>
+<p> a character vector of plotting colors. Used also to group
+fluctuation profiles. NA values in col will omit the corresponding fluctuation
+profile in the plot. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>label</code></td>
+<td>
+<p> a character vector of plotting labels with length matching
+<code>nrow(x)</code>. If <code>mean=TRUE</code>, the length of <code>label</code> can be equal to
+the number of categories indicated by <code>col</code>. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>signif</code></td>
+<td>
+<p> logical, if TRUE significance of fluctuation difference is calculated
+and annotated for each atomic position. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>p.cutoff</code></td>
+<td>
+<p> Cutoff of p-value to define significance. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>q.cutoff</code></td>
+<td>
+<p> Cutoff of the mean fluctuation difference to define significance. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>s.cutoff</code></td>
+<td>
+<p> Cutoff of sample size in each group to calculate the significance. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>n.cutoff</code></td>
+<td>
+<p> Cutoff of consecutive residue positions with significant fluctuation
+difference. If the actual number is less than the cutoff,
+correponding postions will not be annotated. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>mean</code></td>
+<td>
+<p> logical, if TRUE plot mean fluctuations of each group. Significance is
+still calculated with the original data. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>polygon</code></td>
+<td>
+<p> logical, if TRUE a nicer plot with area under the line for the first
+row of <code>x</code> are filled with polygons. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ncore </code></td>
+<td>
+<p> number of CPU cores used to do the calculation. By default
+(<code>ncore=NULL</code>), use all available CPU cores. The argument is only
+used when <code>signif=TRUE</code>. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>spread</code></td>
+<td>
+<p> logical, if TRUE the fluctuation profiles are spread -
+i.e. not on top of each other. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>offset</code></td>
+<td>
+<p> numerical offset value in use when
+‘spread=TRUE’. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p> extra plotting arguments passed to <code>plot.bio3d</code>. </p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The significance calculation is performed when <code>signif=TRUE</code> and there are at least
+two groups with sample size larger than or equal to <code>s.cutoff</code>. A "two-sided"
+student's t-test is performed for each atomic position (each
+column of <code>x</code>).  If <code>x</code> contains gaps, indicated by <code>NA</code>s,
+only non-gapped positions are considered. The position is considered significant if both
+<code>p-value &lt;= p.cutoff</code> and the mean value difference of the two groups, q, satisfies
+<code>q &gt;= q.cutoff</code>. If more than two groups are available, every pair of groups are
+subjected to the t-test calculation and the minimal p-value along with the q-value
+for the corresponding pair are used for the significance evaluation.
+</p>
+
+
+<h3>Value</h3>
+
+<p>If significance is calculated, return a vector indicating significant positions.
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p> Xin-Qiu Yao, Lars Skjaerven, Barry Grant </p>
+
+
+<h3>References</h3>
+
+<p>Grant, B.J. et al. (2006) <em>Bioinformatics</em> <b>22</b>, 2695–2696.
+</p>
+
+
+<h3>See Also</h3>
+
+ <p><code>plot.bio3d</code>, <code>rmsf</code>, <code>nma.pdbs</code>,
+<code>t.test</code>, <code>polygon</code>. </p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## Not run: 
+## load transducin example data
+attach(transducin)
+
+## subset of pdbs to analyze
+inds = c(1:5, 16:20)
+pdbs &lt;- trim(pdbs, row.inds=inds)
+gaps.res = gap.inspect(pdbs$ali)
+
+## reference RESNO and SSE for axis annotations
+resno &lt;- pdbs$resno[1, gaps.res$f.inds]
+sse &lt;- pdbs$sse[1, gaps.res$f.inds]
+
+## eNMA calculation and obtain modes of motion including atomic fluctuations
+modes &lt;- nma(pdbs, ncore=NULL)
+x = modes$fluctuation
+
+## simple line plot with SSE annotation
+plot.fluct(x, sse=sse, resno=resno)
+
+## group data by specifying colors of each fluctuation line; same color indicates
+## same group. Also do significance calculation and annotation
+col = c(rep('red', 5), rep('blue', 5))
+plot.fluct(x, col=col, signif=TRUE, sse=sse, resno=resno)
+
+## spread lines
+plot.fluct(x, col=col, signif=TRUE, sse=sse, resno=resno, typ='l', spread=TRUE)
+
+## show only line of mean values for each group. 
+## Nicer plot with area shaded for the first group.
+plot.fluct(x, col=col, signif=TRUE, sse=sse, resno=resno, mean=TRUE, 
+           polygon=TRUE, label=c('GTP', 'GDI'))
+
+detach(transducin)
+
+## End(Not run)
+</code></pre>
+
+
+</div>

@@ -1,0 +1,268 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>Random Graphs</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Perform an analysis with random graphs for brain MRI data</h2>
+
+<h3>Description</h3>
+
+<p><code>analysis_random_graphs</code> performs the steps needed for doing typical
+graph theory analyses with brain MRI data if you need to generate equivalent
+random graphs. This includes calculating <em>small world</em> parameters and
+normalized <em>rich club</em> coefficients.
+</p>
+<p><code>sim.rand.graph.par</code> simulates <code>N</code> simple random graphs with the
+same clustering (optional) and degree sequence as the input. Essentially a
+wrapper for <code>sample_degseq</code> (or, if you want to match by
+clustering, <code>sim.rand.graph.clust</code>) and
+<code>make_brainGraph</code>. It uses <code>foreach</code> for
+parallel processing.
+</p>
+<p><code>sim.rand.graph.clust</code> simulates a random graph with a given degree
+sequence <em>and</em> clustering coefficient. Increasing the <code>max.iters</code>
+value will result in a closer match of clustering with the observed graph.
+</p>
+<p><code>sim.rand.graph.hqs</code> generates a number of random covariance matrices
+using the Hirschberger-Qi-Steuer (HQS) algorithm, and create graphs from
+those matrices.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">analysis_random_graphs(g.list, level = g.list[[1L]]$level, N = 100L,
+  savedir = ".", ...)
+
+sim.rand.graph.par(g, level = c("subject", "group"), N = 100L,
+  clustering = FALSE, rewire.iters = max(10 * ecount(g), 10000L),
+  cl = g$transitivity, max.iters = 100L, ...)
+
+sim.rand.graph.clust(g, rewire.iters = 10000, cl = g$transitivity,
+  max.iters = 100)
+
+sim.rand.graph.hqs(resids, level = c("subject", "group"), N = 100L,
+  weighted = TRUE, r.thresh = NULL, ...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>g.list</code></td>
+<td>
+<p>List of <code>brainGraphList</code> objects; the length of this list
+should equal the number of thresholds/densities in the study</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>level</code></td>
+<td>
+<p>Character string indicating whether the graphs are subject-,
+group-, or contrast-specific. Default: <code>'subject'</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>N</code></td>
+<td>
+<p>Integer; the number of random graphs to simulate. Default: 100</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>savedir</code></td>
+<td>
+<p>Character string specifying the directory in which to save the
+generated graphs. Default: current working directory</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Other arguments passed to <code>make_brainGraph</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>g</code></td>
+<td>
+<p>A graph object</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>clustering</code></td>
+<td>
+<p>Logical; whether or not to control for clustering. Default:
+<code>FALSE</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>rewire.iters</code></td>
+<td>
+<p>Integer; number of rewiring iterations for the initial
+graph randomization. Default: 1e4</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>cl</code></td>
+<td>
+<p>The clustering measure. Default: <em>transitivity</em></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>max.iters</code></td>
+<td>
+<p>The maximum number of iterations to perform; choosing a
+lower number may result in clustering that is further away from the
+observed graph's. Default: 100</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>resids</code></td>
+<td>
+<p>A <code>brainGraph_resids</code> object, a <code>data.table</code> of
+residuals, or a numeric matrix</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>weighted</code></td>
+<td>
+<p>Logical indicating whether to create weighted graphs. If
+true, a threshold must be provided.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>r.thresh</code></td>
+<td>
+<p>Numeric value for the correlation threshold, if
+<code>weighted=FALSE</code>.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p><code>analysis_random_graphs</code> does the following:
+</p>
+
+<ol>
+<li>
+<p> Generate <code>N</code> random graphs for each graph and density/threshold
+</p>
+</li>
+<li>
+<p> Write graphs to disk in <code>savedir</code>. Read them back into <code>R</code>
+and combine into lists; then write these lists to disk. You can later
+delete the individual <code>.rds</code> files afterwards.
+</p>
+</li>
+<li>
+<p> Calculate <em>small world</em> parameters, along with values for a few
+global graph measures that may be of interest.
+</p>
+</li>
+<li>
+<p> Calculate <em>normalized rich club coefficients</em> and associated
+p-values.
+</p>
+</li>
+</ol>
+<p>If you do not want to match by clustering, then simple rewiring of the input
+graph is performed (the number of rewires equaling the larger of <code>1e4</code>
+and <code class="reqn">10 \times m</code>, where <code class="reqn">m</code> is the graph's edge count).
+</p>
+<p><code>sim.rand.graph.hqs</code> - The first step is to create the observed
+covariance of residuals (or whatever matrix/data.table is provided). Then
+random covariance matrices are created with the same distributional
+properties as the observed matrix, they are converted to correlation
+matrices, and finally graphs from these matrices. By default, weighted graphs
+will be created in which the edge weights represent correlation values. If
+you want binary matrices, you must provide a correlation threshold.
+</p>
+
+
+<h3>Value</h3>
+
+<p><code>analysis_random_graphs</code> returns a <em>list</em> containing:
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>rich</code></td>
+<td>
+<p>A data table containing normalized rich-club coefficients and
+p-values</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>small</code></td>
+<td>
+<p>A data table with small-world parameters</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>rand</code></td>
+<td>
+<p>A data table with some global graph measures for all random
+graphs generated</p>
+</td>
+</tr>
+</table>
+<p><code>sim.rand.graph.par</code> - a <em>list</em> of <em>N</em> random graphs
+with some additional vertex and graph attributes
+</p>
+<p><code>sim.rand.graph.clust</code> - A single <code>igraph</code> graph object
+</p>
+<p><code>sim.rand.graph.hqs</code> - A list of random graphs from the null
+covariance matrices
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Christopher G. Watson, <a href="mailto:cgwatson@bu.edu">cgwatson@bu.edu</a>
+</p>
+
+
+<h3>References</h3>
+
+<p>Bansal, S. and Khandelwal, S. and Meyers, L.A. (2009) Exploring
+biological network structure with clustered random networks. <em>BMC
+Bioinformatics</em>, <b>10</b>, 405–421.
+doi: <a href="https://doi.org/10.1186/1471-2105-10-405">10.1186/1471-2105-10-405</a>
+</p>
+<p>Hirschberger M., Qi Y., Steuer R.E. (2007) Randomly generating
+portfolio-selection covariance matrices with specified distributional
+characteristics. <em>European Journal of Operational Research</em>.
+<b>177</b>, 1610–1625. doi: <a href="https://doi.org/10.1016/j.ejor.2005.10.014">10.1016/j.ejor.2005.10.014</a>
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>small.world</code>
+</p>
+<p><code>rewire, sample_degseq,
+  keeping_degseq</code>
+</p>
+<p><code>transitivity</code>
+</p>
+<p>Other Random graph functions: <code>Rich Club</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## Not run: 
+rand_all &lt;- analysis_random_graphs(g.norm, 1e2,
+  savedir='/home/cwatson/dti/rand', clustering=F)
+
+## End(Not run)
+## Not run: 
+rand1 &lt;- sim.rand.graph.par(g[[1]][[N]], N=1e3)
+rand1.cl &lt;- sim.rand.graph.par(g[[1]][[N]], N=1e2,
+  clustering=T, max.iters=1e3)
+
+## End(Not run)
+</code></pre>
+
+
+</div>

@@ -1,0 +1,352 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>kma</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Clustering and alignment of functional data</h2>
+
+<h3>Description</h3>
+
+<p>kma jointly performs clustering and alignment of a functional dataset (multidimensional or unidimensional functions). </p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">kma(x, y0 = NULL, y1 = NULL, n.clust = 1, warping.method = "affine",
+similarity.method = "d1.pearson", center.method = "k-means", seeds = NULL,
+optim.method = "L-BFGS-B", span = 0.15, t.max = 0.1, m.max = 0.1, n.out = NULL,
+tol = 0.01, fence = TRUE, iter.max = 100, show.iter = 0, nstart=2, return.all=FALSE,
+check.total.similarity=FALSE)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>matrix <em>n.func</em> X <em>grid.size</em> or vector <em>grid.size</em>: 
+the abscissa values where each function is evaluated. <em>n.func</em>: number of functions in the dataset. <em>grid.size</em>: maximal number of abscissa values where each function is evaluated. The abscissa points may be unevenly spaced and they may differ from function to function. <code>x</code> can also be a vector of length <em>grid.size</em>. In this case, <code>x</code> will be used as abscissa grid for all functions.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>y0</code></td>
+<td>
+<p>matrix <em>n.func</em> X <em>grid.size</em> or array <em>n.func</em> X <em>grid.size</em> X <em>d</em>: evaluations of the set of original functions on the abscissa grid <code>x</code>. <em>n.func</em>: number of functions in the dataset. <em>grid.size</em>: maximal number of abscissa values where each function is evaluated. <em>d</em>: (only if the sample is multidimensional) number of function components, i.e. each function is a <em>d</em>-dimensional curve. Default value of <code>y0</code> is <code>NULL</code>. The parameter <code>y0</code> must be provided if the chosen <code>similarity.method</code> concerns original functions.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>y1</code></td>
+<td>
+<p>matrix <em>n.func</em> X <em>grid.size</em> or array <em>n.func</em> X <em>grid.size</em> X <em>d</em>: evaluations of the set of original functions first derivatives on the abscissa grid <code>x</code>. Default value of <code>y1</code> is <code>NULL</code>. The parameter <code>y1</code> must be provided if the chosen <code>similarity.method</code> concerns original function first derivatives.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>n.clust</code></td>
+<td>
+<p>scalar: required number of clusters. Default value is <code>1</code>. Note that if <code>n.clust=1</code> kma performs only alignment without clustering.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>warping.method</code></td>
+<td>
+<p>character: type of alignment required. If <code>warping.method='NOalignment'</code> kma performs only k-mean clustering (without alignment). If <code>warping.method='affine'</code> kma performs alignment (and possibly clustering) of functions using linear affine transformation as warping functions, i.e., <em>x.final = dilation*x + shift</em>. If <code>warping.method='shift'</code> kma allows only shift, i.e., <em>x.final = x + shift</em>. If <code>warping.method='dilation'</code> kma allows only dilation, i.e., <em>x.final = dilation*x</em>. Default value is <code>'affine'</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>similarity.method</code></td>
+<td>
+<p>character: required similarity measure. Possible choices are: <code>'d0.pearson'</code>, <code>'d1.pearson'</code>, <code>'d0.L2'</code>, <code>'d1.L2'</code>, <code>'d0.L2.centered'</code>, <code>'d1.L2.centered'</code>. Default value is <code>'d1.pearson'</code>. See kma.similarity for details.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>center.method</code></td>
+<td>
+<p>character: type of clustering method to be used. Possible choices are: <code>'k-means'</code> and <code>'k-medoids'</code>. Default value is <code>'k-means'</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>seeds</code></td>
+<td>
+<p>vector <em>max(n.clust)</em> or matrix <em>nstart</em> X <em>n.clust</em>: indexes of the functions to be used as initial centers. If it is a matrix, each row contains the indexes of the initial centers of one of the <code>nstart</code> initializations. In the case where not all the values of <code>seeds</code> are provided, those not provided are randomly chosen among the <code>n.func</code> original functions. If <code>seeds=NULL</code> all the centers are randomly chosen. Default value of <code>seeds</code> is <code>NULL</code></p>
+</td>
+</tr>
+</table>
+<p>.
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>optim.method</code></td>
+<td>
+<p>character: optimization method chosen to find the best warping functions at each iteration. Possible choices are: <code>'L-BFGS-B'</code> and <code>'SANN'</code>. See optim function for details. Default method is <code>'L-BFGS-B'</code>.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>span</code></td>
+<td>
+<p>scalar: the span to be used for the loess procedure in the center estimation step when <code>center.method='k-means'</code>. Default value is 0.15. If <code>center.method='k-medoids'</code> value of <code>span</code> is ignored.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>t.max</code></td>
+<td>
+<p>scalar: <code>t.max</code> controls the maximal allowed shift, at each iteration, in the alignment procedure with respect to the range of curve domains. <code>t.max</code> must be such that <em>0&lt;t.max&lt;1</em> (e.g., <code>t.max=0.1</code> means that shift is bounded, at each iteration, between <em>-0.1*range(x)</em> and <em>+0.1*range(x)</em>). Default value is <code>0.1</code>. If <code>warping.method='dilation'</code> value of <code>t.max</code> is ignored.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>m.max</code></td>
+<td>
+<p>scalar: <code>m.max</code> controls the maximal allowed dilation, at each iteration, in the alignment procedure. <code>m.max</code> must be such that <em>0&lt;m.max&lt;1</em> (e.g., <code>m.max=0.1</code> means that dilation is bounded, at each iteration, between <em>1-0.1</em> and <em>1+0.1</em> ). Default value is <code>0.1</code>. If <code>warping.method='shift'</code> value of <code>m.max</code> is ignored.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>n.out</code></td>
+<td>
+<p>scalar: the desired length of the abscissa for computation of the similarity indexes and the centers. Default value is <code>round(1.1*grid.size)</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>tol</code></td>
+<td>
+<p>scalar: the algorithm stops when the increment of similarity of each function with respect to the corrispondent center is lower than <code>tol</code>. Default value is <code>0.01</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>fence</code></td>
+<td>
+<p>boolean: if <code>fence=TRUE</code> a control is activated at the end of each iteration. The aim of the control is to avoid shift/dilation outlighers with respect to their computed distributions. If <code>fence=TRUE</code> the running time can increase considerably. Default value of <code>fence</code> is TRUE.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>iter.max</code></td>
+<td>
+<p>scalar: maximum number of iterations in the k-mean alignment cycle. Default value is <code>100</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>show.iter</code></td>
+<td>
+<p>boolean: if <code>show.iter=TRUE</code> kma shows the current iteration of the algorithm. Default value is <code>FALSE</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nstart</code></td>
+<td>
+<p>scalar: number of initializations with different seeds. Default value is <code>2</code>. This parameter is used only if <code>center.method</code> is <code>'k-medoids'</code>. When <code>center.method = 'k-means'</code> one initialization is performed.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>return.all</code></td>
+<td>
+<p>boolean: if <code>return.all=TRUE</code> the results of all the <code>nstart</code> initializations are returned; the output is a list of length <code>nstart</code>. If <code>return.all=FALSE</code> only the best result is provided (the one with higher mean similarity if <code>similarity.method</code> is <code>'d0.pearson'</code> or<code>'d1.pearson'</code>, or the one with lower distance if <code>similarity.method</code> is <code>'d0.L2'</code>, <code>'d1.L2'</code>, <code>'d0.L2.centered'</code> or <code>'d1.L2.centered'</code>). Default value is <code>FALSE</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>check.total.similarity</code></td>
+<td>
+<p>boolean: if <code>check.total.similarity=TRUE</code> at each iteration the algorithm checks if there is a decrease of the total similarity and stops. In the affermative case the result obtained in the penultimate iteration is returned. Default value is <code>FALSE</code></p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>The function output is a list containing the following elements:
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>iterations</code></td>
+<td>
+<p>scalar: total number of iterations performed by kma function.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>as input.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>y0</code></td>
+<td>
+<p>as input.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>y1</code></td>
+<td>
+<p>as input.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>n.clust</code></td>
+<td>
+<p>as input.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>warping.method</code></td>
+<td>
+<p>as input.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>similarity.method</code></td>
+<td>
+<p>as input.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>center.method</code></td>
+<td>
+<p>as input.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>x.center.orig</code></td>
+<td>
+<p>vector <em>n.out</em>: abscissa of the original center.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>y0.center.orig</code></td>
+<td>
+<p>matrix <em>1</em> X <em>n.out</em>: the unique row contains the evaluations of the original function center. If <code>warping.method='k-means'</code> there are two scenarios: if <code>similarity.method='d0.pearson'</code> or <code>'d0.L2'</code> or <code>d0.L2.centered</code> the original function center is computed via loess procedure applied to original data; if <code>similarity.method='d1.pearson'</code> or <code>'d1.L2'</code> or <code>d1.L2.centered</code> it is computed by integration of first derivatives center <code>y1.center.orig</code> (the integration constant is computed minimizing the sum of the weighed L2 distances between the center and the original functions). If <code>warping.method='k-medoids'</code> the original function center is the medoid of original functions.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>y1.center.orig</code></td>
+<td>
+<p>matrix <em>1</em> X <em>n.out</em>: the unique row contains the evaluations of the original function first derivatives center. If <code>warping.method='k-means'</code> the original center is computed via loess procedure applied to original function first derivatives. If <code>warping.method='k-medoids'</code> the original center is the medoid of original functions.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>similarity.orig</code></td>
+<td>
+<p>vector: original similarities between the original functions and the original center.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>x.final</code></td>
+<td>
+<p>matrix <em>n.func</em> X <em>grid.size</em>: aligned abscissas.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>n.clust.final</code></td>
+<td>
+<p>scalar: final number of clusters. Note that, when <code>center.method='k.means'</code>, the parameter <code>n.clust.final</code> may differ from initial number of clusters (i.e., from <code>n.clust</code>) if some clusters are found to be empty. In this case a warning message is issued.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>x.centers.final</code></td>
+<td>
+<p>vector <em>n.out</em>: abscissas of the final function centers and/or of the final function first derivatives centers.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>y0.centers.final</code></td>
+<td>
+<p>matrix <em>n.clust.final</em> X <em>n.out</em>: rows contain the evaluations of the final functions centers. <code>y0.centers.final</code> is <code>NULL</code> if <code>y0</code> is not given as input.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>y1.centers.final</code></td>
+<td>
+<p>matrix <em>n.clust.final</em> X <em>n.out</em>: rows contains the evaluations of the final derivatives centers. <code>y1.centers.final</code> is <code>NULL</code> if the chosen similarity measure does not concern function first derivatives.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>labels</code></td>
+<td>
+<p>vector: cluster assignments.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>similarity.final</code></td>
+<td>
+<p>vector: similarities between each function and the center of the cluster the function is assigned to.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>dilation.list </code></td>
+<td>
+<p>list: dilations obtained at each iteration of kma function.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>shift.list </code></td>
+<td>
+<p>list: shifts obtained at each iteration of kma function.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>dilation</code></td>
+<td>
+<p>vector: dilation applied to the original abscissas <code>x</code> to obtain the aligned abscissas <code>x.final</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>shift</code></td>
+<td>
+<p>vector: shift applied to the original abscissas <code>x</code> to obtain the aligned abscissas <code>x.final</code>.</p>
+</td>
+</tr>
+</table>
+<h3>Author(s)</h3>
+
+<p>Alice Parodi, Mirco Patriarca, Laura Sangalli, Piercesare Secchi, Simone Vantini, Valeria Vitelli.
+</p>
+
+
+<h3>References</h3>
+
+<p>Sangalli, L.M., Secchi, P., Vantini, S., Vitelli, V., 2010. <em>"K-mean alignment for curve clustering"</em>. Computational Statistics and Data Analysis, 54, 1219-1233.
+</p>
+<p>Sangalli, L.M., Secchi, P., Vantini, S., 2014. <em>"Analysis of AneuRisk65 data: K-mean Alignment"</em>. Electronic Journal of Statistics, Special Section on "Statistics of Time Warpings and Phase Variations", Vol. 8, No. 2, 1891-1904.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>kma.similarity</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">    ## simulated data
+    set.seed(1)
+    x.coord = seq(0,1,0.01)
+    x &lt;- matrix(ncol = length(x.coord), nrow = 100)
+    labels &lt;- matrix(ncol = 100, nrow = 1)
+  
+    centers &lt;-  matrix(ncol = length(x.coord), nrow = 4)
+    centers[1, ] &lt;- abs(x.coord)-0.5
+    centers[2, ] &lt;- (abs(x.coord-0.5))^2 - 0.8
+    centers[3, ] &lt;- -(abs(x.coord-0.5))^2 + 0.7
+    centers[4, ] &lt;- 0.75*sin(8*pi*abs(x.coord))
+  
+    for(i in 1:4){
+        for(j in 1:25){
+            labels[25*(i-1) + j] &lt;- i  
+            if(i == 1){x[25*(i-1) + j, ] &lt;- abs(x.coord)-0.5 + 
+                rnorm(length(x.coord),0,0.1)}
+            if(i == 2){x[25*(i-1) + j, ] &lt;- (abs(x.coord-0.5))^2 - 0.8 + 
+                rnorm(length(x.coord),0,0.1)}
+            if(i == 3){x[25*(i-1) + j, ] &lt;- -(abs(x.coord-0.5))^2 + 0.7 + 
+                rnorm(length(x.coord),0,0.1)}
+            if(i == 4){x[25*(i-1) + j, ] &lt;- 0.75*sin(8*pi*abs(x.coord)) + 
+                rnorm(length(x.coord),0,0.1)}
+            }
+        }
+    C &lt;- kma(x.coord, x, n.clust = 4, 
+            warping.method = "NOalignment", similarity.method = "d0.pearson")
+    table(C$labels, labels)
+
+</code></pre>
+
+
+</div>

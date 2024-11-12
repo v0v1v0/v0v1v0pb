@@ -1,0 +1,88 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>loss</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Cumulative Insurance Loss Payments</h2>
+
+<h3>Description</h3>
+
+<p>This dataset, discussed in Gesmann &amp; Morris (2020), contains
+cumulative insurance loss payments over the course of ten years.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">loss
+</code></pre>
+
+
+<h3>Format</h3>
+
+<p>A data frame of 55 observations containing information
+on the following 4 variables.
+</p>
+
+<dl>
+<dt>AY</dt>
+<dd>
+<p>Origin year of the insurance (1991 to 2000)</p>
+</dd>
+<dt>dev</dt>
+<dd>
+<p>Deviation from the origin year in months</p>
+</dd>
+<dt>cum</dt>
+<dd>
+<p>Cumulative loss payments</p>
+</dd>
+<dt>premium</dt>
+<dd>
+<p>Achieved premiums for the given origin year</p>
+</dd>
+</dl>
+<h3>Source</h3>
+
+<p>Gesmann M. &amp; Morris J. (2020). Hierarchical Compartmental Reserving
+Models. <em>CAS Research Papers</em>.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## Not run: 
+# non-linear model to predict cumulative loss payments
+fit_loss &lt;- brm(
+  bf(cum ~ ult * (1 - exp(-(dev/theta)^omega)),
+     ult ~ 1 + (1|AY), omega ~ 1, theta ~ 1,
+     nl = TRUE),
+  data = loss, family = gaussian(),
+  prior = c(
+    prior(normal(5000, 1000), nlpar = "ult"),
+    prior(normal(1, 2), nlpar = "omega"),
+    prior(normal(45, 10), nlpar = "theta")
+  ),
+  control = list(adapt_delta = 0.9)
+)
+
+# basic summaries
+summary(fit_loss)
+conditional_effects(fit_loss)
+
+# plot predictions per origin year
+conditions &lt;- data.frame(AY = unique(loss$AY))
+rownames(conditions) &lt;- unique(loss$AY)
+me_loss &lt;- conditional_effects(
+  fit_loss, conditions = conditions,
+  re_formula = NULL, method = "predict"
+)
+plot(me_loss, ncol = 5, points = TRUE)
+
+## End(Not run)
+
+</code></pre>
+
+
+</div>

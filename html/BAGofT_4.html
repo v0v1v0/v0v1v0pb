@@ -1,0 +1,118 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>testGlmnet</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Testing penalized logistic regressions
+
+</h2>
+
+<h3>Description</h3>
+
+<p><code>testGlmnet</code> specifies a penalized logistic regression as the classifier to test. It returns a function that can be taken as the input of ‘testModel’. R package ‘glmnet’ is required.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">testGlmnet(formula, alpha = 1)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>formula</code></td>
+<td>
+
+<p>an object of class <code>"formula"</code> (or one that
+can be coerced to that class): a symbolic description of the
+model to test.
+
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>alpha</code></td>
+<td>
+<p>the elasticnet mixing parameter, with <code class="reqn">0\le\alpha\le 1</code>.
+The penalty is defined as
+</p>
+<p style="text-align: center;"><code class="reqn">(1-\alpha)/2||\beta||_2^2+\alpha||\beta||_1.</code>
+</p>
+ <p><code>alpha=1</code> is the
+lasso penalty, and <code>alpha=0</code> the ridge penalty.</p>
+</td>
+</tr>
+</table>
+<h3>References</h3>
+
+<p>Zhang, Ding and Yang (2021) "Is a Classification Procedure Good Enough?-A Goodness-of-Fit Assessment Tool for Classification Learning" arXiv preprint 	arXiv:1911.03063v2 (2021).
+
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## Not run: 
+###################################################
+# Generate a sample dataset.
+###################################################
+# set the random seed
+set.seed(20)
+# set the number of observations
+n &lt;- 200
+# set the number of covariates
+p &lt;- 20
+
+# generate covariates data
+Xdat &lt;- matrix(runif((n*p), -5,5), nrow = n, ncol = p)
+colnames(Xdat) &lt;- paste("x", c(1:p), sep = "")
+
+# generate random coefficients
+betaVec &lt;- rnorm(6)
+# calculate the linear predictor data
+lindat &lt;-  3 * (Xdat[,1] &lt; 2 &amp; Xdat[,1] &gt; -2) + -3 * (Xdat[,1] &gt; 2 | Xdat[,1] &lt; -2) +
+  0.5 * (Xdat[,2] + Xdat[, 3] + Xdat[,4] + Xdat[, 5])
+# calculate the probabilities
+pdat &lt;- 1/(1 + exp(-lindat))
+
+# generate the response data
+ydat &lt;- sapply(pdat, function(x) rbinom(1, 1, x))
+
+# generate the dataset
+dat &lt;- data.frame(y = ydat, Xdat)
+
+###################################################
+# Obtain the testing result
+###################################################
+
+# 50 percent training set
+testRes1 &lt;- BAGofT(testModel = testGlmnet(formula = y~., alpha = 1),
+                  data = dat,
+                  ne = n*0.5,
+                  nsplits = 20,
+                  nsim = 40)
+# 75 percent training set
+testRes2 &lt;- BAGofT(testModel = testGlmnet(formula = y~., alpha = 1),
+                   data = dat,
+                   ne = n*0.75,
+                   nsplits = 20,
+                   nsim = 40)
+# 90 percent training set
+testRes3 &lt;- BAGofT(testModel = testGlmnet(formula = y~., alpha = 1),
+                   data = dat,
+                   ne = n*0.9,
+                   nsplits = 20,
+                   nsim = 40)
+
+# print the testing result.
+print(c(testRes1$p.value, testRes2$p.value, testRes3$p.value))
+
+## End(Not run)
+</code></pre>
+
+
+</div>

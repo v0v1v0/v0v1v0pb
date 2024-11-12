@@ -1,0 +1,123 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>ffmatrixmult</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Matrix multiplication with "ff_matrix" or "matrix" inputs</h2>
+
+<h3>Description</h3>
+
+<p>A function for <code>crossprod(x,y)</code>, for <code>tcrossprod(x,y)</code>, or for regular matrix multiplication, that is compatible with <code>ff</code> matrices. Multiplication is done without creating new matrices for the transposes of <code>x</code> or <code>y</code>. Note, the crossproduct function can't be applied directly to objects with class <code>ff</code>.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">ffmatrixmult(x, y = NULL, xt = FALSE, yt = FALSE, ram.output = FALSE,
+  override.big.error = FALSE, ...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>a matrix or ff_matrix</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>y</code></td>
+<td>
+<p>a matrix or ff_matrix. If NULL, this is set equal to x, although a second copy of the matrix x is not actually stored.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>xt</code></td>
+<td>
+<p>should the x matrix be transposed before multiplying</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>yt</code></td>
+<td>
+<p>should the y matrix be transposed before multiplying (e.g. <code>xt=TRUE</code>, <code>yt=FALSE</code> leads to <code>crossprod(x,y)</code>).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ram.output</code></td>
+<td>
+<p>force output to be a normal matrix, as opposed to an object with class <code>ff</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>override.big.error</code></td>
+<td>
+<p>If the dimension of the final output matrix is especially large, <code>ffmatrixmult</code> will abort, giving an error. This is meant to avoid the accidental creation of very large matrices. Set override.big.error=TRUE to bypass this error.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>passed to <code>ff</code>.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>A standard matrix, or a matrix with class <code>ff</code> if one of the input matrices has class <code>ff</code>.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## Not run: 
+ library(ff)
+	#Tall data
+	y_tall&lt;-matrix(rnorm(5000),500,10) #y tall
+	x_tall&lt;-matrix(rnorm(5000),500,10)
+	y_wide&lt;-t(y_tall)
+	x_wide&lt;-t(x_tall)
+	y_tall_ff&lt;-as.ff(y_tall) #y tall and ff
+	x_tall_ff&lt;-as.ff(x_tall) 
+	y_wide_ff&lt;-as.ff(y_wide) #y tall and ff
+	x_wide_ff&lt;-as.ff(x_wide) 
+
+ #Set options to ensure that block matrix algebra is actually done,
+ #and the entire algebra isn't just one in one step.
+ #Compare ffmatrixmult against output from standard methods
+ options('ffbytesize'=100)
+
+ #small final matrices
+	#x'x
+	range(  crossprod(x_tall) - ffmatrixmult(x_tall_ff, xt=TRUE)  )
+	range(  tcrossprod(x_wide) - ffmatrixmult(x_wide_ff, yt=TRUE)  )
+	range(  crossprod(x_tall,y_tall) - ffmatrixmult(x_tall_ff,y_tall_ff, xt=TRUE)  )
+	range(  tcrossprod(x_wide,y_wide) - ffmatrixmult(x_wide_ff,y_wide_ff, yt=TRUE)  )
+	range(  (x_wide%*%y_tall) - ffmatrixmult(x_wide_ff,y_tall_ff)  )
+
+	#ff + small data
+	s_tall &lt;- matrix(rnorm(80),10,8) 
+	s_wide &lt;- matrix(rnorm(80),8,10) 
+
+	#tall output
+	range(  crossprod(x_wide, s_tall) - ffmatrixmult(x_wide_ff, s_tall,xt=TRUE)[]  )
+	range(  tcrossprod(x_tall, s_wide) - ffmatrixmult(x_tall_ff, s_wide,yt=TRUE)[]  )
+	range( x_tall%*%s_tall - ffmatrixmult(x_tall_ff, s_tall)[])
+
+	#Wide output
+	range(  crossprod(s_tall, y_wide) - ffmatrixmult( s_tall, y_wide_ff,xt=TRUE)[]  )
+	range(  tcrossprod(s_wide, y_tall) - ffmatrixmult( s_wide,y_tall_ff,yt=TRUE)[]  )
+	range( s_wide%*%y_wide - ffmatrixmult(s_wide,y_wide_ff)[])
+
+ #Reset options for more practical use
+ options('ffbytesize'=16777216)
+
+
+## End(Not run)
+</code></pre>
+
+
+</div>

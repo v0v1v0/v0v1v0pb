@@ -1,0 +1,177 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>soybean</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Soybean-BioCro model definition</h2>
+
+<h3>Description</h3>
+
+<p>Initial values, parameters, direct modules, differential modules, and
+a differential equation solver that can be used to run soybean growth
+simulations in Champaign, Illinois and other locations. Along with the soybean
+circadian clock specifications (<code>soybean_clock</code>), these values
+define the soybean growth model of Matthews <em>et al.</em> (2022)
+[<a href="https://doi.org/10.1093/insilicoplants/diab032">doi:10.1093/insilicoplants/diab032</a>], which is commonly referred to as
+<em>Soybean-BioCro</em>.
+</p>
+<p>To represent soybean growth in Champaign, IL, these values must be paired with
+the Champaign weather data (<code>cmi_soybean_weather_data</code>). This
+weather data includes the output from the soybean circadian clock model
+(<code>soybean_clock</code>), so the clock components do not need to be
+included when running a soybean growth simulation using this weather data.
+The parameters already include the <code>clay_loam</code> values from the
+<code>soil_parameters</code> dataset, which is the appropriate soil type for
+Champaign.
+</p>
+<p>Some specifications, such as the values of photosynthetic parameters, would
+remain the same in any location; others, such as the latitude or longitude,
+would need to change when simulating crop growth in different locations. Care
+must be taken to understand each input quantity before attempting to run
+simulations in other places or for other cultivars.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">soybean</code></pre>
+
+
+<h3>Format</h3>
+
+<p>A list of 5 named elements that are suitable for passing to
+<code>run_biocro</code>, as described in the help page for
+<code>crop_model_definitions</code>.
+</p>
+
+
+<h3>Details</h3>
+
+<p>As improvements are made to the BioCro modules, their behavior changes, and
+the soybean model parameters must be updated. Following significant module
+updates, reparameterization is performed using the same method and data as
+used in Matthews <em>et al.</em> (2022). The following is a summary of
+reparameterizations that have occurred since the original publication of the
+Soybean-BioCro model:
+</p>
+
+<ul>
+<li> <p><em>2023-06-18</em>: Several modules have been updated, and the value of
+the atmospheric transmittance has been changed from 0.85 to 0.6 based on
+Campbell and Norman, An Introduction to Environmental Biophysics,
+2nd Edition, Pg 173. Due to these changes, reparameterization of the
+following was required: <code>alphaLeaf</code>, <code>alphaRoot</code>,
+<code>alphaStem</code>, <code>alphaShell</code>, <code>betaLeaf</code>, <code>betaRoot</code>,
+<code>betaStem</code>, <code>betaShell</code>, <code>rateSeneLeaf</code>, <code>rateSeneStem</code>,
+<code>alphaSeneLeaf</code>, <code>betaSeneLeaf</code>, <code>alphaSeneStem</code>, and
+<code>betaSeneStem</code>.
+</p>
+</li>
+<li> <p><em>2023-03-15</em>: Several modules have been updated. The most
+significant changes are that (1) the
+<code>BioCro:no_leaf_resp_neg_assim_partitioning_growth_calculator</code> now
+reduces the leaf growth rate in response to water stress and (2) the
+partitioning modules now include a new tissue type (<code>shell</code>). The new
+component allows us to distinguish between components of the soybean pod,
+where <code>shell</code> represents the pericarp and <code>grain</code> represents the
+seed. This distinction has been found to be important for accurately
+predicting seed biomass, which is more important in agricultural settings
+than the entire pod mass, since the pericarp is not included in typical
+yield measurements. Due to these changes, reparameterization of the
+following was required: <code>alphaLeaf</code>, <code>alphaRoot</code>,
+<code>alphaStem</code>, <code>alphaShell</code>, <code>betaLeaf</code>, <code>betaRoot</code>,
+<code>betaStem</code>, <code>betaShell</code>, <code>rateSeneLeaf</code>, <code>rateSeneStem</code>,
+<code>alphaSeneLeaf</code>, <code>betaSeneLeaf</code>, <code>alphaSeneStem</code>, and
+<code>betaSeneStem</code>. It was also necessary to add a new direct module to the
+model definition: <code>BioCro:leaf_water_stress_exponential</code>. This module
+calculates the fractional reduction in leaf growth rate due to water stress.
+</p>
+</li>
+</ul>
+<p>Whenever a reparameterization is made, this list should be updated, and any
+vignettes using the soybean model should be checked to see if any axis limits,
+etc., need to change.
+</p>
+
+
+<h3>Source</h3>
+
+<p>This model is described in detail in Matthews <em>et al.</em> (2022)
+[<a href="https://doi.org/10.1093/insilicoplants/diab032">doi:10.1093/insilicoplants/diab032</a>]. Here we make a few notes about some of
+its components:
+</p>
+
+<ul>
+<li>
+<p> For this model, the ODE solver type should not be
+<code>boost_rosenbrock</code> or <code>auto</code> (which defaults to
+<code>boost_rosenbrock</code> when a fixed step size Euler ODE solver is not
+required, as in this case) since the integration will fail unless the
+tolerances are stringent (e.g., <code>output_step_size = 0.01</code>,
+<code>adaptive_rel_error_tol = 1e-9</code>, <code>adaptive_abs_error_tol = 1e-9</code>).
+</p>
+</li>
+<li>
+<p> For the initial total seed mass per land area, we use the following
+equation: <code>Number of seeds per meter * weight per seed / row spacing</code>.
+The number of seeds per meter is 20 and the row spacing is 0.38 m, as
+reported in Morgan <em>et al.</em> (2004) [<a href="https://doi.org/10.1104/pp.104.043968">doi:10.1104/pp.104.043968</a>]. The
+weight per seed is based on the average of .12 to .18 grams, as reported by
+<a href="https://www.feedipedia.org/node/42">Feedipedia</a>. Thus, we have an
+initial biomass of
+<code>(20 seeds / m) * (0.15 g / seed) / (0.38 m) = 7.89 g / m^2</code>,
+equivalent to <code>0.0789 Mg / ha</code> in the typical BioCro units. Since this
+model does not have a seed component, this value is used to determine the
+initial <code>Leaf</code>, <code>Stem</code>, and <code>Root</code> biomass, assuming 80%
+leaf, 10% stem, and 10% root.
+</p>
+</li>
+<li>
+<p> For historical reasons, the seed tissue in this model is called
+<code>Grain</code>. The entire pod biomass can be calculated by adding the
+<code>Grain</code> and <code>Shell</code> biomass.
+</p>
+</li>
+<li>
+<p> For historical reasons, this model includes a <code>Rhizome</code> tissue.
+Soybean does not have a rhizome, so the rhizome in the model does not grow
+or senesce. To achieve this, the <code>kRhizome_emr</code> and
+<code>rateSeneRhizome</code> parameters must be set to 0. It is also necessary to
+specify values for several other quantities such as <code>alphaSeneRhizome</code>,
+<code>betaSeneRhizome</code>, and the initial rhizome mass, although the actual
+values of these quantities will have no effect on the simulation output.
+</p>
+</li>
+<li>
+<p> For historical reasons, some of the modules that define Soybean-BioCro
+require input quantities that are not actually used for any calculations;
+these "extraneous" parameters are identified in <code>data/soybean.R</code>.
+</p>
+</li>
+<li>
+<p> The <code>sowing_time</code> input to the
+<code>soybean_development_rate_calculator</code> module is set to 0 because
+Soybean-BioCro uses the weather data to set the sowing time. In other words,
+the weather data is truncated so it begins at the sowing date.
+</p>
+</li>
+</ul>
+<h3>See Also</h3>
+
+
+<ul>
+<li> <p><code>run_biocro</code>
+</p>
+</li>
+<li> <p><code>modules</code>
+</p>
+</li>
+<li> <p><code>crop_model_definitions</code>
+</p>
+</li>
+<li> <p><code>soybean_clock</code>
+</p>
+</li>
+</ul>
+</div>

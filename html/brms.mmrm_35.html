@@ -1,0 +1,141 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>brm_transform_marginal</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Marginal mean transformation</h2>
+
+<h3>Description</h3>
+
+<p>Transformation from model parameters to marginal means.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">brm_transform_marginal(
+  data,
+  formula,
+  average_within_subgroup = NULL,
+  prefix = "b_"
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+<p>A classed data frame from <code>brm_data()</code>, or an informative
+prior archetype from a function like <code>brm_archetype_successive_cells()</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>formula</code></td>
+<td>
+<p>An object of class <code>"brmsformula"</code> from <code>brm_formula()</code>
+or <code>brms::brmsformula()</code>. Should include the full mapping
+of the model, including fixed effects, residual correlation,
+and heterogeneity in the discrete-time-specific residual variance
+components.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>average_within_subgroup</code></td>
+<td>
+<p><code>TRUE</code> to average concomitant covariates
+proportionally within subgroup levels, <code>FALSE</code> to average these
+covariates across the whole dataset. If <code>average_within_subgroup</code> is
+<code>NULL</code> (default), and if the model has a subgroup and nuisance variables,
+then <code>brm_transform_marginal()</code> prints and informative message
+(once per session) and sets <code>average_within_subgroup</code> to <code>FALSE</code>.
+If you see this message, please read
+<a href="https://openpharma.github.io/brms.mmrm/articles/inference.html">https://openpharma.github.io/brms.mmrm/articles/inference.html</a>,
+decide whether to set <code>average_within_subgroup</code> to <code>TRUE</code> or <code>FALSE</code>
+in <code>brm_transform_marginal()</code>, and then manually supply the output of
+<code>brm_transform_marginal()</code> to the <code>transform</code> argument of
+<code>brm_marginal_draws()</code>.
+</p>
+<p>To create marginal means, <code>brms.mmrm</code> conditions the nuisance covariates
+on their averages across the whole dataset
+(<code>average_within_subgroup = FALSE</code> or <code>NULL</code>
+in <code>brm_transform_marginal()</code>).
+This may be reasonable in some cases,
+and it mitigates the kind of hidden confounding between the subgroup
+and other variables which may otherwise cause Simpson's paradox.
+However, for subgroup-specific marginal means, it may not be realistic
+to condition on a single point estimate for all levels of the reference
+grid
+(for example, if the subgroup is female vs male, but all marginal
+means condition on a single overall observed pregnancy rate of 5%).
+In these situations, it may be appropriate to instead condition on
+subgroup-specific averages of nuisance variables
+(<code>average_within_subgroup = TRUE</code> in <code>brm_transform_marginal()</code>).
+But if you do this,
+it is your responsibility to investigate and understand the
+hidden interactions and confounding in your dataset.
+For more information, please visit
+<a href="https://openpharma.github.io/brms.mmrm/articles/inference.html">https://openpharma.github.io/brms.mmrm/articles/inference.html</a>
+and
+<a href="https://cran.r-project.org/package=emmeans/vignettes/interactions.html">https://cran.r-project.org/package=emmeans/vignettes/interactions.html</a>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>prefix</code></td>
+<td>
+<p>Character of length 1, prefix to add to
+the model matrix (<code>"X"</code>) from <code>brms::make_standata()</code> in order to
+reconstruct the <code>brms</code> model parameter names. This argument should
+only be modified for testing purposes.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The matrix from <code>brm_transform_marginal()</code> is passed to
+the <code>transform_marginal</code> argument of <code>brm_marginal_draws()</code>,
+and it transforms posterior draws of model parameters to
+posterior draws of marginal means. You may customize the output of
+<code>brm_transform_marginal()</code> before passing it to <code>brm_marginal_draws()</code>.
+However, please do not modify the dimensions, row names, or column
+names.
+</p>
+
+
+<h3>Value</h3>
+
+<p>A matrix to transform model parameters (columns) into
+marginal means (rows).
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">set.seed(0L)
+data &lt;- brm_data(
+  data = brm_simulate_simple()$data,
+  outcome = "response",
+  group = "group",
+  time = "time",
+  patient = "patient",
+  reference_group = "group_1",
+  reference_time = "time_1"
+)
+formula &lt;- brm_formula(
+  data = data,
+  baseline = FALSE,
+  baseline_time = FALSE
+)
+transform &lt;- brm_transform_marginal(data = data, formula = formula)
+equations &lt;- summary(transform)
+print(equations)
+summary(transform, message = FALSE)
+class(transform)
+print(transform)
+</code></pre>
+
+
+</div>

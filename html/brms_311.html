@@ -1,0 +1,215 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>posterior_predict.brmsfit</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Draws from the Posterior Predictive Distribution</h2>
+
+<h3>Description</h3>
+
+<p>Compute posterior draws of the posterior predictive distribution. Can be
+performed for the data used to fit the model (posterior predictive checks) or
+for new data. By definition, these draws have higher variance than draws
+of the expected value of the posterior predictive distribution computed by
+<code>posterior_epred.brmsfit</code>. This is because the residual error
+is incorporated in <code>posterior_predict</code>. However, the estimated means of
+both methods averaged across draws should be very similar.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">## S3 method for class 'brmsfit'
+posterior_predict(
+  object,
+  newdata = NULL,
+  re_formula = NULL,
+  re.form = NULL,
+  transform = NULL,
+  resp = NULL,
+  negative_rt = FALSE,
+  ndraws = NULL,
+  draw_ids = NULL,
+  sort = FALSE,
+  ntrys = 5,
+  cores = NULL,
+  ...
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>object</code></td>
+<td>
+<p>An object of class <code>brmsfit</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>newdata</code></td>
+<td>
+<p>An optional data.frame for which to evaluate predictions. If
+<code>NULL</code> (default), the original data of the model is used. <code>NA</code>
+values within factors (excluding grouping variables) are interpreted as if
+all dummy variables of this factor are zero. This allows, for instance, to
+make predictions of the grand mean when using sum coding. <code>NA</code> values
+within grouping variables are treated as a new level.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>re_formula</code></td>
+<td>
+<p>formula containing group-level effects to be considered in
+the prediction. If <code>NULL</code> (default), include all group-level effects;
+if <code>NA</code> or <code>~0</code>, include no group-level effects.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>re.form</code></td>
+<td>
+<p>Alias of <code>re_formula</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>transform</code></td>
+<td>
+<p>(Deprecated) A function or a character string naming
+a function to be applied on the predicted responses
+before summary statistics are computed.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>resp</code></td>
+<td>
+<p>Optional names of response variables. If specified, predictions
+are performed only for the specified response variables.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>negative_rt</code></td>
+<td>
+<p>Only relevant for Wiener diffusion models.
+A flag indicating whether response times of responses
+on the lower boundary should be returned as negative values.
+This allows to distinguish responses on the upper and
+lower boundary. Defaults to <code>FALSE</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ndraws</code></td>
+<td>
+<p>Positive integer indicating how many posterior draws should
+be used. If <code>NULL</code> (the default) all draws are used. Ignored if
+<code>draw_ids</code> is not <code>NULL</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>draw_ids</code></td>
+<td>
+<p>An integer vector specifying the posterior draws to be used.
+If <code>NULL</code> (the default), all draws are used.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>sort</code></td>
+<td>
+<p>Logical. Only relevant for time series models.
+Indicating whether to return predicted values in the original
+order (<code>FALSE</code>; default) or in the order of the
+time series (<code>TRUE</code>).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ntrys</code></td>
+<td>
+<p>Parameter used in rejection sampling
+for truncated discrete models only
+(defaults to <code>5</code>). See Details for more information.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>cores</code></td>
+<td>
+<p>Number of cores (defaults to <code>1</code>). On non-Windows systems,
+this argument can be set globally via the <code>mc.cores</code> option.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Further arguments passed to <code>prepare_predictions</code>
+that control several aspects of data validation and prediction.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p><code>NA</code> values within factors in <code>newdata</code>,
+are interpreted as if all dummy variables of this factor are
+zero. This allows, for instance, to make predictions of the grand mean
+when using sum coding.
+</p>
+<p>In multilevel models, it is possible to
+allow new levels of grouping factors to be used in the predictions.
+This can be controlled via argument <code>allow_new_levels</code>.
+New levels can be sampled in multiple ways, which can be controlled
+via argument <code>sample_new_levels</code>. Both of these arguments are
+documented in <code>prepare_predictions</code> along with several
+other useful arguments to control specific aspects of the predictions.
+</p>
+<p>For truncated discrete models only: In the absence of any general
+algorithm to sample from truncated discrete distributions, rejection
+sampling is applied in this special case. This means that values are
+sampled until a value lies within the defined truncation boundaries. In
+practice, this procedure may be rather slow (especially in <span style="font-family: Courier New, Courier; color: #666666;"><b>R</b></span>). Thus, we
+try to do approximate rejection sampling by sampling each value
+<code>ntrys</code> times and then select a valid value. If all values are
+invalid, the closest boundary is used, instead. If there are more than a
+few of these pathological cases, a warning will occur suggesting to
+increase argument <code>ntrys</code>.
+</p>
+
+
+<h3>Value</h3>
+
+<p>An <code>array</code> of draws. In univariate models,
+the output is as an S x N matrix, where S is the number of posterior
+draws and N is the number of observations. In multivariate models, an
+additional dimension is added to the output which indexes along the
+different response variables.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## Not run: 
+## fit a model
+fit &lt;- brm(time | cens(censored) ~ age + sex + (1 + age || patient),
+           data = kidney, family = "exponential", init = "0")
+
+## predicted responses
+pp &lt;- posterior_predict(fit)
+str(pp)
+
+## predicted responses excluding the group-level effect of age
+pp &lt;- posterior_predict(fit, re_formula = ~ (1 | patient))
+str(pp)
+
+## predicted responses of patient 1 for new data
+newdata &lt;- data.frame(
+  sex = factor(c("male", "female")),
+  age = c(20, 50),
+  patient = c(1, 1)
+)
+pp &lt;- posterior_predict(fit, newdata = newdata)
+str(pp)
+
+## End(Not run)
+
+</code></pre>
+
+
+</div>

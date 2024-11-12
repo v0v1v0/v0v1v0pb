@@ -1,0 +1,220 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>composite_ppi</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Create a composite of multiple plan position indicators (<code>ppi</code>)</h2>
+
+<h3>Description</h3>
+
+<p>Combines multiple plan position indicators (<code>ppi</code>) into a single
+<code>ppi</code>. Can be used to make a composite of <code>ppi</code>'s from multiple
+radars.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">composite_ppi(
+  x,
+  param = "all",
+  nx = 100,
+  ny = 100,
+  xlim,
+  ylim,
+  res,
+  crs,
+  raster = NA,
+  method = "max",
+  idp = 2,
+  idw_max_distance = NA,
+  coverage = FALSE
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>A list of <code>ppi</code> objects.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>param</code></td>
+<td>
+<p>Character (vector). One or more parameter name(s) to composite.
+To composite all available scan parameters use <code>all</code> (default).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nx</code></td>
+<td>
+<p>number of raster pixels in the x (longitude) dimension</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ny</code></td>
+<td>
+<p>number of raster pixels in the y (latitude) dimension</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>xlim</code></td>
+<td>
+<p>x (longitude) range</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ylim</code></td>
+<td>
+<p>y (latitude) range</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>res</code></td>
+<td>
+<p>numeric vector of length 1 or 2 to set the resolution of the raster (see res).
+If this argument is used, arguments <code>nx</code> and <code>ny</code> are ignored. Unit is identical to <code>xlim</code> and <code>ylim</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>crs</code></td>
+<td>
+<p>character or object of class CRS. PROJ.4 type description of a Coordinate Reference System (map projection).
+When 'NA' (default), an azimuthal equidistant projection with origin at the radar location is used.
+To use a WSG84 (lat,lon) projection, use crs="+proj=longlat +datum=WGS84"</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>raster</code></td>
+<td>
+<p>(optional) RasterLayer with a CRS. When specified this raster topology is used for the output, and nx, ny, res
+arguments are ignored.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>method</code></td>
+<td>
+<p>Character (vector). Compositing method(s), either <code>mean</code>,
+<code>min</code>, <code>max</code> or <code>idw</code>. To apply different methods for each of the
+parameters, provide a vector with the same length as <code>param</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>idp</code></td>
+<td>
+<p>Numeric. Inverse distance weighting power.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>idw_max_distance</code></td>
+<td>
+<p>Numeric. Maximum distance from the radar to consider
+in inverse distance weighting. Measurements beyond this distance will have
+a weighting factor of zero.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>coverage</code></td>
+<td>
+<p>Logical. When <code>TRUE</code>, adds an additional <code>coverage</code> parameter
+to the <code>ppi</code> indicating the number of <code>ppi</code>s covering a single composite
+pixel.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The function can combine multiple <code>ppi</code>s of different scan elevations of the
+same radar or <code>ppi</code>s of different radars. The coordinates of the returned
+<code>ppi</code> object are in the WGS84 datum, unless a different <code>crs</code> is provided. If
+only <code>res</code> is provided, but no <code>crs</code> is set, <code>res</code> is in meters and the
+origin of the composite <code>ppi</code> is set to the mean(lat, lon) location.
+</p>
+<p>The <code>method</code> parameter determines how values of different <code>ppi</code>s at the same
+geographic location are combined:
+</p>
+
+<ul>
+<li> <p><code>mean</code>: Compute the average value.
+</p>
+</li>
+<li> <p><code>max</code>: Compute the maximum value. If <code>ppi</code>s are of the same radar and the
+same polar volume, this computes a max product, showing the maximum detected
+signal at that geographic location.
+</p>
+</li>
+<li> <p><code>min</code>: Compute the minimum value.
+</p>
+</li>
+<li> <p><code>idw</code>: This option is useful primarily when compositing <code>ppi</code>s of multiple
+radars. Performs an inverse distance weighting, where values are weighted
+according to 1/(distance from the radar)^<code>idp</code>.
+</p>
+</li>
+</ul>
+<p>Argument <code>method</code> determines how values of different ppi's at the same
+geographic location are combined.
+</p>
+
+<ul>
+<li> <p><code>mean</code>: Compute the average value
+</p>
+</li>
+<li> <p><code>max</code>: Compute the maximum value. If ppi's are of the same radar and the
+same polar volume, this computes a max product, showing the maximum
+detected signal at that geographic location.
+</p>
+</li>
+<li> <p><code>min</code>: Compute the minimum value
+</p>
+</li>
+<li> <p><code>idw</code>: This option is useful primarily when compositing ppi's of multiple
+radars. Performs an inverse distance weighting, where values are weighted
+according to 1/(distance from the radar)^<code>idp</code>
+</p>
+</li>
+</ul>
+<p>The coordinates system of the returned <code>ppi</code> is a WGS84
+(lat, lon) datum, unless a different <code>crs</code> is provided. If only
+<code>res</code> is provided, but no <code>crs</code> is set, <code>res</code> is in
+meter units and the origin of the composite <code>ppi</code> is set to the
+mean (lat, lon) location.
+</p>
+<p>This function is a prototype and under active development
+</p>
+
+
+<h3>Value</h3>
+
+<p>A <code>ppi</code> object.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R"># Locate and read the polar volume example file
+
+pvolfile &lt;- system.file("extdata", "volume.h5", package = "bioRad")
+pvol &lt;- read_pvolfile(pvolfile)
+
+# Calculate a ppi for each elevation scan, 1000m grid resolution
+ppis &lt;- lapply(pvol$scans, project_as_ppi, grid_size=1000)
+
+# Overlay the ppis, calculating the maximum value observed
+# across the available scans at each geographic location
+composite &lt;- composite_ppi(ppis, method = "max", res=1000)
+
+# Plot the calculated max product on the basemap
+if (all(sapply(c("ggspatial","prettymapr", "rosm"), requireNamespace, quietly = TRUE))) {
+map(composite)
+}
+
+</code></pre>
+
+
+</div>

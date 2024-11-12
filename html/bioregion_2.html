@@ -1,0 +1,216 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>cut_tree</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Cut a hierarchical tree</h2>
+
+<h3>Description</h3>
+
+<p>This functions is designed to work on a hierarchical tree and cut it
+at user-selected heights. It works on either outputs from
+<code>hclu_hierarclust</code> or <code>hclust</code> objects. It cuts the tree for the chosen
+number(s) of clusters or selected height(s). It also includes a procedure to
+automatically return the height of cut for the chosen number(s) of clusters.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">cut_tree(
+  tree,
+  n_clust = NULL,
+  cut_height = NULL,
+  find_h = TRUE,
+  h_max = 1,
+  h_min = 0,
+  dynamic_tree_cut = FALSE,
+  dynamic_method = "tree",
+  dynamic_minClusterSize = 5,
+  dissimilarity = NULL,
+  ...
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>tree</code></td>
+<td>
+<p>a <code>bioregion.hierar.tree</code> or a <code>hclust</code> object</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>n_clust</code></td>
+<td>
+<p>an integer or a vector of integers indicating the number of
+clusters to be obtained from the hierarchical tree, or the output from
+<code>partition_metrics()</code>. Should not be used at the same time as <code>cut_height</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>cut_height</code></td>
+<td>
+<p>a numeric vector indicating the height(s) at which the
+tree should be cut. Should not be used at the same time as <code>n_clust</code> or
+<code>optim_method</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>find_h</code></td>
+<td>
+<p>a boolean indicating if the height of cut should be found for
+the requested <code>n_clust</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>h_max</code></td>
+<td>
+<p>a numeric indicating the maximum possible tree height for
+finding the height of cut when <code>find_h = TRUE</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>h_min</code></td>
+<td>
+<p>a numeric indicating the minimum possible height in the tree
+for finding the height of cut when <code>find_h = TRUE</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>dynamic_tree_cut</code></td>
+<td>
+<p>a boolean indicating if the dynamic tree cut method
+should be used, in which case <code>n_clust</code> &amp; <code>cut_height</code> are ignored</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>dynamic_method</code></td>
+<td>
+<p>a character vector indicating the method to be used
+to dynamically cut the tree: either <code>"tree"</code> (clusters searched only
+in the tree) or <code>"hybrid"</code> (clusters searched on both tree and dissimilarity
+matrix)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>dynamic_minClusterSize</code></td>
+<td>
+<p>an integer indicating the minimum cluster size
+to use in the dynamic tree cut method (see
+dynamicTreeCut::cutreeDynamic())</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>dissimilarity</code></td>
+<td>
+<p>only useful if <code>dynamic_method = "hybrid"</code>.
+Provide here the dissimilarity <code>data.frame</code> used to build the <code>tree</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>further arguments to be passed to
+dynamicTreeCut::cutreeDynamic() to
+customize the dynamic tree cut method.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The function can cut the tree with two main methods. First, it can cut
+the entire tree at the same height (either specified by <code>cut_height</code> or
+automatically defined for the chosen <code>n_clust</code>). Second, it can use
+the dynamic tree cut method (Langfelder et al. 2008), in which
+case clusters are detected with an adaptive method based on the shape of
+branches in the tree (thus cuts happen at multiple heights depending on
+cluster positions in the tree).
+</p>
+<p>The dynamic tree cut method has two variants.
+</p>
+
+<ul>
+<li>
+<p>The tree-based only variant
+(<code>dynamic_method = "tree"</code>) is a top-down approach which relies only
+on the tree and follows the order of clustered objects on it
+</p>
+</li>
+<li>
+<p>The hybrid variant
+(<code>dynamic_method = "hybrid"</code>) is a bottom-up approach which relies on
+both the tree and the dissimilarity matrix to build clusters on the basis of
+dissimilarity information among sites. This method is useful to detect
+outlying members in each cluster.
+</p>
+</li>
+</ul>
+<h3>Value</h3>
+
+<p>If <code>tree</code> is an output from <code>hclu_hierarclust()</code>, then the same
+object is returned with content updated (i.e., <code>args</code> and <code>clusters</code>). If
+<code>tree</code> is a <code>hclust</code> object, then a <code>data.frame</code> containing the clusters is
+returned.
+</p>
+
+
+<h3>Note</h3>
+
+<p>The argument <code>find_h</code> is ignored if <code>dynamic_tree_cut = TRUE</code>,
+because heights of cut cannot be estimated in this case.
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Pierre Denelle (<a href="mailto:pierre.denelle@gmail.com">pierre.denelle@gmail.com</a>),
+Maxime Lenormand (<a href="mailto:maxime.lenormand@inrae.fr">maxime.lenormand@inrae.fr</a>) and
+Boris Leroy (<a href="mailto:leroy.boris@gmail.com">leroy.boris@gmail.com</a>)
+</p>
+
+
+<h3>References</h3>
+
+<p>Langfelder P, Zhang B, Horvath S (2008).
+“Defining clusters from a hierarchical cluster tree: the Dynamic Tree Cut package for R.”
+<em>BIOINFORMATICS</em>, <b>24</b>(5), 719–720.
+</p>
+
+
+<h3>See Also</h3>
+
+<p>hclu_hierarclust
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">comat &lt;- matrix(sample(0:1000, size = 500, replace = TRUE, prob = 1/1:1001),
+20, 25)
+rownames(comat) &lt;- paste0("Site", 1:20)
+colnames(comat) &lt;- paste0("Species", 1:25)
+
+simil &lt;- similarity(comat, metric = "all")
+dissimilarity &lt;- similarity_to_dissimilarity(simil)
+
+# User-defined number of clusters
+tree1 &lt;- hclu_hierarclust(dissimilarity, n_clust = 5)
+tree2 &lt;- cut_tree(tree1, cut_height = .05)
+tree3 &lt;- cut_tree(tree1, n_clust = c(3, 5, 10))
+tree4 &lt;- cut_tree(tree1, cut_height = c(.05, .1, .15, .2, .25))
+tree5 &lt;- cut_tree(tree1, n_clust = c(3, 5, 10), find_h = FALSE)
+
+hclust_tree &lt;- tree2$algorithm$final.tree
+clusters_2 &lt;- cut_tree(hclust_tree, n_clust = 10)
+
+cluster_dynamic &lt;- cut_tree(tree1, dynamic_tree_cut = TRUE,
+                            dissimilarity = dissimilarity)
+
+</code></pre>
+
+
+</div>

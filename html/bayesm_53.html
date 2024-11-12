@@ -1,0 +1,231 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>rnegbinRw</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>MCMC Algorithm for Negative Binomial Regression</h2>
+
+<h3>Description</h3>
+
+<p><code>rnegbinRw</code> implements a Random Walk Metropolis Algorithm for the Negative Binomial (NBD) regression model where <code class="reqn">\beta|\alpha</code> and <code class="reqn">\alpha|\beta</code> are drawn with two different random walks.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">rnegbinRw(Data, Prior, Mcmc)</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>Data </code></td>
+<td>
+<p>list(y, X)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Prior</code></td>
+<td>
+<p>list(betabar, A, a, b)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Mcmc </code></td>
+<td>
+<p>list(R, keep, nprint, s_beta, s_alpha, beta0, alpha)</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+
+
+<h4>Model and Priors</h4>
+
+<p><code class="reqn">y</code> <code class="reqn">\sim</code> <code class="reqn">NBD(mean=\lambda, over-dispersion=alpha)</code>  <br><code class="reqn">\lambda = exp(x'\beta)</code>
+</p>
+<p><code class="reqn">\beta</code> <code class="reqn">\sim</code> <code class="reqn">N(betabar, A^{-1})</code> <br><code class="reqn">alpha</code> <code class="reqn">\sim</code> <code class="reqn">Gamma(a, b)</code> (unless <code>Mcmc$alpha</code> specified) <br>
+Note: prior mean of <code class="reqn">alpha = a/b</code>, <code class="reqn">variance = a/(b^2)</code>
+</p>
+
+
+
+<h4>Argument Details</h4>
+
+<p><em><code>Data = list(y, X)</code></em>
+</p>
+
+<table>
+<tr>
+<td style="text-align: left;">
+    <code>y:       </code> </td>
+<td style="text-align: left;"> <code class="reqn">n x 1</code> vector of counts (<code class="reqn">0,1,2,\ldots</code>) </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+    <code>X:       </code> </td>
+<td style="text-align: left;"> <code class="reqn">n x k</code> design matrix
+    </td>
+</tr>
+</table>
+<p><em><code>Prior = list(betabar, A, a, b)</code> [optional]</em>
+</p>
+
+<table>
+<tr>
+<td style="text-align: left;">
+    <code>betabar: </code> </td>
+<td style="text-align: left;"> <code class="reqn">k x 1</code> prior mean (def: 0) </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+    <code>A:       </code> </td>
+<td style="text-align: left;"> <code class="reqn">k x k</code> PDS prior precision matrix (def: 0.01*I) </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+    <code>a:       </code> </td>
+<td style="text-align: left;"> Gamma prior parameter (not used if <code>Mcmc$alpha</code> specified) (def: 0.5) </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+    <code>b:       </code> </td>
+<td style="text-align: left;"> Gamma prior parameter (not used if <code>Mcmc$alpha</code> specified) (def: 0.1)
+    </td>
+</tr>
+</table>
+<p><em><code>Mcmc  = list(R, keep, nprint, s_beta, s_alpha, beta0, alpha)</code> [only <code>R</code> required]</em>
+</p>
+
+<table>
+<tr>
+<td style="text-align: left;">
+    <code>R:       </code> </td>
+<td style="text-align: left;"> number of MCMC draws </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+    <code>keep:    </code> </td>
+<td style="text-align: left;"> MCMC thinning parameter -- keep every <code>keep</code>th draw (def: 1) </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+    <code>nprint:  </code> </td>
+<td style="text-align: left;"> print the estimated time remaining for every <code>nprint</code>'th draw (def: 100, set to 0 for no print) </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+    <code>s_beta:  </code> </td>
+<td style="text-align: left;"> scaling for beta | alpha RW inc cov matrix (def: 2.93/<code>sqrt(k)</code>) </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+    <code>s_alpha: </code> </td>
+<td style="text-align: left;"> scaling for alpha | beta RW inc cov matrix (def: 2.93) </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+    <code>alpha:   </code> </td>
+<td style="text-align: left;"> over-dispersion parameter (def: alpha ~ Gamma(a,b))
+    </td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>A list containing: 
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>betadraw     </code></td>
+<td>
+<p><code class="reqn">R/keep x k</code> matrix of beta draws</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>alphadraw    </code></td>
+<td>
+<p><code class="reqn">R/keep x 1</code> vector of alpha draws</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>llike        </code></td>
+<td>
+<p><code class="reqn">R/keep x 1</code> vector of log-likelihood values evaluated at each draw</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>acceptrbeta  </code></td>
+<td>
+<p>acceptance rate of the beta draws</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>acceptralpha </code></td>
+<td>
+<p>acceptance rate of the alpha draws</p>
+</td>
+</tr>
+</table>
+<h3>Note</h3>
+
+<p>The NBD regression encompasses Poisson regression in the sense that as alpha goes to infinity the NBD distribution tends toward the Poisson. For "small" values of alpha, the dependent variable can be extremely variable so that a large number of observations may be required to obtain precise inferences.
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Sridhar Narayanan (Stanford GSB) and Peter Rossi (Anderson School, UCLA), <a href="mailto:perossichi@gmail.com">perossichi@gmail.com</a>.</p>
+
+
+<h3>References</h3>
+
+<p>For further discussion, see <em>Bayesian Statistics and Marketing</em> by Rossi, Allenby, McCulloch.</p>
+
+
+<h3>See Also</h3>
+
+ <p><code>rhierNegbinRw</code> </p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">if(nchar(Sys.getenv("LONG_TEST")) != 0)  {R=1000} else {R=10}
+set.seed(66)
+
+simnegbin = function(X, beta, alpha) {
+  # Simulate from the Negative Binomial Regression
+  lambda = exp(X%*%beta)
+  y = NULL
+  for (j in 1:length(lambda)) { y = c(y, rnbinom(1, mu=lambda[j], size=alpha)) }
+  return(y)
+}
+
+nobs = 500
+nvar = 2 # Number of X variables
+alpha = 5
+Vbeta = diag(nvar)*0.01
+
+# Construct the regdata (containing X)
+simnegbindata = NULL
+beta = c(0.6, 0.2)
+X = cbind(rep(1,nobs), rnorm(nobs,mean=2,sd=0.5))
+simnegbindata = list(y=simnegbin(X,beta,alpha), X=X, beta=beta)
+
+Data1 = simnegbindata
+Mcmc1 = list(R=R)
+
+out = rnegbinRw(Data=Data1, Mcmc=list(R=R))
+
+cat("Summary of alpha/beta draw", fill=TRUE)
+summary(out$alphadraw, tvalues=alpha)
+summary(out$betadraw, tvalues=beta)
+
+## plotting examples
+if(0){plot(out$betadraw)}
+</code></pre>
+
+
+</div>

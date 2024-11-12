@@ -1,0 +1,238 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>pagination</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Bootstrap 4 pagination widget</h2>
+
+<h3>Description</h3>
+
+<p>See <a href="https://getbootstrap.com/docs/4.0/components/pagination/">https://getbootstrap.com/docs/4.0/components/pagination/</a>.
+</p>
+<p>Insert inside pagination.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">pagination(
+  ...,
+  id = NULL,
+  selected = NULL,
+  align = c("center", "left", "right"),
+  size = c("md", "sm", "lg"),
+  previousBtn = "«",
+  nextBtn = "»",
+  .list = NULL
+)
+
+paginationItem(title, ..., value = title, icon = NULL, disabled = FALSE)
+
+updatePagination(
+  id,
+  selected = NULL,
+  disabled = NULL,
+  session = shiny::getDefaultReactiveDomain()
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Slot for paginationItem.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>id</code></td>
+<td>
+<p>Unique widget id. For programmatic update.
+See updatePagination.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>selected</code></td>
+<td>
+<p>Which element to select at start.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>align</code></td>
+<td>
+<p>Alignment.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>size</code></td>
+<td>
+<p>Buttons size.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>previousBtn</code></td>
+<td>
+<p>Previous button text.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nextBtn</code></td>
+<td>
+<p>Next button text.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>.list</code></td>
+<td>
+<p>Programmatically generated paginationItem.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>title</code></td>
+<td>
+<p>Display title for tab</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>value</code></td>
+<td>
+<p>The value that should be sent when <code>tabsetPanel</code> reports
+that this tab is selected. If omitted and <code>tabsetPanel</code> has an
+<code>id</code>, then the title will be used.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>icon</code></td>
+<td>
+<p>Optional icon to appear on the tab. This attribute is only
+valid when using a <code>tabPanel</code> within a <code>navbarPage()</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>disabled</code></td>
+<td>
+<p>Whether to disable the item. Default to FALSE.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>session</code></td>
+<td>
+<p>Shiny session object.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>An HTML pagination container
+</p>
+<p>An HTML tag.
+</p>
+<p>Send a message from R to JS so as to update
+the pagination widget on the client.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">if (interactive()) {
+ library(shiny)
+ library(bs4Dash)
+
+ shinyApp(
+   ui = dashboardPage(
+    header = dashboardHeader(), 
+    sidebar = dashboardSidebar(),
+    body = dashboardBody(
+     pagination(
+       paginationItem("page1", box(title = "This is a box!")),
+       paginationItem("page2", "This is page 2", disabled = TRUE),
+       paginationItem("page3", "This is page 3", disabled = TRUE),
+       paginationItem(
+         "page4",
+         sliderInput(
+           "obs",
+           "Number of observations:",
+           min = 0,
+           max = 1000,
+           value = 500
+         ),
+         plotOutput("distPlot"),
+         icon = icon("cog")
+       )
+     )
+    )
+   ),
+   server = function(input, output, session) {
+     output$distPlot &lt;- renderPlot({
+       hist(rnorm(input$obs))
+     })
+   }
+ )
+}
+if (interactive()) {
+ library(shiny)
+ library(bs4Dash)
+
+ shinyApp(
+   ui = dashboardPage(
+    header = dashboardHeader(), 
+    sidebar = dashboardSidebar(),
+    body = dashboardBody(
+     fluidRow(
+       actionButton("update", "Select page 4", class = "mx-2"),
+       actionButton("disable", "Disable page 1", class = "mx-2"),
+       actionButton("enable", "Enable page 1", class = "mx-2"),
+       textOutput("selected_page")
+     ),
+     br(),
+     pagination(
+       id = "mypagination",
+       paginationItem("page1", box(title = "This is a box!")),
+       paginationItem("page2", "This is page 2", disabled = TRUE),
+       paginationItem("page3", "This is page 3"),
+       paginationItem(
+         "page4",
+         sliderInput(
+           "obs",
+           "Number of observations:",
+           min = 0,
+           max = 1000,
+           value = 500
+         ),
+         plotOutput("distPlot"),
+         icon = icon("cog")
+       )
+     )
+    )
+   ),
+   server = function(input, output, session) {
+    
+     observeEvent(input$update,{
+       updatePagination("mypagination", selected = "page4")
+     })
+    
+     observeEvent(input$disable,{
+       updatePagination("mypagination", disabled = "page1")
+     })
+    
+     observeEvent(input$enable,{
+       updatePagination("mypagination", selected = "page1")
+     })
+    
+     output$selected_page &lt;- renderText({
+       sprintf("Currently selected page: %s", input$mypagination)
+     })
+    
+     output$distPlot &lt;- renderPlot({
+       hist(rnorm(input$obs))
+     })
+   }
+ )
+}
+</code></pre>
+
+
+</div>

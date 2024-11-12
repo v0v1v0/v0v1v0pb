@@ -1,0 +1,152 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>getJobTable</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Query Job Information</h2>
+
+<h3>Description</h3>
+
+<p><code>getJobStatus</code> returns the internal table which stores information about the computational
+status of jobs, <code>getJobPars</code> a table with the job parameters, <code>getJobResources</code> a table
+with the resources which were set to submit the jobs, and <code>getJobTags</code> the tags of the jobs
+(see Tags).
+</p>
+<p><code>getJobTable</code> returns all these tables joined.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">getJobTable(ids = NULL, reg = getDefaultRegistry())
+
+getJobStatus(ids = NULL, reg = getDefaultRegistry())
+
+getJobResources(ids = NULL, reg = getDefaultRegistry())
+
+getJobPars(ids = NULL, reg = getDefaultRegistry())
+
+getJobTags(ids = NULL, reg = getDefaultRegistry())
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>ids</code></td>
+<td>
+<p>[<code>data.frame</code> or <code>integer</code>]<br>
+A <code>data.frame</code> (or <code>data.table</code>)
+with a column named “job.id”.
+Alternatively, you may also pass a vector of integerish job ids.
+If not set, defaults to all jobs.
+Invalid ids are ignored.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>reg</code></td>
+<td>
+<p>[<code>Registry</code>]<br>
+Registry. If not explicitly passed, uses the default registry (see <code>setDefaultRegistry</code>).</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>[<code>data.table</code>] with the following columns (not necessarily in this order):
+</p>
+
+<dl>
+<dt>job.id</dt>
+<dd>
+<p>Unique Job ID as integer.</p>
+</dd>
+<dt>submitted</dt>
+<dd>
+<p>Time the job was submitted to the batch system as <code>POSIXct</code>.</p>
+</dd>
+<dt>started</dt>
+<dd>
+<p>Time the job was started on the batch system as <code>POSIXct</code>.</p>
+</dd>
+<dt>done</dt>
+<dd>
+<p>Time the job terminated (successfully or with an error) as <code>POSIXct</code>.</p>
+</dd>
+<dt>error</dt>
+<dd>
+<p>Either <code>NA</code> if the job terminated successfully or the error message.</p>
+</dd>
+<dt>mem.used</dt>
+<dd>
+<p>Estimate of the memory usage.</p>
+</dd>
+<dt>batch.id</dt>
+<dd>
+<p>Batch ID as reported by the scheduler.</p>
+</dd>
+<dt>log.file</dt>
+<dd>
+<p>Log file. If missing, defaults to <code>[job.hash].log</code>.</p>
+</dd>
+<dt>job.hash</dt>
+<dd>
+<p>Unique string identifying the job or chunk.</p>
+</dd>
+<dt>time.queued</dt>
+<dd>
+<p>Time in seconds (as <code>difftime</code>) the job was queued.</p>
+</dd>
+<dt>time.running</dt>
+<dd>
+<p>Time in seconds (as <code>difftime</code>) the job was running.</p>
+</dd>
+<dt>pars</dt>
+<dd>
+<p>List of parameters/arguments for this job.</p>
+</dd>
+<dt>resources</dt>
+<dd>
+<p>List of computational resources set for this job.</p>
+</dd>
+<dt>tags</dt>
+<dd>
+<p>Tags as joined string, delimited by “,”.</p>
+</dd>
+<dt>problem</dt>
+<dd>
+<p>Only for <code>ExperimentRegistry</code>: the problem identifier.</p>
+</dd>
+<dt>algorithm</dt>
+<dd>
+<p>Only for <code>ExperimentRegistry</code>: the algorithm identifier.</p>
+</dd>
+</dl>
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+tmp = makeRegistry(file.dir = NA, make.default = FALSE)
+f = function(x) if (x &lt; 0) stop("x must be &gt; 0") else sqrt(x)
+batchMap(f, x = c(-1, 0, 1), reg = tmp)
+submitJobs(reg = tmp)
+waitForJobs(reg = tmp)
+addJobTags(1:2, "tag1", reg = tmp)
+addJobTags(2, "tag2", reg = tmp)
+
+# Complete table:
+getJobTable(reg = tmp)
+
+# Job parameters:
+getJobPars(reg = tmp)
+
+# Set and retrieve tags:
+getJobTags(reg = tmp)
+
+# Job parameters with tags right-joined:
+rjoin(getJobPars(reg = tmp), getJobTags(reg = tmp))
+</code></pre>
+
+
+</div>

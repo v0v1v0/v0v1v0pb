@@ -1,0 +1,320 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>loadNetwork</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>
+Load a Boolean network from a file
+</h2>
+
+<h3>Description</h3>
+
+<p>Loads a Boolean network or probabilistic Boolean network from a file and converts it to an internal transition table representation.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">loadNetwork(file, 
+            bodySeparator = ",",
+            lowercaseGenes = FALSE,
+            symbolic = FALSE)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>file</code></td>
+<td>
+
+<p>The name of the file to be read
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>bodySeparator</code></td>
+<td>
+
+<p>An optional separation character to divide the target factors and the formulas. Default is ",".
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>lowercaseGenes</code></td>
+<td>
+
+<p>If set to <code>TRUE</code>, all gene names are converted to lower case, i.e. the gene names are case-insensitive. This corresponds to the behaviour of <span class="pkg">BoolNet</span> versions prior to 1.5. Defaults to <code>FALSE</code>.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>symbolic</code></td>
+<td>
+
+<p>If set to <code>TRUE</code>, a symbolic representation of class <code>SymbolicBooleanNetwork</code> is returned. This is not available for asynchronous or probabilistic Boolean networks, but is required for the simulation of networks with extended temporal predicates and time delays (see <code>simulateSymbolicModel</code>). If such predicates are detected, the switch is activated by default. 
+</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>Depending on whether the network is loaded in truth table representation or not, the supported network file formats differ slightly.
+</p>
+<p>For the truth table representation (<code>symbolic=FALSE</code>), the language basically consists of expressions based on the Boolean operators AND (&amp;), or (|), and NOT (!). In addition, some convenience operators are included (see EBNF and operator description below).
+The first line contains a header. In case of a Boolean network with only one function per gene, the header is "targets, functions"; in a probabilistic network, there is an optional third column "probabilities". All subsequent lines contain Boolean rules or comment lines that are omitted by the parser.
+A rule consists of a target gene, a separator, a Boolean expression to calculate a transition step for the target gene, and an optional probability for the rule (for probabilistic Boolean networks only – see below). 
+</p>
+<p>The EBNF description of the network file format is as follows:
+</p>
+<pre>
+Network           = Header Newline {Rule Newline | Comment Newline};
+Header            = "targets" Separator "factors";
+Rule              = GeneName Separator BooleanExpression [Separator Probability];
+Comment           = "#" String;
+BooleanExpression = GeneName 
+                    | "!" BooleanExpression 
+                    | "(" BooleanExpression ")" 
+                    | BooleanExpression " &amp; " BooleanExpression  
+                    | BooleanExpression " | " BooleanExpression;
+                    | "all(" BooleanExpression {"," BooleanExpression} ")"
+                    | "any(" BooleanExpression {"," BooleanExpression} ")"
+                    | "maj(" BooleanExpression {"," BooleanExpression} ")"
+                    | "sumgt(" BooleanExpression {"," BooleanExpression} "," Integer ")"
+                    | "sumlt(" BooleanExpression {"," BooleanExpression} "," Integer ")";
+GeneName          = ? A gene name from the list of involved genes ?;
+Separator         = ",";
+Integer           = ? An integer value?;
+Probability       = ? A floating-point number ?;
+String            = ? Any sequence of characters (except a line break) ?;
+Newline           = ? A line break character ?;
+</pre>
+<p>The extended format for Boolean networks with temporal elements that can be loaded if <code>symbolic=TRUE</code> additionally allows for a specification of time steps. Furthermore, the operators can be extended with iterators that evaluate their arguments over multiple time steps.
+</p>
+<pre>
+Network               = Header Newline
+                        {Function Newline | Comment Newline};
+Header                = "targets" Separator "factors";
+Function              = GeneName Separator BooleanExpression;
+Comment               = "#" String;
+BooleanExpression     = GeneName | GeneName TemporalSpecification | BooleanOperator | TemporalOperator
+BooleanOperator       =   BooleanExpression 
+                        | "!" BooleanExpression 
+                        | "(" BooleanExpression ")" 
+                        | BooleanExpression " &amp; " BooleanExpression  
+                        | BooleanExpression " | " BooleanExpression;
+TemporalOperator      =   "all" [TemporalIteratorDef] 
+                                "(" BooleanExpression {"," BooleanExpression} ")"
+                        | "any" [TemporalIteratorDef] 
+                                "(" BooleanExpression {"," BooleanExpression} ")"
+                        | "maj" [TemporalIteratorDef] 
+                                "(" BooleanExpression {"," BooleanExpression} ")"
+                        | "sumgt" [TemporalIteratorDef] 
+                                  "(" BooleanExpression {"," BooleanExpression} "," Integer ")"
+                        | "sumlt" [TemporalIteratorDef] 
+                                  "(" BooleanExpression {"," BooleanExpression} "," Integer ")"
+                        | "timeis" "(" Integer ")"
+                        | "timegt" "(" Integer ")"
+                        | "timelt" "(" Integer ")";
+TemporalIteratorDef   = "[" TemporalIterator "=" Integer ".." Integer "]";
+TemporalSpecification = "[" TemporalOperand {"+" TemporalOperand | "-" TemporalOperand} "]";
+TemporalOperand       = TemporalIterator | Integer
+TemporalIterator      = ? An alphanumeric string ?;
+GeneName              = ? A gene name from the list of involved genes ?;
+Separator             = ",";
+Integer               = ? An integer value?;
+String                = ? Any sequence of characters (except a line break) ?;
+Newline               = ? A line break character ?;
+</pre>
+<p>The meaning of the operators is as follows:
+</p>
+
+<dl>
+<dt><code>all</code></dt>
+<dd>
+<p>Equivalent to a conjunction of all arguments. For symbolic networks, the operator can have a time range, in which case the arguments are evaluated for each time point specified in the iterator.</p>
+</dd>
+<dt><code>any</code></dt>
+<dd>
+<p>Equivalent to a disjunction of all arguments. For symbolic networks, the operator can have a time range, in which case the arguments are evaluated for each time point specified in the iterator.</p>
+</dd>
+<dt><code>maj</code></dt>
+<dd>
+<p>Evaluates to true if the majority of the arguments evaluate to true. For symbolic networks, the operator can have a time range, in which case the arguments are evaluated for each time point specified in the iterator.</p>
+</dd>
+<dt><code>sumgt</code></dt>
+<dd>
+<p>Evaluates to true if the number of arguments (except the last) that evaluate to true is greater than the number specified in the last argument. For symbolic networks, the operator can have a time range, in which case the arguments are evaluated for each time point specified in the iterator.</p>
+</dd>
+<dt><code>sumlt</code></dt>
+<dd>
+<p>Evaluates to true if the number of arguments (except the last) that evaluate to true is less than the number specified in the last argument. For symbolic networks, the operator can have a time range, in which case the arguments are evaluated for each time point specified in the iterator.</p>
+</dd>
+<dt><code>timeis</code></dt>
+<dd>
+<p>Evaluates to true if the current absolute time step (i.e. number of state transitions performed from the current start state) is the same as the argument.</p>
+</dd>
+<dt><code>timelt</code></dt>
+<dd>
+<p>Evaluates to true if the current absolute time step (i.e. number of state transitions performed from the current start state) is the less than the argument.</p>
+</dd>
+<dt><code>timegt</code></dt>
+<dd>
+<p>Evaluates to true if the current absolute time step (i.e. number of state transitions performed from the current start state) is greater than the argument.</p>
+</dd>
+</dl>
+<p>If <code>symbolic=FALSE</code> and there is exactly one rule for each gene, a Boolean network of class <code>BooleanNetwork</code> is created. In these networks, constant genes are automatically fixed (e.g. knocked-out or over-expressed). This means that they are always set to the constant value, and states with the complementary value are not considered in transition tables etc. If you would like to change this behaviour, use <code>fixGenes</code> to reset the fixing.
+</p>
+<p>If <code>symbolic=FALSE</code> and two or more rules exist for the same gene, the function returns a probabilistic network of class <code>ProbabilisticBooleanNetwork</code>. In this case, alternative rules may be annotated with probabilities, which must sum up to 1 for all rules that belong to the same gene. If no probabilities are supplied, uniform distribution is assumed.
+</p>
+<p>If <code>symbolic=TRUE</code>, a symbolic representation of a (possibly temporal) Boolean network of class <code>SymbolicBooleanNetwork</code> is created.
+</p>
+
+
+<h3>Value</h3>
+
+<p>If <code>symbolic=FALSE</code> and only one function per gene is specified, a structure of class <code>BooleanNetwork</code> representing the network is returned. It has the following components:
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>genes</code></td>
+<td>
+<p>A vector of gene names involved in the network. This list determines the indices of genes in inputs of functions or in state bit vectors.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>interactions</code></td>
+<td>
+<p>A list with <code>length(genes)</code> elements, where the i-th element describes the transition function for the i-th gene. Each element has the following sub-components:
+</p>
+
+<dl>
+<dt>input</dt>
+<dd>
+<p>A vector of indices of the genes that serve as the input of the Boolean transition function. If the function has no input (i.e. the gene is constant), the vector consists of a zero element.</p>
+</dd>
+<dt>func</dt>
+<dd>
+<p>The transition function in truth table representation. This vector has <code>2^length(input)</code> entries, one for each combination of input variables. If the gene is constant, the function is 1 or 0.</p>
+</dd>
+<dt>expression</dt>
+<dd>
+<p>A string representation of the Boolean expression from which the truth table was generated</p>
+</dd>
+</dl>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>fixed</code></td>
+<td>
+<p>A vector specifying which genes are knocked-out or over-expressed. For each gene, there is one element which is set to 0 if the gene is knocked-out, to 1 if the gene is over-expressed, and to -1 if the gene is not fixed at all, i. e. can change its value according to the supplied transition function. Constant genes are automatically set to fixed values.</p>
+</td>
+</tr>
+</table>
+<p>If <code>symbolic=FALSE</code> and there is at least one gene with two or more alternative transition functions, a structure of class <code>ProbabilisticBooleanNetwork</code> is returned. This structure is similar to <code>BooleanNetwork</code>, but allows for storing more than one function in an interaction. It consists of the following components:
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>genes</code></td>
+<td>
+<p>A vector of gene names involved in the network. This list determines the indices of genes in inputs of functions or in state bit vectors.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>interactions</code></td>
+<td>
+<p>A list with <code>length(genes)</code> elements, where the i-th element describes the alternative transition functions for the i-th gene. Each element is a list of transition functions. In this second-level list, each element has the the following sub-components:
+</p>
+
+<dl>
+<dt>input</dt>
+<dd>
+<p>A vector of indices of the genes that serve as the input of the Boolean transition function. If the function has no input (i.e. the gene is constant), the vector consists of a zero element.</p>
+</dd>
+<dt>func</dt>
+<dd>
+<p>The transition function in truth table representation. This vector has <code>2^length(input)</code> entries, one for each combination of input variables. If the gene is constant, the function is -1.</p>
+</dd>
+<dt>expression</dt>
+<dd>
+<p>A string representation of the underlying Boolean expression</p>
+</dd>
+<dt>probability</dt>
+<dd>
+<p>The probability that the corresponding transition function is chosen</p>
+</dd>	  
+</dl>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>fixed</code></td>
+<td>
+<p>A vector specifying which genes are knocked-out or over-expressed. For each gene, there is one element which is set to 0 if the gene is knocked-out, to 1 if the gene is over-expressed, and to -1 if the gene is not fixed at all, i. e. can change its value according to the supplied transition function. You can knock-out and over-express genes using <code>fixGenes</code>.</p>
+</td>
+</tr>
+</table>
+<p>If <code>symbolic=TRUE</code>, a structure of class <code>SymbolicBooleanNetwork</code> that represents the network as expression trees is returned. It has the following components:
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>genes</code></td>
+<td>
+<p>A vector of gene names involved in the network. This list determines the indices of genes in inputs of functions or in state bit vectors.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>interactions</code></td>
+<td>
+<p>A list with <code>length(genes)</code> elements, where the i-th element describes the transition function for the i-th gene in a symbolic representation. Each such element is a list that represents a recursive expression tree, possibly consisting of sub-elements (operands) that are expression trees themselves. Each element in an expression tree can be a Boolean/temporal operator, a literal ("atom") or a numeric constant.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>internalStructs</code></td>
+<td>
+<p>A pointer referencing an internal representation of the expression trees as raw C objects. This is used for simulations and must be set to NULL if <code>interactions</code> are changed to force a refreshment.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>timeDelays</code></td>
+<td>
+<p>An integer vector storing the temporal memory sizes required for each of the genes in the network. That is, the vector stores the minimum number of predecessor states of each gene that need to be saved to determine the successor state of the network.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>fixed</code></td>
+<td>
+<p>A vector specifying which genes are knocked-out or over-expressed. For each gene, there is one element which is set to 0 if the gene is knocked-out, to 1 if the gene is over-expressed, and to -1 if the gene is not fixed at all, i. e. can change its value according to the supplied transition function. Constant genes are automatically set to fixed values.</p>
+</td>
+</tr>
+</table>
+<h3>See Also</h3>
+
+<p><code>getAttractors</code>, <code>simulateSymbolicModel</code>, <code>markovSimulation</code>, <code>stateTransition</code>, <code>fixGenes</code>, <code>loadSBML</code>, <code>loadBioTapestry</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## Not run: 
+# write example network to file
+fil &lt;- tempfile(pattern = "testNet")
+sink(fil)
+cat("targets, factors\n")
+cat("Gene1, !Gene2 | !Gene3\n")
+cat("Gene2, Gene3 &amp; Gene4\n")
+cat("Gene3, Gene2 &amp; !Gene1\n")
+cat("Gene4, 1\n")
+sink()
+
+# read file
+net &lt;- loadNetwork(fil)
+print(net)
+
+## End(Not run)
+</code></pre>
+
+
+</div>

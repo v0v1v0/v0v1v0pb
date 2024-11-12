@@ -1,0 +1,252 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>mc.wbart.gse</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Global SE variable selection for BART with parallel computation</h2>
+
+<h3>Description</h3>
+
+<p>Here we implement the global SE method for variable selection in
+nonparametric survival analysis with BART.  Unfortunately, the method is
+very computationally intensive so we present some trade-offs below. </p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">mc.wbart.gse( x.train, y.train,
+              P=50L, R=5L, ntree=20L, numcut=100L, C=1, alpha=0.05,
+              k=2.0, power=2.0, base=0.95,
+              ndpost=2000L, nskip=100L,
+              printevery=100L, keepevery=1L, keeptrainfits=FALSE,
+              seed=99L, mc.cores=2L, nice=19L 
+              )
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>x.train</code></td>
+<td>
+<p> Explanatory variables for training (in sample)
+data.<br> Must be a matrix with (as usual) rows corresponding to
+observations and columns to variables.<br><code>surv.bart</code> will generate
+draws of <code class="reqn">f(t, x)</code> for each <code class="reqn">x</code> which is a row of x.train.  </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>y.train</code></td>
+<td>
+
+<p>The continuous outcome.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>P</code></td>
+<td>
+
+<p>The number of permutations: typically 50 or 100.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>R</code></td>
+<td>
+
+<p>The number of replicates: typically 5 or 10.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ntree</code></td>
+<td>
+
+<p>The number of trees.  In variable selection,
+the number of trees is smaller than what might
+be used for the best fit.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>numcut</code></td>
+<td>
+
+<p>The number of possible values of c (see usequants).
+If a single number if given, this is used for all variables.
+Otherwise a vector with length equal to ncol(x.train) is required,
+where the <code class="reqn">i^{th}</code> element gives the number of c used for
+the <code class="reqn">i^{th}</code> variable in x.train.
+If usequants is false, numcut equally spaced cutoffs
+are used covering the range of values in the corresponding
+column of x.train.  If usequants is true, then  min(numcut, the number of unique values in the
+corresponding columns of x.train - 1) c values are used.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>C</code></td>
+<td>
+
+<p>The starting value for the multiple of SE.  You should not need to
+change this except in rare circumstances.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>alpha</code></td>
+<td>
+
+<p>The global SE method relies on simultaneous 1-<code>alpha</code> coverage
+across the permutations for all predictor variables.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>k</code></td>
+<td>
+
+<p>k is the number of prior standard deviations <code class="reqn">f(t, x)</code> is away from +/-3.
+The bigger k is, the more conservative the fitting will be.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>power</code></td>
+<td>
+
+<p>Power parameter for tree prior.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>base</code></td>
+<td>
+
+<p>Base parameter for tree prior.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ndpost</code></td>
+<td>
+
+<p>The number of posterior draws after burn in.  In the global SE
+method, generally, the method is repeated several times to
+establish the variable count probabilities.  However, we take the
+alternative approach of simply running the MCMC chain longer which
+should result in the same stabilization of the estimates.  Therefore,
+the number of posterior draws in variable selection should be set to a larger value than
+would be typically anticipated for fitting. 
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nskip</code></td>
+<td>
+
+<p>Number of MCMC iterations to be treated as burn in.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>printevery</code></td>
+<td>
+
+<p>As the MCMC runs, a message is printed every printevery draws.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>keepevery</code></td>
+<td>
+
+<p>Every <code>keepevery</code> draw is kept.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>keeptrainfits</code></td>
+<td>
+
+<p>If <code>TRUE</code> the draws of <code class="reqn">f(t, x)</code> for <code class="reqn">x</code> = rows of
+x.train are generated.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>seed</code></td>
+<td>
+
+<p><code>seed</code> required for reproducible MCMC.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>mc.cores</code></td>
+<td>
+
+<p>Number of cores to employ in parallel.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nice</code></td>
+<td>
+
+<p>Set the job priority.  The default
+priority is 19: priorities go from 0 (highest) to 19 (lowest).
+</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p><code>mc.wbart.gse</code> returns a list.
+</p>
+
+
+<h3>References</h3>
+
+<p>Bleich, J., Kapelner, A., George, E.I., and Jensen, S.T. (2014).
+Variable selection for BART: an application to gene regulation.
+<em>The Annals of Applied Statistics</em>, <b>8:1750-81</b>.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>mc.wbart</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## Not run: 
+
+library(ElemStatLearn)
+
+data(phoneme)
+
+x.train &lt;- matrix(NA, nrow=4509, ncol=257)
+    
+dimnames(x.train)[[2]] &lt;- c(paste0('x.', 1:256), 'speaker')
+    
+x.train[ , 257] &lt;- as.numeric(phoneme$speaker)
+
+for(j in 1:256) x.train[ , j] &lt;- as.numeric(phoneme[ , paste0('x.', j)])
+
+gse &lt;- mc.wbart.gse(x.train, as.numeric(phoneme$g), mc.cores=5, seed=99)
+
+## important variables
+dimnames(x.train)[[2]][gse$which]
+    
+
+## End(Not run)
+</code></pre>
+
+
+</div>

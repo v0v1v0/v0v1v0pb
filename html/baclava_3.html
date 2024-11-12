@@ -1,0 +1,188 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>cohortODX</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Cohort-specific Overdiagnosis</h2>
+
+<h3>Description</h3>
+
+<p>Estimates the overall and screening specific overdiagnosis probability
+for the cohort of the original analysis.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">cohortODX(
+  object,
+  data.clinical,
+  data.assess,
+  other.cause.rates = NULL,
+  plot = TRUE
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>object</code></td>
+<td>
+<p>A 'baclava' object. The value object returned by fit_baclava().</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>data.clinical</code></td>
+<td>
+<p>A data.frame object. The clinical data. The data must
+be structured as
+</p>
+
+<ul>
+<li> <p><code>id</code>: A character, numeric, or integer object. The unique participant
+id to which the record pertains. Note these must include those provided in
+<code>data.assess</code>. Must be only 1 record for each participant.
+</p>
+</li>
+<li> <p><code>age_entry</code>: A numeric object. The age at time of entry into the study.
+Note that this data is used to calculate a normalization; to expedite
+numerical integration, it is recommended that the ages be rounded.
+Optional input <code>round.age.entry</code> can be
+set to FALSE if this approximation is not desired; however, the
+computation time will significantly increase.
+</p>
+</li>
+<li> <p><code>endpoint_type</code>: A character object. Must be one of {"clinical",
+"censored", "preclinical"}. Type "clinical" indicates that disease
+was diagnosed in the clinical compartment (i.e., symptomatic). Type
+"preclinical" indicates that disease was diagnosed in the preclinical
+compartment (i.e., during an assessment). Type
+"censored" indicates disease was not diagnosed prior to end of study.
+</p>
+</li>
+<li> <p><code>age_endpoint</code>: A numeric object. The participant's age at the
+time the endpoint was evaluated.
+</p>
+</li>
+</ul>
+<p>If the sensitivity parameter (beta) is arm-specific, an additional
+column <code>arm</code> is required indicating the study arm to which each
+participant is assigned. Similarly, if the preclinical Weibull distribution is
+group-specific, an additional column <code>grp.rateP</code> is required. See Details
+for further information.
+This input should be identical to that provided to obtain <code>object</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>data.assess</code></td>
+<td>
+<p>A data.frame object. Disease status assessments recorded
+during healthy or preclinical compartment, e.g., screenings for disease.
+The data must be structured as
+</p>
+
+<ul>
+<li> <p><code>id</code>: A character, numeric, or integer object. The unique participant
+id to which the record pertains. Multiple records for each id are allowed.
+</p>
+</li>
+<li> <p><code>age_assess</code>: A numeric object. The participant's age at time of
+assessment.
+</p>
+</li>
+<li> <p><code>disease_detected</code>: An integer object. Must be binary 0/1, where
+1 indicates that disease was detected at the assessment; 0 otherwise.
+</p>
+</li>
+</ul>
+<p>If the sensitivity parameter (beta) is screen-specific, an additional
+column <code>screen_type</code> is required indicating the type of each
+screen.
+This input should be identical to that provided to obtain <code>object</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>other.cause.rates</code></td>
+<td>
+<p>A data.frame object. Age specific incidence rates
+that do not include the disease of interest. Must contain columns "Rate"
+and "Age".</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>plot</code></td>
+<td>
+<p>A logical object. If TRUE, generates a boxplot of the overdiagnosis
+probability for each individual as a function of the screen at which
+disease was detected. Includes only the consecutive screens for which more
+than 1% of the screen detected cases were detected.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>A list object. 
+</p>
+
+<ul>
+<li> <p><code>all</code> An n x S matrix containing the estimated overdiagnosis
+probability for each individual (n) and each posterior parameter set (S).
+</p>
+</li>
+<li> <p><code>mean.individual</code> A vector containing the mean across S of
+the estimated overdiagnosis for each individual, i.e., <code>rowMeans(all)</code>.
+</p>
+</li>
+<li> <p><code>mean.overall</code> A numeric, the mean overdiagnosis
+probability across all posterior parameter sets and screen-detected cases, 
+i.e., <code>mean(all)</code>. 
+</p>
+</li>
+<li> <p><code>summary.by.screen</code> A matrix containing the summary statistics of 
+<code>mean.individual</code> for the individuals detected positive at
+each screen, i.e., <code>summary(mean.individual[diagnosis_screen_id == i])</code>. 
+</p>
+</li>
+</ul>
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+data(screen_data)
+
+theta_0 &lt;- list("rate_H" = 7e-4, "shape_H" = 2.0,
+                "rate_P" = 0.5  , "shape_P" = 1.0,
+                "beta" = 0.9, psi = 0.4)
+prior &lt;- list("rate_H" = 0.01, "shape_H" = 1,
+              "rate_P" = 0.01, "shape_P" = 1,
+              "a_psi" = 1/2 , "b_psi" = 1/2,
+              "a_beta" = 38.5, "b_beta" = 5.8)
+
+# This is for illustration only -- the number of Gibbs samples should be
+# significantly larger and the epsilon values should be tuned.
+example &lt;- fit_baclava(data.assess = data.screen,
+                       data.clinical = data.clinical,
+                       t0 = 30.0,
+                       theta_0 = theta_0,
+                       prior = prior,
+                       save.latent = TRUE)
+
+# if rates are not available, an all cause dataset is provided in the package
+# NOTE: these predictions will be over-estimated
+
+data(all_cause_rates)
+all_cause_rates &lt;- all_cause_rates[, c("Age", "both")]
+colnames(all_cause_rates) &lt;- c("Age", "Rate")
+
+cohort_odx &lt;- cohortODX(object = example,
+                        data.clinical = data.clinical,
+                        data.assess = data.screen,
+                        other.cause.rates = all_cause_rates,
+                        plot = FALSE)
+
+</code></pre>
+
+
+</div>

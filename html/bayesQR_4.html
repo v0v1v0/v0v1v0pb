@@ -1,0 +1,113 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>predict.bayesQR</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2> Calculate predicted probabilities for binary quantile regression </h2>
+
+<h3>Description</h3>
+
+<p><code>predict.bayesQR</code> is an S3 method that calculates predicted probabilities for binary quantile regression, both with or without adaptive lasso.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">  ## S3 method for class 'bayesQR'
+predict(object, X, burnin=0, ...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>object</code></td>
+<td>
+<p> an output object of the <code>bayesQR</code> function, S3 class bayesQR, with binary dependent variable, with or without adaptive lasso. At leas 9 estimated quantiles are required. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>X</code></td>
+<td>
+<p> matrix of predictors (should be of the same type as the variables used to estimate the model). </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>burnin</code></td>
+<td>
+<p> the number of burnin draws that should be discared (default=0, meaning all draws are included). </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p> additional parameters passed to the generic <code>predict</code> function. </p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p><code>predict.bayesQR</code> is an S3 method that calculates the predicted probabilities based on a matrix of predictors <em>X</em> and an object containing the parameter estimates of a sequence of binary quantile regressions.
+The rationale behind the approach is described in Kordas (2006) and applied in Migueis, V.L., Benoit, D.F. and Van den Poel, D. (2012).
+Note that the more quantiles are estimated, the more fine-grained the predicted probabilities will be. 
+</p>
+
+
+<h3>Value</h3>
+
+<p>A vector containing the predicted probabilities.
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Dries F. Benoit
+</p>
+
+
+<h3>References</h3>
+
+<p>Kordas, G. (2006). Binary regression quantiles, <em>Journal of Applied Econometrics</em>, <b>21</b>(3), 387-407.
+<br><br>
+Migueis, V.L., Benoit, D.F. and Van den Poel, D. (2012). Enhanced decision support in credit scoring using Bayesian binary quantile regression, <em>Journal of the Operational Research Society</em>, (<em>in press</em>).
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R"># Simulate data from binary regression model
+set.seed(1234)
+n &lt;- 200
+X &lt;- matrix(runif(n=n*2, min=-5, max=5),ncol=2)
+ystar &lt;- cbind(1,X)%*% c(1,1.5,-.5) + rnorm(n=n, mean=0, sd=abs(2*X[,1]))
+y &lt;- as.numeric(ystar&gt;0)
+
+# Estimate a sequence of binary quantile regression models
+# NOTE: to limit execution time of the example, ndraw is set
+#       to a very low value. Set value to 4000 for a better
+#       approximation of the posterior distirubtion.
+out &lt;- bayesQR(y ~ X, quantile=seq(.1,.9,.1), ndraw=400)
+
+# Calculate predicted probabilities
+pred &lt;- predict(object=out, X=cbind(1,X), burnin=20)
+
+# Make histogram of predicted probabilities 
+hist(pred,breaks=10)
+
+# Calculate Percentage Correclty Classified (PCC)
+mean(y==as.numeric(pred&gt;.5))
+
+# Compare with logit model
+mylogit &lt;- glm(y ~ X, family=binomial(logit))
+
+# Make histogram of predicted probabilities 
+hist(mylogit$fit,breaks=10)
+
+# Calculate Percentage Correclty Classified (PCC)
+mean(y==as.numeric(mylogit$fit&gt;.5))
+</code></pre>
+
+
+</div>

@@ -1,0 +1,113 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>axe-coxph</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Axing a coxph.</h2>
+
+<h3>Description</h3>
+
+<p>Axing a coxph.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">## S3 method for class 'coxph'
+axe_env(x, verbose = FALSE, ...)
+
+## S3 method for class 'coxph'
+axe_data(x, verbose = FALSE, ...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>A model object.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>verbose</code></td>
+<td>
+<p>Print information each time an axe method is executed.
+Notes how much memory is released and what functions are
+disabled. Default is <code>FALSE</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Any additional arguments related to axing.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The <code>survival::coxph()</code> model is unique in how it uses environments in
+its components, and butchering such an object can behave in surprising ways
+in any environment other than the
+<a href="https://adv-r.hadley.nz/environments.html#important-environments">global environment</a>
+(such as when wrapped in a function). We do not recommend that you use
+<code>butcher()</code> with a <code>coxph</code> object anywhere other than the global environment.
+</p>
+<p>Do this:
+</p>
+<div class="sourceCode r"><pre>my_coxph_func &lt;- function(df) {
+    coxph(Surv(time, status) ~ x + strata(covar), df)
+}
+## in global environment only:
+butcher(my_coxph_func(df))
+</pre></div>
+<p>Do <em>not</em> do this:
+</p>
+<div class="sourceCode r"><pre>my_coxph_func &lt;- function(df) {
+    res &lt;- coxph(Surv(time, status) ~ x + strata(covar), df)
+    ## no:
+    butcher(res)
+}
+
+## will not work correctly:
+my_coxph_func(df)
+</pre></div>
+
+
+<h3>Value</h3>
+
+<p>Axed coxph object.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+library(survival)
+
+example_data &lt;-
+  tibble::tibble(
+    time = rpois(1000, 2) + 1,
+    status = rbinom(1000, 1, .5),
+    x = rpois(1000, .5),
+    covar = rbinom(1000, 1, .5)
+  )
+
+example_data
+
+make_big_model &lt;- function() {
+  boop &lt;- runif(1e6)
+  coxph(Surv(time, status) ~ x + strata(covar), example_data)
+}
+
+res &lt;- make_big_model()
+
+weigh(res)
+weigh(butcher(res))
+
+</code></pre>
+
+
+</div>

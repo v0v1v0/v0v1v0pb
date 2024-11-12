@@ -1,0 +1,199 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>lavaan_summary</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Tidy report of lavaan model.</h2>
+
+<h3>Description</h3>
+
+<p>Tidy report of lavaan model.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">lavaan_summary(
+  lavaan,
+  ci = c("raw", "boot", "bc.boot", "bca.boot"),
+  nsim = 100,
+  seed = NULL,
+  digits = 3,
+  print = TRUE,
+  covariance = FALSE,
+  file = NULL
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>lavaan</code></td>
+<td>
+<p>Model object fitted by <code>lavaan</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ci</code></td>
+<td>
+<p>Method for estimating standard error (SE) and
+95% confidence interval (CI).
+</p>
+<p>Defaults to <code>"raw"</code> (the standard approach of <code>lavaan</code>).
+Other options:
+</p>
+
+<dl>
+<dt><code>"boot"</code></dt>
+<dd>
+<p>Percentile Bootstrap</p>
+</dd>
+<dt><code>"bc.boot"</code></dt>
+<dd>
+<p>Bias-Corrected Percentile Bootstrap</p>
+</dd>
+<dt><code>"bca.boot"</code></dt>
+<dd>
+<p>Bias-Corrected and Accelerated (BCa) Percentile Bootstrap</p>
+</dd>
+</dl>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nsim</code></td>
+<td>
+<p>Number of simulation samples (bootstrap resampling)
+for estimating SE and 95% CI.
+In formal analyses, <strong><code>nsim=1000</code> (or larger)</strong> is strongly suggested.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>seed</code></td>
+<td>
+<p>Random seed for obtaining reproducible results. Defaults to <code>NULL</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>digits</code></td>
+<td>
+<p>Number of decimal places of output. Defaults to <code>3</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>print</code></td>
+<td>
+<p>Print results. Defaults to <code>TRUE</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>covariance</code></td>
+<td>
+<p>Print (co)variances. Defaults to <code>FALSE</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>file</code></td>
+<td>
+<p>File name of MS Word (<code>.doc</code>).</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>Invisibly return a list of results:
+</p>
+
+<dl>
+<dt><code>fit</code></dt>
+<dd>
+<p>Model fit indices.</p>
+</dd>
+<dt><code>measure</code></dt>
+<dd>
+<p>Latent variable measures.</p>
+</dd>
+<dt><code>regression</code></dt>
+<dd>
+<p>Regression paths.</p>
+</dd>
+<dt><code>covariance</code></dt>
+<dd>
+<p>Variances and/or covariances.</p>
+</dd>
+<dt><code>effect</code></dt>
+<dd>
+<p>Defined effect estimates.</p>
+</dd>
+</dl>
+<h3>See Also</h3>
+
+<p><code>PROCESS</code>, <code>CFA</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## Simple Mediation:
+## Solar.R (X) =&gt; Ozone (M) =&gt; Temp (Y)
+
+# PROCESS(airquality, y="Temp", x="Solar.R",
+#         meds="Ozone", ci="boot", nsim=1000, seed=1)
+
+model = "
+Ozone ~ a*Solar.R
+Temp ~ c.*Solar.R + b*Ozone
+Indirect := a*b
+Direct := c.
+Total := c. + a*b
+"
+lv = lavaan::sem(model=model, data=airquality)
+lavaan::summary(lv, fit.measure=TRUE, ci=TRUE, nd=3)  # raw output
+lavaan_summary(lv)
+# lavaan_summary(lv, ci="boot", nsim=1000, seed=1)
+
+
+## Serial Multiple Mediation:
+## Solar.R (X) =&gt; Ozone (M1) =&gt; Wind(M2) =&gt; Temp (Y)
+
+# PROCESS(airquality, y="Temp", x="Solar.R",
+#         meds=c("Ozone", "Wind"),
+#         med.type="serial", ci="boot", nsim=1000, seed=1)
+
+model0 = "
+Ozone ~ a1*Solar.R
+Wind ~ a2*Solar.R + d12*Ozone
+Temp ~ c.*Solar.R + b1*Ozone + b2*Wind
+Indirect_All := a1*b1 + a2*b2 + a1*d12*b2
+Ind_X_M1_Y := a1*b1
+Ind_X_M2_Y := a2*b2
+Ind_X_M1_M2_Y := a1*d12*b2
+Direct := c.
+Total := c. + a1*b1 + a2*b2 + a1*d12*b2
+"
+lv0 = lavaan::sem(model=model0, data=airquality)
+lavaan::summary(lv0, fit.measure=TRUE, ci=TRUE, nd=3)  # raw output
+lavaan_summary(lv0)
+# lavaan_summary(lv0, ci="boot", nsim=1000, seed=1)
+
+model1 = "
+Ozone ~ a1*Solar.R
+Wind ~ d12*Ozone
+Temp ~ c.*Solar.R + b1*Ozone + b2*Wind
+Indirect_All := a1*b1 + a1*d12*b2
+Ind_X_M1_Y := a1*b1
+Ind_X_M1_M2_Y := a1*d12*b2
+Direct := c.
+Total := c. + a1*b1 + a1*d12*b2
+"
+lv1 = lavaan::sem(model=model1, data=airquality)
+lavaan::summary(lv1, fit.measure=TRUE, ci=TRUE, nd=3)  # raw output
+lavaan_summary(lv1)
+# lavaan_summary(lv1, ci="boot", nsim=1000, seed=1)
+
+</code></pre>
+
+
+</div>

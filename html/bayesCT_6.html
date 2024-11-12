@@ -1,0 +1,272 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>binomial_analysis</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Analyzing Bayesian trial for binomial counts</h2>
+
+<h3>Description</h3>
+
+<p>Function to analyze Bayesian trial for binomial count data
+which allows early stopping and incorporation of historical data using
+the discount function approach
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">binomial_analysis(
+  treatment,
+  outcome,
+  complete = NULL,
+  y0_treatment = NULL,
+  N0_treatment = NULL,
+  y0_control = NULL,
+  N0_control = NULL,
+  alternative = "greater",
+  N_impute = 10,
+  h0 = 0,
+  number_mcmc = 10000,
+  prob_ha = 0.95,
+  futility_prob = 0.1,
+  expected_success_prob = 0.9,
+  prior = c(1, 1),
+  discount_function = "identity",
+  fix_alpha = FALSE,
+  alpha_max = 1,
+  weibull_scale = 0.135,
+  weibull_shape = 3,
+  method = "fixed"
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>treatment</code></td>
+<td>
+<p>vector. treatment assignment for patients, 1 for treatment group and
+0 for control group</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>outcome</code></td>
+<td>
+<p>vector. binomial outcome of the trial, 1 for response (success or
+failure), 0 for no response.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>complete</code></td>
+<td>
+<p>vector. similar length as treatment and outcome variable,
+1 for complete outcome, 0 for loss to follow up. If complete is not provided,
+the dataset is assumed to be complete.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>y0_treatment</code></td>
+<td>
+<p>scalar. Number of events for the historical treatment
+arm.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>N0_treatment</code></td>
+<td>
+<p>scalar. Number of observations of the historical treatment group.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>y0_control</code></td>
+<td>
+<p>scalar. Number of events for the historical control arm.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>N0_control</code></td>
+<td>
+<p>scalar. Number of observations of the historical control group.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>alternative</code></td>
+<td>
+<p>character. The string specifying the alternative
+hypothesis, must be one of <code>"greater"</code> (default), <code>"less"</code> or
+<code>"two.sided"</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>N_impute</code></td>
+<td>
+<p>scalar. Number of imputations for Monte Carlo simulation of
+missing data.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>h0</code></td>
+<td>
+<p>scalar. Threshold for comparing two mean values. Default is
+<code>h0=0</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>number_mcmc</code></td>
+<td>
+<p>scalar. Number of Monte Carlo Markov Chain draws in
+sampling posterior.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>prob_ha</code></td>
+<td>
+<p>scalar. Probability of alternative hypothesis.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>futility_prob</code></td>
+<td>
+<p>scalar. Probability of stopping early for futility.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>expected_success_prob</code></td>
+<td>
+<p>scalar. Probability of stopping early for success.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>prior</code></td>
+<td>
+<p>vector. Prior values of beta rate, Beta(a0, b0). The default is
+set to Beta(1, 1).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>discount_function</code></td>
+<td>
+<p>character. If incorporating historical data, specify
+the discount function. Currently supports the Weibull function
+(<code>discount_function="weibull"</code>), the scaled-Weibull function
+(<code>discount_function="scaledweibull"</code>), and the identity function
+(<code>discount_function="identity"</code>). The scaled-Weibull discount function
+scales the output of the Weibull CDF to have a max value of 1. The identity
+discount function uses the posterior probability directly as the discount
+weight. Default value is <code>"identity"</code>. See <code>bdpnormal</code> for
+more details.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>fix_alpha</code></td>
+<td>
+<p>logical. Fix alpha at alpha_max? Default value is FALSE.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>alpha_max</code></td>
+<td>
+<p>scalar. Maximum weight the discount function can apply.
+Default is 1. For a two-arm trial, users may specify a vector of two values
+where the first value is used to weight the historical treatment group and
+the second value is used to weight the historical control group.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>weibull_scale</code></td>
+<td>
+<p>scalar. Scale parameter of the Weibull discount function
+used to compute alpha, the weight parameter of the historical data. Default
+value is 0.135. For a two-arm trial, users may specify a vector of two
+values where the first value is used to estimate the weight of the
+historical treatment group and the second value is used to estimate the
+weight of the historical control group. Not used when discount_function =
+"identity".</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>weibull_shape</code></td>
+<td>
+<p>scalar. Shape parameter of the Weibull discount function
+used to compute alpha, the weight parameter of the historical data. Default
+value is 3. For a two-arm trial, users may specify a vector of two values
+where the first value is used to estimate the weight of the historical
+treatment group and the second value is used to estimate the weight of the
+historical control group. Not used when discount_function = "identity".</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>method</code></td>
+<td>
+<p>character. Analysis method with respect to estimation of the weight
+paramter alpha. Default method "<code>mc</code>" estimates alpha for each
+Monte Carlo iteration. Alternate value "<code>fixed</code>" estimates alpha once
+and holds it fixed throughout the analysis.  See the the
+<code>bdpsurvival</code> vignette <br><code>vignette("bdpsurvival-vignette", package="bayesDP")</code> for more details.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>a list of output for the Bayesian trial for binomial count.
+</p>
+
+<dl>
+<dt><code>prob_of_accepting_alternative</code></dt>
+<dd>
+<p>scalar. The input parameter of probability of accepting the alternative.</p>
+</dd>
+<dt><code>margin</code></dt>
+<dd>
+<p>scalar. The margin input value of difference between mean estimate of treatment
+and mean estimate of the control.</p>
+</dd>
+<dt><code>alternative</code></dt>
+<dd>
+<p>character. The input parameter of alternative hypothesis. </p>
+</dd>
+<dt><code>N_treatment</code></dt>
+<dd>
+<p>scalar. The number of patients enrolled in the experimental group for
+each simulation.</p>
+</dd>
+<dt><code>N_control</code></dt>
+<dd>
+<p>scalar. The number of patients enrolled in the control group for
+each simulation.</p>
+</dd>
+<dt><code>N_enrolled</code></dt>
+<dd>
+<p>vector. The number of patients enrolled in the trial (sum of control
+and experimental group for each simulation. )</p>
+</dd>
+<dt><code>N_complete</code></dt>
+<dd>
+<p>scalar. The number of patients who completed the trial and had no
+loss to follow-up.</p>
+</dd>
+<dt><code>post_prob_accept_alternative</code></dt>
+<dd>
+<p>vector. The final probability of accepting the alternative
+hypothesis after the analysis is done.</p>
+</dd>
+<dt><code>est_final</code></dt>
+<dd>
+<p>scalar. The final estimate of the difference in posterior estimate of
+treatment and posterior estimate of the control group.</p>
+</dd>
+<dt><code>stop_futility</code></dt>
+<dd>
+<p>scalar. Did the trial stop for futility during imputation of patient
+who had loss to follow up? 1 for yes and 0 for no.</p>
+</dd>
+<dt><code>stop_expected_success</code></dt>
+<dd>
+<p>scalar. Did the trial stop for early success during imputation of patient
+who had loss to follow up? 1 for yes and 0 for no.</p>
+</dd>
+</dl>
+</div>

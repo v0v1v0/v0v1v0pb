@@ -1,0 +1,390 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>optRandomParC</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Optimizing a set of partitions based on the value of a criterion function</h2>
+
+<h3>Description</h3>
+
+<p>The function optimizes a set of partitions based on the value of a criterion function  (see <code>critFunC</code> for details on the criterion function) for a given network and blockmodel for Generalized blockmodeling (Žiberna, 2007) based on other parameters (see below).
+The optimization is done through local optimization, where the neighborhood of a partition includes all partitions that can be obtained by moving one unit from one cluster to another or by exchanging two units (from different clusters).
+The number of clusters and a number of partitions to generate can be specified (<code>optParC</code>).
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">optRandomParC(
+  M,
+  k,
+  approaches,
+  blocks,
+  rep,
+  save.initial.param = TRUE,
+  save.initial.param.opt = FALSE,
+  deleteMs = TRUE,
+  max.iden = 10,
+  switch.names = NULL,
+  return.all = FALSE,
+  return.err = TRUE,
+  seed = NULL,
+  RandomSeed = NULL,
+  parGenFun = genRandomPar,
+  mingr = NULL,
+  maxgr = NULL,
+  addParam = list(genPajekPar = TRUE, probGenMech = NULL),
+  maxTriesToFindNewPar = rep * 10,
+  skip.par = NULL,
+  useOptParMultiC = FALSE,
+  useMulti = useOptParMultiC,
+  printRep = ifelse(rep &lt;= 10, 1, round(rep/10)),
+  n = NULL,
+  nCores = 1,
+  useParLapply = FALSE,
+  useLB = NULL,
+  chunk.size = 1,
+  cl = NULL,
+  stopcl = is.null(cl),
+  useRegParrallaBackend = FALSE,
+  ...
+)
+
+## S3 method for class 'optMorePar'
+print(x, ...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>M</code></td>
+<td>
+<p>A matrix representing the (usually valued) network. For multi-relational networks, this should be an array with the third dimension representing the relation. The network can have one or more modes (diferent kinds of units with no ties among themselves). If the network is not two-mode, the matrix must be square.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>k</code></td>
+<td>
+<p>The number of clusters used in the generation of partitions.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>approaches</code></td>
+<td>
+<p>One of the approaches (for each relation in multi-relational netowrks in a vector) described in Žiberna (2007). Possible values are:<br>
+"bin" - binary blockmodeling,<br>
+"val" - valued blockmodeling,<br>
+"hom" - homogeneity blockmodeling,<br>
+"ss" - sum of squares homogeneity blockmodeling, and<br>
+"ad" - absolute deviations homogeneity blockmodeling.<br><br>
+The last two options are "shorthand" for specifying <code>approaches="hom"</code> and  <code>homFun</code> to either <code>"ss"</code> or  <code>"ad"</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>blocks</code></td>
+<td>
+<p>A vector, a list of vectors or an array with names of allowed blocy types. <br><br>
+Only listing of allowed block types (blockmodel is not pre-specified).<br>
+A vector with names of allowed block types. For multi-relational networks, it can be a list of such vectors. For <code>approaches = "bin"</code> or <code>approaches = "val"</code>, at least two should be selected. Possible values are:<br><code>"nul"</code> - null or empty block<br><code>"com"</code> - complete block<br><code>"rdo"</code>, <code>"cdo"</code> - row and column-dominant blocks (binary and valued approach only)<br><code>"reg"</code> - (f-)regular block<br><code>"rre"</code>, <code>"cre"</code> - row and column-(f-)regular blocks<br><code>"rfn"</code>, <code>"cfn"</code> - row and column-dominant blocks (binary, valued only)<br><code>"den"</code> - density block (binary approach only)<br><code>"avg"</code> - average block (valued approach only)<br><code>"dnc"</code> - do not care block - the error is always zero<br>
+The ordering is important, since if several block types have identical error, the first on the list is selected.<br><br>
+A pre-specified blockmodel.<br>
+An array with four dimensions (see example below). The third and the fourth represent the clusters (for rows and columns). The first is as long as the maximum number of allows block types for a given block. If some block has less possible block types, the empty slots should have values <code>NA</code>. The second dimension is the number of relations (1 for single-relational networks). The values in the array should be the ones from above. The array can have only three dimensions in case of one-relational networks or if the same pre-specified blockmodel is assumed for all relations. Further, it can have only two dimensions, if in addition only one block type is allowed per block.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>rep</code></td>
+<td>
+<p>The number of repetitions/different starting partitions to check.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>save.initial.param</code></td>
+<td>
+<p>Should the inital parameters (<code>approaches</code>, ...) be saved. The default value is <code>TRUE</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>save.initial.param.opt</code></td>
+<td>
+<p>Should the inital parameters(<code>approaches</code>, ...) of using <code>optParC</code> be saved. The default value is <code>FALSE</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>deleteMs</code></td>
+<td>
+<p>Delete networks/matrices from the results of to save space.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>max.iden</code></td>
+<td>
+<p>Maximum number of results that should be saved (in case there are more than <code>max.iden</code> results with minimal error, only the first <code>max.iden</code> will be saved).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>switch.names</code></td>
+<td>
+<p>Should partitions that only differ in group names be considered equal. By default it is set to <code>TRUE</code> if <code>blocks</code> is either a vector or a list of vectors and to <code>FALSE</code> otherwise.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>return.all</code></td>
+<td>
+<p>If <code>FALSE</code>, solution for only the best (one or more) partition/s is/are returned.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>return.err</code></td>
+<td>
+<p>Should the error for each optimized partition be returned.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>seed</code></td>
+<td>
+<p>Optional. The seed for random generation of partitions.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>RandomSeed</code></td>
+<td>
+<p>Optional. Integer vector, containing the random number generator. It is only looked for in the user's workspace.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>parGenFun</code></td>
+<td>
+<p>The function (object) that will generate random partitions. The default function is   <code>genRandomPar</code>. The function has to accept the following parameters: <code>k</code> (number o of partitions by modes, <code>n</code> (number of units by modes), <code>seed</code> (seed value for random generation of partition), <code>addParam</code> (a list of additional parameters).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>mingr</code></td>
+<td>
+<p>Minimal allowed group size.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>maxgr</code></td>
+<td>
+<p>Maximal allowed group size.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>addParam</code></td>
+<td>
+<p>A list of additional parameters for function specified above. In the usage section they are specified for the default function <code>genRandomPar</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>maxTriesToFindNewPar</code></td>
+<td>
+<p>The maximum number of partition try when trying to find a new partition to optimize that was not yet checked before - the default value is <code>rep * 1000</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>skip.par</code></td>
+<td>
+<p>The partitions that are not allowed or were already checked and should therefore be skipped.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>useOptParMultiC</code></td>
+<td>
+<p>For backward compatibility. May be removed soon. See next argument.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>useMulti</code></td>
+<td>
+<p>Which version of local search should be used. Default is currently <code>FALSE</code>. If <code>FALSE</code>, first possible all moves in random order and then all possible exchanges in random order are tried. When a move with lower value of criterion function is found, the algorithm moves to this new partition. If <code>TRUE</code> the version of local search where all possible moves and exchanges are tried first and then the one with the lowest error is selected and used. In this case, several optimal partitions are found. <code>maxPar</code> best partitions are returned.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>printRep</code></td>
+<td>
+<p>Should some information about each optimization be printed.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>n</code></td>
+<td>
+<p>The number of units by "modes". It is used only for generating random partitions. It has to be set only if there are more than two modes or if there are two modes, but the matrix representing the network is one mode (both modes are in rows and columns).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nCores</code></td>
+<td>
+<p>Number of cores to be used. Value <code>0</code> means all available cores. It can also be a cluster object.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>useParLapply</code></td>
+<td>
+<p>Should <code>parLapplyLB</code> or <code>parLapply</code> (see <code>useLB</code>) be used for parallel execution (on multiple cores). Otherwise <code>mforeach</code> is used. Defaults to FALSE. If <code>useParLapply = TRUE</code> and <code>useLB = TRUE</code>, results are not reproducible.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>useLB</code></td>
+<td>
+<p>Should be logical if set. Only used if <code>useParLapply = TRUE</code>. Should load balancing be used (<code>parLapplyLB</code> instead of <code>parLapply</code>). Using load balancing usually means faster execution, but results are with not reproducible. Defaults to <code>NULL</code>, which is changed to <code>TRUE</code>, but a warning.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>chunk.size</code></td>
+<td>
+<p>chunk.size used in <code>parLapplyLB</code> if it is used, otherwise ignored. Defaults to 1.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>cl</code></td>
+<td>
+<p>The cluster to use (if formed beforehand). Defaults to <code>NULL</code>. Ignored if useParLapply=FALSE (default) and foreach::getDoParRegistered is true</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>stopcl</code></td>
+<td>
+<p>Should the cluster be stoped after the function finishes. Defaults to <code>is.null(cl)</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>useRegParrallaBackend</code></td>
+<td>
+<p>Should the function use already registered parallel backend. Defaults to <code>FALSE</code>. If <code>TRUE</code>, you must make sure that an appropriate backend is correctly set up and registered. Use only if <code>useParLapply = FALSE</code> (default) and <code>nCore</code> is not 1.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Arguments passed to other functions, see <code>critFunC</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>The result of <code>optRandomParC</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>genPajekPar</code></td>
+<td>
+<p>Should the partitions be generated as in Pajek.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>probGenMech</code></td>
+<td>
+<p>Should the probabilities for different mechanisms for specifying the partitions be set. If <code>probGenMech</code> is not set, it is determined based on the parameter <code>genPajekPar</code>.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>M</code></td>
+<td>
+<p>The matrix of the network analyzed.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>res</code></td>
+<td>
+<p>If <code>return.all = TRUE</code> - A list of results the same as <code>best</code> - one <code>best</code> for each partition optimized.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>best</code></td>
+<td>
+<p>A list of results from <code>optParC</code>, only without <code>M</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>err</code></td>
+<td>
+<p>If <code>return.err = TRUE</code> - The vector of errors or inconsistencies of the empirical  network with the ideal network for a given blockmodel (model,approach,...) and parititions.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nIter</code></td>
+<td>
+<p>The vector of the number of iterations used - one value for each starting partition that was optimized. It can show that <code>maxiter</code> is too low if a lot of these values have the value of <code>maxiter</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>checked.par</code></td>
+<td>
+<p>If selected - A list of checked partitions. If <code>merge.save.skip.par</code> is <code>TRUE</code>, this list also includes the partitions in <code>skip.par</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>call</code></td>
+<td>
+<p>The call used to call the function.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>initial.param</code></td>
+<td>
+<p>If selected - The initial parameters are used.</p>
+</td>
+</tr>
+</table>
+<h3>Warning</h3>
+
+<p>It should be noted that the time complexity of package blockmodeling is increasing with
+the number of units and the number of clusters (due to its algorithm). Therefore the analysis
+of network with more than 100 units can take a lot of time (from a few hours to a few days).
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Aleš, Žiberna
+</p>
+
+
+<h3>References</h3>
+
+<p>Batagelj, V., &amp; Mrvar, A. (2006). Pajek 1.11. Retrieved from http://vlado.fmf.uni-lj.si/pub/networks/pajek/
+</p>
+<p>Doreian, P., Batagelj, V. &amp; Ferligoj, A. (2005). Generalized blockmodeling, (Structural analysis in the social sciences, 25). Cambridge [etc.]: Cambridge University Press.
+</p>
+<p>Žiberna, A. (2007). Generalized Blockmodeling of Valued Networks. Social Networks, 29(1), 105-126. doi: 10.1016/j.socnet.2006.04.002
+</p>
+<p>Žiberna, A. (2008). Direct and indirect approaches to blockmodeling of valued networks in terms of regular equivalence. Journal of Mathematical Sociology, 32(1), 57-84. doi: 10.1080/00222500701790207
+</p>
+<p>Žiberna, A. (2014). Blockmodeling of multilevel networks. Social Networks, 39(1), 46-61. doi: 10.1016/j.socnet.2014.04.002
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>critFunC</code>, <code>IM</code>, <code>clu</code>, <code>err</code>, <code>plot.optMorePar</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">n &lt;- 8 # If larger, the number of partitions increases dramatically
+# as does if we increase the number of clusters
+net &lt;- matrix(NA, ncol = n, nrow = n)
+clu &lt;- rep(1:2, times = c(3, 5))
+tclu &lt;- table(clu)
+net[clu == 1, clu == 1] &lt;- rnorm(n = tclu[1] * tclu[1], mean = 0, sd = 1)
+net[clu == 1, clu == 2] &lt;- rnorm(n = tclu[1] * tclu[2], mean = 4, sd = 1)
+net[clu == 2, clu == 1] &lt;- rnorm(n = tclu[2] * tclu[1], mean = 0, sd = 1)
+net[clu == 2, clu == 2] &lt;- rnorm(n = tclu[2] * tclu[2], mean = 0, sd = 1)
+
+# Optimizing 10 random chosen partitions with optRandomParC
+res &lt;- optRandomParC(M = net, k = 2, rep = 10,
+approaches = "hom", homFun = "ss", blocks = "com")
+plot(res) # Hopefully we get the original partition
+
+</code></pre>
+
+
+</div>

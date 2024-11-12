@@ -1,0 +1,151 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>rvmsin</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>The bivariate von Mises sine model</h2>
+
+<h3>Description</h3>
+
+<p>The bivariate von Mises sine model
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">rvmsin(
+  n,
+  kappa1 = 1,
+  kappa2 = 1,
+  kappa3 = 0,
+  mu1 = 0,
+  mu2 = 0,
+  method = "naive"
+)
+
+dvmsin(x, kappa1 = 1, kappa2 = 1, kappa3 = 0, mu1 = 0, mu2 = 0, log = FALSE)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>n</code></td>
+<td>
+<p>number of observations. Ignored if at least one of the other parameters have length k &gt; 1, in which
+case, all the parameters are recycled to length k to produce k random variates.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>kappa1, kappa2, kappa3</code></td>
+<td>
+<p>vectors of concentration parameters; <code>kappa1, kappa2 &gt; 0</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>mu1, mu2</code></td>
+<td>
+<p>vectors of mean parameters.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>method</code></td>
+<td>
+<p>Rejection sampling method to be used. Available choices are <code>"naive"</code> (default) or <code>"vmprop"</code>. See details.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>bivariate vector  or a two-column matrix with each row being a bivariate vector of angles
+(in radians)  where the densities are to be evaluated.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>log</code></td>
+<td>
+<p>logical. Should the log density be returned instead?</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The bivariate von Mises sine model density at the point <code class="reqn">x = (x_1, x_2)</code> is given by
+</p>
+<p style="text-align: center;"><code class="reqn">f(x) = C_s (\kappa_1, \kappa_2, \kappa_3) \exp(\kappa_1 \cos(T_1) + \kappa_2 \cos(T_2) + \kappa_3 \sin(T_1) \sin(T_2))</code>
+</p>
+
+<p>where
+</p>
+<p style="text-align: center;"><code class="reqn">T_1 = x_1 - \mu_1;  T_2 = x_2 - \mu_2</code>
+</p>
+
+<p>and <code class="reqn">C_s (\kappa_1, \kappa_2, \kappa_3)</code> denotes the normalizing constant for the sine model.
+</p>
+<p>Two different rejection sampling methods are implemented for random generation. If <code>method = "vmprop"</code>, then first the y-marginal
+is drawn from the associated marginal density, and then x is generated from the conditional distributio of x given y. The marginal generation of
+y is implemented in a rejection sampling scheme with proposal being either von Mises (if the target marginal density is unimodal), or a mixture of
+von Mises (if bimodal), with optimally chosen concentration. This the method suggested in Mardia et al. (2007). On the other hand, when
+<code>method = "naive"</code> (default) a (naive) bivariate rejection sampling scheme with (bivariate) uniform propsoal is used.
+</p>
+<p>Note that although method = <code>"vmprop"</code> may provide better efficiency when the density is highly concentrated, it does have
+an (often substantial) overhead due to the optimziation step required to find a reasonable proposal concentration parameter.
+This can compensate the efficiency gains of this method, especially when <code>n</code> is not large.
+</p>
+
+
+<h3>Value</h3>
+
+<p><code>dvmsin</code> gives the density  and <code>rvmsin</code> generates random deviates.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">kappa1 &lt;- c(1, 2, 3)
+kappa2 &lt;- c(1, 6, 5)
+kappa3 &lt;- c(0, 1, 2)
+mu1 &lt;- c(1, 2, 5)
+mu2 &lt;- c(0, 1, 3)
+x &lt;- diag(2, 2)
+n &lt;- 10
+
+# when x is a bivariate vector and parameters are all scalars,
+# dvmsin returns single density
+dvmsin(x[1, ], kappa1[1], kappa2[1], kappa3[1], mu1[1], mu2[1])
+
+# when x is a two column matrix and parameters are all scalars,
+# dmvsin returns a vector of densities calculated at the rows of
+# x with the same parameters
+dvmsin(x, kappa1[1], kappa2[1], kappa3[1], mu1[1], mu2[1])
+
+# if x is a bivariate vector and at least one of the parameters is
+# a vector, all parameters are recycled to the same length, and
+# dvmsin returns a vector of with ith element being the density
+# evaluated at x with parameter values kappa1[i], kappa2[i],
+# kappa3[i], mu1[i] and mu2[i]
+dvmsin(x[1, ], kappa1, kappa2, kappa3, mu1, mu2)
+
+# if x is a two column matrix and at least one of the parameters is
+# a vector, rows of x and the parameters are recycled to the same
+# length, and dvmsin returns a vector of with ith element being the
+# density evaluated at ith row of x with parameter values kappa1[i],
+# kappa2[i], # kappa3[i], mu1[i] and mu2[i]
+dvmsin(x[1, ], kappa1, kappa2, kappa3, mu1, mu2)
+
+# when parameters are all scalars, number of observations generated
+# by rvmsin is n
+rvmsin(n, kappa1[1], kappa2[1], kappa3[1], mu1[1], mu2[1])
+
+# when at least one of the parameters is a vector, all parameters are
+# recycled to the same length, n is ignored, and the number of
+# observations generated by rvmsin is the same as the length of the
+# recycled vectors
+rvmsin(n, kappa1, kappa2, kappa3, mu1, mu2)
+
+</code></pre>
+
+
+</div>

@@ -1,0 +1,1086 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>bayesmeta</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>
+Bayesian random-effects meta-analysis
+</h2>
+
+<h3>Description</h3>
+
+<p>This function allows to derive the posterior distribution of the two
+parameters in a random-effects meta-analysis and provides functions to
+evaluate joint and marginal posterior probability distributions, etc.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">  bayesmeta(y, ...)
+  ## Default S3 method:
+bayesmeta(y, sigma, labels = names(y),
+          tau.prior = "uniform",
+          mu.prior = c("mean"=NA,"sd"=NA),
+          mu.prior.mean = mu.prior[1], mu.prior.sd = mu.prior[2],
+          interval.type = c("shortest", "central"),
+          delta = 0.01, epsilon = 0.0001,
+          rel.tol.integrate = 2^16*.Machine$double.eps,
+          abs.tol.integrate = 0.0,
+          tol.uniroot = rel.tol.integrate, ...)
+  ## S3 method for class 'escalc'
+bayesmeta(y, labels = NULL, ...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>y</code></td>
+<td>
+
+<p>vector of estimates <em>or</em> an <code>escalc</code> object.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>sigma</code></td>
+<td>
+
+<p>vector of standard errors associated with <code>y</code>.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>labels</code></td>
+<td>
+
+<p>(optional) a vector of labels corresponding to <code>y</code> and <code>sigma</code>.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>tau.prior</code></td>
+<td>
+
+<p>a <code>function</code> returning the prior density for the heterogeneity
+parameter (<code class="reqn">\tau</code>) <em>or</em> a <code>character</code> string
+specifying one of the <em>default ‘non-informative’
+priors</em>; possible choices for the latter case are: 
+</p>
+
+<ul>
+<li> <p><code>"uniform"</code>: a uniform prior in <code class="reqn">\tau</code>
+</p>
+</li>
+<li> <p><code>"sqrt"</code>: a uniform prior in <code class="reqn">\sqrt{\tau}</code>
+</p>
+</li>
+<li> <p><code>"Jeffreys"</code>: the Jeffreys prior for <code class="reqn">\tau</code>
+</p>
+</li>
+<li> <p><code>"BergerDeely"</code>: the prior due to Berger and Deely (1988)
+</p>
+</li>
+<li> <p><code>"conventional"</code>: the conventional prior
+</p>
+</li>
+<li> <p><code>"DuMouchel"</code>: the DuMouchel prior
+</p>
+</li>
+<li> <p><code>"shrinkage"</code>: the ‘uniform shrinkage’ prior
+</p>
+</li>
+<li> <p><code>"I2"</code>: a uniform prior on the ‘relative heterogeneity’ <code class="reqn">I^2</code>
+</p>
+</li>
+</ul>
+<p>The default is <code>"uniform"</code> (which should be used with caution;
+see remarks below). The above priors are described in some more
+detail below.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>mu.prior</code></td>
+<td>
+
+<p>the mean and standard deviation of the normal prior distribution for
+the effect <code class="reqn">\mu</code>. If unspecified, an (improper) uniform prior is
+used.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>mu.prior.mean, mu.prior.sd</code></td>
+<td>
+
+<p>alternative parameters to specify the prior distribution for the
+effect <code class="reqn">\mu</code> (see above).
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>interval.type</code></td>
+<td>
+
+<p>the type of (credible, prediction, shrinkage) interval to be
+returned by default; either <code>"shortest"</code> for shortest
+intervals, or <code>"central"</code> for central, equal-tailed intervals.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>delta, epsilon</code></td>
+<td>
+
+<p>the parameters specifying the desired accuracy for approximation of
+the <code class="reqn">\mu</code> posterior(s), and with that determining the number of
+<code class="reqn">\tau</code> support points being used internally. Smaller values
+imply greater accuracy and greater computational burden (Roever and
+Friede, 2017).
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>rel.tol.integrate, abs.tol.integrate, tol.uniroot</code></td>
+<td>
+
+<p>the <code>rel.tol</code>, <code>abs.tol</code> and <code>tol</code>
+‘accuracy’ arguments that are passed to
+the <code>integrate()</code> or <code>uniroot()</code> functions
+for internal numerical integration or root finding
+(see also the help there).
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+
+<p>other <code>bayesmeta</code> arguments.
+</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The common random-effects meta-analysis model may be stated as
+</p>
+<p style="text-align: center;"><code class="reqn">y_i|\mu,\sigma_i,\tau \;\sim\; \mathrm{Normal}(\mu, \, \sigma_i^2 + \tau^2)</code>
+</p>
+
+<p>where the data (<code class="reqn">y</code>, <code class="reqn">\sigma</code>) enter as <code class="reqn">y_i</code>, the
+<code class="reqn">i</code>-th estimate, that is associated with standard error
+<code class="reqn">\sigma_i &gt; 0</code>, and <code class="reqn">i=1,...,k</code>. The model includes two unknown parameters,
+namely the (mean) effect <code class="reqn">\mu</code>, and the heterogeneity
+<code class="reqn">\tau</code>. Alternatively, the model may also be formulated via an
+intermediate step as
+</p>
+<p style="text-align: center;"><code class="reqn">y_i|\theta_i,\sigma_i \;\sim\; \mathrm{Normal}(\theta_i, \, \sigma_i^2),</code>
+</p>
+
+<p style="text-align: center;"><code class="reqn">\theta_i|\mu,\tau \;\sim\; \mathrm{Normal}(\mu, \, \tau^2),</code>
+</p>
+
+<p>where the <code class="reqn">\theta_i</code> denote the <em>trial-specific</em> means
+that are then measured through the estimate <code class="reqn">y_i</code> with an
+associated measurement uncertainty <code class="reqn">\sigma_i</code>. The
+<code class="reqn">\theta_i</code> again differ from trial to trial and are
+distributed around a common mean <code class="reqn">\mu</code> with standard deviation
+<code class="reqn">\tau</code>.
+</p>
+<p>The <code>bayesmeta()</code> function utilizes the fact that the joint posterior
+distribution <code class="reqn">p(\mu, \tau | y, \sigma)</code> may be partly analytically
+integrated out to determine the integrals necessary for coherent
+Bayesian inference on one or both of the parameters.
+</p>
+<p>As long as we assume that the prior probability distribution may be
+factored into independent marginals <code class="reqn">p(\mu,\tau)=p(\mu)\times
+  p(\tau)</code> and either an (improper) uniform
+or a normal prior is used for the effect <code class="reqn">\mu</code>, the joint
+likelihood <code class="reqn">p(y|\mu,\tau)</code> may be analytically marginalized over
+<code class="reqn">\mu</code>, yielding the marginal likelihood function
+<code class="reqn">p(y|\tau)</code>. Using any prior <code class="reqn">p(\tau)</code> for the heterogeneity,
+the 1-dimensional marginal posterior <code class="reqn">p(\tau|y) \propto
+  p(y|\tau)\times p(\tau)</code> may
+then be treated numerically. As the <em>conditional</em> posterior
+<code class="reqn">p(\mu|\tau,y)</code> is a normal distribution, inference on the
+remaining joint (<code class="reqn">p(\mu,\tau|y)</code>) or marginal (<code class="reqn">p(\mu|y)</code>)
+posterior may be approached numerically (using the <abbr><span class="acronym">DIRECT</span></abbr>
+algorithm) as well. Accuracy of the computations is determined by the
+<code>delta</code> (maximum divergence <code class="reqn">\delta</code>) and <code>epsilon</code>
+(tail probability <code class="reqn">\epsilon</code>) parameters (Roever and Friede,
+2017).
+</p>
+<p>What constitutes a sensible prior for both <code class="reqn">\mu</code> and <code class="reqn">\tau</code>
+depends (as usual) very much on the context.
+Potential candidates for informative (or weakly informative)
+heterogeneity (<code class="reqn">\tau</code>) priors may include the <em>half-normal</em>,
+<em>half-Student-<code class="reqn">t</code></em>,  <em>half-Cauchy</em>, <em>exponential</em>,
+or <em>Lomax</em> distributions; we recommend the use of heavy-tailed
+prior distributions if in case of prior/data conflict the prior is
+supposed to be discounted (O'Hagan and Pericchi, 2012).  A sensible
+informative prior might also be a <em>log-normal</em> or a <em>scaled
+inverse <code class="reqn">\chi^2</code></em> distribution. 
+One might argue that an uninformative prior for <code class="reqn">\tau</code> may be
+uniform or monotonically decreasing in <code class="reqn">\tau</code>. Another option is
+to use the <em>Jeffreys prior</em> (see the <code>tau.prior</code> argument
+above). The Jeffreys prior implemented here is the variant also
+described by Tibshirani (1989) that results from fixing the location
+parameter (<code class="reqn">\mu</code>) and considering the Fisher information element
+corresponding to the heterogeneity <code class="reqn">\tau</code> only. This prior also
+constitutes the <em>Berger/Bernardo reference prior</em> for the present
+problem (Bodnar <em>et al.</em>, 2016).  The <em>uniform shrinkage</em> and
+<em>DuMouchel</em> priors are described in Spiegelhalter <em>et al.</em> (2004,
+Sec. 5.7.3). 
+The procedure is able to handle improper priors (and does so by
+default), but of course the usual care must be taken here, as the
+resulting posterior <em>may</em> or <em>may not</em> be a proper
+probability distribution.
+</p>
+<p>Note that a wide range of different types of endpoints may be treated
+on a continuous scale after an appropriate transformation; for
+example, count data may be handled by considering corresponding
+logarithmic odds ratios. Many such transformations are implemented
+in the <span class="pkg">metafor</span> package's <code>escalc</code> function
+and may be directly used as an input to the <code>bayesmeta()</code>
+function; see also the example below.  Alternatively, the
+<span class="pkg">compute.es</span> package also provides a range of effect sizes to be
+computed from different data types.
+</p>
+<p>The <code>bayesmeta()</code> function eventually generates some basic
+summary statistics, but most importantly it provides an object
+containing a range of <code>function</code>s allowing to evaluate posterior
+distributions; this includes joint and marginal posteriors, prior and
+likelihood, predictive distributions, densities, cumulative
+distributions and quantile functions. For more details see also the
+documentation and examples below.
+Use of the <code>individual</code> argument allows to access posteriors
+of study-specific (<em>shrinkage-</em>) effects
+(<code class="reqn">\theta_i</code>).
+The <code>predict</code> argument may be used to access the predictive
+distribution of a future study's effect
+(<code class="reqn">\theta_{k+1}</code>), facilitating a
+<em>meta-analytic-predictive (MAP)</em> approach (Neuenschwander <em>et al.</em>,
+2010).
+</p>
+
+
+<h4>Prior specification details</h4>
+
+<p>When specifying the <code>tau.prior</code> argument as a <code>character</code> string
+(and not as a prior density <code>function</code>), then the actual
+prior probability density functions corresponding to the possible
+choices of the <code>tau.prior</code> argument are given by:
+</p>
+
+<ul>
+<li> <p><code>"uniform"</code> - the (improper) uniform prior in <code class="reqn">\tau</code>:
+</p>
+<p style="text-align: center;"><code class="reqn">p(\tau) \;\propto\; 1</code>
+</p>
+
+</li>
+<li> <p><code>"sqrt"</code> - the (improper) uniform prior in <code class="reqn">\sqrt{\tau}</code>:
+</p>
+<p style="text-align: center;"><code class="reqn">p(\tau) \;\propto\; \tau^{-1/2} \;=\; \frac{1}{\sqrt{\tau}}</code>
+</p>
+
+</li>
+<li> <p><code>"Jeffreys"</code> - <em>Tibshirani's noninformative prior</em>,
+a variation of the (‘general’ or ‘overall’) <em>Jeffreys prior</em>, which here also constitutes
+the <em>Berger/Bernardo reference prior</em> for <code class="reqn">\tau</code>:
+</p>
+<p style="text-align: center;"><code class="reqn">p(\tau) \;\propto\;
+        \sqrt{\sum_{i=1}^k\Bigl(\frac{\tau}{\sigma_i^2+\tau^2}\Bigr)^2}</code>
+</p>
+
+<p>This is also an improper prior whose density does not integrate to 1.
+This prior results from applying <em>Jeffreys' general rule</em> (Kass and Wasserman, 1996),
+and in particular considering that location parameters (here: the effect <code class="reqn">\mu</code>)
+should be treated separately (Roever, 2020).
+</p>
+</li>
+<li> <p><code>"overallJeffreys"</code> - the ‘general’ or ‘overall’ form 
+of the <em>Jeffreys prior</em>;
+this is derived based on the Fisher information terms
+corresponding to <em>both</em> the effect (<code class="reqn">\mu</code>) and heterogeneity (<code class="reqn">\tau</code>).
+The resulting (improper) prior density is
+</p>
+<p style="text-align: center;"><code class="reqn">p(\tau) \;\propto\;
+        \sqrt{\sum_{i=1}^k\frac{1}{\sigma_i^2+\tau^2} \; \sum_{i=1}^k\Bigl(\frac{\tau}{\sigma_i^2+\tau^2}\Bigr)^2}</code>
+</p>
+
+<p>Use of this specification is generally <em>not</em> recommended; see, e.g.,
+Jeffreys (1946), Jeffreys (1961, Sec. III.3.10),
+Berger (1985, Sec. 3.3.3) and Kass and Wasserman (1996, Sec. 2.2).
+Since the effect <code class="reqn">\mu</code> constitutes a <em>location parameter</em> here,
+it should be treated separately (Roever, 2020).
+</p>
+</li>
+<li> <p><code>"BergerDeely"</code> - the (improper) <em>Berger/Deely</em> prior:
+</p>
+<p style="text-align: center;"><code class="reqn">p(\tau) \;\propto\; \prod_{i=1}^k \Bigl(\frac{\tau}{\sigma_i^2+\tau^2}\Bigr)^{1/k}</code>
+</p>
+
+<p>This is a variation of the above <em>Jeffreys</em> prior, and both are equal in
+case all standard errors (<code class="reqn">\sigma_i</code>) are the same.
+</p>
+</li>
+<li> <p><code>"conventional"</code> - the (proper) <em>conventional prior</em>:
+</p>
+<p style="text-align: center;"><code class="reqn">p(\tau) \;\propto\; \prod_{i=1}^k \biggl(\frac{\tau}{(\sigma_i^2+\tau^2)^{3/2}}\biggr)^{1/k}</code>
+</p>
+
+<p>This is a proper variation of the above <em>Berger/Deely</em> prior 
+intended especially for testing and model selection purposes.
+</p>
+</li>
+<li> <p><code>"DuMouchel"</code> - the (proper) <em>DuMouchel</em> prior:
+</p>
+<p style="text-align: center;"><code class="reqn">p(\tau) \;=\; \frac{s_0}{(s_0+\tau)^2}</code>
+</p>
+
+<p>where <code class="reqn">s_0=\sqrt{s_0^2}</code> and <code class="reqn">s_0^2</code> again is the harmonic mean of the standard errors (as above).
+</p>
+</li>
+<li> <p><code>"shrinkage"</code> - the (proper) <em>uniform shrinkage</em> prior:
+</p>
+<p style="text-align: center;"><code class="reqn">p(\tau) \;=\; \frac{2 s_0^2 \tau}{(s_0^2+\tau^2)^2}</code>
+</p>
+
+<p>where <code class="reqn">s_0^2=\frac{k}{\sum_{i=1}^k \sigma_i^{-2}}</code> is the harmonic
+mean of the squared standard errors <code class="reqn">\sigma_i^2</code>.
+</p>
+</li>
+<li> <p><code>"I2"</code> - the (proper) uniform prior in <code class="reqn">I^2</code>:
+</p>
+<p style="text-align: center;"><code class="reqn">p(\tau) \;=\; \frac{2 \hat{\sigma}^2 \tau}{(\hat{\sigma}^2 + \tau^2)^2}</code>
+</p>
+
+<p>where <code class="reqn">\hat{\sigma}^2 = \frac{(k-1)\; \sum_{i=1}^k\sigma_i^{-2}}{\bigl(\sum_{i=1}^k\sigma_i^{-2}\bigr)^2 - \sum_{i=1}^k\sigma_i^{-4}}</code>.
+This prior is similar to the uniform shrinkage prior, except for
+the use of <code class="reqn">\hat{\sigma}^2</code> instead of <code class="reqn">s_0^2</code>.
+</p>
+</li>
+</ul>
+<p>For more details on the above priors, see Roever (2020).
+For more general information especially on (weakly)
+informative heterogeneity prior distributions, see Roever <em>et al.</em> (2021).
+Regarding empirically motivated informative heterogeneity priors see also
+the <code>TurnerEtAlPrior()</code> and <code>RhodesEtAlPrior()</code>
+functions, or Roever <em>et al.</em> (2023) and Lilienthal <em>et al.</em> 
+(2023).
+</p>
+
+
+
+<h4>Credible intervals</h4>
+
+<p>Credible intervals (as well as prediction and shrinkage intervals)
+may be determined in different ways. By default, <em>shortest</em>
+intervals are returned, which for unimodal posteriors (the usual
+case) is equivalent to the <em>highest posterior density region</em>
+(Gelman <em>et al.</em>, 1997, Sec. 2.3).
+Alternatively, central (equal-tailed) intervals may also be derived.
+The default behaviour may be controlled via the <code>interval.type</code>
+argument, or also by using the <code>method</code> argument with each
+individual call of the <code>$post.interval()</code> function (see below).
+A third option, although not available for prediction or shrinkage
+intervals, and hence not as an overall default choice, but only for
+the <code>$post.interval()</code> function, is to
+determine the <em>evidentiary</em> credible interval, which has the
+advantage of being parameterization invariant (Shalloway, 2014).
+</p>
+
+
+
+<h4>Bayes factors</h4>
+
+<p>Bayes factors (Kass and Raftery, 1995) for the two hypotheses of
+<code class="reqn">\tau=0</code> and <code class="reqn">\mu=0</code> are provided in the <code>$bayesfactor</code>
+element; <em>low</em> or <em>high</em> values here constitute evidence
+<em>against</em> or <em>in favour of</em> the hypotheses,
+respectively. Bayes factors are based on marginal likelihoods and
+can only be computed if the priors for heterogeneity and effect are
+proper. Bayes factors for other hypotheses can be computed using the
+marginal likelihood (as provided through the <code>$marginal</code>
+element) and the <code>$likelihood()</code> function. Bayes factors must
+be interpreted with very much caution, as they are susceptible to
+<em>Lindley's paradox</em> (Lindley, 1957), which especially implies
+that variations of the prior specifications that have only minuscule
+effects on the posterior distribution may have a substantial impact
+on Bayes factors (via the marginal likelihood). For more details on
+the problems and challenges related to Bayes factors see also
+Gelman <em>et al.</em> (1997, Sec. 7.4).
+</p>
+<p>Besides the ‘actual’ Bayes factors, <em>minimum Bayes
+factors</em> are also provided (Spiegelhalter <em>et al.</em>, 2004; Sec. 4.4).
+The minimum Bayes factor for the hypothesis of <code class="reqn">\mu=0</code>
+constitutes the minimum across all possible priors for <code class="reqn">\mu</code> and
+hence gives a measure of how much (or how little) evidence
+<em>against</em> the hypothesis is provided by the data <em>at most</em>.
+It is independent of the particular effect prior used in the
+analysis, but still dependent on the heterogeneity
+prior. Analogously, the same is true for the heterogeneity's minimum
+Bayes factor. A minimum Bayes factor can also be computed when only
+one of the priors is proper.
+</p>
+
+
+
+<h4>Numerical accuracy</h4>
+
+<p>Accuracy of the numerical results is determined by four parameters,
+namely, the accuracy of numerical integration as specified through the
+<code>rel.tol.integrate</code> and <code>abs.tol.integrate</code> arguments (which
+are internally passed on to the <code>integrate</code>
+function), and the accuracy of the grid approximation used for
+integrating out the heterogeneity as specified through the
+<code>delta</code> and <code>epsilon</code> arguments (Roever and Friede,
+2017). As these may also heavily impact on the computation time, be
+careful when changing these from their default values. You can monitor
+the effect of different settings by checking the number and range of
+support points returned in the <code>$support</code> element.
+</p>
+  
+
+
+<h4>Study weights</h4>
+
+<p>Conditional on a given <code class="reqn">\tau</code> value, the posterior
+expectations of the overall effect (<code class="reqn">\mu</code>) as well as the
+shrinkage estimates (<code class="reqn">\theta_i</code>) result as convex
+combinations of the estimates <code class="reqn">y_i</code>. The <em>weights</em>
+associated with each estimate <code class="reqn">y_i</code> are commonly quoted
+in frequentist meta-analysis results in order to quantify
+(arguably somewhat heuristically) each study's contribution to the
+overall estimates, often in terms of percentages.
+</p>
+<p>In a Bayesian meta-analysis, these numbers to not immediately
+arise, since the heterogeneity is marginalized over. However, due
+to linearity, the posterior mean effects may still be expressed in
+terms of linear combinations of initial estimates <code class="reqn">y_i</code>,
+with weights now given by the <em>posterior mean weights</em>,
+marginalized over the heterogeneity <code class="reqn">\tau</code> (Roever and Friede,
+2020). The posterior mean weights are returned in the
+<code>$weights</code> and <code>$weights.theta</code> elements, for the overall
+effect <code class="reqn">\mu</code> as well as for the shrinkage estimates
+<code class="reqn">\theta_i</code>.
+</p>
+
+
+
+<h3>Value</h3>
+
+<p>A list of class <code>bayesmeta</code> containing the following elements:
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>y</code></td>
+<td>
+<p>vector of estimates (the input data).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>sigma</code></td>
+<td>
+<p>vector of standard errors corresponding
+to <code>y</code> (input data).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>labels</code></td>
+<td>
+<p>vector of labels corresponding to <code>y</code> and <code>sigma</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>k</code></td>
+<td>
+<p>number of data points (in <code>y</code>).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>tau.prior</code></td>
+<td>
+<p>the prior probability density function for <code class="reqn">\tau</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>mu.prior.mean</code></td>
+<td>
+<p>the prior mean of <code class="reqn">\mu</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>mu.prior.sd</code></td>
+<td>
+<p>the prior standard deviation of <code class="reqn">\mu</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>dprior</code></td>
+<td>
+<p>a <code>function(tau=NA, mu=NA, log=FALSE)</code> of two
+parameters, <code>tau</code> and/or <code>mu</code>, returning either the joint or
+marginal prior probability density, depending on which parameter(s)
+is/are provided.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>tau.prior.proper</code></td>
+<td>
+<p>a <code>logical</code> flag indicating whether the
+heterogeneity prior appears to be proper (which is judged based on
+an attempted numerical integration of the density function).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>likelihood</code></td>
+<td>
+<p>a <code>function(tau=NA, mu=NA, log=FALSE)</code> of two
+parameters, <code>tau</code> and/or <code>mu</code>, returning either the joint or
+marginal likelihood, depending on which parameter(s) is/are provided.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>dposterior</code></td>
+<td>
+<p>a <code>function(tau=NA, mu=NA, theta=mu, log=FALSE, predict=FALSE, individual=FALSE)</code>
+of two parameters, <code>tau</code> and/or <code>mu</code>,
+returning either the joint or marginal posterior probability density,
+depending on which parameter(s) is/are provided. Using the argument
+<code>predict=TRUE</code> yields the <em>posterior predictive
+distribution</em> for <code class="reqn">\theta</code>. Using the <code>individual</code>
+argument, you can request individual effects'
+(<code class="reqn">\theta_i</code>) posterior distributions. May be an integer
+number (<code>1,...,k</code>) giving the index, or a character string giving
+the label.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>pposterior</code></td>
+<td>
+<p>a <code>function(tau=NA, mu=NA, theta=mu, predict=FALSE, individual=FALSE)</code> 
+of one parameter (either <code>tau</code> or <code>mu</code>) returning the
+corresponding marginal posterior cumulative distribution
+function. Using the argument <code>predict=TRUE</code> yields the posterior
+predictive distribution for <code class="reqn">\theta</code>. Using the <code>individual</code>
+argument, you can request individual effects'
+(<code class="reqn">\theta_i</code>) posterior distributions. May be an integer
+number (<code>1,...,k</code>) giving the index, or a character string giving
+the label.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>qposterior</code></td>
+<td>
+<p>a <code>function(tau.p=NA, mu.p=NA, theta.p=mu.p, predict=FALSE, individual=FALSE)</code>
+of one parameter (either <code>tau.p</code> or <code>mu.p</code>) returning the
+corresponding marginal posterior quantile function. Using the argument
+<code>predict=TRUE</code> yields the posterior predictive distribution for
+<code class="reqn">\theta</code>. Using the <code>individual</code> argument, you can request
+individual effects' (<code class="reqn">\theta_i</code>) posterior
+distributions. May be an integer number (<code>1,...,k</code>) giving the
+index, or a character string giving the label.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>rposterior</code></td>
+<td>
+<p>a <code>function(n=1, predict=FALSE, individual=FALSE, tau.sample=TRUE)</code>
+generating <code>n</code> independent random draws from the
+(2-dimensional) posterior distribution. Using the argument
+<code>predict=TRUE</code> yields the posterior predictive distribution for
+<code class="reqn">\theta</code>. Using the <code>individual</code> argument, you can request
+individual effects' (<code class="reqn">\theta_i</code>) posterior
+distributions. May be an integer number (<code>1,...,k</code>) giving the
+index, or a character string giving the label. In general, this via
+the inversion method, so it is rather slow. However, if one is not
+interested in sampling the heterogeneity parameter (<code class="reqn">\tau</code>),
+using ‘<code>tau.sample=FALSE</code>’ will speed up the function
+substantially.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>post.interval</code></td>
+<td>
+<p>a <code>function(tau.level=NA, mu.level=NA, theta.level=mu.level, method=c("shortest","central","evidentiary"), predict=FALSE, individual=FALSE)</code>
+returning a credible interval, depending on which of the two
+parameters is provided (either <code>tau.level</code> or
+<code>mu.level</code>). The additional parameter <code>method</code> may be used
+to specify the desired type of interval: <code>method</code> <code>=</code>
+<code>"shortest"</code> returns the shortest interval, <code>method</code>
+<code>=</code> <code>"central"</code> returns a central interval, and <code>method</code>
+<code>=</code> <code>"evidentiary"</code> returns an evidentiary interval
+(Shalloway, 2014); the former is the default option. Using the
+argument <code>predict=TRUE</code> yields a posterior predictive interval
+for <code class="reqn">\theta</code>. Using the <code>individual</code>
+argument, you can request individual effects'
+(<code class="reqn">\theta_i</code>) posterior distributions. May be an integer
+number (<code>1,...,k</code>) giving the index, or a character string giving
+the label.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>cond.moment</code></td>
+<td>
+<p>a <code>function(tau, predict=FALSE, individual=FALSE, simplify=TRUE)</code>
+returning conditional moments (mean and standard deviation) of
+<code class="reqn">\mu</code> as a function of <code class="reqn">\tau</code>. Using the argument
+<code>predict=TRUE</code> yields (conditional) posterior predictive
+moments for <code class="reqn">\theta</code>. Using the <code>individual</code>
+argument, you can request individual effects'
+(<code class="reqn">\theta_i</code>) posterior distributions. May be an integer
+number (<code>1,...,k</code>) giving the index, or a character string giving
+the label.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>I2</code></td>
+<td>
+<p>a <code>function(tau)</code> returning the ‘relative’ heterogeneity
+<code class="reqn">I^2</code> as a function of <code class="reqn">\tau</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>summary</code></td>
+<td>
+<p>a <code>matrix</code> listing some summary statistics, namely
+marginal posterior mode, median, mean, standard deviation
+and a (shortest) 95% credible intervals,
+of the marginal posterior distributions of <code class="reqn">\tau</code> and <code class="reqn">\mu</code>,
+and of the posterior predictive distribution of <code class="reqn">\theta</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>interval.type</code></td>
+<td>
+<p>the <code>interval.type</code> input argument
+specifying the type of interval to be returned by default.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ML</code></td>
+<td>
+<p>a <code>matrix</code> giving joint and marginal maximum-likelihood
+estimates of <code class="reqn">(\tau,\mu)</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>MAP</code></td>
+<td>
+<p>a <code>matrix</code> giving joint and marginal
+maximum-a-posteriori estimates of <code class="reqn">(\tau,\mu)</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>theta</code></td>
+<td>
+<p>a <code>matrix</code> giving the ‘shrinkage estimates’,
+i.e, summary statistics of the trial-specific means
+<code class="reqn">\theta_i</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>weights</code></td>
+<td>
+<p>a <code>vector</code> giving the posterior expected
+<em>inverse-variance weights</em> for each study (and for the effect
+prior mean, if the effect prior was proper).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>weights.theta</code></td>
+<td>
+<p>a <code>matrix</code> whose columns give the
+posterior expected weights of each study (and of the effect prior
+mean, if the effect prior was proper) for all shrinkage
+estimates.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>marginal.likelihood</code></td>
+<td>
+<p>the marginal likelihood of the data (this 
+number is only computed if proper effect and heterogeneity priors 
+are specified).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>bayesfactor</code></td>
+<td>
+<p>Bayes factors and minimum Bayes factors for the two
+hypotheses of <code class="reqn">\tau=0</code> and <code class="reqn">\mu=0</code>. These depend on the
+marginal likelihood and hence can only be computed if proper effect
+and/or heterogeneity priors are specified; see also remark above.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>support</code></td>
+<td>
+<p>a <code>matrix</code> giving the <code class="reqn">\tau</code> support points used
+internally in the grid approximation, along with their associated
+weights, conditional mean and standard deviation of <code class="reqn">\mu</code>,
+and the standard deviation of the (conditional) predictive
+distribution of <code class="reqn">\theta</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>delta, epsilon</code></td>
+<td>
+<p>the ‘<code>delta</code>’ and ‘<code>epsilon</code>’
+input parameter determining numerical accuracy.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>rel.tol.integrate, abs.tol.integrate, tol.uniroot</code></td>
+<td>
+<p>the input
+parameters determining the numerical accuracy of the internally used
+<code>integrate()</code> and <code>uniroot()</code> functions.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>call</code></td>
+<td>
+<p>an object of class <code>call</code> giving the
+function call that generated the <code>bayesmeta</code> object.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>init.time</code></td>
+<td>
+<p>the computation time (in seconds) used to generate
+the <code>bayesmeta</code> object.</p>
+</td>
+</tr>
+</table>
+<h3>Author(s)</h3>
+
+<p>Christian Roever <a href="mailto:christian.roever@med.uni-goettingen.de">christian.roever@med.uni-goettingen.de</a>
+</p>
+
+
+<h3>References</h3>
+
+<p>C. Roever.
+Bayesian random-effects meta-analysis using the bayesmeta R package.
+<em>Journal of Statistical Software</em>, <b>93</b>(6):1-51, 2020.
+<a href="https://doi.org/10.18637/jss.v093.i06">doi:10.18637/jss.v093.i06</a>.
+</p>
+<p>C. Roever, R. Bender, S. Dias, C.H. Schmid, H. Schmidli, S. Sturtz,
+S. Weber, T. Friede.
+On weakly informative prior distributions for the heterogeneity
+parameter in Bayesian random-effects meta-analysis.
+<em>Research Synthesis Methods</em>, <b>12</b>(4):448-474, 2021.
+<a href="https://doi.org/10.1002/jrsm.1475">doi:10.1002/jrsm.1475</a>.
+</p>
+<p>C. Roever, T. Friede.
+Discrete approximation of a mixture distribution via restricted divergence.
+<em>Journal of Computational and Graphical Statistics</em>,
+<b>26</b>(1):217-222, 2017.
+<a href="https://doi.org/10.1080/10618600.2016.1276840">doi:10.1080/10618600.2016.1276840</a>.
+</p>
+<p>C. Roever, T. Friede.
+Bounds for the weight of external data in shrinkage estimation.
+<em>Biometrical Journal</em>, <b>65</b>(5):1131-1143, 2021.
+<a href="https://doi.org/10.1002/bimj.202000227">doi:10.1002/bimj.202000227</a>.
+</p>
+<p>J. O. Berger.
+<em>Statistical Decision Theory and Bayesian Analysis</em>.
+2nd edition. Springer-Verlag, 1985.
+<a href="https://doi.org/10.1007/978-1-4757-4286-2">doi:10.1007/978-1-4757-4286-2</a>.
+</p>
+<p>J.O. Berger, J. Deely.
+A Bayesian approach to ranking and selection of related means with
+alternatives to analysis-of-variance methodology.
+<em>Journal of the American Statistical Association</em>,
+<b>83</b>(402):364-373, 1988.
+<a href="https://doi.org/10.1080/01621459.1988.10478606">doi:10.1080/01621459.1988.10478606</a>.
+</p>
+<p>O. Bodnar, A. Link, C. Elster.
+Objective Bayesian inference for a generalized marginal random effects
+model. 
+<em>Bayesian Analysis</em>, <b>11</b>(1):25-45, 2016.
+<a href="https://doi.org/10.1214/14-BA933">doi:10.1214/14-BA933</a>.
+</p>
+<p>A. Gelman, J.B. Carlin, H.S. Stern, D.B. Rubin. <em>Bayesian data
+analysis</em>. Chapman &amp; Hall / CRC, Boca Raton, 1997.
+</p>
+<p>A. Gelman. Prior distributions for variance parameters in hierarchical
+models. <em>Bayesian Analysis</em>, <b>1</b>(3):515-534, 2006.
+<a href="https://doi.org/10.1214/06-BA117A">doi:10.1214/06-BA117A</a>.
+</p>
+<p>J. Hartung, G. Knapp, B.K. Sinha. <em>Statistical meta-analysis with
+applications</em>. Wiley, Hoboken, 2008.
+</p>
+<p>L.V. Hedges, I. Olkin. <em>Statistical methods for meta-analysis</em>.
+Academic Press, San Diego, 1985
+</p>
+<p>H. Jeffreys.
+An invariant form for the prior probability in estimation problems.
+<em>Proceedings of the Royal Society of london, Series A</em>,
+<b>186</b>(1007):453-462, 1946.
+<a href="https://doi.org/10.1098/rspa.1946.0056">doi:10.1098/rspa.1946.0056</a>.
+</p>
+<p>H. Jeffreys.
+<em>Theory of Probability</em>. 3rd edition. Clarendon Press, Oxford, 1961.
+</p>
+<p>A.E. Kass, R.E. Raftery.
+Bayes factors.
+<em>Journal of the American Statistical Association</em>,
+<b>90</b>(430):773-795, 1995.
+<a href="https://doi.org/10.2307/2291091">doi:10.2307/2291091</a>.
+</p>
+<p>A.E. Kass, L. Wasserman.
+The selection of prior distributions by formal rules.
+<em>Journal of the American Statistical Association</em>.
+<b>91</b>(453):1243-1370, 1996.
+<a href="https://doi.org/10.1080/01621459.1996.10477003">doi:10.1080/01621459.1996.10477003</a>.
+</p>
+<p>J. Lilienthal, S. Sturtz, C. Schuermann, M. Maiworm, C. Roever, T. Friede, R. Bender.
+Bayesian random-effects meta-analysis with empirical heterogeneity priors
+for application in health technology assessment with very few studies.
+<em>Research Synthesis Methods</em>, 2023.
+<a href="https://doi.org/10.1002/jrsm.1685">doi:10.1002/jrsm.1685</a>.
+</p>
+<p>D.V. Lindley.
+A statistical paradox.
+<em>Biometrika</em>, <b>44</b>(1/2):187-192, 1957.
+<a href="https://doi.org/10.1093/biomet/44.1-2.187">doi:10.1093/biomet/44.1-2.187</a>.
+</p>
+<p>B. Neuenschwander, G. Capkun-Niggli, M. Branson, D.J. Spiegelhalter.
+Summarizing historical information on controls in clinical trials.
+<em>Trials</em>, <b>7</b>(1):5-18, 2010.
+<a href="https://doi.org/10.1177/1740774509356002">doi:10.1177/1740774509356002</a>.
+</p>
+<p>A. O'Hagan, L. Pericchi.
+Bayesian heavy-tailed models and conflict resolution: A review.
+<em>Brazilian Journal of Probability and Statistics</em>,
+<b>26</b>(4):372-401, 2012.
+<a href="https://doi.org/10.1214/11-BJPS164">doi:10.1214/11-BJPS164</a>.
+</p>
+<p>C. Roever, S. Sturtz, J. Lilienthal, R. Bender, T. Friede.
+Summarizing empirical information on between-study heterogeneity
+for Bayesian random-effects meta-analysis. 
+<em>Statistics in Medicine</em>, <b>42</b>(14):2439-2454, 2023.
+<a href="https://doi.org/10.1002/sim.9731">doi:10.1002/sim.9731</a>.
+</p>
+<p>S. Shalloway.
+The evidentiary credible region.
+<em>Bayesian Analysis</em>, <b>9</b>(4):909-922, 2014.
+<a href="https://doi.org/10.1214/14-BA883">doi:10.1214/14-BA883</a>.
+</p>
+<p>D.J. Spiegelhalter, K.R. Abrams, J.P.Myles.
+<em>Bayesian approaches to clinical trials and health-care
+evaluation</em>. 
+Wiley &amp; Sons, 2004.
+</p>
+<p>R. Tibshirani.
+Noninformative priors for one parameter of many.
+<em>Biometrika</em>, <b>76</b>(3):604-608, 1989.
+<a href="https://doi.org/10.1093/biomet/76.3.604">doi:10.1093/biomet/76.3.604</a>.
+</p>
+<p>W. Viechtbauer.
+Conducting meta-analyses in R with the metafor package.
+<em>Journal of Statistical Software</em>, <b>36</b>(3):1-48, 2010.
+<a href="https://doi.org/10.18637/jss.v036.i03">doi:10.18637/jss.v036.i03</a>.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>forestplot.bayesmeta</code>, <code>plot.bayesmeta</code>,
+<code>escalc</code>,
+<code>bmr</code>,
+<code>compute.es</code>.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">########################################
+# example data by Snedecor and Cochran:
+data("SnedecorCochran")
+
+## Not run: 
+# analysis using improper uniform prior
+# (may take a few seconds to compute!):
+ma01 &lt;- bayesmeta(y=SnedecorCochran[,"mean"], sigma=sqrt(SnedecorCochran[,"var"]),
+                  label=SnedecorCochran[,"no"])
+
+# analysis using an informative prior
+# (normal for mu and half-Cauchy for tau (scale=10))
+# (may take a few seconds to compute!):
+ma02 &lt;- bayesmeta(y=SnedecorCochran[,"mean"], sigma=sqrt(SnedecorCochran[,"var"]),
+                  label=SnedecorCochran[,"no"],
+                  mu.prior.mean=50, mu.prior.sd=50,
+                  tau.prior=function(x){return(dhalfcauchy(x, scale=10))})
+
+# show some summary statistics:
+print(ma01)
+summary(ma01)
+
+# show some plots:
+forestplot(ma01)
+plot(ma01)
+
+# compare resulting marginal densities;
+# the effect parameter (mu):
+mu &lt;- seq(30, 80, le=200)
+plot(mu, ma02$dposterior(mu=mu), type="l", lty="dashed",
+     xlab=expression("effect "*mu),
+     ylab=expression("marginal posterior density"),
+     main="Snedecor/Cochran example")
+lines(mu, ma01$dposterior(mu=mu), lty="solid")
+
+# the heterogeneity parameter (tau):
+tau &lt;- seq(0, 50, le=200)
+plot(tau, ma02$dposterior(tau=tau), type="l", lty="dashed",
+     xlab=expression("heterogeneity "*tau),
+     ylab=expression("marginal posterior density"),
+     main="Snedecor/Cochran example")
+lines(tau, ma01$dposterior(tau=tau), lty="solid")
+
+# compute posterior median relative heterogeneity I-squared:
+ma01$I2(tau=ma01$summary["median","tau"])
+
+# determine 90 percent upper limits on the heterogeneity tau:
+ma01$qposterior(tau=0.90)
+ma02$qposterior(tau=0.90)
+# determine shortest 90 percent credible interval for tau:
+ma01$post.interval(tau.level=0.9, method="shortest")
+## End(Not run)
+
+
+#####################################
+# example data by Sidik and Jonkman:
+data("SidikJonkman2007")
+# add log-odds-ratios and corresponding standard errors:
+sj &lt;- SidikJonkman2007
+sj &lt;- cbind(sj, "log.or"=log(sj[,"lihr.events"])-log(sj[,"lihr.cases"]-sj[,"lihr.events"])
+                             -log(sj[,"oihr.events"])+log(sj[,"oihr.cases"]-sj[,"oihr.events"]),
+                "log.or.se"=sqrt(1/sj[,"lihr.events"] + 1/(sj[,"lihr.cases"]-sj[,"lihr.events"])
+                                 + 1/sj[,"oihr.events"] + 1/(sj[,"oihr.cases"]-sj[,"oihr.events"])))
+
+## Not run: 
+# analysis using weakly informative half-normal prior
+# (may take a few seconds to compute!):
+ma03a &lt;- bayesmeta(y=sj[,"log.or"], sigma=sj[,"log.or.se"],
+                   label=sj[,"id.sj"],
+                   tau.prior=function(t){dhalfnormal(t,scale=1)})
+
+# alternatively: may utilize "metafor" package's "escalc()" function
+# to compute log-ORs and standard errors:
+require("metafor")
+es &lt;- escalc(measure="OR",
+             ai=lihr.events, n1i=lihr.cases,
+             ci=oihr.events, n2i=oihr.cases,
+             slab=id, data=SidikJonkman2007)
+# apply "bayesmeta()" function directly to "escalc" object:
+ma03b &lt;- bayesmeta(es, tau.prior=function(t){dhalfnormal(t,scale=1)})
+# "ma03a" and "ma03b" should be identical:
+print(ma03a$summary)
+print(ma03b$summary)
+# compare to metafor's (frequentist) random-effects meta-analysis:
+rma03a &lt;- rma.uni(es)
+rma03b &lt;- rma.uni(es, method="EB", knha=TRUE)
+# compare mu estimates (estimate and confidence interval):
+plot(ma03b, which=3)
+abline(v=c(rma03a$b, rma03a$ci.lb, rma03a$ci.ub), col="red", lty=c(1,2,2))
+abline(v=c(rma03b$b, rma03b$ci.lb, rma03b$ci.ub), col="green3", lty=c(1,2,2))
+# compare tau estimates (estimate and confidence interval):
+plot(ma03b, which=4)
+abline(v=confint(rma03a)$random["tau",], col="red", lty=c(1,2,2))       
+abline(v=confint(rma03b)$random["tau",], col="green3", lty=c(1,3,3))       
+
+# show heterogeneity's posterior density:
+plot(ma03a, which=4, main="Sidik/Jonkman example")
+
+# show some numbers (mode, median and mean):
+abline(v=ma03a$summary[c("mode","median","mean"),"tau"], col="blue")
+
+# compare with Sidik and Jonkman's estimates:
+sj.estimates &lt;- sqrt(c("MM"  = 0.429,   # method of moments estimator
+                       "VC"  = 0.841,   # variance component type estimator
+                       "ML"  = 0.562,   # maximum likelihood estimator
+                       "REML"= 0.598,   # restricted maximum likelihood estimator
+                       "EB"  = 0.703,   # empirical Bayes estimator
+                       "MV"  = 0.818,   # model error variance estimator
+                       "MVvc"= 0.747))  # a variation of the MV estimator
+abline(v=sj.estimates, col="red", lty="dashed")
+## End(Not run)
+
+
+###########################
+# example data by Cochran:
+data("Cochran1954")
+
+## Not run: 
+# analysis using improper uniform prior
+# (may take a few seconds to compute!):
+ma04 &lt;- bayesmeta(y=Cochran1954[,"mean"], sigma=sqrt(Cochran1954[,"se2"]),
+                  label=Cochran1954[,"observer"])
+
+# show joint posterior density:
+plot(ma04, which=2, main="Cochran example")
+# show (known) true parameter value:
+abline(h=161)
+
+# pick a point estimate for tau:
+tau &lt;- ma04$summary["median","tau"]
+# highlight two point hypotheses (fixed vs. random effects):
+abline(v=c(0, tau), col="orange", lty="dotted", lwd=2)
+
+# show marginal posterior density:
+plot(ma04, which=3)
+abline(v=161)
+# show the conditional distributions of the effect mu
+# at two tau values corresponding to fixed and random effects models:
+cm &lt;- ma04$cond.moment(tau=c(0,tau))
+mu &lt;- seq(130,200, le=200)
+lines(mu, dnorm(mu, mean=cm[1,"mean"], sd=cm[1,"sd"]), col="orange", lwd=2)
+lines(mu, dnorm(mu, mean=cm[2,"mean"], sd=cm[2,"sd"]), col="orange", lwd=2)
+
+# determine a range of tau values:
+tau &lt;- seq(0, ma04$qposterior(tau=0.99), length=100)
+# compute conditional posterior moments:
+cm.overall &lt;- ma04$cond.moment(tau=tau)
+# compute study-specific conditional posterior moments:
+cm.indiv &lt;- ma04$cond.moment(tau=tau, individual=TRUE)
+# show forest plot along with conditional posterior means:
+par(mfrow=c(1,2))
+  plot(ma04, which=1, main="Cochran 1954 example")
+  matplot(tau, cm.indiv[,"mean",], type="l", lty="solid", col=1:ma04$k,
+          xlim=c(0,max(tau)*1.2), xlab=expression("heterogeneity "*tau),
+          ylab=expression("(conditional) shrinkage estimate E["*
+                           theta[i]*"|"*list(tau, y, sigma)*"]"))
+  text(rep(max(tau)*1.01, ma04$k), cm.indiv[length(tau),"mean",],
+       ma04$label, col=1:ma04$k, adj=c(0,0.5))
+  lines(tau, cm.overall[,"mean"], lty="dashed", lwd=2)
+  text(max(tau)*1.01, cm.overall[length(tau),"mean"],
+       "overall", adj=c(0,0.5))
+par(mfrow=c(1,1))
+
+# show the individual effects' posterior distributions:
+theta &lt;- seq(120, 240, le=300)
+plot(range(theta), c(0,0.1), type="n", xlab=expression(theta[i]), ylab="")
+for (i in 1:ma04$k) {
+  # draw estimate +/- uncertainty as a Gaussian:
+  lines(theta, dnorm(theta, mean=ma04$y[i], sd=ma04$sigma[i]), col=i+1, lty="dotted")
+  # draw effect's posterior distribution:
+  lines(theta, ma04$dposterior(theta=theta, indiv=i), col=i+1, lty="solid")
+}
+abline(h=0)
+legend(max(theta), 0.1, legend=ma04$label, col=(1:ma04$k)+1, pch=15, xjust=1, yjust=1)
+
+## End(Not run)
+</code></pre>
+
+
+</div>

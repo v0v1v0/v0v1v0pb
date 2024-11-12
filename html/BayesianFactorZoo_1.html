@@ -1,0 +1,188 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>BayesianFM</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Bayesian Fama-MacBeth</h2>
+
+<h3>Description</h3>
+
+<p>This function provides the Bayesian Fama-MacBeth regression.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">BayesianFM(f, R, sim_length)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>f</code></td>
+<td>
+<p>A matrix of factors with dimension <code class="reqn">t \times k</code>, where <code class="reqn">k</code> is the number of factors
+and <code class="reqn">t</code> is the number of periods;</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>R</code></td>
+<td>
+<p>A matrix of test assets with dimension <code class="reqn">t \times N</code>, where <code class="reqn">t</code> is the number of periods
+and <code class="reqn">N</code> is the number of test assets;</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>sim_length</code></td>
+<td>
+<p>The length of MCMCs;</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p><code>BayesianFM</code> is similar to another twin function in this package, <code>BayesianSDF</code>,
+except that we estimate factors' risk premia rather than risk prices in this function.
+Unlike <code>BayesianSDF</code>, we use factor loadings, <code class="reqn">\beta_f</code>, instead of covariance exposures, <code class="reqn">C_f</code>,
+in the Fama-MacBeth regression. In particular, after we obtain the posterior draws of <code class="reqn">\mu_{Y}</code> and <code class="reqn">\Sigma_{Y}</code>
+(details can be found in the section introducing <code>BayesianSDF</code> function),
+we calculate <code class="reqn">\beta_f</code> as follows: <code class="reqn">\beta_f = C_f \Sigma_f^{-1}</code>, and <code class="reqn">\beta = (1_N, \beta_f)</code>.
+</p>
+<p><strong>Bayesian Fama-MacBeth (BFM)</strong>
+</p>
+<p>The posterior distribution of <code class="reqn">\lambda</code> conditional on <code class="reqn">\mu_{Y}</code>, <code class="reqn">\Sigma_{Y}</code>, and the data, is a Dirac distribution at
+<code class="reqn">(\beta^\top \beta)^{-1} \beta^\top \mu_R</code>.
+</p>
+<p><strong>Bayesian Fama-MacBeth GLS (BFM-GLS)</strong>
+</p>
+<p>The posterior distribution of <code class="reqn">\lambda</code> conditional on <code class="reqn">\mu_{Y}</code>, <code class="reqn">\Sigma_{Y}</code>, and the data, is a Dirac distribution at
+<code class="reqn"> (\beta^\top \Sigma_R^{-1} \beta)^{-1} \beta^\top \Sigma_R^{-1} \mu_R  </code>.
+</p>
+
+
+<h3>Value</h3>
+
+<p>The return of <code>BayesianFM</code> is a list of the following elements:
+</p>
+
+<ul>
+<li> <p><code>lambda_ols_path</code>: A <code>sim_length</code><code class="reqn">\times (k+1)</code> matrix of OLS risk premia estimates (Each row represents a draw.
+Note that the first column is <code class="reqn">\lambda_c</code> corresponding to the constant term.
+The next <code class="reqn">k</code> columns are the risk premia estimates of the <code class="reqn">k</code> factors);
+</p>
+</li>
+<li> <p><code>lambda_gls_path</code>: A <code>sim_length</code><code class="reqn">\times (k+1)</code> matrix of the risk premia estimates <code class="reqn">\lambda</code> (GLS);
+</p>
+</li>
+<li> <p><code>R2_ols_path</code>: A <code>sim_length</code><code class="reqn">\times 1</code> matrix of the <code class="reqn">R^2_{OLS}</code>;
+</p>
+</li>
+<li> <p><code>R2_gls_path</code>: A <code>sim_length</code><code class="reqn">\times 1</code> matrix of the <code class="reqn">R^2_{GLS}</code>.
+</p>
+</li>
+</ul>
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+## &lt;--------------------------------------------------------------------------------&gt;
+##   Example: Bayesian Fama-MacBeth
+## &lt;--------------------------------------------------------------------------------&gt;
+
+library(reshape2)
+library(ggplot2)
+
+# Load Data
+data("BFactor_zoo_example")
+HML &lt;- BFactor_zoo_example$HML
+lambda_ols &lt;- BFactor_zoo_example$lambda_ols
+R2.ols.true &lt;- BFactor_zoo_example$R2.ols.true
+sim_f &lt;- BFactor_zoo_example$sim_f
+sim_R &lt;- BFactor_zoo_example$sim_R
+uf &lt;- BFactor_zoo_example$uf
+
+## &lt;-------------------Case 1: strong factor----------------------------------------&gt;
+
+# the Frequentist Fama-MacBeth
+# sim_f: simulated factor, sim_R: simulated return
+# sim_f is the useful (i.e., strong) factor
+results.fm &lt;- Two_Pass_Regression(sim_f, sim_R)
+
+# the Bayesian Fama-MacBeth with 10000 simulations
+results.bfm &lt;- BayesianFM(sim_f, sim_R, 2000)
+
+# Note that the first element correspond to lambda of the constant term
+# So we choose k=2 to get lambda of the strong factor
+k &lt;- 2
+m1 &lt;- results.fm$lambda[k]
+sd1 &lt;- sqrt(results.fm$cov_lambda[k,k])
+
+bfm&lt;-results.bfm$lambda_ols_path[1001:2000,k]
+fm&lt;-rnorm(20000,mean = m1, sd=sd1)
+data&lt;-data.frame(cbind(fm, bfm))
+colnames(data)&lt;-c("Frequentist FM", "Bayesian FM")
+data.long&lt;-melt(data)
+
+p &lt;- ggplot(aes(x=value, colour=variable, linetype=variable), data=data.long)
+p+
+ stat_density(aes(x=value, colour=variable),
+              geom="line",position="identity", size = 2, adjust=1) +
+ geom_vline(xintercept = lambda_ols[2], linetype="dotted", color = "#8c8c8c", size=1.5)+
+ guides(colour = guide_legend(override.aes=list(size=2), title.position = "top",
+ title.hjust = 0.5, nrow=1,byrow=TRUE))+
+ theme_bw()+
+ labs(color=element_blank()) +
+ labs(linetype=element_blank()) +
+ theme(legend.key.width=unit(4,"line")) +
+ theme(legend.position="bottom")+
+ theme(text = element_text(size = 26))+
+ xlab(bquote("Risk premium ("~lambda[strong]~")")) +
+ ylab("Density" )
+
+
+## &lt;-------------------Case 2: useless factor---------------------------------------&gt;
+
+# uf is the useless factor
+# the Frequentist Fama-MacBeth
+results.fm &lt;- Two_Pass_Regression(uf, sim_R)
+
+# the Bayesian Fama-MacBeth with 10000 simulations
+results.bfm &lt;- BayesianFM(uf, sim_R, 2000)
+
+# Note that the first element correspond to lambda of the constant term
+# So we choose k=2 to get lambda of the useless factor
+k &lt;- 2
+m1 &lt;- results.fm$lambda[k]
+sd1 &lt;- sqrt(results.fm$cov_lambda[k,k])
+
+
+bfm&lt;-results.bfm$lambda_ols_path[1001:2000,k]
+fm&lt;-rnorm(20000,mean = m1, sd=sd1)
+data&lt;-data.frame(cbind(fm, bfm))
+colnames(data)&lt;-c("Frequentist FM", "Bayesian FM")
+data.long&lt;-melt(data)
+
+p &lt;- ggplot(aes(x=value, colour=variable, linetype=variable), data=data.long)
+p+
+ stat_density(aes(x=value, colour=variable),
+              geom="line",position="identity", size = 2, adjust=1) +
+ geom_vline(xintercept = lambda_ols[2], linetype="dotted", color = "#8c8c8c", size=1.5)+
+ guides(colour = guide_legend(override.aes=list(size=2),
+ title.position = "top", title.hjust = 0.5, nrow=1,byrow=TRUE))+
+ theme_bw()+
+ labs(color=element_blank()) +
+ labs(linetype=element_blank()) +
+ theme(legend.key.width=unit(4,"line")) +
+ theme(legend.position="bottom")+
+ theme(text = element_text(size = 26))+
+ xlab(bquote("Risk premium ("~lambda[strong]~")")) +
+ ylab("Density" )
+
+
+
+</code></pre>
+
+
+</div>

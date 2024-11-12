@@ -1,0 +1,309 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>bcgam</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Fitting Bayesian Constrained Generalised Additive Models</h2>
+
+<h3>Description</h3>
+
+<p><code>bcgam</code> is used to fit generalised partial linear regression models using a Bayesian 
+approach, where shape and smoothness constraints are imposed on nonparametrically modelled predictors 
+through shape-restricted splines, and no constraints are imposed on optional parametrically modelled covariates.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">bcgam(formula, family = gaussian(), data = NULL, nloop = 10000,
+  burnin = trunc(nloop/10))
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>formula</code></td>
+<td>
+<p>an object of class <code>formula</code> that contains a symbolic description of the model to be fitted.
+It has the form "response~nonparam+param", where "nonparam" are the predictors to be modelled
+nonparametrically and "param" are the optional predictors to be modelled parametrically. The user
+has to specify the relationship between the systematic component <code class="reqn">\eta</code> and any nonparametrically modelled
+predictor <code class="reqn">x</code>. The options are:
+</p>
+
+<ul>
+<li>
+<p> sm.incr(x): <code class="reqn">x</code> is smooth and increasing in <code class="reqn">\eta</code>. See <code>sm.incr</code> for more details.
+</p>
+</li>
+<li>
+<p> sm.decr(x): <code class="reqn">x</code> is smooth and decreasing in <code class="reqn">\eta</code>. See <code>sm.decr</code> for more details.
+</p>
+</li>
+<li>
+<p> sm.conv(x): <code class="reqn">x</code> is smooth and convex in <code class="reqn">\eta</code>. See <code>sm.conv</code> for more details.
+</p>
+</li>
+<li>
+<p> sm.conc(x): <code class="reqn">x</code> is smooth and concave in <code class="reqn">\eta</code>. See <code>sm.conc</code> for more details.
+</p>
+</li>
+<li>
+<p> sm.incr.conv(x): <code class="reqn">x</code> is smooth, increasing and convex in <code class="reqn">\eta</code>. See <code>sm.incr.conv</code> for more details.
+</p>
+</li>
+<li>
+<p> sm.decr.conv(x): <code class="reqn">x</code> is smooth, decreasing and convex in <code class="reqn">\eta</code>. See <code>sm.decr.conv</code> for more details.
+</p>
+</li>
+<li>
+<p> sm.incr.conc(x): <code class="reqn">x</code> is smooth, increasing and concave in <code class="reqn">\eta</code>. See <code>sm.incr.conc</code> for more details.
+</p>
+</li>
+<li>
+<p> sm.decr.conc(x): <code class="reqn">x</code> is smooth, decreasing and concave in <code class="reqn">\eta</code>. See <code>sm.decr.conc</code> for more details.
+</p>
+</li>
+</ul>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>family</code></td>
+<td>
+<p>a description of the error distribution and link function to be used in the model. This accepts
+only the following families: <code>"gaussian"</code> (normal errors model), <code>"binomial"</code> (logistic model), and 
+<code>"poisson"</code> (Poisson model). See <code>family</code> for details of family functions.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+<p>an optional data frame, list or environment containing the variables in the model. The default is <code>"NULL"</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nloop</code></td>
+<td>
+<p>length of the MCMC. The default is <code>10000</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>burnin</code></td>
+<td>
+<p>a positive value, smaller than <code>nloop</code>, that indicates the amount of initial
+MCMC values to be discarded. By default, it burns-in the first 10% chain values.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>We assume the additive model for each systematic component element <code class="reqn">\eta_i</code> given by
+</p>
+<p style="text-align: center;"><code class="reqn">\eta_i = f_1(x_{1i}) + ... + f_L(x_{Li}) + z_i'\gamma,</code>
+</p>
+<p> where <code class="reqn">z_i</code> is a vector
+of variables to be modelled parametrically and <code class="reqn">\gamma</code> is a parameter vector. The functions
+<code class="reqn">f_l</code> of the continuous predictors <code class="reqn">x_l</code> are assumed to be smooth, and shape restrictions
+such as monotonicity and/or convexity might be assumed. Generally, the vector <code class="reqn">\eta=(\eta_1, ..., \eta_n)'</code>
+is approximated by </p>
+<p style="text-align: center;"><code class="reqn">\sum_{j=1}^{m_1}\beta_{1j}\delta_{1j} + ... + \sum_{j=1}^{m_L}\beta_{Lj}\delta_{Lj} 
++ \sum_{j=1}^{p}\alpha_j\nu_j,</code>
+</p>
+<p> where <code class="reqn">\beta_{lj} \ge 0</code> for all <code class="reqn">l,j</code>. The <code class="reqn">\delta</code>'s represent
+the basis vectors used to approximate the <code class="reqn">f</code> functions. The <code class="reqn">\nu_j</code> consists of the
+one vector and the vectors of the observed values of covariates to be modelled parametrically. In addition, 
+when <code class="reqn">f_l</code> is assumed to be convex, the <code class="reqn">x_l</code> vector is included as one of the <code class="reqn">\nu_j</code>.
+</p>
+<p>A Bayesian approach is considered for estimation and inference of the model above. As the <code class="reqn">\beta</code>
+coefficients are constrained to be non-negative, then a gamma prior with hyperparameters <code class="reqn">c_{l1}</code> (shape)
+and <code class="reqn">c_{l2}</code> (scale) is assumed for each <code class="reqn">\beta_{lj}</code>. The values <code class="reqn">c_{l1}</code> and <code class="reqn">c_{l2}</code> are
+chosen in a way that a large variance can be combined with a small mean, so that it is close to a 
+non-informative gamma prior. Further, a normal prior distribution with mean zero and large variance <code class="reqn">M</code>
+is considered for the <code class="reqn">\alpha</code> coefficients.
+</p>
+<p><code>bcgam</code> makes use of the system "nimble" to set the Bayesian (hierarchical) model and compute the MCMC. Hence, 
+"nimble" has to be loaded in <code>R</code> to be able to use <code>bcgam</code>. Information about how to download
+and install "nimble" can be found at <a href="https://r-nimble.org">https://r-nimble.org</a>.
+</p>
+
+
+<h3>Value</h3>
+
+<p><code>bcgam</code> returns an object of class "bcgam".
+</p>
+<p>The generic routines <code>summary</code> and <code>print</code> are used to obtain and print a summary
+of the results. Further, 2D and 3D plots can be created using <code>plot</code> and <code>persp</code>, respectively.
+</p>
+<p>An object of class "bcgam" is a list containing at least the following components:
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>coefs</code></td>
+<td>
+<p>a vector of posterior means of the <code class="reqn">\alpha</code> and <code class="reqn">\beta</code> coefficients.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>sd.coefs</code></td>
+<td>
+<p>a vector of posterior standard errors of the <code class="reqn">\alpha</code> and <code class="reqn">\beta</code> coefficients.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>etahat</code></td>
+<td>
+<p>a vector of posterior means of the systematic component <code class="reqn">\eta</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>muhat</code></td>
+<td>
+<p>a vector of posterior means of <code class="reqn">\mu</code>. <code class="reqn">\mu</code> is obtained by 
+transforming <code class="reqn">\eta</code> using the inverse of the link function.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>alpha.sims</code></td>
+<td>
+<p>a matrix of posterior samples (after burn-in) of the <code class="reqn">\alpha</code> coefficients.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>beta.sims</code></td>
+<td>
+<p>a matrix of posterior samples (after burn-in) of the <code class="reqn">\beta</code> coefficients.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>sigma.sims</code></td>
+<td>
+<p>a matrix of posterior samples (after burn-in) of <code class="reqn">\sigma</code>. This is only
+shown when <code>family="gaussian"</code>. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>eta.sims</code></td>
+<td>
+<p>a matrix of posterior samples (after burn-in) of the systematic component <code class="reqn">\eta</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>mu.sims</code></td>
+<td>
+<p>a matrix of posterior samples (after burn-in) of <code class="reqn">\mu</code>.
+<code class="reqn">\mu</code> is obtained by transforming <code class="reqn">\eta</code> using the inverse of the link function.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>delta</code></td>
+<td>
+<p>a matrix that contains the basis functions <code class="reqn">\delta</code> in its columns. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>zmat</code></td>
+<td>
+<p>a matrix that contains the vectors <code class="reqn">\nu</code> in its columns. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>knots</code></td>
+<td>
+<p>a list of the knots.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>shapes</code></td>
+<td>
+<p>a list of numbers that indicate the shape categories.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>sps</code></td>
+<td>
+<p>a character vector of the space parameter used to create the knots.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nloop</code></td>
+<td>
+<p>the length of the MCMC.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>burnin</code></td>
+<td>
+<p>the burn-in value.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>family</code></td>
+<td>
+<p>the family parameter.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>y</code></td>
+<td>
+<p>the response variable.</p>
+</td>
+</tr>
+</table>
+<h3>Author(s)</h3>
+
+<p>Cristian Oliva-Aviles and Mary C. Meyer
+</p>
+
+
+<h3>References</h3>
+
+<p>Meyer, M. C. (2008) Inference using shape-restricted regression splines. 
+<em>Annals of Applied Statistics</em> <strong>2(3)</strong>, 1013-1033.
+</p>
+<p>Meyer, M. C., Hackstadt, A. J., and Hoeting J. A. (2011) Bayesian estimation and inference for 
+generalised partial linear models using shape-restricted splines. <em>Journal of Nonparametric
+Statistics</em> <strong>23(4)</strong>, 867-884.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>predict.bcgam</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## Not run: 
+## Example 1 (gaussian)
+data(duncan)
+
+bcgam.fit &lt;- bcgam(income~sm.incr(prestige, space="E")+sm.conv(education)+type, data=duncan)
+print(bcgam.fit)
+summary(bcgam.fit)
+plot(bcgam.fit, prestige, col=4)
+persp(bcgam.fit, prestige, education, level=0.90)
+
+
+## Example 2 (poisson)
+set.seed(2018)
+n&lt;-50
+x1&lt;-sqrt(1:n)
+z&lt;-as.factor(rbinom(n, 1, 0.5))
+log.eta&lt;-x1/7+0.2*as.numeric(z)+rnorm(50, sd=0.6)
+eta&lt;-exp(log.eta)
+y&lt;-rpois(n,eta)
+
+bcgam.fit &lt;- bcgam(y~sm.conv(x1)+z, family="poisson")
+summary(bcgam.fit)
+predict(bcgam.fit, newdata=data.frame(x1=0.2, z="0"), interval="credible")
+plot(bcgam.fit, x1, col=3, col.inter=4)
+
+## End(Not run)
+</code></pre>
+
+
+</div>

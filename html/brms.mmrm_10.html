@@ -1,0 +1,140 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>brm_data_chronologize</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Chronologize a dataset</h2>
+
+<h3>Description</h3>
+
+<p>Convert the discrete time variable into an ordered factor.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">brm_data_chronologize(
+  data,
+  order = NULL,
+  levels = NULL,
+  time = attr(data, "brm_time")
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+<p>Data frame or tibble with longitudinal data.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>order</code></td>
+<td>
+<p>Optional character string with the name of a variable in
+the data for ordering the time variable.
+Either <code>order</code> or <code>levels</code> must be supplied, but not both together.
+If <code>order</code> is supplied,
+the levels of <code>data[[order]]</code> must have a 1:1 correspondence with
+those of <code>data[[time]]</code>, and <code>sort(unique(data[[order]]))</code> must
+reflect the desired order of the levels of <code>data[[time]]</code>. For example,
+suppose you have a CDISC dataset with categorical time variable <code>AVISIT</code>
+and integer variable <code>AVISITN</code>. Then,
+<code>brm_data_chronologize(time = "AVISIT", order = "AVISITN")</code> will turn
+<code>AVISIT</code> into an ordered factor with levels that respect the ordering
+in <code>AVISITN</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>levels</code></td>
+<td>
+<p>Optional character vector of levels of <code>data[[time]]</code>
+in chronological order. Used to turn <code>data[[time]]</code> into an
+ordered factor.
+Either <code>order</code> or <code>levels</code> must be supplied, but not both together.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>time</code></td>
+<td>
+<p>Character string with the name of the discrete time
+variable in the data. This is the variable that <code>brm_data_chronologize()</code>
+turns into an ordered factor. It needs to be specified explicitly
+if and only if the <code>data</code> argument was not produced by a call to
+<code>brm_data()</code>.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>Most MMRMs should use an ordered factor for the <code>time</code> column
+in the data. This way, individual time points are treated as
+distinct factor levels for the purposes of fixed effect parameterizations
+(see the "Contrasts" section), and the explicit ordering ensures
+that informative prior archetypes and ARMA-like correlation structures
+are expressed correctly. Without the ordering, problems can arise when
+character vectors are sorted: e.g. if <code>AVISIT</code> has levels
+<code style="white-space: pre;">⁠"VISIT1", "VISIT2", ..., "VISIT10"⁠</code>, then <code>brms</code> will mistake the
+the order of scheduled study visits to be
+<code style="white-space: pre;">⁠"VISIT1", "VISIT10", "VISIT2", ...⁠</code>, which is not chronological.
+</p>
+<p>You can easily turn
+the time variable into an ordered factor using
+<code>brm_data_chronologize()</code>. Either supply an explicit character vector
+of chronologically-ordered factor levels in the <code>levels</code> argument,
+or supply the name of a time-ordered variable in the <code>order</code> argument.
+</p>
+<p><code>brm_data_chronologize()</code> can be called either before or just after
+<code>brm_data()</code>, but in the former case, the discrete time variable
+needs to be specified explicitly in <code>time</code> argument. And in the latter,
+<code>brm_data_chronologize()</code> must be called before any of the informative
+prior archetype functions such as <code>brm_archetype_successive_cells()</code>.
+</p>
+
+
+<h3>Value</h3>
+
+<p>A data frame with the time column as an ordered factor.
+</p>
+
+
+<h3>Contrasts</h3>
+
+<p>Ordinarily, ordered factors automatically use polynomial contrasts from
+<code>contr.poly()</code>. This is undesirable for MMRMs, so if the time variable
+is an ordered factor, then <code>brm_data()</code>
+manually sets <code>contrasts(data[[time]])</code> to a set of treatment contrasts
+using <code>contr.treatment()</code>. If you prefer different contrasts, please
+manually set <code>contrasts(data[[time]])</code> to something else after
+calling <code>brm_data()</code>.
+</p>
+
+
+<h3>See Also</h3>
+
+<p>Other data: 
+<code>brm_data()</code>,
+<code>brm_data_change()</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">data &lt;- brm_simulate_outline(n_time = 12, n_patient = 4)
+data$AVISIT &lt;- gsub("_0", "_", data$time)
+data$AVISITN &lt;- as.integer(gsub("time_", "", data$time))
+data[, c("AVISIT", "AVISITN")]
+sort(unique(data$AVISIT)) # wrong order
+data1 &lt;- brm_data_chronologize(data, time = "AVISIT", order = "AVISITN")
+sort(unique(data1$AVISIT)) # correct order
+levels &lt;- paste0("time_", seq_len(12))
+data2 &lt;- brm_data_chronologize(data, time = "AVISIT", levels = levels)
+sort(unique(data2$AVISIT)) # correct order
+</code></pre>
+
+
+</div>

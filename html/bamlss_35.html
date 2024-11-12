@@ -1,0 +1,475 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>opt_boost</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Boosting BAMLSS</h2>
+
+<h3>Description</h3>
+
+<p>Optimizer functions for gradient and likelihood boosting with <code>bamlss</code>. In each
+boosting iteration the function selects the model term with the largest contribution to the
+log-likelihood, AIC or BIC.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">## Gradient boosting optimizer.
+opt_boost(x, y, family, weights = NULL,
+  offset = NULL, nu = 0.1, nu.adapt = TRUE, df = 4, maxit = 400,
+  mstop = NULL, maxq = NULL, qsel.splitfactor = FALSE,
+  verbose = TRUE, digits = 4, flush = TRUE,
+  eps = .Machine$double.eps^0.25,
+  nback = NULL, plot = TRUE, initialize = TRUE,
+  stop.criterion = NULL, select.type = 1,
+  force.stop = TRUE, hatmatrix = !is.null(stop.criterion),
+  reverse.edf = FALSE, approx.edf = FALSE,
+  always = FALSE, ...)
+
+boost(x, y, family, weights = NULL,
+  offset = NULL, nu = 0.1, nu.adapt = TRUE, df = 4, maxit = 400,
+  mstop = NULL, maxq = NULL, qsel.splitfactor = FALSE,
+  verbose = TRUE, digits = 4, flush = TRUE,
+  eps = .Machine$double.eps^0.25,
+  nback = NULL, plot = TRUE, initialize = TRUE,
+  stop.criterion = NULL, select.type = 1,
+  force.stop = TRUE, hatmatrix = !is.null(stop.criterion),
+  reverse.edf = FALSE, approx.edf = FALSE,
+  always = FALSE, ...)
+
+## Modified likelihood based boosting.
+opt_boostm(x, y, family, offset = NULL,
+  nu = 0.1, df = 3, maxit = 400, mstop = NULL,
+  verbose = TRUE, digits = 4, flush = TRUE,
+  eps = .Machine$double.eps^0.25, plot = TRUE,
+  initialize = TRUE, stop.criterion = "BIC",
+  force.stop = !is.null(stop.criterion),
+  do.optim = TRUE, always = FALSE, ...)
+
+boostm(x, y, family, offset = NULL,
+  nu = 0.1, df = 3, maxit = 400, mstop = NULL,
+  verbose = TRUE, digits = 4, flush = TRUE,
+  eps = .Machine$double.eps^0.25, plot = TRUE,
+  initialize = TRUE, stop.criterion = "BIC",
+  force.stop = !is.null(stop.criterion),
+  do.optim = TRUE, always = FALSE, ...)
+
+## Boosting summary extractor.
+boost_summary(object, ...)
+
+## Plot all boosting paths.
+boost_plot(x, which = c("loglik", "loglik.contrib", "parameters",
+  "aic", "bic", "user"), intercept = TRUE, spar = TRUE, mstop = NULL,
+  name = NULL, drop = NULL, labels = NULL, color = NULL, ...)
+
+## Boosting summary printing and plotting.
+## S3 method for class 'boost_summary'
+print(x, summary = TRUE, plot = TRUE,
+  which = c("loglik", "loglik.contrib"), intercept = TRUE,
+  spar = TRUE, ...)
+## S3 method for class 'boost_summary'
+plot(x, ...)
+
+## Model frame for out-of-sample selection.
+boost_frame(formula, train, test, family = "gaussian", ...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>For function <code>opt_boost()</code> the <code>x</code> list, as returned from function
+<code>bamlss.frame</code>, holding all model matrices and other information that is used for
+fitting the model. For the plotting function the corresponding <code>bamlss</code> object
+fitted with the <code>opt_boost()</code> optimizer.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>y</code></td>
+<td>
+<p>The model response, as returned from function <code>bamlss.frame</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>family</code></td>
+<td>
+<p>A <span class="pkg">bamlss</span> family object, see <code>family.bamlss</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>weights</code></td>
+<td>
+<p>Prior weights on the data, as returned from function <code>bamlss.frame</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>offset</code></td>
+<td>
+<p>Can be used to supply model offsets for use in fitting,
+returned from function <code>bamlss.frame</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nu</code></td>
+<td>
+<p>Numeric, between [0, 1], controls the step size, i.e., the amount
+that should be added to model term parameters.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nu.adapt</code></td>
+<td>
+<p>Logical. If set to TRUE (default) step size <code>nu</code> is divided by 2,
+if current boosting iteration did not improve the loglikelihood.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>df</code></td>
+<td>
+<p>Integer, defines the initial degrees of freedom that should be assigned
+to each smooth model term. May also be a named vector, the names must match the model term
+labels, e.g., as provided in <code>summary.bamlss</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>maxit</code></td>
+<td>
+<p>Integer, the maximum number of boosting iterations.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>mstop</code></td>
+<td>
+<p>For convenience, overwrites <code>maxit</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>maxq</code></td>
+<td>
+<p>Integer, defines the maximum number of selected base-learners. The algorithm stops
+if this numer is exceeded.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>qsel.splitfactor</code></td>
+<td>
+<p>Logical, if set to <code>TRUE</code> dummy variables of categorical predictors are counted individually.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>name</code></td>
+<td>
+<p>Character, the name of the coefficient (group) that should be plotted. Note that
+the string provided in <code>name</code> will be removed from the labels on the 4th axis.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>drop</code></td>
+<td>
+<p>Character, the name of the coefficient (group) that should not be plotted.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>labels</code></td>
+<td>
+<p>A character string of labels that should be used on the 4 axis.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>color</code></td>
+<td>
+<p>Colors or color function that creates colors for the (group) paths.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>verbose</code></td>
+<td>
+<p>Print information during runtime of the algorithm.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>digits</code></td>
+<td>
+<p>Set the digits for printing when <code>verbose = TRUE</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>flush</code></td>
+<td>
+<p>use <code>flush.console</code> for displaying the current output in the console.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>eps</code></td>
+<td>
+<p>The tolerance used as stopping mechanism, see argument <code>nback</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nback</code></td>
+<td>
+<p>Integer. If <code>nback</code> is not <code>NULL</code>, then the algorithm stops if the
+the change in the log-likelihood of the last <code>nback</code> iterations is smaller or
+equal to <code>eps</code>. If <code>maxit = NULL</code> the maximum number of iterations is set to 10000.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>plot</code></td>
+<td>
+<p>Should the boosting summary be printed and plotted?</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>initialize</code></td>
+<td>
+<p>Logical, should intercepts be initialized?</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>stop.criterion</code></td>
+<td>
+<p>Character, selects the information criterion that should be used
+to determine the optimum number of boosting iterations. Either <code>"AIC"</code> or <code>"BIC"</code>
+is possible. Note that this feature requires to compute hat-matrices for each distributional
+parameter, therefore, the routine may be slow and computer storage intensive.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>select.type</code></td>
+<td>
+<p>Should model terms be selected by the log-likelihood contribution,
+<code>select.type = 1</code>, or by the corresponding <code>stop.criterion</code>, <code>select.type = 2</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>force.stop</code></td>
+<td>
+<p>Logical, should the algorithm stop if the information criterion increases?</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>do.optim</code></td>
+<td>
+<p>Logical. Should smoothing parameters be optimized in each boosting iteration?</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>hatmatrix</code></td>
+<td>
+<p>Logical, if set to <code>TRUE</code> the hat-matrices for each distributional parameter
+will be computed. The hat-matrices are used to determine the effective (equivalent) degrees of
+freedom in each boosting iteration, i.e., it is possible to compute information criteria
+like the AIC or BIC for selecting the optimum number of boosting iterations.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>reverse.edf</code></td>
+<td>
+<p>Logical. Instead of computing degrees of freedom with hat-matrices, the actual
+smoothing parameters are reverse engineered to compute the corresponding actual smoother matrix.
+Note that this option is still experimental.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>approx.edf</code></td>
+<td>
+<p>Logical. Another experimental and fast approximation of the degrees of freedom.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>always</code></td>
+<td>
+<p>Logical or character. Should the intercepts forced to be updated in each boosting iteration?
+If <code>always = TRUE</code> each intercept of each distributional parameter is updated,
+if <code>always = "best"</code> only the intercept corresponding to the distributional of the best
+fitting model term is updated.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>object</code></td>
+<td>
+<p>A <code>bamlss</code> object that was fitted using <code>opt_boost()</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>summary</code></td>
+<td>
+<p>Should the summary be printed?</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>which</code></td>
+<td>
+<p>Which of the three provided plots should be created?</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>intercept</code></td>
+<td>
+<p>Should the coefficient paths of intercepts be dropped in the plot?</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>spar</code></td>
+<td>
+<p>Should graphical parmeters be set with <code>par</code>?</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>formula</code></td>
+<td>
+<p>See <code>bamlss.frame</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>train, test</code></td>
+<td>
+<p>Data frames used for training and testing the model..</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>For function <code>opt_boost()</code>, arguments passed to <code>bamlss.engine.setup</code>.
+for function <code>boost_summary()</code> arguments passed to function <code>print.boost_summary()</code>.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>For function <code>boost_summary()</code> a list containing information on selection frequencies etc.
+For function <code>opt_boost()</code> and <code>opt_boostm()</code> a list containing the following objects:
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>fitted.values</code></td>
+<td>
+<p>A named list of the fitted values based on the last boosting iteration
+of the modeled parameters of the selected distribution.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>parameters</code></td>
+<td>
+<p>A matrix, each row corresponds to the parameter values of one boosting iteration.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>boost_summary</code></td>
+<td>
+<p>The boosting summary which can be printed and plotted.</p>
+</td>
+</tr>
+</table>
+<h3>WARNINGS</h3>
+
+<p>The function does not take care of variable scaling for the linear parts! This must be done by the
+user, e.g., one option is to use argument <code>scale.d</code> in function <code>bamlss.frame</code>,
+which uses <code>scale</code>.
+</p>
+<p>Function <code>opt_boost()</code> does not select the optimum stopping iteration! The modified likelihood
+based algorithm implemented in function <code>opt_boostm()</code> is still experimental!
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>bamlss.frame</code>, <code>bamlss</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## Not run: ## Simulate data.
+set.seed(123)
+d &lt;- GAMart()
+
+## Estimate model.
+f &lt;- num ~ x1 + x2 + x3 + lon + lat +
+  s(x1) + s(x2) + s(x3) + s(lon) + s(lat) + te(lon,lat)
+
+b &lt;- bamlss(f, data = d, optimizer = opt_boost,
+  sampler = FALSE, scale.d = TRUE, nu = 0.01,
+  maxit = 1000, plot = FALSE)
+
+## Plot estimated effects.
+## plot(b)
+
+## Print and plot the boosting summary.
+boost_summary(b, plot = FALSE)
+## boost_plot(b, which = 1)
+## boost_plot(b, which = 2)
+## boost_plot(b, which = 3, name = "mu.s.te(lon,lat).")
+
+## Extract estimated parameters for certain
+## boosting iterations.
+parameters(b, mstop = 1)
+parameters(b, mstop = 100)
+
+## Also works with predict().
+head(do.call("cbind", predict(b, mstop = 1)))
+head(do.call("cbind", predict(b, mstop = 100)))
+
+## Another example using the modified likelihood
+## boosting algorithm.
+f &lt;- list(
+  num ~ x1 + x2 + x3 + lon + lat +
+    s(x1) + s(x2) + s(x3) + s(lon) + s(lat) + te(lon,lat),
+  sigma ~ x1 + x2 + x3 + lon + lat +
+    s(x1) + s(x2) + s(x3) + s(lon) + s(lat) + te(lon,lat)
+)
+
+b &lt;- bamlss(f, data = d, optimizer = opt_boostm,
+  sampler = FALSE, scale.d = TRUE, nu = 0.05,
+  maxit = 400, stop.criterion = "AIC", force.stop = FALSE)
+
+## Plot estimated effects.
+## plot(b)
+
+## Plot AIC and log-lik contributions.
+## boost_plot(b, "AIC")
+## boost_plot(b, "loglik.contrib")
+
+## Out-of-sample selection of model terms.
+set.seed(123)
+d &lt;- GAMart(n = 5000)
+
+## Split data into training and testing
+i &lt;- sample(1:2, size = nrow(d), replace = TRUE)
+dtest &lt;- subset(d, i == 1)
+dtrain &lt;- subset(d, i == 2)
+
+## Model formula
+f &lt;- list(
+  num ~ s(x1) + s(x2) + s(x3),
+  sigma ~ s(x1) + s(x2) + s(x3)
+)
+
+## Create model frame for out-of-sample selection.
+sm &lt;- boost_frame(f, train = dtrain, test = dtest, family = "gaussian")
+
+## Out-of-sample selection function.
+sfun &lt;- function(parameters) {
+  sm$parameters &lt;- parameters
+  p &lt;- predict(sm, type = "parameter")
+  -1 * sum(sm$family$d(dtest$num, p, log = TRUE))
+}
+
+## Start boosting with out-of-sample negative
+## log-likelihood selection of model terms.
+b &lt;- bamlss(f, data = dtrain, sampler = FALSE, optimizer = opt_boost,
+  selectfun = sfun, always = "best")
+
+## Plot curve of negative out-of-sample log-likelihood.
+## boost_plot(b, which = "user")
+
+## End(Not run)
+</code></pre>
+
+
+</div>

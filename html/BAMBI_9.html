@@ -1,0 +1,144 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>circ_varcor_model</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Analytic circular variances and correlations for bivariate angular models</h2>
+
+<h3>Description</h3>
+
+<p>Analytic circular variances and correlations for bivariate angular models
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">circ_varcor_model(
+  model = "vmsin",
+  kappa1 = 1,
+  kappa2 = 1,
+  kappa3 = 0,
+  mu1 = 0,
+  mu2 = 0,
+  nsim = 10000,
+  ...
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>model</code></td>
+<td>
+<p>bivariate angular model. Must be one of <code>"vmsin"</code>,
+<code>"vmcos"</code>, or <code>"wnorm2"</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>kappa1, kappa2, kappa3</code></td>
+<td>
+<p>concentration and covariance parameters.
+Recycled to the same size. kappa3^2 must be &lt; kappa1*kappa2 in the wnorm2 model
+(see rwnorm2 for a detailed parameterization of <code>wnorm2</code>).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>mu1, mu2</code></td>
+<td>
+<p>mean parameters. Ignored as they do not play any role in
+the analytical formulas.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nsim</code></td>
+<td>
+<p>Monte Carlo sample size. Ignored if all of <code>kappa1</code>, <code>kappa2</code>
+and <code>abs(kappa3)</code> are &lt; 150 or if model = <code>"wnorm2"</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>additional model specific argment</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The function computes the analytic circular variances and correlations
+(both Jammalamadaka-Sarma (JS) and Fisher-Lee (FL) forms) for von Mises sine,
+von Mises cosine and bivariate wrapped normal distributions.
+</p>
+<p>For <code>wnorm2</code>, expressions for the circular variances,
+JS and FL correlation coefficients can be found in Mardia and Jupp (2009),
+Jammalamadaka and Sarma (1988) and Fisher and Lee (1983) respectively.
+For <code>vmsin</code> and <code>vmcos</code> these expressions are provided in Chakraborty and Wong (2018).
+</p>
+<p>Because the analytic expressions in <code>vmsin</code> and <code>vmcos</code> models involve infinite sums
+of product of Bessel functions,
+if any of <code>kappa1</code>, <code>kappa2</code> and <code>abs(kappa3)</code> is larger
+than or equal to 150, IID Monte Carlo with sample size <code>nsim</code> is used
+to approximate <code>rho_js</code> for numerical stability.  From <code>rho_js</code>,
+<code>rho_fl</code> is computed using Corollary 2.2 in
+Chakraborty and Wong (2018), which makes cost-complexity for
+the <code>rho_fl</code> evaluation to be of order  O(<code>nsim</code>) for <code>vmsin</code>
+and <code>vmcos</code> models. (In general,  <code>rho_fl</code> evaluation
+is of order O(<code>nsim</code>^2)).
+</p>
+<p>In addition, for the <code>vmcos</code> model, when <code>-150 &lt; kappa3 &lt; -1</code>
+or <code>50 &lt; max(kappa1, kappa2, abs(kappa3)) &lt;= 150</code>, the analytic formulas
+in Chakraborty and Wong (2018) are used; however, the reciprocal of the normalizing
+constant and its partial derivatives are all calculated numerically via (quasi) Monte carlo method for
+numerical stability. These (quasi) random numbers can be provided through the
+argument <code>qrnd</code>, which must be a two column matrix, with each element being
+a  (quasi) random number between 0 and 1. Alternatively, if <code>n_qrnd</code> is
+provided (and <code>qrnd</code> is missing), a two dimensional sobol sequence of size <code>n_qrnd</code> is
+generated via the function sobol from the R package <code>qrng</code>. If none of <code>qrnd</code>
+or <code>n_qrnd</code> is available, a two dimensional sobol sequence of size 1e4 is used.
+</p>
+
+
+<h3>Value</h3>
+
+<p>Returns a list with elements <code>var1</code>, <code>var2</code> (circular variances for the
+first and second coordinates), <code>rho_fl</code> and <code>rho_js</code> (circular correlations).
+See details.
+</p>
+
+
+<h3>References</h3>
+
+<p>Fisher, N. I. and Lee, A. (1983). A correlation coefficient for circular data. Biometrika, 70(2):327-332.
+</p>
+<p>Jammalamadaka, S. R. and Sarma, Y. (1988). A correlation coefficient for
+angular variables. Statistical theory and data analysis II, pages 349-364.
+</p>
+<p>Mardia, K. and Jupp, P. (2009). Directional Statistics. Wiley Series in Probability and Statistics. Wiley.
+</p>
+<p>Chakraborty, S. and Wong, S, W.K. (2018). On the circular correlation coefficients
+for bivariate von Mises distributions on a torus. arXiv e-print.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">circ_varcor_model("vmsin", kappa1= 1, kappa2 = 2, kappa3 = 3)
+
+# Monte Carlo approximation
+set.seed(1)
+dat &lt;- rvmsin(1000, 1, 2, 3)
+# sample circular variance
+circ_var &lt;- function(x)
+  1 - mean(cos(x - atan2(mean(sin(x)), mean(cos(x))) ))
+circ_var(dat[, 1])
+circ_var(dat[, 2])
+circ_cor(dat, "fl")
+circ_cor(dat, "js")
+
+</code></pre>
+
+
+</div>

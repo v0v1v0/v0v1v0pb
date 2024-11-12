@@ -1,0 +1,105 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>cor_car</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>(Deprecated) Spatial conditional autoregressive (CAR) structures</h2>
+
+<h3>Description</h3>
+
+<p>These function are deprecated. Please see <code>car</code> for the new
+syntax. These functions are constructors for the <code>cor_car</code> class
+implementing spatial conditional autoregressive structures.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">cor_car(W, formula = ~1, type = "escar")
+
+cor_icar(W, formula = ~1)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>W</code></td>
+<td>
+<p>Adjacency matrix of locations.
+All non-zero entries are treated as if the two locations
+are adjacent. If <code>formula</code> contains a grouping factor,
+the row names of <code>W</code> have to match the levels
+of the grouping factor.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>formula</code></td>
+<td>
+<p>An optional one-sided formula of the form
+<code>~ 1 | g</code>, where <code>g</code> is a grouping factor mapping
+observations to spatial locations. If not specified,
+each observation is treated as a separate location.
+It is recommended to always specify a grouping factor
+to allow for handling of new data in post-processing methods.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>type</code></td>
+<td>
+<p>Type of the CAR structure. Currently implemented
+are <code>"escar"</code> (exact sparse CAR), <code>"esicar"</code>
+(exact sparse intrinsic CAR), <code>"icar"</code> (intrinsic CAR),
+and <code>"bym2"</code>. More information is provided in the 'Details' section.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The <code>escar</code> and <code>esicar</code> types are
+implemented based on the case study of Max Joseph
+(<a href="https://github.com/mbjoseph/CARstan">https://github.com/mbjoseph/CARstan</a>). The <code>icar</code> and
+<code>bym2</code> type is implemented based on the case study of Mitzi Morris
+(<a href="https://mc-stan.org/users/documentation/case-studies/icar_stan.html">https://mc-stan.org/users/documentation/case-studies/icar_stan.html</a>).
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## Not run: 
+# generate some spatial data
+east &lt;- north &lt;- 1:10
+Grid &lt;- expand.grid(east, north)
+K &lt;- nrow(Grid)
+
+# set up distance and neighbourhood matrices
+distance &lt;- as.matrix(dist(Grid))
+W &lt;- array(0, c(K, K))
+W[distance == 1] &lt;- 1
+
+# generate the covariates and response data
+x1 &lt;- rnorm(K)
+x2 &lt;- rnorm(K)
+theta &lt;- rnorm(K, sd = 0.05)
+phi &lt;- rmulti_normal(
+  1, mu = rep(0, K), Sigma = 0.4 * exp(-0.1 * distance)
+)
+eta &lt;- x1 + x2 + phi
+prob &lt;- exp(eta) / (1 + exp(eta))
+size &lt;- rep(50, K)
+y &lt;- rbinom(n = K, size = size, prob = prob)
+dat &lt;- data.frame(y, size, x1, x2)
+
+# fit a CAR model
+fit &lt;- brm(y | trials(size) ~ x1 + x2, data = dat,
+           family = binomial(), autocor = cor_car(W))
+summary(fit)
+
+## End(Not run)
+
+</code></pre>
+
+
+</div>

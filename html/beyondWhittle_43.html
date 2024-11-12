@@ -1,0 +1,214 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>gibbs_var</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Gibbs sampler for vector autoregressive model.</h2>
+
+<h3>Description</h3>
+
+<p>Obtain samples of the posterior of a Bayesian VAR model of fixed order.
+An independent Normal-Inverse-Wishart prior is employed.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">gibbs_var(
+  data,
+  ar.order,
+  Ntotal,
+  burnin,
+  thin = 1,
+  print_interval = 500,
+  full_lik = F,
+  beta.mu = rep(0, ar.order * ncol(data)^2),
+  beta.Sigma = 10000 * diag(ar.order * ncol(data)^2),
+  Sigma.S = 1e-04 * diag(ncol(data)),
+  Sigma.nu = 1e-04
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+<p>numeric matrix; NA values are interpreted as missing values and treated as random</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ar.order</code></td>
+<td>
+<p>order of the autoregressive model (integer &gt;= 0)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Ntotal</code></td>
+<td>
+<p>total number of iterations to run the Markov chain</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>burnin</code></td>
+<td>
+<p>number of initial iterations to be discarded</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>thin</code></td>
+<td>
+<p>thinning number (postprocessing)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>print_interval</code></td>
+<td>
+<p>Number of iterations, after which a status is printed to console</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>full_lik</code></td>
+<td>
+<p>logical; if TRUE, the full likelihood for all observations is used; if FALSE, the partial likelihood for the last n-p observations</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>beta.mu</code></td>
+<td>
+<p>prior mean of beta vector (normal)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>beta.Sigma</code></td>
+<td>
+<p>prior covariance matrix of beta vector</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Sigma.S</code></td>
+<td>
+<p>prior parameter for the innovation covariance matrix, symmetric positive definite matrix</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Sigma.nu</code></td>
+<td>
+<p>prior parameter for the innovation covariance matrix, nonnegative real number</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>See Section 2.2.3 in Koop and Korobilis (2010) or Section 6.2 in Meier (2018) for further details
+</p>
+
+
+<h3>Value</h3>
+
+<p>list containing the following fields:
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>beta</code></td>
+<td>
+<p>matrix containing traces of the VAR parameter vector beta</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Sigma</code></td>
+<td>
+<p>trace of innovation covariance Sigma</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>psd.median,psd.mean</code></td>
+<td>
+<p>psd estimates: (pointwise, componentwise) posterior median and mean</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>psd.p05,psd.p95</code></td>
+<td>
+<p>pointwise credibility interval</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>psd.u05,psd.u95</code></td>
+<td>
+<p>uniform credibility interval, see (6.5) in Meier (2018)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>lpost</code></td>
+<td>
+<p>trace of log posterior</p>
+</td>
+</tr>
+</table>
+<h3>References</h3>
+
+<p>G. Koop and D. Korobilis (2010)
+<em>Bayesian Multivariate Time Series Methods for Empirical Macroeconomics</em>
+Foundations and Trends in Econometrics
+&lt;doi:10.1561/0800000013&gt;
+</p>
+<p>A. Meier (2018)
+<em>A Matrix Gamma Process and Applications to Bayesian Analysis of Multivariate Time Series</em>
+PhD thesis, OvGU Magdeburg
+&lt;https://opendata.uni-halle.de//handle/1981185920/13470&gt;
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## Not run: 
+
+##
+## Example 1: Fit a VAR(p) model to SOI/Recruitment series:
+##
+
+# Use this variable to set the VAR model order
+p &lt;- 5
+
+data &lt;- cbind(as.numeric(astsa::soi-mean(astsa::soi)), 
+              as.numeric(astsa::rec-mean(astsa::rec)) / 50)
+data &lt;- apply(data, 2, function(x) x-mean(x))
+
+# If you run the example be aware that this may take several minutes
+print("example may take some time to run")
+mcmc &lt;- gibbs_var(data=data, ar.order=p, Ntotal=10000, burnin=4000, thin=2)
+
+# Plot spectral estimate, credible regions and periodogram on log-scale
+plot(mcmc, log=T)
+
+
+
+##
+## Example 2: Fit a VAR(p) model to VMA(1) data
+##
+
+# Use this variable to set the VAR model order
+p &lt;- 5
+
+n &lt;- 256
+ma &lt;- rbind(c(-0.75, 0.5), c(0.5, 0.75))
+Sigma &lt;- rbind(c(1, 0.5), c(0.5, 1))
+data &lt;- sim_varma(model=list(ma=ma), n=n, d=2)
+data &lt;- apply(data, 2, function(x) x-mean(x))
+
+# If you run the example be aware that this may take several minutes
+print("example may take some time to run")
+mcmc &lt;- gibbs_var(data=data, ar.order=p, Ntotal=10000, burnin=4000, thin=2)
+
+# Plot spectral estimate, credible regions and periodogram on log-scale
+plot(mcmc, log=T)
+
+## End(Not run)
+</code></pre>
+
+
+</div>

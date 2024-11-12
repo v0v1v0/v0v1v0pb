@@ -1,0 +1,206 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>bundle.luz_module_fitted</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Bundle a <code>luz_module_fitted</code> object</h2>
+
+<h3>Description</h3>
+
+<p>Bundling a model prepares it to be saved to a file and later
+restored for prediction in a new R session. See the 'Value' section for
+more information on bundles and their usage.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">## S3 method for class 'luz_module_fitted'
+bundle(x, ...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>A <code>luz_module_fitted</code> object returned from
+<code>luz::fit.luz_module_generator()</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Not used in this bundler and included for compatibility with
+the generic only. Additional arguments passed to this method will return
+an error.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>For now, bundling methods for torch are only available
+via the luz package, "a higher level API for torch providing
+abstractions to allow for much less verbose training loops."
+</p>
+
+
+<h3>Value</h3>
+
+<p>A bundle object with subclass <code>bundled_luz_module_fitted</code>.
+</p>
+<p>Bundles are a list subclass with two components:
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>object</code></td>
+<td>
+<p>An R object. Gives the output of native serialization
+methods from the model-supplying package, sometimes with additional
+classes or attributes that aid portability. This is often
+a raw object.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>situate</code></td>
+<td>
+<p>A function. The <code>situate()</code> function is defined when
+<code>bundle()</code> is called, though is a loose analogue of an <code>unbundle()</code> S3
+method for that object. Since the function is defined on <code>bundle()</code>, it
+has access to references and dependency information that can
+be saved alongside the <code>object</code> component. Calling <code>unbundle()</code> on a
+bundled object <code>x</code> calls <code>x$situate(x$object)</code>, returning the
+unserialized version of <code>object</code>. <code>situate()</code> will also restore needed
+references, such as server instances and environmental variables.</p>
+</td>
+</tr>
+</table>
+<p>Bundles are R objects that represent a "standalone" version of their
+analogous model object. Thus, bundles are ready for saving to a file; saving
+with <code>base::saveRDS()</code> is our recommended serialization strategy for bundles,
+unless documented otherwise for a specific method.
+</p>
+<p>To restore the original model object <code>x</code> in a new environment, load its
+bundle with <code>base::readRDS()</code> and run <code>unbundle()</code> on it. The output
+of <code>unbundle()</code> is a model object that is ready to <code>predict()</code> on new data,
+and other restored functionality (like plotting or summarizing) is supported
+as a side effect only.
+</p>
+<p>The bundle package wraps native serialization methods from model-supplying
+packages. Between versions, those model-supplying packages may change their
+native serialization methods, possibly introducing problems with re-loading
+objects serialized with previous package versions. The bundle package does
+not provide checks for these sorts of changes, and ought to be used in
+conjunction with tooling for managing and monitoring model environments
+like vetiver or renv.
+</p>
+<p>See <code>vignette("bundle")</code> for more information on bundling and its motivation.
+</p>
+
+
+<h3>See Also</h3>
+
+<p>This method wraps <code>luz::luz_save()</code> and <code>luz::luz_load()</code>.
+</p>
+<p>Other bundlers: 
+<code>bundle.H2OAutoML()</code>,
+<code>bundle.keras.engine.training.Model()</code>,
+<code>bundle.model_fit()</code>,
+<code>bundle.model_stack()</code>,
+<code>bundle.recipe()</code>,
+<code>bundle.step_umap()</code>,
+<code>bundle.train()</code>,
+<code>bundle.workflow()</code>,
+<code>bundle.xgb.Booster()</code>,
+<code>bundle()</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+if (torch::torch_is_installed()) {
+# fit model and bundle ------------------------------------------------
+library(torch)
+library(torchvision)
+library(luz)
+
+set.seed(1)
+
+# example adapted from luz pkgdown article "Autoencoder"
+dir &lt;- tempdir()
+
+mnist_dataset2 &lt;- torch::dataset(
+  inherit = mnist_dataset,
+  .getitem = function(i) {
+    output &lt;- super$.getitem(i)
+    output$y &lt;- output$x
+    output
+  }
+)
+
+train_ds &lt;- mnist_dataset2(
+  dir,
+  download = TRUE,
+  transform = transform_to_tensor
+)
+
+test_ds &lt;- mnist_dataset2(
+  dir,
+  train = FALSE,
+  transform = transform_to_tensor
+)
+
+train_dl &lt;- dataloader(train_ds, batch_size = 128, shuffle = TRUE)
+test_dl &lt;- dataloader(test_ds, batch_size = 128)
+
+net &lt;- nn_module(
+  "Net",
+  initialize = function() {
+    self$encoder &lt;- nn_sequential(
+      nn_conv2d(1, 6, kernel_size=5),
+      nn_relu(),
+      nn_conv2d(6, 16, kernel_size=5),
+      nn_relu()
+    )
+    self$decoder &lt;- nn_sequential(
+      nn_conv_transpose2d(16, 6, kernel_size = 5),
+      nn_relu(),
+      nn_conv_transpose2d(6, 1, kernel_size = 5),
+      nn_sigmoid()
+    )
+  },
+  forward = function(x) {
+    x %&gt;%
+      self$encoder() %&gt;%
+      self$decoder()
+  },
+  predict = function(x) {
+    self$encoder(x) %&gt;%
+      torch_flatten(start_dim = 2)
+  }
+)
+
+mod &lt;- net %&gt;%
+  setup(
+    loss = nn_mse_loss(),
+    optimizer = optim_adam
+  ) %&gt;%
+  fit(train_dl, epochs = 1, valid_data = test_dl)
+
+mod_bundle &lt;- bundle(mod)
+
+
+# then, after saveRDS + readRDS or passing to a new session ----------
+mod_unbundled &lt;- unbundle(mod_bundle)
+
+mod_unbundled_preds &lt;- predict(mod_unbundled, test_dl)
+}
+
+</code></pre>
+
+
+</div>

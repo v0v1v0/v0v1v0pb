@@ -1,0 +1,184 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>ssm_mlg</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>General multivariate linear Gaussian state space models</h2>
+
+<h3>Description</h3>
+
+<p>Construct an object of class <code>ssm_mlg</code> by directly defining the
+corresponding terms of the model.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">ssm_mlg(
+  y,
+  Z,
+  H,
+  T,
+  R,
+  a1 = NULL,
+  P1 = NULL,
+  init_theta = numeric(0),
+  D = NULL,
+  C = NULL,
+  state_names,
+  update_fn = default_update_fn,
+  prior_fn = default_prior_fn
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>y</code></td>
+<td>
+<p>Observations as multivariate time series or matrix with
+dimensions n x p.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Z</code></td>
+<td>
+<p>System matrix Z of the observation equation as p x m matrix or
+p x m x n array.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>H</code></td>
+<td>
+<p>Lower triangular matrix H of the observation. Either a scalar or
+a vector of length n.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>T</code></td>
+<td>
+<p>System matrix T of the state equation. Either a m x m matrix or a
+m x m x n array.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>R</code></td>
+<td>
+<p>Lower triangular matrix R the state equation. Either a m x k matrix
+or a m x k x n array.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>a1</code></td>
+<td>
+<p>Prior mean for the initial state as a vector of length m.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>P1</code></td>
+<td>
+<p>Prior covariance matrix for the initial state as m x m matrix.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>init_theta</code></td>
+<td>
+<p>Initial values for the unknown hyperparameters theta
+(i.e. unknown variables excluding latent state variables).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>D</code></td>
+<td>
+<p>Intercept terms for observation equation, given as a p x n matrix.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>C</code></td>
+<td>
+<p>Intercept terms for state equation, given as m x n matrix.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>state_names</code></td>
+<td>
+<p>A character vector defining the names of the states.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>update_fn</code></td>
+<td>
+<p>A function which returns list of updated model
+components given input vector theta. This function should take only one
+vector argument which is used to create list with elements named as
+<code>Z</code>, <code>H</code>, <code>T</code>, <code>R</code>, <code>a1</code>, <code>P1</code>, <code>D</code>, and
+<code>C</code>, where each element matches the dimensions of the original model
+It's best to check the internal dimensions with <code>str(model_object)</code> as
+the dimensions of input arguments can differ from the final dimensions.
+If any of these components is missing, it is assumed to be constant wrt.
+theta.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>prior_fn</code></td>
+<td>
+<p>A function which returns log of prior density
+given input vector theta.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The general multivariate linear-Gaussian model is defined using the
+following observational and state equations:
+</p>
+<p style="text-align: center;"><code class="reqn">y_t = D_t + Z_t \alpha_t + H_t \epsilon_t, 
+(\textrm{observation equation})</code>
+</p>
+
+<p style="text-align: center;"><code class="reqn">\alpha_{t+1} = C_t + T_t \alpha_t + R_t \eta_t, 
+(\textrm{transition equation})</code>
+</p>
+
+<p>where <code class="reqn">\epsilon_t \sim N(0, I_p)</code>, <code class="reqn">\eta_t \sim N(0, I_k)</code> and
+<code class="reqn">\alpha_1 \sim N(a_1, P_1)</code> independently of each other.
+Here p is the number of time series and k is the number of disturbance terms
+(which can be less than m, the number of states).
+</p>
+<p>The <code>update_fn</code> function should take only one
+vector argument which is used to create list with elements named as
+<code>Z</code>, <code>H</code> <code>T</code>, <code>R</code>, <code>a1</code>, <code>P1</code>, <code>D</code>,
+and <code>C</code>,
+where each element matches the dimensions of the original model.
+If any of these components is missing, it is assumed to be
+constant wrt. theta.
+Note that while you can input say R as m x k matrix for <code>ssm_mlg</code>,
+<code>update_fn</code> should return R as m x k x 1 in this case.
+It might be useful to first construct the model without updating function
+</p>
+
+
+<h3>Value</h3>
+
+<p>An object of class <code>ssm_mlg</code>.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+data("GlobalTemp", package = "KFAS")
+model_temp &lt;- ssm_mlg(GlobalTemp, H = matrix(c(0.15,0.05,0, 0.05), 2, 2), 
+  R = 0.05, Z = matrix(1, 2, 1), T = 1, P1 = 10,
+  state_names = "temperature",
+  # using default values, but being explicit for testing purposes
+  D = matrix(0, 2, 1), C = matrix(0, 1, 1))
+ts.plot(cbind(model_temp$y, smoother(model_temp)$alphahat), col = 1:3)
+
+</code></pre>
+
+
+</div>

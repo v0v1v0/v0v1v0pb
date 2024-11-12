@@ -1,0 +1,231 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>maxR</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Compute maxR statistic for each off-axis dose combination</h2>
+
+<h3>Description</h3>
+
+<p><code>maxR</code> computes maxR statistics for each off-axis dose
+combination given the data provided. It provides a summary with results
+indicating whether a given point is estimated to be synergetic or
+antagonistic. These can be based either on normal approximation or a
+fully bootstrapped distribution of the statistics.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">maxR(
+  data_off,
+  fitResult,
+  transforms = fitResult$transforms,
+  null_model = c("loewe", "hsa", "bliss", "loewe2"),
+  R,
+  CP,
+  reps,
+  nested_bootstrap = FALSE,
+  B.B = NULL,
+  cutoff = 0.95,
+  cl = NULL,
+  B.CP = NULL,
+  method = c("equal", "model", "unequal"),
+  bootStraps,
+  idUnique,
+  n1,
+  doseGridOff,
+  transFun,
+  invTransFun,
+  ...
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>data_off</code></td>
+<td>
+<p>data frame with off -axis information</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>fitResult</code></td>
+<td>
+<p>Monotherapy (on-axis) model fit, e.g. produced by
+<code>fitMarginals</code>. It has to be a <code>"MarginalFit"</code> object or a
+list containing <code>df</code>, <code>sigma</code>, <code>coef</code>,
+<code>shared_asymptote</code> and <code>method</code> elements for, respectively,
+marginal model degrees of freedom, residual standard deviation, named
+vector of coefficient estimates, logical value of whether shared asymptote
+is imposed and method for estimating marginal models during bootstrapping
+(see <code>fitMarginals</code>). If biological and power transformations
+were used in marginal model estimation, <code>fitResult</code> should contain
+<code>transforms</code> elements with these transformations. Alternatively, these
+can also be specified via <code>transforms</code> argument.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>transforms</code></td>
+<td>
+<p>Transformation functions. If non-null, <code>transforms</code> is
+a list containing 5 elements, namely biological and power transformations
+along with their inverse functions and <code>compositeArgs</code> which is a list
+with argument values shared across the 4 functions. See vignette for more
+information.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>null_model</code></td>
+<td>
+<p>Specified null model for the expected response surface.
+Currently, allowed options are <code>"loewe"</code> for generalized Loewe model,
+<code>"hsa"</code> for Highest Single Agent model, <code>"bliss"</code> for Bliss additivity,
+and <code>"loewe2"</code> for the alternative Loewe generalization.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>R</code></td>
+<td>
+<p>Numeric vector containing mean deviation of predicted response
+surface from the observed one at each of the off-axis points. If missing,
+it will be calculated automatically from output of
+<code>predictOffAxis</code> function.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>CP</code></td>
+<td>
+<p>Prediction covariance matrix. If not specified, it will be estimated
+by bootstrap using <code>B.CP</code> iterations.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>reps</code></td>
+<td>
+<p>Numeric vector containing number of replicates for each off-axis
+dose combination. If missing, it will be calculated automatically from output
+of <code>predictOffAxis</code> function.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nested_bootstrap</code></td>
+<td>
+<p>When statistics are calculated, if
+<code>nested_bootstrap = TRUE</code>, <code>CP</code> matrix is recalculated at each
+bootstrap iteration of <code>B.B</code> using <code>B.CP</code> iterations. Using such
+nested bootstrap may however significantly increase computational time. If
+<code>nested_bootstrap = FALSE</code>, <code>CP</code> bootstrapped data reuses
+<code>CP</code> matrix calculated from the original data.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>B.B</code></td>
+<td>
+<p>Number of iterations to use in bootstrapping null distribution for
+either meanR or maxR statistics.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>cutoff</code></td>
+<td>
+<p>Cut-off to use in maxR procedure for declaring non-additivity
+(default is 0.95).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>cl</code></td>
+<td>
+<p>If parallel computations are desired, <code>cl</code> should be a cluster
+object created by <code>makeCluster</code>. If parallel
+computing is active, progress reporting messages are not necessarily
+ordered as it should be expected.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>B.CP</code></td>
+<td>
+<p>Number of bootstrap iterations to use for CP matrix estimation</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>method</code></td>
+<td>
+<p>What assumption should be used for the variance of on- and 
+off-axis points. This argument can take one of the values from 
+<code>c("equal", "model", "unequal")</code>. With the value <code>"equal"</code> as the
+default. <code>"equal"</code> assumes that both on- and off-axis points have the 
+same variance, <code>"unequal"</code> estimates a different parameter for on- and 
+off-axis points and <code>"model"</code> predicts variance based on the average 
+effect of an off-axis point. If no transformations are used the 
+<code>"model"</code> method is recommended. If transformations are used, only the
+<code>"equal"</code> method can be chosen.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>bootStraps</code></td>
+<td>
+<p>precomputed bootstrap objects</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>idUnique</code></td>
+<td>
+<p>unique combinations of on-axis points, a character vector</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>n1</code></td>
+<td>
+<p>the number of off-axis points</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>doseGridOff</code></td>
+<td>
+<p>dose grid for off-axis points</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>transFun, invTransFun</code></td>
+<td>
+<p>the transformation and inverse transformation functions for the variance</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Further arguments that will be later passed to
+<code>generateData</code> function during bootstrapping</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>This function returns a <code>maxR</code> object with estimates for the
+maxR statistical test. <code>maxR</code> object is essentially a list with
+appropriately named elements.
+</p>
+<p>In particular, <code>maxR</code> object contains <code>"Ymean"</code> element which is
+a summary table of maxR test results for each dose combination. This table
+contains mean deviation from the predicted surface, normalized deviation
+(<code>"absR"</code>) as well as a statistical call whether this deviation is
+significant. Distributional information on which these calls are made can
+be retrieved from the attributes of the <code>"Ymean"</code> dataframe.
+</p>
+<p>Also, <code>maxR</code> object contains <code>"Call"</code> element which indicates the
+general direction of the deviation of the observed surface from the null.
+This call is based on the strongest local deviation in the <code>"Ymean"</code>
+table. 4 values are available here: <code>"Syn"</code>, <code>"Ant"</code>,
+<code>"None"</code>, <code>"Undefined"</code>. If one compound acts as an agonist while
+another one is an antagonist, then a deviation from the null is classified
+as <code>"Undefined"</code>. If both compounds act in the same direction, then a
+stronger than individual effect is classified as synergy while a weaker
+effect would be classified as antagonism.
+</p>
+
+
+</div>

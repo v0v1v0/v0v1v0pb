@@ -1,0 +1,144 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>NoiseScree</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Noise Scree Plots</h2>
+
+<h3>Description</h3>
+
+<p>Extract patterns from either a Biclust or BiBitWorkflow object (see Details) and plot the Noise Scree plot (same as plot 4 in <code>BiBitWorkflow</code>). Additionally, if <code>FisherResult</code> is available (from <code>RowTest_Fisher</code>), this info will be added to the plot.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">NoiseScree(result, matrix, type = c("Added", "Total"), pattern = NULL,
+  noise_select = 0, alpha = 0.05)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>result</code></td>
+<td>
+<p>A Biclust or BiBitWorkflow Object.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>matrix</code></td>
+<td>
+<p>Accompanying binary data matrix which was used to obtain <code>result</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>type</code></td>
+<td>
+<p>Either <code>"Added"</code> or <code>"Total"</code>. Should the noise level be plotted against the number of added rows (at that noise level) or the total number of rows (up to that noise level)?</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>pattern</code></td>
+<td>
+<p>Numeric vector for which patterns the noise scree plot should be drawn (default = all patterns).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>noise_select</code></td>
+<td>
+<p>Should an automatic noise selection be applied and drawn (blue vertical line) on the plot? (Using ad hoc method to find the elbow/kink in the Noise Scree plots)
+</p>
+
+<ul>
+<li> <p><code>noise_select=0</code>: No noise selection is applied and no line is drawn (default).
+</p>
+</li>
+<li> <p><code>noise_select=1</code>: Using the Noise Scree plot (with 'Added Rows' on the y-axis), find the noise level where the current number of added rows at this noise level is larger than the mean of 'added rows' at the lower noise levels. 
+After locating this noise level, lower the noise level by 1. This is your automatically selected elbow/kink and therefore your noise level.
+</p>
+</li>
+<li> <p><code>noise_select=2</code>: Applies the same steps as for <code>noise_select=1</code>, but instead of decreasing the noise level by only 1, keep decreasing the noise level until the number of added rows isn't decreasing anymore either.
+</p>
+</li>
+</ul>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>alpha</code></td>
+<td>
+<p>If info from the Fisher Exact test is available, which significance level should be used to in the plot (Noise versus Significant Fisher Exact Test rows). (default=0.05)</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+
+<dl>
+<dt><em>Biclust S4 Object</em></dt>
+<dd>
+<p>Using the column patterns of the Biclust result, the noise level is plotted versus the number of <code>"Total"</code> or <code>"Added"</code> rows.
+</p>
+</dd>
+<dt><em>BiBitWorkflow S3 Object</em></dt>
+<dd>
+<p>The merged column patterns (after cutting the hierarchical tree) are extracted from the BiBitWorkflow object, namely the <code>$info$MergedColPatterns</code> slot. 
+These patterns are used to plot the noise level versus the number of <code>"Total"</code> or <code>"Added"</code> rows.
+</p>
+</dd>
+</dl>
+<p>If information on the Fisher Exact Test is available, then this info will added to the plot (noise level versus significant rows).
+</p>
+
+
+<h3>Value</h3>
+
+<p><code>NULL</code>
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Ewoud De Troyer
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## Not run: 
+## Prepare some data ##
+set.seed(254)
+mat &lt;- matrix(sample(c(0,1),5000*50,replace=TRUE,prob=c(1-0.15,0.15)),
+              nrow=5000,ncol=50)
+mat[1:200,1:10] &lt;- matrix(sample(c(0,1),200*10,replace=TRUE,prob=c(1-0.9,0.9)),
+                          nrow=200,ncol=10)
+mat[300:399,6:15] &lt;- matrix(sample(c(0,1),100*10,replace=TRUE,prob=c(1-0.9,0.9)),
+                            nrow=100,ncol=10)
+mat[400:599,21:30] &lt;- matrix(sample(c(0,1),200*10,replace=TRUE,prob=c(1-0.9,0.9)),
+                             nrow=200,ncol=10)
+mat[700:799,29:38] &lt;- matrix(sample(c(0,1),100*10,replace=TRUE,prob=c(1-0.9,0.9)),
+                             nrow=100,ncol=10)
+mat &lt;- mat[sample(1:5000,5000,replace=FALSE),sample(1:50,50,replace=FALSE)]
+
+## Apply BiBitWorkflow ##
+out &lt;- BiBitWorkflow(matrix=mat,minr=50,minc=5,noise=0.2,cut_type="number",cut_pm=4)
+# Make Noise Scree Plot - Default
+NoiseScree(result=out,matrix=mat,type="Added")
+NoiseScree(result=out,matrix=mat,type="Total")
+# Make Noise Scree Plot - Use Automatic Noies Selection
+NoiseScree(result=out,matrix=mat,type="Added",noise_select=2)
+NoiseScree(result=out,matrix=mat,type="Total",noise_select=2)
+
+## Apply RowTest_Fisher on BiBitWorkflow Object ##
+out2 &lt;- RowTest_Fisher(result=out,matrix=mat)
+# Fisher output is added to "NoiseScree" plot
+NoiseScree(result=out2,matrix=mat,type="Added")
+NoiseScree(result=out2,matrix=mat,type="Total")
+
+## End(Not run)
+</code></pre>
+
+
+</div>

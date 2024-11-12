@@ -1,0 +1,127 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>batchMapResults</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Map Over Results to Create New Jobs</h2>
+
+<h3>Description</h3>
+
+<p>This function allows you to create new computational jobs (just like <code>batchMap</code> based on the results of
+a <code>Registry</code>.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">batchMapResults(
+  fun,
+  ids = NULL,
+  ...,
+  more.args = list(),
+  target,
+  source = getDefaultRegistry()
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>fun</code></td>
+<td>
+<p>[<code>function</code>]<br>
+Function which takes the result as first (unnamed) argument.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ids</code></td>
+<td>
+<p>[<code>data.frame</code> or <code>integer</code>]<br>
+A <code>data.frame</code> (or <code>data.table</code>)
+with a column named “job.id”.
+Alternatively, you may also pass a vector of integerish job ids.
+If not set, defaults to the return value of <code>findDone</code>.
+Invalid ids are ignored.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>[ANY]<br>
+Arguments to vectorize over (list or vector). Passed to <code>batchMap</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>more.args</code></td>
+<td>
+<p>[<code>list</code>]<br>
+A list of further arguments passed to <code>fun</code>.
+Default is an empty list.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>target</code></td>
+<td>
+<p>[<code>Registry</code>]<br>
+Empty Registry where new jobs are created for.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>source</code></td>
+<td>
+<p>[<code>Registry</code>]<br>
+Registry. If not explicitly passed, uses the default registry (see <code>setDefaultRegistry</code>).</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>[<code>data.table</code>] with ids of jobs added to <code>target</code>.
+</p>
+
+
+<h3>Note</h3>
+
+<p>The URI to the result files in registry <code>source</code> is hard coded as parameter in the <code>target</code> registry.
+This means that <code>target</code> is currently not portable between systems for computation.
+</p>
+
+
+<h3>See Also</h3>
+
+<p>Other Results: 
+<code>loadResult()</code>,
+<code>reduceResultsList()</code>,
+<code>reduceResults()</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+# Source registry: calculate square of some numbers
+tmp = makeRegistry(file.dir = NA, make.default = FALSE)
+batchMap(function(x) list(square = x^2), x = 1:10, reg = tmp)
+submitJobs(reg = tmp)
+waitForJobs(reg = tmp)
+
+# Target registry: calculate the square root on results of first registry
+target = makeRegistry(file.dir = NA, make.default = FALSE)
+batchMapResults(fun = function(x, y) list(sqrt = sqrt(x$square)), ids = 4:8,
+  target = target, source = tmp)
+submitJobs(reg = target)
+waitForJobs(reg = target)
+
+# Map old to new ids. First, get a table with results and parameters
+results = unwrap(rjoin(getJobPars(reg = target), reduceResultsDataTable(reg = target)))
+print(results)
+
+# Parameter '.id' points to job.id in 'source'. Use a inner join to combine:
+ijoin(results, unwrap(reduceResultsDataTable(reg = tmp)), by = c(".id" = "job.id"))
+</code></pre>
+
+
+</div>

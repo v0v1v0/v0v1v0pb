@@ -1,0 +1,322 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>bfast01</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Checking for one major break in the time series</h2>
+
+<h3>Description</h3>
+
+<p>A function to select a suitable model for the data by choosing either a
+model with 0 or with 1 breakpoint.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">bfast01(
+  data,
+  formula = NULL,
+  test = "OLS-MOSUM",
+  level = 0.05,
+  aggregate = all,
+  trim = NULL,
+  bandwidth = 0.15,
+  functional = "max",
+  order = 3,
+  lag = NULL,
+  slag = NULL,
+  na.action = na.omit,
+  reg = c("lm", "rlm"),
+  stl = "none",
+  sbins = 1
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+<p>A time series of class <code>ts</code>, or another
+object that can be coerced to such. The time series is processed by
+<code>bfastpp</code>. A time series of class <code>ts</code>
+can be prepared by a convenience function <code>bfastts</code> in
+case of daily, 10 or 16-daily time series.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>formula</code></td>
+<td>
+<p>formula for the regression model.  The default is
+intelligently guessed based on the arguments order/lag/slag i.e.
+<code>response ~ trend + harmon</code>, i.e., a linear trend and a harmonic season
+component. Other specifications are possible using all terms set up by
+<code>bfastpp</code>, i.e., <code>season</code> (seasonal pattern with
+dummy variables), <code>lag</code> (autoregressive terms), <code>slag</code> (seasonal
+autoregressiv terms), or <code>xreg</code> (further covariates). See
+<code>bfastpp</code> for details.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>test</code></td>
+<td>
+<p>character specifying the type of test(s) performed. Can be one
+or more of BIC, supLM, supF, OLS-MOSUM, ..., or any other test supported by
+<code>sctest.formula</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>level</code></td>
+<td>
+<p>numeric. Significance for the
+<code>sctest.formula</code> performed.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>aggregate</code></td>
+<td>
+<p>function that aggregates a logical vector to a single
+value. This is used for aggregating the individual test decisions from
+<code>test</code> to a single one.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>trim</code></td>
+<td>
+<p>numeric. The mimimal segment size passed to the <code>from</code>
+argument of the <code>Fstats</code> function.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>bandwidth</code></td>
+<td>
+<p>numeric scalar from interval (0,1), functional. The
+<code>bandwidth</code> argument is passed to the <code>h</code> argument of the
+<code>sctest.formula</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>functional</code></td>
+<td>
+<p>arguments passed on to
+<code>sctest.formula</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>order</code></td>
+<td>
+<p>numeric. Order of the harmonic term, defaulting to <code>3</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>lag</code></td>
+<td>
+<p>numeric. Order of the autoregressive term, by default omitted.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>slag</code></td>
+<td>
+<p>numeric. Order of the seasonal autoregressive term, by default
+omitted.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>na.action</code></td>
+<td>
+<p>arguments passed on to <code>bfastpp</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>reg</code></td>
+<td>
+<p>whether to use OLS regression <code>lm()</code> or
+robust regression <code>MASS::rlm()</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>stl</code></td>
+<td>
+<p>argument passed on to <code>bfastpp</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>sbins</code></td>
+<td>
+<p>argument passed on to <code>bfastpp</code></p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p><code>bfast01</code> tries to select a suitable model for the data by choosing
+either a model with 0 or with 1 breakpoint. It proceeds in the following
+steps:
+</p>
+
+<ol>
+<li>
+<p> The data is preprocessed with bfastpp using the arguments
+<code>order</code>/<code>lag</code>/<code>slag</code>/<code>na.action</code>/<code>stl</code>/<code>sbins</code>.
+</p>
+</li>
+<li>
+<p> A linear model with the given formula is fitted. By default a suitable
+formula is guessed based on the preprocessing parameters.
+</p>
+</li>
+<li>
+<p> The model with 1 breakpoint is estimated as well where the breakpoint is
+chosen to minimize the segmented residual sum of squares.
+</p>
+</li>
+<li>
+<p> A sequence of tests for the null hypothesis of zero breaks is performed. Each
+test results in a decision for FALSE (no breaks) or TRUE (structural
+break(s)). The test decisions are then aggregated to a single decision (by
+default using all() but any() or some other function could also be used).
+</p>
+</li>
+</ol>
+<p>Available methods for the object returned include standard methods for
+linear models (coef, fitted, residuals, predict, AIC, BIC, logLik, deviance,
+nobs, model.matrix, model.frame), standard methods for breakpoints
+(breakpoints, breakdates), coercion to a zoo series with the decomposed
+components (as.zoo), and a plot method which plots such a zoo series along
+with the confidence interval (if the 1-break model is visualized). All
+methods take a 'breaks' argument which can either be 0 or 1. By default the
+value chosen based on the 'test' decisions is used.
+</p>
+<p>Note that the different tests supported have power for different types of
+alternatives. Some tests (such as supLM/supF or BIC) assess changes in all
+coefficients of the model while residual-based tests (e.g., OLS-CUSUM or
+OLS-MOSUM) assess changes in the conditional mean. See Zeileis (2005) for a
+unifying view.
+</p>
+
+
+<h3>Value</h3>
+
+<p><code>bfast01</code> returns a list of class <code>"bfast01"</code> with the
+following elements: </p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>call</code></td>
+<td>
+<p>the original function call.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+<p>the
+data preprocessed by <code>"bfastpp"</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>formula</code></td>
+<td>
+<p>the model formulae.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>breaks</code></td>
+<td>
+<p>the number of breaks chosen based on the <code>test</code> decision
+(either 0 or 1).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>test</code></td>
+<td>
+<p>the individual test decisions.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>breakpoints</code></td>
+<td>
+<p>the optimal breakpoint for the model with 1 break.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>model</code></td>
+<td>
+<p>A list of two 'lm' objects with no and one breaks,
+respectively.</p>
+</td>
+</tr>
+</table>
+<h3>Author(s)</h3>
+
+<p>Achim Zeileis, Jan Verbesselt
+</p>
+
+
+<h3>References</h3>
+
+<p>De Jong R, Verbesselt J, Zeileis A, Schaepman ME (2013).
+“Shifts in Global Vegetation Activity Trends.”
+<em>Remote Sensing</em>, <b>5</b>(3), 1117–1133.
+ISSN 2072-4292, doi: <a href="https://doi.org/10.3390/rs5031117">10.3390/rs5031117</a>, <a href="https://doi.org/10.3390/rs5031117">https://doi.org/10.3390/rs5031117</a>.
+</p>
+<p>Zeileis A (2005).
+“A Unified Approach to Structural Change Tests Based on ML Scores, F Statistics, and OLS Residuals.”
+<em>Econometric Reviews</em>, <b>24</b>(4), 445–466.
+ISSN 0747-4938, doi: <a href="https://doi.org/10.1080/07474930500406053">10.1080/07474930500406053</a>, <a href="https://doi.org/10.1080/07474930500406053">https://doi.org/10.1080/07474930500406053</a>.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>bfastmonitor</code>,
+<code>breakpoints</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+library(zoo)
+## define a regular time series
+ndvi &lt;- as.ts(zoo(som$NDVI.a, som$Time))
+
+## fit variations
+bf1 &lt;- bfast01(ndvi)
+bf2 &lt;- bfast01(ndvi, test = c("BIC", "OLS-MOSUM", "supLM"), aggregate = any)
+bf3 &lt;- bfast01(ndvi, test = c("OLS-MOSUM", "supLM"), aggregate = any, bandwidth = 0.11) 
+
+## inspect test decisions
+bf1$test
+bf1$breaks
+bf2$test
+bf2$breaks
+bf3$test
+bf3$breaks
+
+## look at coefficients
+coef(bf1)
+coef(bf1, breaks = 0)
+coef(bf1, breaks = 1) 
+
+## zoo series with all components
+plot(as.zoo(ndvi))
+plot(as.zoo(bf1, breaks = 1))
+plot(as.zoo(bf2))
+plot(as.zoo(bf3))
+
+## leveraged by plot method
+plot(bf1, regular = TRUE)
+plot(bf2)
+plot(bf2, plot.type = "multiple",
+     which = c("response", "trend", "season"), screens = c(1, 1, 2))
+plot(bf3)
+
+
+</code></pre>
+
+
+</div>

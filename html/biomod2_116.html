@@ -1,0 +1,168 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>bm_SampleFactorLevels</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Sample all levels of a factorial variable</h2>
+
+<h3>Description</h3>
+
+<p>This internal <span class="pkg">biomod2</span> function allows the user to sample all levels of all 
+the factorial variables contained in a <code>data.frame</code> or <code>SpatRaster</code> 
+object.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">bm_SampleFactorLevels(expl.var, mask.out = NULL, mask.in = NULL)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>expl.var</code></td>
+<td>
+<p>a <code>data.frame</code> or <code>SpatRaster</code>
+object containing the explanatory variables (in columns or layers)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>mask.out</code></td>
+<td>
+<p>a <code>data.frame</code> or <code>SpatRaster</code>
+object containing the area that has already been sampled (<em>factor 
+levels within this mask will not be sampled</em>)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>mask.in</code></td>
+<td>
+<p>a <code>data.frame</code> or <code>SpatRaster</code> 
+object containing areas where factor levels are to be sampled in priority. 
+<em>Note that if after having explored these masks, some factor levels 
+remain unsampled, they will be sampled in the reference input object <code>expl.var</code>.</em></p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The <code>expl.var</code>, <code>mask.out</code> and <code>mask.in</code> parameters must be coherent in terms of 
+dimensions :
+</p>
+
+<ul>
+<li>
+<p> same number of rows for <code>data.frame</code> objects
+</p>
+</li>
+<li>
+<p> same resolution, projection system and number of cells for <code>SpatRaster</code> objects 
+<br><br></p>
+</li>
+</ul>
+<p>If <code>mask.in</code> contains several columns (<code>data.frame</code>) or layers 
+(<code>SpatRaster</code>), then their order matters : 
+they will be considered successively to sample missing factor levels. <br><br></p>
+
+<ul>
+<li>
+<p> Values in <code>data.frame</code> will be understood as :
+</p>
+
+<ul>
+<li> <p><code>FALSE</code> : out of mask
+</p>
+</li>
+<li> <p><code>TRUE</code> : in mask
+</p>
+</li>
+</ul>
+</li>
+<li>
+<p> Values in <code>SpatRaster</code> will be understood as :
+</p>
+
+<ul>
+<li> <p><code>NA</code> : out of mask
+</p>
+</li>
+<li> <p><code>not NA</code> : in mask
+</p>
+</li>
+</ul>
+</li>
+</ul>
+<h3>Value</h3>
+
+<p>A <code>vector</code> of <code>numeric</code> values corresponding to either row (<code>data.frame</code>) or 
+cell (<code>SpatRaster</code>) numbers, each refering to a single level of a 
+single factorial variable.
+</p>
+<p>In case no factorial variable is found in the input object, <code>NULL</code> is returned.
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Damien Georges
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>bm_PseudoAbsences</code>, <code>bm_CrossValidation</code>
+</p>
+<p>Other Secundary functions: 
+<code>bm_BinaryTransformation()</code>,
+<code>bm_CrossValidation()</code>,
+<code>bm_FindOptimStat()</code>,
+<code>bm_MakeFormula()</code>,
+<code>bm_ModelingOptions()</code>,
+<code>bm_PlotEvalBoxplot()</code>,
+<code>bm_PlotEvalMean()</code>,
+<code>bm_PlotRangeSize()</code>,
+<code>bm_PlotResponseCurves()</code>,
+<code>bm_PlotVarImpBoxplot()</code>,
+<code>bm_PseudoAbsences()</code>,
+<code>bm_RunModelsLoop()</code>,
+<code>bm_SRE()</code>,
+<code>bm_SampleBinaryVector()</code>,
+<code>bm_Tuning()</code>,
+<code>bm_VariablesImportance()</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">library(terra)
+
+## Create raster data
+ras.1 &lt;- ras.2 &lt;- mask.out &lt;- rast(nrows = 10, ncols = 10)
+ras.1[] &lt;- as.factor(rep(c(1, 2, 3, 4, 5), each = 20))
+ras.1 &lt;- as.factor(ras.1)
+ras.2[] &lt;- rnorm(100)
+stk &lt;- c(ras.1, ras.2)
+names(stk) &lt;- c("varFact", "varNorm")
+
+## define a mask for already sampled points
+mask.out[1:40] &lt;- 1
+
+## define a list of masks where we want to sample in priority
+mask.in &lt;- list(ras.1, ras.1)
+mask.in[[1]][1:80] &lt;- NA ## only level 5 should be sampled in this mask
+mask.in[[1]][21:80] &lt;- NA ## only levels 1 and 5 should be sampled in this mask
+
+## Sample all factor levels
+samp1 &lt;- bm_SampleFactorLevels(expl.var = stk, mask.out = mask.out)
+samp2 &lt;- bm_SampleFactorLevels(expl.var = stk, mask.in = mask.in)
+samp3 &lt;- bm_SampleFactorLevels(expl.var = stk, mask.out = mask.out, mask.in = mask.in)
+
+
+</code></pre>
+
+
+</div>

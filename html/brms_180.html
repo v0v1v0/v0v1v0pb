@@ -1,0 +1,231 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>hypothesis.brmsfit</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Non-Linear Hypothesis Testing</h2>
+
+<h3>Description</h3>
+
+<p>Perform non-linear hypothesis testing for all model parameters.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">## S3 method for class 'brmsfit'
+hypothesis(
+  x,
+  hypothesis,
+  class = "b",
+  group = "",
+  scope = c("standard", "ranef", "coef"),
+  alpha = 0.05,
+  robust = FALSE,
+  seed = NULL,
+  ...
+)
+
+hypothesis(x, ...)
+
+## Default S3 method:
+hypothesis(x, hypothesis, alpha = 0.05, robust = FALSE, ...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>An <code>R</code> object. If it is no <code>brmsfit</code> object,
+it must be coercible to a <code>data.frame</code>.
+In the latter case, the variables used in the <code>hypothesis</code> argument
+need to correspond to column names of <code>x</code>, while the rows
+are treated as representing posterior draws of the variables.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>hypothesis</code></td>
+<td>
+<p>A character vector specifying one or more
+non-linear hypothesis concerning parameters of the model.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>class</code></td>
+<td>
+<p>A string specifying the class of parameters being tested.
+Default is "b" for population-level effects.
+Other typical options are "sd" or "cor".
+If <code>class = NULL</code>, all parameters can be tested
+against each other, but have to be specified with their full name
+(see also <code>variables</code>)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>group</code></td>
+<td>
+<p>Name of a grouping factor to evaluate only
+group-level effects parameters related to this grouping factor.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>scope</code></td>
+<td>
+<p>Indicates where to look for the variables specified in
+<code>hypothesis</code>. If <code>"standard"</code>, use the full parameter names
+(subject to the restriction given by <code>class</code> and <code>group</code>).
+If <code>"coef"</code> or <code>"ranef"</code>, compute the hypothesis for all levels
+of the grouping factor given in <code>"group"</code>, based on the
+output of <code>coef.brmsfit</code> and <code>ranef.brmsfit</code>,
+respectively.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>alpha</code></td>
+<td>
+<p>The alpha-level of the tests (default is 0.05;
+see 'Details' for more information).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>robust</code></td>
+<td>
+<p>If <code>FALSE</code> (the default) the mean is used as
+the measure of central tendency and the standard deviation as
+the measure of variability. If <code>TRUE</code>, the median and the
+median absolute deviation (MAD) are applied instead.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>seed</code></td>
+<td>
+<p>A single numeric value passed to <code>set.seed</code>
+to make results reproducible.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Currently ignored.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>Among others, <code>hypothesis</code> computes an evidence ratio
+(<code>Evid.Ratio</code>) for each hypothesis. For a one-sided hypothesis, this
+is just the posterior probability (<code>Post.Prob</code>) under the hypothesis
+against its alternative. That is, when the hypothesis is of the form
+<code>a &gt; b</code>, the evidence ratio is the ratio of the posterior probability
+of <code>a &gt; b</code> and the posterior probability of <code>a &lt; b</code>. In this
+example, values greater than one indicate that the evidence in favor of
+<code>a &gt; b</code> is larger than evidence in favor of <code>a &lt; b</code>. For an
+two-sided (point) hypothesis, the evidence ratio is a Bayes factor between
+the hypothesis and its alternative computed via the Savage-Dickey density
+ratio method. That is the posterior density at the point of interest
+divided by the prior density at that point. Values greater than one
+indicate that evidence in favor of the point hypothesis has increased after
+seeing the data. In order to calculate this Bayes factor, all parameters
+related to the hypothesis must have proper priors and argument
+<code>sample_prior</code> of function <code>brm</code> must be set to <code>"yes"</code>.
+Otherwise <code>Evid.Ratio</code> (and <code>Post.Prob</code>) will be <code>NA</code>.
+Please note that, for technical reasons, we cannot sample from priors of
+certain parameters classes. Most notably, these include overall intercept
+parameters (prior class <code>"Intercept"</code>) as well as group-level
+coefficients. When interpreting Bayes factors, make sure that your priors
+are reasonable and carefully chosen, as the result will depend heavily on
+the priors. In particular, avoid using default priors.
+</p>
+<p>The <code>Evid.Ratio</code> may sometimes be <code>0</code> or <code>Inf</code> implying very
+small or large evidence, respectively, in favor of the tested hypothesis.
+For one-sided hypotheses pairs, this basically means that all posterior
+draws are on the same side of the value dividing the two hypotheses. In
+that sense, instead of <code>0</code> or <code>Inf,</code> you may rather read it as
+<code>Evid.Ratio</code> smaller <code>1 / S</code> or greater <code>S</code>, respectively,
+where <code>S</code> denotes the number of posterior draws used in the
+computations.
+</p>
+<p>The argument <code>alpha</code> specifies the size of the credible interval
+(i.e., Bayesian confidence interval). For instance, if we tested a
+two-sided hypothesis and set <code>alpha = 0.05</code> (5%) an, the credible
+interval will contain <code>1 - alpha = 0.95</code> (95%) of the posterior
+values. Hence, <code>alpha * 100</code>% of the posterior values will
+lie outside of the credible interval. Although this allows testing of
+hypotheses in a similar manner as in the frequentist null-hypothesis
+testing framework, we strongly argue against using arbitrary cutoffs (e.g.,
+<code>p &lt; .05</code>) to determine the 'existence' of an effect.
+</p>
+
+
+<h3>Value</h3>
+
+<p>A <code>brmshypothesis</code> object.
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Paul-Christian Buerkner <a href="mailto:paul.buerkner@gmail.com">paul.buerkner@gmail.com</a>
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>brmshypothesis</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## Not run: 
+## define priors
+prior &lt;- c(set_prior("normal(0,2)", class = "b"),
+           set_prior("student_t(10,0,1)", class = "sigma"),
+           set_prior("student_t(10,0,1)", class = "sd"))
+
+## fit a linear mixed effects models
+fit &lt;- brm(time ~ age + sex + disease + (1 + age|patient),
+           data = kidney, family = lognormal(),
+           prior = prior, sample_prior = "yes",
+           control = list(adapt_delta = 0.95))
+
+## perform two-sided hypothesis testing
+(hyp1 &lt;- hypothesis(fit, "sexfemale = age + diseasePKD"))
+plot(hyp1)
+hypothesis(fit, "exp(age) - 3 = 0", alpha = 0.01)
+
+## perform one-sided hypothesis testing
+hypothesis(fit, "diseasePKD + diseaseGN - 3 &lt; 0")
+
+hypothesis(fit, "age &lt; Intercept",
+           class = "sd", group  = "patient")
+
+## test the amount of random intercept variance on all variance
+h &lt;- paste("sd_patient__Intercept^2 / (sd_patient__Intercept^2 +",
+           "sd_patient__age^2 + sigma^2) = 0")
+(hyp2 &lt;- hypothesis(fit, h, class = NULL))
+plot(hyp2)
+
+## test more than one hypothesis at once
+h &lt;- c("diseaseGN = diseaseAN", "2 * diseaseGN - diseasePKD = 0")
+(hyp3 &lt;- hypothesis(fit, h))
+plot(hyp3, ignore_prior = TRUE)
+
+## compute hypotheses for all levels of a grouping factor
+hypothesis(fit, "age = 0", scope = "coef", group = "patient")
+
+## use the default method
+dat &lt;- as.data.frame(fit)
+str(dat)
+hypothesis(dat, "b_age &gt; 0")
+
+## End(Not run)
+
+</code></pre>
+
+
+</div>

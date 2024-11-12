@@ -1,0 +1,230 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>predict.bamlss</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>
+BAMLSS Prediction 
+</h2>
+
+<h3>Description</h3>
+
+<p>Takes a fitted <code>bamlss</code> object and computes predictions. Predictions can be based on
+estimated parameters of optimizer functions or on samples returned from sampler functions.
+It is possible to compute predictions on multiple cores using the
+<code>parallel</code> and to chunk predictions to save computation time and memory
+storage. Predictions can be computed for full distributional parameters or specific model
+terms. If a <code>link{bamlss}</code> model was fitted on multiple cores, i.e., the samples
+are provided as <code>link{mcmc.list}</code> where each list entry represents samples from one
+core, function <code>predict.bamlss()</code> computes combined predictions based on samples of all
+cores.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">## S3 method for class 'bamlss'
+predict(object, newdata, model = NULL, term = NULL,
+  match.names = TRUE, intercept = TRUE, type = c("link", "parameter"),
+  FUN = function(x) { mean(x, na.rm = TRUE) }, trans = NULL,
+  what = c("samples", "parameters"), nsamps = NULL,
+  verbose = FALSE, drop = TRUE,
+  cores = NULL, chunks = 1, ...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>object</code></td>
+<td>
+<p>An object of class <code>"bamlss"</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>newdata</code></td>
+<td>
+<p>A data frame or list containing the values of the model
+covariates at which predictions are required. Note that depending
+on argument <code>term</code>, only covariates that are needed by the
+corresponding model terms need to be supplied.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>model</code></td>
+<td>
+<p>Character or integer, specifies the model for which predictions should be computed.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>term</code></td>
+<td>
+<p>Character or integer, specifies the model terms for which predictions are required.
+Note that, e.g., <code>term = c("s(x1)", "x2")</code> will compute the combined prediction
+<code>s(x1) + x2</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>match.names</code></td>
+<td>
+<p>Should partial string matching be used to select the <code>term</code>s for
+prediction. Note that, e.g., <code>term = "x1"</code> will select all terms including <code>"x1"</code> if
+<code>match.names = TRUE</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>intercept</code></td>
+<td>
+<p>Should the intercept be included?</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>type</code></td>
+<td>
+<p>If <code>type = "link"</code> the predictor of the corresponding <code>model</code>
+is returned. If <code>type = "parameter"</code> predictions on the distributional parameter scale
+are returned.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>FUN</code></td>
+<td>
+<p>A function that should be applied on the samples of predictors or
+parameters, depending on argument <code>type</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>trans</code></td>
+<td>
+<p>A transformer function or named list of transformer functions that computes
+transformed predictions. If <code>trans</code> is a list, the list names must match the names
+of the parameters of the <code>bamlss.family</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>what</code></td>
+<td>
+<p>Predictions can be computed from samples or estimated parameters of optimizer
+functions. If no samples are available the default is to use estimated parameters.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nsamps</code></td>
+<td>
+<p>If the fitted <code>bamlss</code> object contains samples of parameters,
+computing predictions may take quite some time. Therefore, to get a first feeling it can
+be useful to compute predictions only based on <code>nsamps</code> samples, i.e., <code>nsamps</code>
+specifies the number of samples which are extracted on equidistant intervals.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>verbose</code></td>
+<td>
+<p>If predictions are chunked, information on the prediction process can be printed.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>drop</code></td>
+<td>
+<p>If predictions for only one <code>model</code> are returned, the list structure is dropped.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>cores</code></td>
+<td>
+<p>Specifies the number of cores that should be used for prediction. Note that
+this functionality is based on the <code>parallel</code> package.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>chunks</code></td>
+<td>
+<p>Should computations be split into <code>chunks</code>? Prediction is then processed
+sequentially.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Arguments passed to prediction functions that are part of a <code>bamlss.family</code>
+object, i.e., the objects has a <code>$predict()</code> function that should be used instead.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>Depending on arguments <code>model</code>, <code>FUN</code> and the structure of the <code>bamlss</code>
+model, a list of predictions or simple vectors or matrices of predictions.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>link{bamlss}</code>, <code>fitted.bamlss</code>.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## Not run: ## Generate some data.
+d &lt;- GAMart()
+
+## Model formula.
+f &lt;- list(
+  num ~ s(x1) + s(x2) + s(x3) + te(lon,lat),
+  sigma ~ s(x1) + s(x2) + s(x3) + te(lon,lat)
+)
+
+## Estimate model.
+b &lt;- bamlss(f, data = d)
+
+## Predictions.
+p &lt;- predict(b)
+str(b)
+
+## Prediction for "mu" model and term "s(x2)".
+p &lt;- predict(b, model = "mu", term = "s(x2)")
+
+## Plot effect
+plot2d(p ~ x2, data = d)
+
+## Same for "sigma" model.
+p &lt;- predict(b, model = "sigma", term = "s(x2)")
+plot2d(p ~ x2, data = d)
+
+## Prediction for "mu" model and term "s(x1)" + "s(x2)"
+## without intercept.
+p &lt;- predict(b, model = "mu", term = c("s(x1)", "s(x2)"),
+  intercept = FALSE)
+
+## Prediction based on quantiles.
+p &lt;- predict(b, model = "mu", term = "s(x2)", FUN = c95)
+plot2d(p ~ x2, data = d)
+
+## Extract samples of predictor for "s(x2)".
+p &lt;- predict(b, model = "mu", term = "s(x2)",
+  intercept = FALSE, FUN = function(x) { x })
+print(dim(p))
+plot2d(p ~ x2, data = d, col.lines = rgb(0.1, 0.1, 0.1, alpha = 0.1))
+
+## Or using specific combinations of terms.
+p &lt;- predict(b, model = "mu", term = c("s(x2)", "te(lon,lat)"),
+  intercept = FALSE, FUN = function(x) { x })
+head(p)
+
+## Prediction using new data.
+## Only need x3 data when predicting
+## for s(x3).
+nd &lt;- data.frame("x3" = seq(0, 1, length = 100))
+nd &lt;- cbind(nd, predict(b, newdata = nd, term = "s(x3)"))
+print(head(nd))
+plot2d(mu ~ x3, data = nd)
+plot2d(sigma ~ x3, data = nd)
+
+## End(Not run)
+</code></pre>
+
+
+</div>

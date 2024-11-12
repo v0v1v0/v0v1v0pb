@@ -1,0 +1,323 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>bart</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Fit BART models to select confounders and estimate treatment effect</h2>
+
+<h3>Description</h3>
+
+<p>Fit Bayesian Regression Additive Trees (BART) models
+to select relevant confounders among a large set of potential confounders
+and to estimate average treatment effect <code class="reqn">E[Y(1) - Y(0)]</code>.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">separate_bart(
+  Y, trt, X,
+  trt_treated     = 1,
+  trt_control     = 0,
+  num_tree        = 50,
+  num_chain       = 4,
+  num_burn_in     = 100,
+  num_thin        = 1,
+  num_post_sample = 100,
+  step_prob       = c(0.28, 0.28, 0.44),
+  alpha           = 0.95,
+  beta            = 2,
+  nu              = 3,
+  q               = 0.95,
+  dir_alpha       = 5,
+  parallel        = FALSE,
+  verbose         = TRUE
+)
+
+single_bart(
+  Y, trt, X,
+  trt_treated     = 1,
+  trt_control     = 0,
+  num_tree        = 50,
+  num_chain       = 4,
+  num_burn_in     = 100,
+  num_thin        = 1,
+  num_post_sample = 100,
+  step_prob       = c(0.28, 0.28, 0.44),
+  alpha           = 0.95,
+  beta            = 2,
+  nu              = 3,
+  q               = 0.95,
+  dir_alpha       = 5,
+  parallel        = FALSE,
+  verbose         = TRUE
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>Y</code></td>
+<td>
+<p>A vector of outcome values.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>trt</code></td>
+<td>
+<p>A vector of treatment values. Binary treatment works for both model
+and continuous treatment works for single_bart(). For binary treatment,
+use 1 to indicate the treated group and 0 for the control group.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>X</code></td>
+<td>
+<p>A matrix of potential confounders.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>trt_treated</code></td>
+<td>
+<p>Value of <code>trt</code> for the treated group.
+The default value is set to 1.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>trt_control</code></td>
+<td>
+<p>Value of <code>trt</code> for the control group.
+The default value is set to 0.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>num_tree</code></td>
+<td>
+<p>Number of trees in BART model. The default value is set to 100.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>num_chain</code></td>
+<td>
+<p>Number of MCMC chains.
+Need to set <code>num_chain &gt; 1</code> for the Gelman-Rubin diagnostic.
+The default value is set to 4.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>num_burn_in</code></td>
+<td>
+<p>Number of MCMC samples to be discarded per chain
+as initial burn-in periods.
+The default value is set to 100.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>num_thin</code></td>
+<td>
+<p>Number of thinning per chain.
+One in every <code>num_thin</code> samples are selected.
+The default value is set to 1.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>num_post_sample</code></td>
+<td>
+<p>Final number of posterior samples per chain.
+Number of MCMC iterations per chain is
+<code>burn_in + num_thin * num_post_sample</code>.
+The default value is set to 100.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>step_prob</code></td>
+<td>
+<p>A vector of tree alteration probabilities (GROW, PRUNE, CHANGE).
+Each alteration is proposed to change the tree structure. <br>
+The default setting is <code style="white-space: pre;">⁠(0.28, 0.28, 0.44)⁠</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>alpha, beta</code></td>
+<td>
+<p>Hyperparameters for tree regularization prior.
+A terminal node of depth <code>d</code> will split with
+probability of <code>alpha * (1 + d)^(-beta)</code>. <br>
+The default setting is
+<code style="white-space: pre;">⁠(alpha, beta) = (0.95, 2)⁠</code> from Chipman et al. (2010).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nu, q</code></td>
+<td>
+<p>Values to calibrate hyperparameter of sigma prior. <br>
+The default setting is <code style="white-space: pre;">⁠(nu, q) = (3, 0.95)⁠</code> from Chipman et al. (2010).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>dir_alpha</code></td>
+<td>
+<p>Hyperparameter of Dirichlet prior for selection probabilities.
+The default value is 5.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>parallel</code></td>
+<td>
+<p>If <code>TRUE</code>, model fitting will be parallelized
+with respect to <code>N = nrow(X)</code>.
+Parallelization is recommended for very high <code>n</code> only.
+The default setting is FALSE.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>verbose</code></td>
+<td>
+<p>If <code>TRUE</code>, message will be printed during training.
+If <code>FALSE</code>, message will be suppressed.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p><code>separate_bart()</code> and <code>single_bart()</code> fit an exposure model and outcome model(s)
+for estimating treatment effect with adjustment of confounders
+in the presence of a large set of potential confounders (Kim et al. 2023).
+</p>
+<p>The exposure model <code class="reqn">E[A|X]</code> and the outcome model(s) <code class="reqn">E[Y|A,X]</code> are
+linked together with a common Dirichlet prior that accrues
+posterior selection probabilities to the corresponding confounders (<code class="reqn">X</code>)
+on the basis of association with both the exposure (<code class="reqn">A</code>) and the
+outcome (<code class="reqn">Y</code>).
+</p>
+<p>There is a distinction between fitting separate outcome models for the treated
+and control groups and fitting a single outcome model for both groups.
+</p>
+
+<ul>
+<li> <p><code>separate_bart()</code> specifies two <strong>"separate"</strong> outcome models
+for two binary treatment levels.
+Thus, it fits three models:
+one exposure model and two separate outcome models for <code class="reqn">A = 0, 1</code>.
+</p>
+</li>
+<li> <p><code>single_bart()</code> specifies one <strong>"single"</strong> outcome model.
+Thus, it fits two models:
+one exposure model and one outcome model for the entire sample.
+</p>
+</li>
+</ul>
+<p>All inferences are made with outcome model(s).
+</p>
+
+
+<h3>Value</h3>
+
+<p>A <code>bartcs</code> object. A list object contains the following components.
+</p>
+<table><tr style="vertical-align: top;">
+<td><code>mcmc_list</code></td>
+<td>
+<p>A <code>mcmc.list</code> object from <span class="pkg">coda</span> package.
+<code>mcmc_list</code> contains the following items.</p>
+</td>
+</tr></table>
+<ul>
+<li> <p><code>ATE</code>        Posterior sample of average treatment effect <code class="reqn">E[Y(1) - Y(0)]</code>.
+</p>
+</li>
+<li> <p><code>Y1</code>         Posterior sample of potential outcome <code class="reqn">E[Y(1)]</code>.
+</p>
+</li>
+<li> <p><code>Y0</code>         Posterior sample of potential outcome <code class="reqn">E[Y(0)]</code>.
+</p>
+</li>
+<li> <p><code>dir_alpha</code>  Posterior sample of <code>dir_alpha.</code>
+</p>
+</li>
+<li> <p><code>sigma2_out</code> Posterior sample of <code>sigma2</code> in the outcome model.
+</p>
+</li>
+</ul>
+<table>
+<tr style="vertical-align: top;">
+<td><code>var_prob</code></td>
+<td>
+<p>Aggregated posterior inclusion probability of each variable.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>var_count</code></td>
+<td>
+<p>Number of selection of each variable in each MCMC iteration.
+Its dimension is <code>num_post_sample * ncol(X)</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>chains</code></td>
+<td>
+<p>A list of results from each MCMC chain.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>model</code></td>
+<td>
+<p><code>separate</code> or <code>single</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>label</code></td>
+<td>
+<p>Column names of <code>X</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>params</code></td>
+<td>
+<p>Parameters used in the model.</p>
+</td>
+</tr>
+</table>
+<h3>References</h3>
+
+<p>Chipman, H. A., George, E. I., &amp; McCulloch, R. E. (2010).
+BART: Bayesian additive regression trees.
+<em>The Annals of Applied Statistics</em>, 4(1), 266-298.
+<a href="https://doi.org/10.1214/09-AOAS285">doi:10.1214/09-AOAS285</a>
+</p>
+<p>Kim, C., Tec, M., &amp; Zigler, C. M. (2023).
+Bayesian Nonparametric Adjustment of Confounding, <em>Biometrics</em>
+<a href="https://doi.org/10.1111/biom.13833">doi:10.1111/biom.13833</a>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">data(ihdp, package = "bartcs")
+single_bart(
+  Y               = ihdp$y_factual,
+  trt             = ihdp$treatment,
+  X               = ihdp[, 6:30],
+  num_tree        = 10,
+  num_chain       = 2,
+  num_post_sample = 20,
+  num_burn_in     = 10,
+  verbose         = FALSE
+)
+separate_bart(
+  Y               = ihdp$y_factual,
+  trt             = ihdp$treatment,
+  X               = ihdp[, 6:30],
+  num_tree        = 10,
+  num_chain       = 2,
+  num_post_sample = 20,
+  num_burn_in     = 10,
+  verbose         = FALSE
+)
+</code></pre>
+
+
+</div>

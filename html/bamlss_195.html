@@ -1,0 +1,132 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>simdata</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Reference data.</h2>
+
+<h3>Description</h3>
+
+<p>Simulated data to test the implementation of the bamlss families.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">data("simdata")
+</code></pre>
+
+
+<h3>Format</h3>
+
+<p>An object of class <code>list</code> of length 3.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>mvnchol_bamlss</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## Not run: ## Reproducing code.
+set.seed(111)
+n &lt;- 2000
+
+## build orthogonal rotation matrix
+thetax &lt;- pi/4
+thetay &lt;- pi/4
+thetaz &lt;- pi/4
+Rx &lt;- matrix( c(1,0,0, 0,cos(thetax),sin(thetax), 0,-sin(thetax),cos(thetax) ), 3, 3 )
+Ry &lt;- matrix( c(cos(thetay),0,-sin(thetay), 0,1,0,  sin(thetay),0,cos(thetay) ), 3, 3 )
+Rz &lt;- matrix( c(cos(thetaz),sin(thetaz),0, -sin(thetaz),cos(thetaz),0, 0,0,1 ), 3, 3 )
+R &lt;- Rx %*% Ry %*% Rz
+
+## non-linear functions
+f1 &lt;- function(x) (sin(pi * x))^2
+f2 &lt;- function(x) (cos(pi * x))^2
+
+## random derivitates  
+x &lt;- runif(n)
+
+## eigenvalues
+val1 &lt;- f1(x) 
+val2 &lt;- f2(x)
+val3 &lt;- rep(0, n)
+
+## initialize vectors for parameter lists
+p12 &lt;- NULL
+p13 &lt;- NULL
+p23 &lt;- NULL
+sig &lt;- matrix(0, n, 3)
+
+lamdiag &lt;- matrix(0, n, 3)
+lambda &lt;- matrix(0, n, 3)
+
+y &lt;- matrix(0, n, 3)
+log_dens_ref &lt;- rep(0, n)
+
+tau &lt;- .1  ## offset on diagonal
+l &lt;- 0     ## count occasions with invertible cv 
+dens1 &lt;- NULL
+for ( ii in seq(n) ) {
+    mu &lt;- rep(0, 3)
+  
+    val &lt;- diag( c(val1[ii], val2[ii], val3[ii]) ) + diag(tau, 3)
+    ## compute covariance matrix from rotation matrix and eigenvalues
+    cv &lt;- R %*% val %*% t(R)
+  
+    ## compute parameters for parameter list
+    sig[ii,] &lt;- sqrt(diag(cv))
+    p12[ii] &lt;- cv[1,2]
+    p13[ii] &lt;- cv[1,3]
+    p23[ii] &lt;- cv[2,3]
+  
+    ## compute paramters for Cholesky family
+    chol_cv &lt;- solve(chol(cv))  # lambdas come from L^-1 not L
+    lamdiag[ii,] &lt;- diag(chol_cv)
+    lambda[ii,] &lt;- chol_cv[upper.tri(chol_cv)]
+  
+    ## Check if cv is invertible 
+    if ( !is.matrix(try(chol(cv))) ) l &lt;- l + 1
+  
+    y[ii,] &lt;- mvtnorm::rmvnorm(1, mu, cv)
+  
+    log_dens_ref[ii] &lt;- mvtnorm::dmvnorm(y[ii,], mu, cv, log = TRUE)
+}
+print(l)
+
+## Data
+d &lt;- as.data.frame(y)
+names(d) &lt;- paste0("y", 1:3)
+d$x &lt;- x
+
+## make parameter list for mvn chol family
+par &lt;- list()
+par[["mu1"]] &lt;- rep(0,n)
+par[["mu2"]] &lt;- rep(0,n)
+par[["mu3"]] &lt;- rep(0,n)
+par[["lamdiag1"]] &lt;- lamdiag[,1]
+par[["lamdiag2"]] &lt;- lamdiag[,2]
+par[["lamdiag3"]] &lt;- lamdiag[,3]
+par[["lambda12"]] &lt;- lambda[,1]
+par[["lambda13"]] &lt;- lambda[,2]
+par[["lambda23"]] &lt;- lambda[,3]
+
+simdata &lt;- list(
+    d   = d,
+    par = par,
+    y   = y
+)
+
+## save(simdata, file = "simdata.rda")
+## End of simulation
+
+## End(Not run)
+</code></pre>
+
+
+</div>

@@ -1,0 +1,154 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>predict</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Predictions</h2>
+
+<h3>Description</h3>
+
+<p>A function that computes predictions and conditional predictions based on a object of class <code>bgvar</code>.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">## S3 method for class 'bgvar'
+predict(
+  object,
+  ...,
+  n.ahead = 1,
+  constr = NULL,
+  constr_sd = NULL,
+  quantiles = NULL,
+  save.store = FALSE,
+  verbose = TRUE
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>object</code></td>
+<td>
+<p>An object of class <code>bgvar</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Additional arguments.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>n.ahead</code></td>
+<td>
+<p>Forecast horizon.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>constr</code></td>
+<td>
+<p>Matrix containing the conditional forecasts of size horizon times K, where horizon corresponds to the forecast horizon specified in <code>pred.obj</code>, while K is the number of variables in the system. The ordering of the variables have to correspond the ordering of the variables in the system. Rest is just set to NA.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>constr_sd</code></td>
+<td>
+<p>Matrix containing the standard deviations around the conditional forecasts. Must have the same size as <code>constr</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>quantiles</code></td>
+<td>
+<p>Numeric vector with posterior quantiles. Default is set to compute median along with 68%/80%/90% confidence intervals.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>save.store</code></td>
+<td>
+<p>If set to <code>TRUE</code> the full distribution is returned. Default is set to <code>FALSE</code> in order to save storage.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>verbose</code></td>
+<td>
+<p>If set to <code>FALSE</code> it suppresses printing messages to the console.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>Predictions are performed up to an horizon of <code>n.ahead</code>. Note that conditional forecasts need a fully identified system. Therefore this function utilizes short-run restrictions via the Cholesky decomposition on the global solution of the variance-covariance matrix of the Bayesian GVAR.
+</p>
+
+
+<h3>Value</h3>
+
+<p>Returns an object of class <code>bgvar.pred</code> with the following elements </p>
+
+<dl>
+<dt><code>fcast</code></dt>
+<dd>
+<p> is a K times n.ahead times Q-dimensional array that contains  Q quantiles of the posterior predictive distribution.</p>
+</dd>
+<dt><code>xglobal</code></dt>
+<dd>
+<p> is a matrix object of dimension T times N (T # of observations, K # of variables in the system).</p>
+</dd>
+<dt><code>n.ahead</code></dt>
+<dd>
+<p> specified forecast horizon.</p>
+</dd>
+<dt><code>lps.stats</code></dt>
+<dd>
+<p> is an array object of dimension K times 2 times n.ahead and contains the mean and standard deviation of the log-predictive scores for each variable and each forecast horizon.</p>
+</dd>
+<dt><code>hold.out</code></dt>
+<dd>
+<p> if <code>h</code> is not set to zero, this contains the hold-out sample.</p>
+</dd>
+</dl>
+<h3>Author(s)</h3>
+
+<p>Maximilian Boeck, Martin Feldkircher, Florian Huber
+</p>
+
+
+<h3>References</h3>
+
+<p>Jarocinski, M. (2010) <em>Conditional forecasts and uncertainty about forecasts revisions in vector autoregressions.</em> Economics Letters, Vol. 108(3), pp. 257-259.
+</p>
+<p>Waggoner, D., F. and T. Zha (1999) <em>Conditional Forecasts in Dynamic Multivariate Models.</em> Review of Economics and Statistics, Vol. 81(4), pp. 639-561.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+library(BGVAR)
+data(testdata)
+model.ssvs &lt;- bgvar(Data=testdata,W=W.test,plag=1,draws=100,burnin=100,
+                    prior="SSVS")
+fcast &lt;- predict(model.ssvs, n.ahead=8)
+
+# conditional predictions
+# et up constraints matrix of dimension n.ahead times K
+constr &lt;- matrix(NA,nrow=8,ncol=ncol(model.ssvs$xglobal))
+colnames(constr) &lt;- colnames(model.ssvs$xglobal)
+constr[1:5,"US.Dp"] &lt;- model.ssvs$xglobal[76,"US.Dp"]
+
+# add uncertainty to conditional forecasts
+constr_sd &lt;- matrix(NA,nrow=8,ncol=ncol(model.ssvs$xglobal))
+colnames(constr_sd) &lt;- colnames(model.ssvs$xglobal)
+constr_sd[1:5,"US.Dp"] &lt;- 0.001
+
+fcast_cond &lt;- predict(model.ssvs, n.ahead=8, constr=constr, constr_sd=constr_sd)
+
+</code></pre>
+
+
+</div>

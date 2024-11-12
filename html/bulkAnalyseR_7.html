@@ -1,0 +1,132 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>DEanalysis</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Perform differential expression (DE) analysis on an expression matrix</h2>
+
+<h3>Description</h3>
+
+<p>This function performs DE analysis on an expression using
+edgeR or DESeq2, given a vector of sample conditions.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">DEanalysis_edger(expression.matrix, condition, var1, var2, anno)
+
+DEanalysis_deseq2(expression.matrix, condition, var1, var2, anno)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>expression.matrix</code></td>
+<td>
+<p>the expression matrix; rows correspond to genes and
+columns correspond to samples; usually preprocessed by
+<code>preprocessExpressionMatrix</code>; a list  (of the same length as
+modality) can be provided if #' <code>length(modality) &gt; 1</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>condition</code></td>
+<td>
+<p>a vector of the same length as the number of columns of
+expression.matrix, containing the sample conditions; this is usually the
+last column of the metadata</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>var1, var2</code></td>
+<td>
+<p>conditions (contained in condition) to perform DE between;
+note that DESeq2 requires at least two replicates per condition</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>anno</code></td>
+<td>
+<p>annotation data frame containing a match between the row names
+of the expression.matrix (usually ENSEMBL IDs) and the gene names that
+should be rendered within the app and in output files; this object is
+created by <code>generateShinyApp</code> using the org.db specified</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>A tibble with the differential expression results for all genes.
+Columns are
+</p>
+
+<ul>
+<li>
+<p> gene_id (usually ENSEMBL ID matching one of the rows of the
+expression matrix)
+</p>
+</li>
+<li>
+<p> gene_name (name matched through the annotation)
+</p>
+</li>
+<li>
+<p> log2exp (average log2(expression) of the gene across samples)
+</p>
+</li>
+<li>
+<p> log2FC (log2(fold-change) of the gene between conditions)
+</p>
+</li>
+<li>
+<p> pval (p-value of the gene being called DE)
+</p>
+</li>
+<li>
+<p> pvalAdj (adjusted p-value using the Benjamini Hochberg correction)
+</p>
+</li>
+</ul>
+<h3>Examples</h3>
+
+<pre><code class="language-R">expression.matrix.preproc &lt;- as.matrix(read.csv(
+  system.file("extdata", "expression_matrix_preprocessed.csv", package = "bulkAnalyseR"), 
+  row.names = 1
+))[1:100, 1:4]
+
+anno &lt;- AnnotationDbi::select(
+  getExportedValue('org.Mm.eg.db', 'org.Mm.eg.db'),
+  keys = rownames(expression.matrix.preproc),
+  keytype = 'ENSEMBL',
+  columns = 'SYMBOL'
+) %&gt;%
+  dplyr::distinct(ENSEMBL, .keep_all = TRUE) %&gt;%
+  dplyr::mutate(NAME = ifelse(is.na(SYMBOL), ENSEMBL, SYMBOL))
+  
+edger &lt;- DEanalysis_edger(
+  expression.matrix = expression.matrix.preproc,
+  condition = rep(c("0h", "12h"), each = 2),
+  var1 = "0h",
+  var2 = "12h",
+  anno = anno
+)
+deseq &lt;- DEanalysis_edger(
+  expression.matrix = expression.matrix.preproc,
+  condition = rep(c("0h", "12h"), each = 2),
+  var1 = "0h",
+  var2 = "12h",
+  anno = anno
+)
+# DE genes with log2(fold-change) &gt; 1 in both pipelines
+intersect(
+  dplyr::filter(edger, abs(log2FC) &gt; 1, pvalAdj &lt; 0.05)$gene_name,
+  dplyr::filter(deseq, abs(log2FC) &gt; 1, pvalAdj &lt; 0.05)$gene_name
+)
+</code></pre>
+
+
+</div>

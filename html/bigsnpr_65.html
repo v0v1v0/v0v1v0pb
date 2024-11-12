@@ -1,0 +1,184 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>snp_ldsc</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>LD score regression</h2>
+
+<h3>Description</h3>
+
+<p>LD score regression
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">snp_ldsc(
+  ld_score,
+  ld_size,
+  chi2,
+  sample_size,
+  blocks = 200,
+  intercept = NULL,
+  chi2_thr1 = 30,
+  chi2_thr2 = Inf,
+  ncores = 1
+)
+
+snp_ldsc2(
+  corr,
+  df_beta,
+  blocks = NULL,
+  intercept = 1,
+  ncores = 1,
+  ind.beta = cols_along(corr),
+  chi2_thr1 = 30,
+  chi2_thr2 = Inf
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>ld_score</code></td>
+<td>
+<p>Vector of LD scores.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ld_size</code></td>
+<td>
+<p>Number of variants used to compute <code>ld_score</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>chi2</code></td>
+<td>
+<p>Vector of chi-squared statistics.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>sample_size</code></td>
+<td>
+<p>Sample size of GWAS corresponding to chi-squared statistics.
+Possibly a vector, or just a single value.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>blocks</code></td>
+<td>
+<p>Either a single number specifying the number of blocks,
+or a vector of integers specifying the block number of each <code>chi2</code> value.
+Default is <code>200</code> for <code>snp_ldsc()</code>, dividing into 200 blocks of approximately
+equal size. <code>NULL</code> can also be used to skip estimating standard errors,
+which is the default for <code>snp_ldsc2()</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>intercept</code></td>
+<td>
+<p>You can constrain the intercept to some value (e.g. 1).
+Default is <code>NULL</code> in <code>snp_ldsc()</code> (the intercept is estimated)
+and is <code>1</code> in <code>snp_ldsc2()</code> (the intercept is fixed to 1).
+This is equivalent to parameter <code>--intercept-h2</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>chi2_thr1</code></td>
+<td>
+<p>Threshold on <code>chi2</code> in step 1. Default is <code>30</code>.
+This is equivalent to parameter <code>--two-step</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>chi2_thr2</code></td>
+<td>
+<p>Threshold on <code>chi2</code> in step 2. Default is <code>Inf</code> (none).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ncores</code></td>
+<td>
+<p>Number of cores used. Default doesn't use parallelism.
+You may use <code>bigstatsr::nb_cores()</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>corr</code></td>
+<td>
+<p>Sparse correlation matrix. Can also be an SFBM.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>df_beta</code></td>
+<td>
+<p>A data frame with 3 columns:
+</p>
+
+<ul>
+<li> <p><code style="white-space: pre;">⁠$beta⁠</code>: effect size estimates
+</p>
+</li>
+<li> <p><code style="white-space: pre;">⁠$beta_se⁠</code>: standard errors of effect size estimates
+</p>
+</li>
+<li> <p><code style="white-space: pre;">⁠$n_eff⁠</code>: either GWAS sample size(s) when estimating <code>beta</code> for a
+continuous trait, or in the case of a binary trait, this is
+<code>4 / (1 / n_control + 1 / n_case)</code>; in the case of a meta-analysis, you
+should sum the effective sample sizes of each study instead of using the
+total numbers of cases and controls, see <a href="https://doi.org/10.1016/j.biopsych.2022.05.029">doi:10.1016/j.biopsych.2022.05.029</a>;
+when using a mixed model, the effective sample size needs to be adjusted
+as well, see <a href="https://doi.org/10.1016/j.xhgg.2022.100136">doi:10.1016/j.xhgg.2022.100136</a>.
+</p>
+</li>
+</ul>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ind.beta</code></td>
+<td>
+<p>Indices in <code>corr</code> corresponding to <code>df_beta</code>. Default is all.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>Vector of 4 values (or only the first 2 if <code>blocks = NULL</code>):
+</p>
+
+<ul>
+<li> <p><code style="white-space: pre;">⁠[["int"]]⁠</code>: LDSC regression intercept,
+</p>
+</li>
+<li> <p><code style="white-space: pre;">⁠[["int_se"]]⁠</code>: SE of this intercept,
+</p>
+</li>
+<li> <p><code style="white-space: pre;">⁠[["h2"]]⁠</code>: LDSC regression estimate of (SNP) heritability (also see
+coef_to_liab),
+</p>
+</li>
+<li> <p><code style="white-space: pre;">⁠[["h2_se"]]⁠</code>: SE of this heritability estimate.
+</p>
+</li>
+</ul>
+<h3>Examples</h3>
+
+<pre><code class="language-R">bigsnp &lt;- snp_attachExtdata()
+G &lt;- bigsnp$genotypes
+y &lt;- bigsnp$fam$affection - 1
+corr &lt;- snp_cor(G, ind.col = 1:1000)
+
+gwas &lt;- big_univLogReg(G, y, ind.col = 1:1000)
+df_beta &lt;- data.frame(beta = gwas$estim, beta_se = gwas$std.err,
+                      n_eff = 4 / (1 / sum(y == 0) + 1 / sum(y == 1)))
+
+snp_ldsc2(corr, df_beta)
+snp_ldsc2(corr, df_beta, blocks = 20, intercept = NULL)
+
+</code></pre>
+
+
+</div>

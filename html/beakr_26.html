@@ -1,0 +1,141 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>serveStaticFiles</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>File-serving middleware</h2>
+
+<h3>Description</h3>
+
+<p>Binds to GET requests that aren't handled by specified paths.
+The result is to return files that are found on the host machine at the
+requested path. Binary file types like <code>.png</code>, <code>.gif</code> or
+<code>.pdf</code> are returned as raw bytes. All others are returned as characters.
+</p>
+<p>Mime types are guessed using the <span class="pkg">mime</span> package. The <code>rawTypesPattern</code>
+parameter is used to match mime types that should be returned as raw bytes.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">serveStaticFiles(
+  beakr = NULL,
+  urlPath = NULL,
+  rootPath = getwd(),
+  rawTypesPattern = "image|json|octet|pdf|video",
+  verbose = FALSE
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>beakr</code></td>
+<td>
+<p><code>Beakr</code> instance or <code>NULL</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>urlPath</code></td>
+<td>
+<p>String representing the URL directory underneath which static
+file paths will appear.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>rootPath</code></td>
+<td>
+<p>String representing the absolute path used as the root
+directory when searching for files on host machine. Defaults to the directory
+in which the script is running.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>rawTypesPattern</code></td>
+<td>
+<p>String pattern identifying mime types to be returned
+as raw bytes.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>verbose</code></td>
+<td>
+<p>Boolean to show a verbose static file information.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>All files to be served in this manner must exist underneath the
+host machine directory specified with <code>rootPath</code>. The directory
+structure underneath <code>rootPath</code> will be mapped onto URLs underneath
+<code>urlPath</code>. This helps when deploying web services at preordained URLs.
+</p>
+<p>The example below presents files underneath host machine directory
+<code>hostDir/</code> to be accessed at URLS under <code>test/</code>.
+</p>
+
+
+<h3>Value</h3>
+
+<p>A <code>Beakr</code> instance with added middleware.
+</p>
+
+
+<h3>Note</h3>
+
+<p>If you run the example in the console, be sure to
+<code>stopServer(bekar)</code> when you are done.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+library(beakr)
+
+# Create a .txt file in temp directory
+hostDir &lt;- tempdir()
+file &lt;- paste0(hostDir, "/my_file.txt")
+cat("I am a text file.", file = file)
+
+# Create an new beakr instance
+beakr &lt;- newBeakr()
+
+# beakr pipeline
+beakr %&gt;%
+
+  # Respond to GET requests at the "/hi" route
+  httpGET(path = "/hi", function(req, res, err) {
+    print("Hello, World!")
+  }) %&gt;%
+
+  # Respond to GET requests at the "/bye" route
+  httpGET(path = "/bye", function(req, res, err) {
+    print("Farewell, my friends.")
+  }) %&gt;%
+
+ # Host the directory of static files
+ serveStaticFiles("/test", hostDir, verbose = TRUE) %&gt;%
+
+ # Start the server on port 25118
+ listen(host = "127.0.0.1", port = 25118, daemon = TRUE)
+
+# ------------------------------------------------------------
+# POINT YOUR BROWSER AT:
+# * http://127.0.0.1:25118/test/my_file.txt
+#
+# THEN, STOP THE SERVER WITH stopServer(beakr)
+# ------------------------------------------------------------
+
+# Stop the beakr instance server
+stopServer(beakr)
+
+</code></pre>
+
+
+</div>

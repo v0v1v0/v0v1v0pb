@@ -1,0 +1,127 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>harmoniseR</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Harmonise taxonomy of bee occurrence data</h2>
+
+<h3>Description</h3>
+
+<p>Uses the Discover Life taxonomy to harmonise bee occurrences and flag those that do not match
+the checklist. <code>harmoniseR()</code> prefers to use the names_clean columns that is generated
+by <code>bdc::bdc_clean_names()</code>. While this is not required, you may find better results by running
+that function on your dataset first.
+This function could be hijacked to service other taxa if a user matched the format of the
+<code>beesTaxonomy()</code> file.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">harmoniseR(
+  data = NULL,
+  path = NULL,
+  taxonomy = BeeBDC::beesTaxonomy(),
+  speciesColumn = "scientificName",
+  rm_names_clean = TRUE,
+  checkVerbatim = FALSE,
+  stepSize = 1e+06,
+  mc.cores = 1
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+<p>A data frame or tibble. Occurrence records as input.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>path</code></td>
+<td>
+<p>A directory as character. The path to a folder that the output can be saved.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>taxonomy</code></td>
+<td>
+<p>A data frame or tibble. The bee taxonomy to use.
+Default = <code>beesTaxonomy()</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>speciesColumn</code></td>
+<td>
+<p>Character. The name of the column containing species names. Default = "scientificName".</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>rm_names_clean</code></td>
+<td>
+<p>Logical. If TRUE then the names_clean column will be removed at the end of
+this function to help reduce confusion about this column later. Default = TRUE</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>checkVerbatim</code></td>
+<td>
+<p>Logical. If TRUE then the verbatimScientificName will be checked as well
+for species matches. This matching will ONLY be done after harmoniseR has failed for the other
+name columns. NOTE: this column is <em>not</em> first run through <code>bdc::bdc_clean_names</code>. Default = FALSE</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>stepSize</code></td>
+<td>
+<p>Numeric. The number of occurrences to process in each chunk. Default = 1000000.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>mc.cores</code></td>
+<td>
+<p>Numeric. If &gt; 1, the function will run in parallel
+using mclapply using the number of cores specified. If = 1 then it will be run using a serial
+loop. NOTE: Windows machines must use a value of 1 (see ?parallel::mclapply). Additionally,
+be aware that each thread can use large chunks of memory.
+Default = 1.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>The occurrences are returned with update taxonomy columns, including: scientificName,
+species, family, subfamily, genus, subgenus, specificEpithet, infraspecificEpithet, and
+scientificNameAuthorship. A new column, .invalidName, is also added and is FALSE when the occurrence's
+name did not match the supplied taxonomy.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>taxadbToBeeBDC()</code> to download any taxonomy (of any taxa or of bees) and
+<code>beesTaxonomy()</code> for the bee taxonomy download.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R"># load in the test dataset
+system.file("extdata", "testTaxonomy.rda", package="BeeBDC") |&gt; load()
+
+beesRaw_out &lt;- BeeBDC::harmoniseR(
+  #The path to a folder that the output can be saved
+path = tempdir(),
+# The formatted taxonomy file
+taxonomy = testTaxonomy, 
+data = BeeBDC::beesFlagged,
+speciesColumn = "scientificName")
+table(beesRaw_out$.invalidName, useNA = "always")
+</code></pre>
+
+
+</div>

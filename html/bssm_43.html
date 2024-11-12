@@ -1,0 +1,110 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>importance_sample</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Importance Sampling from non-Gaussian State Space Model</h2>
+
+<h3>Description</h3>
+
+<p>Returns <code>nsim</code> samples from the approximating Gaussian model with
+corresponding (scaled) importance weights.
+Probably mostly useful for comparing KFAS and bssm packages.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">importance_sample(model, nsim, use_antithetic, max_iter, conv_tol, seed, ...)
+
+## S3 method for class 'nongaussian'
+importance_sample(
+  model,
+  nsim,
+  use_antithetic = TRUE,
+  max_iter = 100,
+  conv_tol = 1e-08,
+  seed = sample(.Machine$integer.max, size = 1),
+  ...
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>model</code></td>
+<td>
+<p>Model of class <code>bsm_ng</code>, <code>ar1_ng</code> <code>svm</code>,
+<code>ssm_ung</code>, or <code>ssm_mng</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nsim</code></td>
+<td>
+<p>Number of samples (positive integer). Suitable values
+depend on the model and the data, and while larger values provide more
+accurate estimates, the run time also increases with respect to to the
+number of samples, so it is generally a good idea to test the filter first
+with a small number of samples, e.g., less than 100.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>use_antithetic</code></td>
+<td>
+<p>Logical. If <code>TRUE</code> (default), use antithetic
+variable for location in simulation smoothing. Ignored for <code>ssm_mng</code>
+models.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>max_iter</code></td>
+<td>
+<p>Maximum number of iterations as a positive integer.
+Default is 100 (although typically only few iterations are needed).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>conv_tol</code></td>
+<td>
+<p>Positive tolerance parameter. Default is 1e-8. Approximation
+is claimed to be converged when the mean squared difference of the modes of
+is less than <code>conv_tol</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>seed</code></td>
+<td>
+<p>Seed for the C++ RNG (positive integer).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Ignored.</p>
+</td>
+</tr>
+</table>
+<h3>Examples</h3>
+
+<pre><code class="language-R">data("sexratio", package = "KFAS")
+model &lt;- bsm_ng(sexratio[, "Male"], sd_level = 0.001, 
+  u = sexratio[, "Total"],
+  distribution = "binomial")
+
+imp &lt;- importance_sample(model, nsim = 1000)
+
+est &lt;- matrix(NA, 3, nrow(sexratio))
+for(i in 1:ncol(est)) {
+  est[, i] &lt;- diagis::weighted_quantile(exp(imp$alpha[i, 1, ]), imp$weights, 
+    prob = c(0.05,0.5,0.95))
+}
+
+ts.plot(t(est),lty = c(2,1,2))
+
+</code></pre>
+
+
+</div>

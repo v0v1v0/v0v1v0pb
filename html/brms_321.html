@@ -1,0 +1,123 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>post_prob.brmsfit</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Posterior Model Probabilities from Marginal Likelihoods</h2>
+
+<h3>Description</h3>
+
+<p>Compute posterior model probabilities from marginal likelihoods.
+The <code>brmsfit</code> method is just a thin wrapper around
+the corresponding method for <code>bridge</code> objects.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">## S3 method for class 'brmsfit'
+post_prob(x, ..., prior_prob = NULL, model_names = NULL)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>A <code>brmsfit</code> object.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>More <code>brmsfit</code> objects or further arguments
+passed to the underlying post-processing functions.
+In particular, see <code>prepare_predictions</code> for further
+supported arguments.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>prior_prob</code></td>
+<td>
+<p>Numeric vector with prior model probabilities.
+If omitted, a uniform prior is used (i.e., all models are equally
+likely a priori). The default <code>NULL</code> corresponds to equal
+prior model weights.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>model_names</code></td>
+<td>
+<p>If <code>NULL</code> (the default) will use model names
+derived from deparsing the call. Otherwise will use the passed
+values as model names.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>Computing the marginal likelihood requires samples
+of all variables defined in Stan's <code>parameters</code> block
+to be saved. Otherwise <code>post_prob</code> cannot be computed.
+Thus, please set <code>save_all_pars = TRUE</code> in the call to <code>brm</code>,
+if you are planning to apply <code>post_prob</code> to your models.
+</p>
+<p>The computation of model probabilities based on bridge sampling requires
+a lot more posterior samples than usual. A good conservative
+rule of thump is perhaps 10-fold more samples (read: the default of 4000
+samples may not be enough in many cases). If not enough posterior
+samples are provided, the bridge sampling algorithm tends to be
+unstable leading to considerably different results each time it is run.
+We thus recommend running <code>post_prob</code>
+multiple times to check the stability of the results.
+</p>
+<p>More details are provided under
+<code>bridgesampling::post_prob</code>.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>
+  bridge_sampler,
+  bayes_factor
+</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## Not run: 
+# model with the treatment effect
+fit1 &lt;- brm(
+  count ~ zAge + zBase + Trt,
+  data = epilepsy, family = negbinomial(),
+  prior = prior(normal(0, 1), class = b),
+  save_all_pars = TRUE
+)
+summary(fit1)
+
+# model without the treatent effect
+fit2 &lt;- brm(
+  count ~ zAge + zBase,
+  data = epilepsy, family = negbinomial(),
+  prior = prior(normal(0, 1), class = b),
+  save_all_pars = TRUE
+)
+summary(fit2)
+
+# compute the posterior model probabilities
+post_prob(fit1, fit2)
+
+# specify prior model probabilities
+post_prob(fit1, fit2, prior_prob = c(0.8, 0.2))
+
+## End(Not run)
+
+</code></pre>
+
+
+</div>

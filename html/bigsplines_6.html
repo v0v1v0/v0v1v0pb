@@ -1,0 +1,420 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>bigssp</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>
+Fits Smoothing Splines with Parametric Effects
+</h2>
+
+<h3>Description</h3>
+
+<p>Given a real-valued response vector <code class="reqn">\mathbf{y}=\{y_{i}\}_{n\times1}</code>, a semiparametric regression model has the form </p>
+<p style="text-align: center;"><code class="reqn">y_{i}= \eta(\mathbf{x}_{i}) + \sum_{j=1}^{t}b_{j}z_{ij} + e_{i}</code>
+</p>
+<p> where <code class="reqn">y_{i}</code> is the <code class="reqn">i</code>-th observation's respone, <code class="reqn">\mathbf{x}_{i}=(x_{i1},\ldots,x_{ip})</code> is the <code class="reqn">i</code>-th observation's nonparametric predictor vector, <code class="reqn">\eta</code> is an unknown smooth function relating the response and nonparametric predictors, <code class="reqn">\mathbf{z}_{i}=(z_{i1},\ldots,z_{it})</code> is the <code class="reqn">i</code>-th observation's parametric predictor vector, and <code class="reqn">e_{i}\sim\mathrm{N}(0,\sigma^{2})</code> is iid Gaussian error. Function can fit both additive and interactive non/parametric effects, and allows for 2-way and 3-way interactions between nonparametric and parametric effects (see Details and Examples).
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">bigssp(formula,data=NULL,type=NULL,nknots=NULL,rparm=NA,
+       lambdas=NULL,skip.iter=TRUE,se.fit=FALSE,rseed=1234,
+       gcvopts=NULL,knotcheck=TRUE,thetas=NULL,weights=NULL,
+       random=NULL,remlalg=c("FS","NR","EM","none"),remliter=500,
+       remltol=10^-4,remltau=NULL)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>formula</code></td>
+<td>
+
+<p>An object of class "<code>formula</code>": a symbolic description of the model to be fitted (see Details and Examples for more information).
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+
+<p>Optional data frame, list, or environment containing the variables in <code>formula</code>. Or an object of class "makessp", which is output from <code>makessp</code>.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>type</code></td>
+<td>
+
+<p>List of smoothing spline types for predictors in <code>formula</code> (see Details). Options include <code>type="cub"</code> for cubic, <code>type="cub0"</code> for another cubic, <code>type="per"</code> for cubic periodic, <code>type="tps"</code> for cubic thin-plate, <code>type="ord"</code> for ordinal, and <code>type="nom"</code> for nominal. Use <code>type="prm"</code> for parametric effect.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nknots</code></td>
+<td>
+
+<p>Two possible options: (a) scalar giving total number of random knots to sample, or (b) vector indexing which rows of <code>data</code> to use as knots.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>rparm</code></td>
+<td>
+
+<p>List of rounding parameters for each predictor. See Details. 
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>lambdas</code></td>
+<td>
+
+<p>Vector of global smoothing parameters to try. Default <code>lambdas=10^-c(9:0)</code>.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>skip.iter</code></td>
+<td>
+
+<p>Logical indicating whether to skip the iterative smoothing parameter update. Using <code>skip.iter=FALSE</code> should provide a more optimal solution, but the fitting time may be substantially longer. See Skip Iteration section.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>se.fit</code></td>
+<td>
+
+<p>Logical indicating if the standard errors of the fitted values should be estimated.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>rseed</code></td>
+<td>
+
+<p>Random seed for knot sampling. Input is ignored if <code>nknots</code> is an input vector of knot indices. Set <code>rseed=NULL</code> to obtain a different knot sample each time, or set <code>rseed</code> to any positive integer to use a different seed than the default.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>gcvopts</code></td>
+<td>
+
+<p>Control parameters for optimization. List with 3 elements: (a) <code>maxit</code>: maximum number of algorithm iterations, (b) <code>gcvtol</code>: covergence tolerance for iterative GCV update, and (c) <code>alpha</code>: tuning parameter for GCV minimization. Default: <code>gcvopts=list(maxit=5,gcvtol=10^-5,alpha=1)</code>
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>knotcheck</code></td>
+<td>
+
+<p>If <code>TRUE</code>, only unique knots are used (for stability).  
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>thetas</code></td>
+<td>
+
+<p>List of initial smoothing parameters for each predictor subspace. See Details. 
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>weights</code></td>
+<td>
+
+<p>Vector of positive weights for fitting (default is vector of ones).  
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>random</code></td>
+<td>
+
+<p>Adds random effects to model (see Random Effects section).
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>remlalg</code></td>
+<td>
+
+<p>REML algorithm for estimating variance components (see Random Effects section). Input is ignored if <code>random=NULL</code>.  
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>remliter</code></td>
+<td>
+
+<p>Maximum number of iterations for REML estimation of variance components. Input is ignored if <code>random=NULL</code>.  
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>remltol</code></td>
+<td>
+
+<p>Convergence tolerance for REML estimation of variance components. Input is ignored if <code>random=NULL</code>.  
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>remltau</code></td>
+<td>
+
+<p>Initial estimate of variance parameters for REML estimation of variance components. Input is ignored if <code>random=NULL</code>.  
+</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The <code>formula</code> syntax is similar to that used in <code>lm</code> and many other R regression functions. Use <code>y~x</code> to predict the response <code>y</code> from the predictor <code>x</code>. Use <code>y~x1+x2</code> to fit an additive model of the predictors <code>x1</code> and <code>x2</code>, and use <code>y~x1*x2</code> to fit an interaction model. The syntax <code>y~x1*x2</code> includes the interaction and main effects, whereas the syntax <code>y~x1:x2</code> only includes the interaction. See Computational Details for specifics about how non/parametric effects are estimated.
+</p>
+<p>See <code>bigspline</code> for definitions of <code>type="cub"</code>, <code>type="cub0"</code>, and <code>type="per"</code> splines, which can handle one-dimensional predictors. See Appendix of Helwig and Ma (2015) for information about <code>type="tps"</code> and <code>type="nom"</code> splines. Note that <code>type="tps"</code> can handle one-, two-, or three-dimensional predictors. I recommend using <code>type="cub"</code> if the predictor scores have no extreme outliers; when outliers are present, <code>type="tps"</code> may produce a better result. 
+</p>
+<p>Using the rounding parameter input <code>rparm</code> can greatly speed-up and stabilize the fitting for large samples. For typical cases, I recommend using <code>rparm=0.01</code> for cubic and periodic splines, but smaller rounding parameters may be needed for particularly jagged functions. For thin-plate splines, the data are NOT transformed to the interval [0,1] before fitting, so the rounding parameter should be on the raw data scale. Also, for <code>type="tps"</code> you can enter one rounding parameter for each predictor dimension. Use <code>rparm=1</code> for ordinal and nominal splines.
+</p>
+
+
+<h3>Value</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>fitted.values</code></td>
+<td>
+<p>Vector of fitted values corresponding to the original data points in <code>xvars</code> (if <code>rparm=NA</code>) or the rounded data points in <code>xunique</code> (if <code>rparm</code> is used).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>se.fit</code></td>
+<td>
+<p>Vector of standard errors of <code>fitted.values</code> (if input <code>se.fit=TRUE)</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>yvar</code></td>
+<td>
+<p>Response vector.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>xvars</code></td>
+<td>
+<p>List of predictors.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>type</code></td>
+<td>
+<p>Type of smoothing spline that was used for each predictor.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>yunique</code></td>
+<td>
+<p>Mean of <code>yvar</code> for unique points after rounding (if <code>rparm</code> is used).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>xunique</code></td>
+<td>
+<p>Unique rows of <code>xvars</code> after rounding (if <code>rparm</code> is used).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>sigma</code></td>
+<td>
+<p>Estimated error standard deviation, i.e., <code class="reqn">\hat{\sigma}</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ndf</code></td>
+<td>
+<p>Data frame with two elements: <code>n</code> is total sample size, and <code>df</code> is effective degrees of freedom of fit model (trace of smoothing matrix).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>info</code></td>
+<td>
+<p>Model fit information: vector containing the GCV, multiple R-squared, AIC, and BIC of fit model (assuming Gaussian error).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>modelspec</code></td>
+<td>
+<p>List containing specifics of fit model (needed for prediction).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>converged</code></td>
+<td>
+<p>Convergence status: <code>converged=TRUE</code> if iterative update converged, <code>converged=FALSE</code> if iterative update failed to converge, and <code>converged=NA</code> if option <code>skip.iter=TRUE</code> was used.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>tnames</code></td>
+<td>
+<p>Names of the terms in model.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>random</code></td>
+<td>
+<p>Random effects formula (same as input).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>tau</code></td>
+<td>
+<p>Variance parameters such that <code>sigma*sqrt(tau)</code> gives standard deviation of random effects (if <code>!is.null(random)</code>).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>blup</code></td>
+<td>
+<p>Best linear unbiased predictors (if <code>!is.null(random)</code>).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>call</code></td>
+<td>
+<p>Called model in input <code>formula</code>.</p>
+</td>
+</tr>
+</table>
+<h3>Warnings </h3>
+
+<p>Cubic and cubic periodic splines transform the predictor to the interval [0,1] before fitting.
+</p>
+<p>When using rounding parameters, output <code>fitted.values</code> corresponds to unique rounded predictor scores in output <code>xunique</code>. Use <code>predict.bigssp</code> function to get fitted values for full <code>yvar</code> vector.
+</p>
+
+
+<h3>Computational Details </h3>
+
+<p>To estimate <code class="reqn">\eta</code> I minimize the penalized least-squares functional </p>
+<p style="text-align: center;"><code class="reqn">\frac{1}{n}\sum_{i=1}^{n}\left(y_{i} - \eta(\mathbf{x}_{i}) - \textstyle\sum_{j=1}^{t}b_{j}z_{ij} \right)^{2} + \lambda J(\eta)</code>
+</p>
+<p> where <code class="reqn">J(\cdot)</code> is a nonnegative penalty functional quantifying the roughness of <code class="reqn">\eta</code> and <code class="reqn">\lambda&gt;0</code> is a smoothing parameter controlling the trade-off between fitting and smoothing the data. Note that for <code class="reqn">p&gt;1</code> nonparametric predictors, there are additional <code class="reqn">\theta_{k}</code> smoothing parameters embedded in <code class="reqn">J</code>. 
+</p>
+<p>The penalized least squares functioncal can be rewritten as </p>
+<p style="text-align: center;"><code class="reqn"> \|\mathbf{y} - \mathbf{K}\mathbf{d} - \mathbf{J}_{\theta}\mathbf{c}\|^{2} + n\lambda\mathbf{c}'\mathbf{Q}_{\theta}\mathbf{c} </code>
+</p>
+
+<p>where <code class="reqn">\mathbf{K}=\{\phi(x_{i}),\mathbf{z}_{i}\}_{n \times m}</code> is the parametric space basis function matrix, <code class="reqn">\mathbf{J}_{\theta}=\sum_{k=1}^{s}\theta_{k}\mathbf{J}_{k}</code> with <code class="reqn">\mathbf{J}_{k}=\{\rho_{k}(\mathbf{x}_{i},\mathbf{x}_{h}^{*})\}_{n \times q}</code> denoting the <code class="reqn">k</code>-th contrast space basis funciton matrix, <code class="reqn">\mathbf{Q}_{\theta}=\sum_{k=1}^{s}\theta_{k}\mathbf{Q}_{k}</code> with <code class="reqn">\mathbf{Q}_{k}=\{\rho_{k}(\mathbf{x}_{g}^{*},\mathbf{x}_{h}^{*})\}_{q \times q}</code> denoting the <code class="reqn">k</code>-th penalty matrix, and <code class="reqn">\mathbf{d}=(d_{0},\ldots,d_{m})'</code> and <code class="reqn">\mathbf{c}=(c_{1},\ldots,c_{q})'</code> are the unknown basis function coefficients. The optimal smoothing parameters are chosen by minimizing the GCV score (see <code>bigspline</code>). 
+</p>
+<p>Note that this function uses the classic smoothing spline parameterization (see Gu, 2013), so there is more than one smoothing parameter per predictor (if interactions are included in the model). To evaluate the GCV score, this function uses the improved (scalable) SSA algorithm discussed in Helwig (2013) and Helwig and Ma (2015).
+</p>
+
+
+<h3>Skip Iteration </h3>
+
+<p>For <code class="reqn">p&gt;1</code> predictors, initial values for the <code class="reqn">\theta_{k}</code> parameters are estimated using Algorithm 3.2 described in Gu and Wahba (1991). 
+</p>
+<p>Default use of this function (<code>skip.iter=TRUE</code>) fixes the <code class="reqn">\theta_{k}</code> parameters afer the smart start, and then finds the global smoothing parameter <code class="reqn">\lambda</code> (among the input <code>lambdas</code>) that minimizes the GCV score. This approach typically produces a solution very similar to the more optimal solution using <code>skip.iter=FALSE</code>.
+</p>
+<p>Setting <code>skip.iter=FALSE</code> uses the same smart starting algorithm as setting <code>skip.iter=TRUE</code>. However, instead of fixing the <code class="reqn">\theta_{k}</code> parameters afer the smart start, using <code>skip.iter=FALSE</code> iterates between estimating the optimal <code class="reqn">\lambda</code> and the optimal <code class="reqn">\theta_{k}</code> parameters. The R function <code>nlm</code> is used to minimize the GCV score with respect to the <code class="reqn">\theta_{k}</code> parameters, which can be time consuming for models with many predictors.
+</p>
+
+
+<h3>Random Effects </h3>
+
+<p>The input <code>random</code> adds random effects to the model assuming a variance components structure. Both nested and crossed random effects are supported. In all cases, the random effects are assumed to be indepedent zero-mean Gaussian variables with the variance depending on group membership.
+</p>
+<p>Random effects are distinguished by vertical bars ("|"), which separate expressions for design matrices (left) from group factors (right). For example, the syntax <code>~1|group</code> includes a random intercept for each level of <code>group</code>, whereas the syntax <code>~1+x|group</code> includes both a random intercept and a random slope for each level of <code>group</code>. For crossed random effects, parentheses are needed to distinguish different terms, e.g., <code>~(1|group1)+(1|group2)</code> includes a random intercept for each level of <code>group1</code> and a random intercept for each level of <code>group2</code>, where both <code>group1</code> and <code>group2</code> are factors. For nested random effects, the syntax <code>~group|subject</code> can be used, where both <code>group</code> and <code>subject</code> are factors such that the levels of <code>subject</code> are nested within those of <code>group</code>.
+</p>
+<p>The input <code>remlalg</code> determines the REML algorithm used to estimate the variance components. Setting <code>remlalg="FS"</code> uses a Fisher Scoring algorithm (default). Setting <code>remlalg="NR"</code> uses a Newton-Raphson algorithm. Setting <code>remlalg="EM"</code> uses an Expectation Maximization algorithm. Use <code>remlalg="none"</code> to fit a model with known variance components (entered through <code>remltau</code>).
+</p>
+<p>The input <code>remliter</code> sets the maximum number of iterations for the REML estimation. The input <code>remltol</code> sets the convergence tolerance for the REML estimation, which is determined via relative change in the REML log-likelihood. The input <code>remltau</code> sets the initial estimates of variance parameters; default is <code>remltau = rep(1,ntau)</code> where <code>ntau</code> is the number of variance components.
+</p>
+
+
+<h3>Note</h3>
+
+<p>The spline is estimated using penalized least-squares, which does not require the Gaussian error assumption. However, the spline inference information (e.g., standard errors and fit information) requires the Gaussian error assumption.
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Nathaniel E. Helwig &lt;helwig@umn.edu&gt;
+</p>
+
+
+<h3>References</h3>
+
+<p>Gu, C. (2013). <em>Smoothing spline ANOVA models, 2nd edition</em>. New York: Springer.
+</p>
+<p>Gu, C. and Wahba, G. (1991). Minimizing GCV/GML scores with multiple smoothing parameters via the Newton method. <em>SIAM Journal on Scientific and Statistical Computing, 12</em>, 383-398.
+</p>
+<p>Helwig, N. E. (2013). <em>Fast and stable smoothing spline analysis of variance models for large samples with applications to electroencephalography data analysis</em>. Unpublished doctoral dissertation. University of Illinois at Urbana-Champaign.
+</p>
+<p>Helwig, N. E. (2016). Efficient estimation of variance components in nonparametric mixed-effects models with large samples. <em>Statistics and Computing, 26</em>, 1319-1336.
+</p>
+<p>Helwig, N. E. (2017). <a href="http://dx.doi.org/10.3389/fams.2017.00015">Regression with ordered predictors via ordinal smoothing splines</a>. Frontiers in Applied Mathematics and Statistics, 3(15), 1-13.
+</p>
+<p>Helwig, N. E. and Ma, P. (2015). Fast and stable multiple smoothing parameter selection in smoothing spline analysis of variance models with large samples. <em>Journal of Computational and Graphical Statistics, 24</em>, 715-732.
+</p>
+<p>Helwig, N. E. and Ma, P. (2016). Smoothing spline ANOVA for super-large samples: Scalable computation via rounding parameters. <em>Statistics and Its Interface, 9</em>, 433-444.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+##########   EXAMPLE   ##########
+
+# function with four continuous predictors
+set.seed(773)
+myfun &lt;- function(x1v,x2v,x3v,x4v){
+  sin(2*pi*x1v) + log(x2v+.1) + x3v*cos(pi*(x4v))
+  }
+x1v &lt;- runif(500)
+x2v &lt;- runif(500)
+x3v &lt;- runif(500)
+x4v &lt;- runif(500)
+y &lt;- myfun(x1v,x2v,x3v,x4v) + rnorm(500)
+
+# fit cubic spline model with x3v*x4v interaction and x3v as "cub" 
+# (includes x3v and x4v main effects)
+cubmod &lt;- bigssp(y~x1v+x2v+x3v*x4v,type=list(x1v="cub",x2v="cub",x3v="cub",x4v="cub"),nknots=50)
+crossprod( myfun(x1v,x2v,x3v,x4v) - cubmod$fitted.values )/500
+
+# fit cubic spline model with x3v*x4v interaction and x3v as "cub0"
+# (includes x3v and x4v main effects)
+cubmod &lt;- bigssp(y~x1v+x2v+x3v*x4v,type=list(x1v="cub",x2v="cub",x3v="cub0",x4v="cub"),nknots=50)
+crossprod( myfun(x1v,x2v,x3v,x4v) - cubmod$fitted.values )/500
+
+# fit model with x3v*x4v interaction treating x3v as parametric effect
+# (includes x3v and x4v main effects)
+cubmod &lt;- bigssp(y~x1v+x2v+x3v*x4v,type=list(x1v="cub",x2v="cub",x3v="prm",x4v="cub"),nknots=50)
+crossprod( myfun(x1v,x2v,x3v,x4v) - cubmod$fitted.values )/500
+
+# fit cubic spline model with x3v:x4v interaction and x3v as "cub"
+# (excludes x3v and x4v main effects)
+cubmod &lt;- bigssp(y~x1v+x2v+x3v:x4v,type=list(x1v="cub",x2v="cub",x3v="cub",x4v="cub"),nknots=50)
+crossprod( myfun(x1v,x2v,x3v,x4v) - cubmod$fitted.values )/500
+
+# fit cubic spline model with x3v:x4v interaction and x3v as "cub0"
+# (excludes x3v and x4v main effects)
+cubmod &lt;- bigssp(y~x1v+x2v+x3v:x4v,type=list(x1v="cub",x2v="cub",x3v="cub0",x4v="cub"),nknots=50)
+crossprod( myfun(x1v,x2v,x3v,x4v) - cubmod$fitted.values )/500
+
+# fit model with x3v:x4v interaction treating x3v as parametric effect
+# (excludes x3v and x4v main effects)
+cubmod &lt;- bigssp(y~x1v+x2v+x3v:x4v,type=list(x1v="cub",x2v="cub",x3v="prm",x4v="cub"),nknots=50)
+crossprod( myfun(x1v,x2v,x3v,x4v) - cubmod$fitted.values )/500
+
+</code></pre>
+
+
+</div>

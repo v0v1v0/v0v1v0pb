@@ -1,0 +1,247 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>Boruta</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Feature selection with the Boruta algorithm</h2>
+
+<h3>Description</h3>
+
+<p>Boruta is an all relevant feature selection wrapper algorithm, capable of working with any classification method that output variable importance measure (VIM); by default, Boruta uses Random Forest.
+The method performs a top-down search for relevant features by comparing original attributes' importance with importance achievable at random, estimated using their permuted copies, and progressively eliminating irrelevant features to stabilise that test.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">Boruta(x, ...)
+
+## Default S3 method:
+Boruta(
+  x,
+  y,
+  pValue = 0.01,
+  mcAdj = TRUE,
+  maxRuns = 100,
+  doTrace = 0,
+  holdHistory = TRUE,
+  getImp = getImpRfZ,
+  ...
+)
+
+## S3 method for class 'formula'
+Boruta(formula, data, ...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>data frame of predictors.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>additional parameters passed to <code>getImp</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>y</code></td>
+<td>
+<p>response vector; factor for classification, numeric vector for regression, <code>Surv</code> object for survival (supports depends on importance adapter capabilities).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>pValue</code></td>
+<td>
+<p>confidence level. Default value should be used.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>mcAdj</code></td>
+<td>
+<p>if set to <code>TRUE</code>, a multiple comparisons adjustment using the Bonferroni method will be applied. Default value should be used; older (1.x and 2.x) versions of Boruta were effectively using <code>FALSE</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>maxRuns</code></td>
+<td>
+<p>maximal number of importance source runs.
+You may increase it to resolve attributes left Tentative.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>doTrace</code></td>
+<td>
+<p>verbosity level. 0 means no tracing, 1 means reporting decision about each attribute as soon as it is justified, 2 means the same as 1, plus reporting each importance source run, 3 means the same as 2, plus reporting of hits assigned to yet undecided attributes.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>holdHistory</code></td>
+<td>
+<p>if set to <code>TRUE</code>, the full history of importance is stored and returned as the <code>ImpHistory</code> element of the result.
+Can be used to decrease a memory footprint of Boruta in case this side data is not used, especially when the number of attributes is huge; yet it disables plotting of such made <code>Boruta</code> objects and the use of the <code>TentativeRoughFix</code> function.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>getImp</code></td>
+<td>
+<p>function used to obtain attribute importance.
+The default is getImpRfZ, which runs random forest from the <code>ranger</code> package and gathers Z-scores of mean decrease accuracy measure.
+It should return a numeric vector of a size identical to the number of columns of its first argument, containing importance measure of respective attributes.
+Any order-preserving transformation of this measure will yield the same result.
+It is assumed that more important attributes get higher importance. +-Inf are accepted, NaNs and NAs are treated as 0s, with a warning.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>formula</code></td>
+<td>
+<p>alternatively, formula describing model to be analysed.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+<p>in which to interpret formula.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>Boruta iteratively compares importances of attributes with importances of shadow attributes, created by shuffling original ones.
+Attributes that have significantly worst importance than shadow ones are being consecutively dropped.
+On the other hand, attributes that are significantly better than shadows are admitted to be Confirmed.
+Shadows are re-created in each iteration.
+Algorithm stops when only Confirmed attributes are left, or when it reaches <code>maxRuns</code> importance source runs.
+If the second scenario occurs, some attributes may be left without a decision.
+They are claimed Tentative.
+You may try to extend <code>maxRuns</code> or lower <code>pValue</code> to clarify them, but in some cases their importances do fluctuate too much for Boruta to converge.
+Instead, you can use <code>TentativeRoughFix</code> function, which will perform other, weaker test to make a final decision, or simply treat them as undecided in further analysis.
+</p>
+
+
+<h3>Value</h3>
+
+<p>An object of class <code>Boruta</code>, which is a list with the following components:
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>finalDecision</code></td>
+<td>
+<p>a factor of three value: <code>Confirmed</code>, <code>Rejected</code> or <code>Tentative</code>, containing final result of feature selection.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ImpHistory</code></td>
+<td>
+<p>a data frame of importances of attributes gathered in each importance source run.
+Beside predictors' importances, it contains maximal, mean and minimal importance of shadow attributes in each run.
+Rejected attributes get <code>-Inf</code> importance.
+Set to <code>NULL</code> if <code>holdHistory</code> was given <code>FALSE</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>timeTaken</code></td>
+<td>
+<p>time taken by the computation.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>impSource</code></td>
+<td>
+<p>string describing the source of importance, equal to a comment attribute of the <code>getImp</code> argument.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>call</code></td>
+<td>
+<p>the original call of the <code>Boruta</code> function.</p>
+</td>
+</tr>
+</table>
+<h3>References</h3>
+
+<p>Miron B. Kursa, Witold R. Rudnicki (2010). Feature Selection with the Boruta Package.
+<em>Journal of Statistical Software, 36(11)</em>, p. 1-13.
+URL: <a href="https://doi.org/10.18637/jss.v036.i11">doi:10.18637/jss.v036.i11</a>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">set.seed(777)
+
+#Boruta on the "small redundant XOR" problem; read ?srx for details
+data(srx)
+Boruta(Y~.,data=srx)-&gt;Boruta.srx
+
+#Results summary
+print(Boruta.srx)
+
+#Result plot
+plot(Boruta.srx)
+
+#Attribute statistics
+attStats(Boruta.srx)
+
+#Using alternative importance source, rFerns
+Boruta(Y~.,data=srx,getImp=getImpFerns)-&gt;Boruta.srx.ferns
+print(Boruta.srx.ferns)
+
+#Verbose
+Boruta(Y~.,data=srx,doTrace=2)-&gt;Boruta.srx
+
+## Not run: 
+#Boruta on the iris problem extended with artificial irrelevant features
+#Generate said features
+iris.extended&lt;-data.frame(iris,apply(iris[,-5],2,sample))
+names(iris.extended)[6:9]&lt;-paste("Nonsense",1:4,sep="")
+#Run Boruta on this data
+Boruta(Species~.,data=iris.extended,doTrace=2)-&gt;Boruta.iris.extended
+#Nonsense attributes should be rejected
+print(Boruta.iris.extended)
+
+## End(Not run)
+
+## Not run: 
+#Boruta on the HouseVotes84 data from mlbench
+library(mlbench); data(HouseVotes84)
+na.omit(HouseVotes84)-&gt;hvo
+#Takes some time, so be patient
+Boruta(Class~.,data=hvo,doTrace=2)-&gt;Bor.hvo
+print(Bor.hvo)
+plot(Bor.hvo)
+plotImpHistory(Bor.hvo)
+
+## End(Not run)
+## Not run: 
+#Boruta on the Ozone data from mlbench
+library(mlbench); data(Ozone)
+library(randomForest)
+na.omit(Ozone)-&gt;ozo
+Boruta(V4~.,data=ozo,doTrace=2)-&gt;Bor.ozo
+cat('Random forest run on all attributes:\n')
+print(randomForest(V4~.,data=ozo))
+cat('Random forest run only on confirmed attributes:\n')
+print(randomForest(ozo[,getSelectedAttributes(Bor.ozo)],ozo$V4))
+
+## End(Not run)
+## Not run: 
+#Boruta on the Sonar data from mlbench
+library(mlbench); data(Sonar)
+#Takes some time, so be patient
+Boruta(Class~.,data=Sonar,doTrace=2)-&gt;Bor.son
+print(Bor.son)
+#Shows important bands
+plot(Bor.son,sort=FALSE)
+
+## End(Not run)
+</code></pre>
+
+
+</div>

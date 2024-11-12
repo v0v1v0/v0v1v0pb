@@ -1,0 +1,121 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>big_cor</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Correlation</h2>
+
+<h3>Description</h3>
+
+<p>Compute the (Pearson) correlation matrix of a Filebacked Big Matrix.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">big_cor(
+  X,
+  ind.row = rows_along(X),
+  ind.col = cols_along(X),
+  block.size = block_size(nrow(X)),
+  backingfile = tempfile(tmpdir = getOption("FBM.dir"))
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>X</code></td>
+<td>
+<p>An object of class FBM.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ind.row</code></td>
+<td>
+<p>An optional vector of the row indices that are used.
+If not specified, all rows are used. <strong>Don't use negative indices.</strong></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ind.col</code></td>
+<td>
+<p>An optional vector of the column indices that are used.
+If not specified, all columns are used. <strong>Don't use negative indices.</strong></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>block.size</code></td>
+<td>
+<p>Maximum number of columns read at once.
+Default uses block_size.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>backingfile</code></td>
+<td>
+<p>Path to the file storing the FBM data on disk.
+<strong>An extension ".bk" will be automatically added.</strong> Default stores in the
+temporary directory, which you can change using global option "FBM.dir".</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>A temporary FBM, with the following two attributes:
+</p>
+
+<ul>
+<li>
+<p> a numeric vector <code>center</code> of column scaling,
+</p>
+</li>
+<li>
+<p> a numeric vector <code>scale</code> of column scaling.
+</p>
+</li>
+</ul>
+<h3>Matrix parallelization</h3>
+
+<p>Large matrix computations are made block-wise and won't be parallelized
+in order to not have to reduce the size of these blocks. Instead, you can use
+the <a href="https://forum.posit.co/t/intel-mkl-integration-to-r-on-windows/176071">MKL</a>
+or OpenBLAS in order to accelerate these block matrix computations.
+You can control the number of cores used by these optimized matrix libraries
+with <code>bigparallelr::set_blas_ncores()</code>.
+</p>
+
+
+<h3>See Also</h3>
+
+<p>cor big_crossprodSelf
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">X &lt;- FBM(13, 17, init = rnorm(221))
+
+# Comparing with cor
+K &lt;- big_cor(X)
+class(K)
+dim(K)
+K$backingfile
+
+true &lt;- cor(X[])
+all.equal(K[], true)
+
+# Using only half of the data
+n &lt;- nrow(X)
+ind &lt;- sort(sample(n, n/2))
+K2 &lt;- big_cor(X, ind.row = ind)
+
+true2 &lt;- cor(X[ind, ])
+all.equal(K2[], true2)
+</code></pre>
+
+
+</div>

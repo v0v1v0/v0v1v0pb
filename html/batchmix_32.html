@@ -1,0 +1,145 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>predictFromMultipleChains</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Predict from multiple MCMC chains</h2>
+
+<h3>Description</h3>
+
+<p>Applies a burn in to and finds a point estimate by combining
+multiple chains of “callMDI“.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">predictFromMultipleChains(
+  mcmc_outputs,
+  burn,
+  point_estimate_method = "median",
+  chains_already_processed = FALSE
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>mcmc_outputs</code></td>
+<td>
+<p>Output from “runMCMCChains“</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>burn</code></td>
+<td>
+<p>The number of MCMC samples to drop as part of a burn in.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>point_estimate_method</code></td>
+<td>
+<p>Summary statistic used to define the point
+estimate. Must be “'mean'“ or “'median'“. “'median'“ is the default.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>chains_already_processed</code></td>
+<td>
+<p>Logical indicating if the chains have already
+had a burn-in applied.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>A named list of quantities related to prediction/clustering:
+</p>
+<p>* “allocation_probability“: List with an $(N x K)$ matrix if the model is
+semi-supervised. The point estimate of the allocation probabilities for
+each data point to each class.
+</p>
+<p>* “prob“: $N$ vector of the point estimate of the probability of being
+allocated to the class with the highest probability.
+</p>
+<p>* “pred“: $N$ vector of the predicted class for each sample. If the model
+is unsupervised then the “salso“ function from Dahl et al. (2021) is
+used on the sampled partitions using the default settings.
+</p>
+<p>* “samples“: List of sampled allocations for each view. Columns
+correspond to items being clustered, rows to MCMC samples.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+# Data dimensions
+N &lt;- 600
+P &lt;- 4
+K &lt;- 5
+B &lt;- 7
+
+# Generating model parameters
+mean_dist &lt;- 2.25
+batch_dist &lt;- 0.3
+group_means &lt;- seq(1, K) * mean_dist
+batch_shift &lt;- rnorm(B, mean = batch_dist, sd = batch_dist)
+std_dev &lt;- rep(2, K)
+batch_var &lt;- rep(1.2, B)
+group_weights &lt;- rep(1 / K, K)
+batch_weights &lt;- rep(1 / B, B)
+dfs &lt;- c(4, 7, 15, 60, 120)
+
+my_data &lt;- generateBatchData(
+  N,
+  P,
+  group_means,
+  std_dev,
+  batch_shift,
+  batch_var,
+  group_weights,
+  batch_weights,
+  type = "MVT",
+  group_dfs = dfs
+)
+
+
+X &lt;- my_data$observed_data
+
+true_labels &lt;- my_data$group_IDs
+fixed &lt;- my_data$fixed
+batch_vec &lt;- my_data$batch_IDs
+
+alpha &lt;- 1
+initial_labels &lt;- generateInitialLabels(alpha, K, fixed, true_labels)
+
+# Sampling parameters
+R &lt;- 1000
+thin &lt;- 25
+burn &lt;- 100
+n_chains &lt;- 2
+
+# Density choice
+type &lt;- "MVT"
+
+# MCMC samples and BIC vector
+mcmc_outputs &lt;- runMCMCChains(
+  X,
+  n_chains,
+  R,
+  thin,
+  batch_vec,
+  type,
+  initial_labels = initial_labels,
+  fixed = fixed
+)
+ensemble_mod &lt;- predictFromMultipleChains(mcmc_outputs, burn)
+
+</code></pre>
+
+
+</div>

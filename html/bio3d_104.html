@@ -1,0 +1,183 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>entropy</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2> Shannon Entropy Score </h2>
+
+<h3>Description</h3>
+
+<p>Calculate the sequence entropy score for every position in an alignment.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">entropy(alignment)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table><tr style="vertical-align: top;">
+<td><code>alignment</code></td>
+<td>
+<p> sequence alignment returned from
+<code>read.fasta</code> or an alignment character matrix. </p>
+</td>
+</tr></table>
+<h3>Details</h3>
+
+<p>Shannon's information theoretic entropy (Shannon, 1948) is an
+often-used measure of residue diversity and hence residue conservation.
+</p>
+
+
+<h3>Value</h3>
+
+<p>Returns a list with five components:
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>H </code></td>
+<td>
+<p>standard entropy score for a 22-letter alphabet.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>H.10 </code></td>
+<td>
+<p>entropy score for a 10-letter alphabet (see below).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>H.norm </code></td>
+<td>
+<p> normalized entropy score (for 22-letter alphabet), so that 
+conserved (low entropy) columns (or positions) score 1, and diverse
+(high entropy) columns score 0.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>H.10.norm </code></td>
+<td>
+<p> normalized entropy score (for 10-letter alphabet),
+so that conserved (low entropy) columns score 1 and diverse
+(high entropy) columns score 0.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>freq </code></td>
+<td>
+<p>residue frequency matrix containing percent occurrence
+values for each residue type.</p>
+</td>
+</tr>
+</table>
+<h3>Note</h3>
+
+ 
+<p>In addition to the standard entropy score (based on a 22-letter
+alphabet of the 20 standard amino-acids, plus a gap character ‘-’
+and a mask character ‘X’), an entropy score, <code>H.10</code>, based on
+a 10-letter alphabet is also returned.
+</p>
+<p>For <code>H.10</code>, residues from the 22-letter alphabet are classified
+into one of 10 types, loosely following the convention of Mirny and
+Shakhnovich (1999):
+Hydrophobic/Aliphatic [V,I,L,M],
+Aromatic [F,W,Y],
+Ser/Thr [S,T],
+Polar [N,Q],
+Positive [H,K,R],
+Negative [D,E],
+Tiny [A,G],
+Proline [P],
+Cysteine [C], and
+Gaps [-,X].
+</p>
+<p>The residue code ‘X’ is useful for handling non-standard aminoacids.
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p> Barry Grant </p>
+
+
+<h3>References</h3>
+
+<p>Grant, B.J. et al. (2006) <em>Bioinformatics</em> <b>22</b>, 2695–2696.
+</p>
+<p>Shannon (1948) <em>The System Technical J.</em> <b>27</b>, 379–422.
+</p>
+<p>Mirny and Shakhnovich (1999) <em>J. Mol. Biol.</em> <b>291</b>, 177–196.
+</p>
+
+
+<h3>See Also</h3>
+
+ <p><code>consensus</code>, <code>read.fasta</code> </p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+# Read HIV protease alignment 
+aln &lt;- read.fasta(system.file("examples/hivp_xray.fa",package="bio3d"))
+
+# Entropy and consensus
+h   &lt;- entropy(aln)
+con &lt;- consensus(aln)
+
+names(h$H)=con$seq
+print(h$H)
+
+# Entropy for sub-alignment (positions 1 to 20) 
+h.sub &lt;- entropy(aln$ali[,1:20])
+
+# Plot entropy and residue frequencies (excluding positions &gt;=60 percent gaps)
+H &lt;- h$H.norm
+H[ apply(h$freq[21:22,],2,sum)&gt;=0.6 ] = 0
+
+col &lt;- mono.colors(32)
+aa  &lt;- rev(rownames(h$freq))
+oldpar &lt;- par(no.readonly=TRUE)
+layout(matrix(c(1,2),2,1,byrow = TRUE), widths = 7, 
+       heights = c(2, 8), respect = FALSE)
+
+# Plot 1: entropy
+par(mar = c(0, 4, 2, 2))
+barplot(H, border="white", ylab = "Entropy",
+        space=0, xlim=c(3.7, 97.3),yaxt="n" )
+axis(side=2, at=c(0.2,0.4, 0.6, 0.8))
+axis(side=3, at=(seq(0,length(con$seq),by=5)-0.5),
+     labels=seq(0,length(con$seq),by=5))
+box()
+
+# Plot2: residue frequencies 
+par(mar = c(5, 4, 0, 2))
+image(x=1:ncol(con$freq),
+      y=1:nrow(con$freq),
+      z=as.matrix(rev(as.data.frame(t(con$freq)))),
+      col=col, yaxt="n", xaxt="n",
+      xlab="Alignment Position", ylab="Residue Type")
+axis(side=1, at=seq(0,length(con$seq),by=5))
+axis(side=2, at=c(1:22), labels=aa)
+axis(side=3, at=c(1:length(con$seq)), labels =con$seq)
+axis(side=4, at=c(1:22), labels=aa)
+grid(length(con$seq), length(aa))
+box()
+
+for(i in 1:length(con$seq)) {
+  text(i, which(aa==con$seq[i]),con$seq[i],col="white")
+}
+abline(h=c(3.5, 4.5, 5.5, 3.5, 7.5, 9.5,
+         12.5, 14.5, 16.5, 19.5), col="gray")
+
+par(oldpar)
+</code></pre>
+
+
+</div>

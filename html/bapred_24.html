@@ -1,0 +1,125 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>fabatchaddon</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>
+Addon batch effect adjustment using FAbatch
+</h2>
+
+<h3>Description</h3>
+
+<p>Performs addon batch effect adjustment using FAbatch. Takes the output of performing <code>fabatch</code> on a training data set and new batch data and correspondingly adjusts the test data to better match the adjusted training data according to the FAbatch model.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">fabatchaddon(params, x, batch)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>params</code></td>
+<td>
+
+<p>object of class <code>fabatch</code>. Contains parameters necessary for addon batch effect adjustment.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+
+<p>matrix. The covariate matrix of the new data. Observations in rows, variables in columns.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>batch</code></td>
+<td>
+
+<p>factor. Batch variable of the new data. Currently has to have levels: '1', '2', '3' and so on.
+</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>The adjusted covariate matrix of the test data.
+</p>
+
+
+<h3>Note</h3>
+
+<p>It is <b>not recommended</b> to perform FAbatch in cross-study prediction settings, because it has been observed to (strongly) impair prediction performance. Given a not too small test set, the following methods are recommended (Hornung et al., 2016b): <code>combatba</code>, <code>meancenter</code>, <code>ratioa</code>, <code>ratiog</code>.
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Roman Hornung
+</p>
+
+
+<h3>References</h3>
+
+<p>Hornung, R., Boulesteix, A.-L., Causeur, D. (2016). Combining location-and-scale batch effect adjustment with data cleaning by latent factor adjustment. BMC Bioinformatics 17:27, &lt;doi: <a href="https://doi.org/10.1186/s12859-015-0870-z">10.1186/s12859-015-0870-z</a>&gt;.
+</p>
+<p>Hornung, R., Causeur, D., Bernau, C., Boulesteix, A.-L. (2017). Improving cross-study prediction through addon batch effect adjustment and addon normalization. Bioinformatics 33(3):397–404, &lt;doi: <a href="https://doi.org/10.1093/bioinformatics/btw650">10.1093/bioinformatics/btw650</a>&gt;.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">data(autism)
+
+# Random subset of 150 variables:
+set.seed(1234)
+Xsub &lt;- X[,sample(1:ncol(X), size=150)]
+
+# In cases of batches with more than 20 observations
+# select 20 observations at random:
+subinds &lt;- unlist(sapply(1:length(levels(batch)), function(x) {
+  indbatch &lt;- which(batch==x)
+  if(length(indbatch) &gt; 20)
+    indbatch &lt;- sort(sample(indbatch, size=20))
+  indbatch
+}))
+Xsub &lt;- Xsub[subinds,]
+batchsub &lt;- batch[subinds]
+ysub &lt;- y[subinds]
+
+
+
+trainind &lt;- which(batchsub %in% c(1,2))
+
+Xsubtrain &lt;- Xsub[trainind,]
+ysubtrain &lt;- ysub[trainind]
+batchsubtrain &lt;- factor(as.numeric(batchsub[trainind]), levels=c(1,2))
+
+
+testind &lt;- which(batchsub %in% c(3,4))
+
+Xsubtest &lt;- Xsub[testind,]
+ysubtest &lt;- ysub[testind]
+
+batchsubtest &lt;- as.numeric(batchsub[testind])
+batchsubtest[batchsubtest==3] &lt;- 1
+batchsubtest[batchsubtest==4] &lt;- 2
+batchsubtest &lt;- factor(batchsubtest, levels=c(1,2))
+
+
+
+params &lt;- fabatch(x=Xsubtrain, y=ysubtrain, batch=batchsubtrain)
+
+Xsubtestaddon &lt;- fabatchaddon(params, x=Xsubtest, 
+  batch=batchsubtest)
+</code></pre>
+
+
+</div>

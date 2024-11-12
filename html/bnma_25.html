@@ -1,0 +1,182 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>nodesplit.network.data</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Make a network object containing data, priors, and a JAGS model file</h2>
+
+<h3>Description</h3>
+
+<p>This function makes a network object that can be used to run network meta-analysis using <code>nodesplit.network.run</code>.
+User needs to specify Outcomes, Study, Treat, N or SE, and response.
+Prior parameters are filled in automatically based on the data type if not specified.
+The input data should be arm-level so that we have observations for each treatment in each study.
+The input data is preprocessed to fit the format necessary to run model in JAGS.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">nodesplit.network.data(
+  Outcomes = NULL,
+  Study = NULL,
+  Treat = NULL,
+  N = NULL,
+  SE = NULL,
+  response = NULL,
+  Treat.order = NULL,
+  pair = NULL,
+  type = "random",
+  dic = FALSE
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>Outcomes</code></td>
+<td>
+<p>Arm-level outcomes. If it is a multinomial response, the matrix would have dimensions treatment arms (row) by multinomial categories (column). If it is binomial or normal, it would be a vector.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Study</code></td>
+<td>
+<p>A vector of study indicator for each arm</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Treat</code></td>
+<td>
+<p>A vector of treatment indicator for each arm</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>N</code></td>
+<td>
+<p>A vector of total number of observations in each arm. Used for binomial and multinomial responses</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>SE</code></td>
+<td>
+<p>A vector of standard error for each arm. Used only for normal response</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>response</code></td>
+<td>
+<p>Specification of the outcomes type. Must specify one of the following: "normal", "binomial", or "multinomial"</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Treat.order</code></td>
+<td>
+<p>Treatment order which determines how treatments are compared. The first treatment that is specified is considered to be the baseline treatment. Default order is alphabetical. If the treatments are coded 1, 2, etc, then the treatment with a value of 1 would be assigned as a baseline treatment.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>pair</code></td>
+<td>
+<p>Define a pair to split. It has to be a vector of length 2 with treatment names</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>type</code></td>
+<td>
+<p>Type of model fitted: either "random" for random effects model or "fixed" for fixed effects model. Default is "random".</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>dic</code></td>
+<td>
+<p>This is an indicator for whether user wants to calculate DIC. Model stores less information if you set it to FALSE. Default is set to FALSE.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>Creates list of variables that are used to run the model using <code>nodesplit.network.run</code>
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+<p>Data combining all the input data. User can check this to insure the data is correctly specified. For modelling purposes, character valued studies or treatment variables are changed to numeric values based on alphabetical order.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nrow</code></td>
+<td>
+<p>Total number of arms in the meta-analysis</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ncat</code></td>
+<td>
+<p>Number of columns in the Outcomes. Will equal 1 for binary and normal and number of categories for multinomial</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nstudy</code></td>
+<td>
+<p>Number of study</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>na</code></td>
+<td>
+<p>Number of arms for each study</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ntreat</code></td>
+<td>
+<p>Number of treatment</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>b.id</code></td>
+<td>
+<p>Indicator in sequence of all treatments for which treatment is base treatment in Study</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>t</code></td>
+<td>
+<p><code>Treat</code> transformed into a matrix which has dimensions number of study by max number of arms in studies</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>r</code></td>
+<td>
+<p><code>Outcomes</code> made into an array that is suitable for use in rjags code. For multinomial, it has 3 dimensions: number of study by max number of arms in studies by number of categories.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>code</code></td>
+<td>
+<p>Rjags model file code that is generated using information provided by the user. To view model file inside R in a nice format, use <code>cat(network$code).</code></p>
+</td>
+</tr>
+</table>
+<h3>References</h3>
+
+<p>S. Dias, N.J. Welton, D.M. Caldwellb, A.E. Ades (2010), <em>Checking consistency in mixed treatment</em>, Statistics in Medicine 29(7-8, Sp. Iss. SI): 932-944. <a href="https://doi.org/10.1002/sim.3767">doi:10.1002/sim.3767</a>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">###Thrombolytic data example
+network &lt;- with(thrombolytic,{
+ nodesplit.network.data(Outcomes, Study, Treat, N, response = "binomial", pair = c(3,9))
+})
+network
+</code></pre>
+
+
+</div>

@@ -1,0 +1,181 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>rmbst</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2> Robust Boosting for Multi-class Robust Loss Functions</h2>
+
+<h3>Description</h3>
+
+<p>MM (majorization/minimization) based gradient boosting for optimizing nonconvex robust loss functions with componentwise
+linear, smoothing splines, tree models as base learners.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">rmbst(x, y, cost = 0.5, rfamily = c("thinge", "closs"), ctrl=bst_control(),
+control.tree=list(maxdepth = 1),learner=c("ls","sm","tree"),del=1e-10)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p> a data frame containing the variables in the model.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>y</code></td>
+<td>
+<p> vector of responses. <code>y</code> must be in {1, 2, ..., k}. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>cost</code></td>
+<td>
+<p> price to pay for false positive, 0 &lt; <code>cost</code> &lt; 1; price of false negative is 1-<code>cost</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>rfamily</code></td>
+<td>
+ <p><code>family</code> = "thinge" is currently implemented.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ctrl</code></td>
+<td>
+<p> an object of class <code>bst_control</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>control.tree</code></td>
+<td>
+<p> control parameters of rpart. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>learner</code></td>
+<td>
+<p> a character specifying the component-wise base learner to be used:
+<code>ls</code> linear models, 
+<code>sm</code> smoothing splines,
+<code>tree</code> regression trees.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>del</code></td>
+<td>
+<p>convergency criteria</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>An MM algorithm operates by creating a convex surrogate function that majorizes the nonconvex objective function. When the surrogate function is minimized with gradient boosting algorithm, the desired objective function is decreased. The MM algorithm contains difference of convex (DC) for <code>rfamily="thinge"</code>, and quadratic majorization boosting algorithm (QMBA) for <code>rfamily="closs"</code>. 
+</p>
+
+
+<h3>Value</h3>
+
+<p>An object of class <code>bst</code> with <code>print</code>, <code>coef</code>,
+<code>plot</code> and <code>predict</code> methods are available for linear models.
+For nonlinear models, methods <code>print</code> and <code>predict</code> are available.
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>x, y, cost, rfamily, learner, control.tree, maxdepth</code></td>
+<td>
+<p>These are input variables and parameters</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ctrl</code></td>
+<td>
+<p>the input <code>ctrl</code> with possible updated <code>fk</code> if <code>type="adaptive"</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>yhat</code></td>
+<td>
+<p>predicted function estimates</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ens</code></td>
+<td>
+<p>a list of length <code>mstop</code>. Each element is a fitted model to the pseudo residuals, defined as negative gradient of loss function at the current estimated function</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ml.fit</code></td>
+<td>
+<p>the last element of <code>ens</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ensemble</code></td>
+<td>
+<p>a vector of length <code>mstop</code>. Each element is the variable selected in each boosting step when applicable</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>xselect</code></td>
+<td>
+<p>selected variables in <code>mstop</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>coef</code></td>
+<td>
+<p>estimated coefficients in <code>mstop</code></p>
+</td>
+</tr>
+</table>
+<h3>Author(s)</h3>
+
+<p> Zhu Wang </p>
+
+
+<h3>References</h3>
+
+<p>Zhu Wang (2018),
+Quadratic Majorization for Nonconvex Loss with
+Applications to the Boosting Algorithm, <em>Journal of Computational and Graphical Statistics</em>, <b>27</b>(3), 491-502, doi: <a href="https://doi.org/10.1080/10618600.2018.1424635">10.1080/10618600.2018.1424635</a>
+</p>
+<p>Zhu Wang (2018), Robust boosting with truncated loss functions, <em>Electronic Journal of Statistics</em>, <b>12</b>(1), 599-650, doi: <a href="https://doi.org/10.1214/18-EJS1404">10.1214/18-EJS1404</a>
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>cv.rmbst</code> for cross-validated stopping iteration. Furthermore see
+<code>bst_control</code></p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">x &lt;- matrix(rnorm(100*5),ncol=5)
+c &lt;- quantile(x[,1], prob=c(0.33, 0.67))
+y &lt;- rep(1, 100)
+y[x[,1] &gt; c[1] &amp; x[,1] &lt; c[2] ] &lt;- 2
+y[x[,1] &gt; c[2]] &lt;- 3
+x &lt;- as.data.frame(x)
+x &lt;- as.data.frame(x)
+dat.m &lt;- mbst(x, y, ctrl = bst_control(mstop=50), family = "hinge", learner = "ls")
+predict(dat.m)
+dat.m1 &lt;- mbst(x, y, ctrl = bst_control(twinboost=TRUE, 
+f.init=predict(dat.m), xselect.init = dat.m$xselect, mstop=50))
+dat.m2 &lt;- rmbst(x, y, ctrl = bst_control(mstop=50, s=1, trace=TRUE), 
+rfamily = "thinge", learner = "ls")
+predict(dat.m2)
+</code></pre>
+
+
+</div>

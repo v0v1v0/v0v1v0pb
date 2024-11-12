@@ -1,0 +1,217 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>blsR</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>blsR: Retrieve Data From the U.S. Bureau Of Labor Statistics API</h2>
+
+<h3>Description</h3>
+
+<p><code>blsR</code> provides functions for retrieving and processing data from the BLS API.
+The functions are divided into 5 categories: query generators, query requests,
+the spanning functions, result processors, and the user-friendly simplified
+interface.
+</p>
+
+
+<h3>API Key and Definition</h3>
+
+<p>The API key is an optional argument, but it is recommended you register for
+an API key and use it. Requests without a key are limited to 10 years of data
+per request, 25 series per query, and 25 queries per day. You can register at:
+<a href="https://data.bls.gov/registrationEngine/">https://data.bls.gov/registrationEngine/</a>
+</p>
+<p>This implementation was based on the signatures available at:
+<a href="https://www.bls.gov/developers/api_signature_v2.htm">https://www.bls.gov/developers/api_signature_v2.htm</a>
+</p>
+<p>The B.L.S. Frequently asked questions is available at:
+<a href="https://www.bls.gov/developers/api_faqs.htm">https://www.bls.gov/developers/api_faqs.htm</a>
+</p>
+
+
+<h3>General Workflow</h3>
+
+<p>This package was designed with a three-step workflow in mind:
+</p>
+
+<ul>
+<li>
+<p> Identify which data you would like to retrieve and create a query.
+</p>
+</li>
+<li>
+<p> Make an http request to execute a query (<code>bls_request()</code>)
+</p>
+</li>
+<li>
+<p> Modify the response data to fit the user workflow
+</p>
+</li>
+</ul>
+<p>You can customize this workflow by creating your own query objects which
+consist of a target URL and an optional payload as documented in the API Spec.
+You may also want to create a custom results processor to shape the data to
+suit individual needs and wrap those into a single call like
+<code>get_series_table()</code> does.
+</p>
+
+
+<h3>API Key Management</h3>
+
+<p>The preferred method to set the key is to set the <code>BLS_API_KEY</code> environment
+variable in an <code>.Renviron</code> file. To learn more, see <code>bls-api-key</code>.
+</p>
+
+<ul>
+<li> <p><code>bls_has_key()</code> - Check if an API key is set
+</p>
+</li>
+<li> <p><code>bls_get_key()</code> - Get an API key, if set
+</p>
+</li>
+<li> <p><code>bls_set_key()</code> - Set an API key for the <em>current session</em>
+</p>
+</li>
+<li> <p><code>bls_unset_key()</code> - Unsset an API key for the <em>current session</em>
+</p>
+</li>
+</ul>
+<h3>Query Generators</h3>
+
+<p>The query generators return a list suitable for passing to <code>bls_request()</code>.
+Most users should never need to access these functions directly but they are
+made available for advanced users and user-extensions.
+</p>
+
+<ul>
+<li> <p><code>query_series()</code> - Create a query for a single time series
+</p>
+</li>
+<li> <p><code>query_n_series()</code> - Create a query to retrieve one or more time series
+and their catalog data
+</p>
+</li>
+<li> <p><code>query_popular_series()</code> - Create a query to retrieve popular series
+</p>
+</li>
+<li> <p><code>query_all_surveys()</code> - Create a query to retrieve all surveys
+</p>
+</li>
+<li> <p><code>query_survey_info()</code> - Create a query to retrieve information about a
+survey
+</p>
+</li>
+<li> <p><code>query_latest_observation()</code> - Create a Query to retrieve the latest
+observation for a time series
+</p>
+</li>
+</ul>
+<h3>Query Requests</h3>
+
+<p>The query-requester functions will execute the query by making the API request
+and returning a minimally-processed response. These are likely to be the
+most suitable functions to use for users who want to access the raw results.
+</p>
+
+<ul>
+<li> <p><code>bls_request()</code> - Execute a query and return the unprocessed results
+</p>
+</li>
+<li> <p><code>get_series()</code> - Create and execute query for a single time series
+</p>
+</li>
+<li> <p><code>get_n_series()</code> - Create and execute a query to retrieve one or more
+time series and their catalog data
+</p>
+</li>
+<li> <p><code>get_popular_series()</code> - Create and execute a query to retrieve popular
+series
+</p>
+</li>
+<li> <p><code>get_all_surveys()</code> - Create and execute a query to retrieve all surveys
+</p>
+</li>
+<li> <p><code>get_survey_info()</code> - Create and execute a query to retrieve information
+about a survey
+</p>
+</li>
+<li> <p><code>get_latest_observation()</code> - Create and execute a query to retrieve the
+latest observation for a time series
+</p>
+</li>
+</ul>
+<h3>Spanning functions</h3>
+
+<p>The spanning functions implement the behavior around breaking up a request
+that exceeds the API limits into multiple requests within the API limits and
+then reducing the results. Currently, spanning is only supported across time
+but there is plans to also support spanning across the number of series
+requested. These functions are low-level internal implementations and most
+users should never need to interact with them directly.
+</p>
+
+<ul>
+<li> <p><code>span_series_request()</code> - Breaks up a request into multiple queries,
+executes the queries, and returns the reduced results
+</p>
+</li>
+<li> <p><code>span_request_queries()</code> - Breaks up a request into a list of queries
+</p>
+</li>
+<li> <p><code>reduce_spanned_responses()</code> - Reduces a list of responses into one
+series list
+</p>
+</li>
+</ul>
+<h3>Result Processors</h3>
+
+<p>The result-processor functions will transform the raw API response data
+structures into data structures more likely to be suitable for modern user
+workflows. The functions generally take as input the values returned by the
+query-requester functions and make transform the data to different formats
+or modify the output of another result-processor function.
+</p>
+
+<ul>
+<li> <p><code>data_as_table()</code> - Flatten the data list into a table
+</p>
+</li>
+<li> <p><code>merge_tables()</code> - Merge multiple tables by period
+</p>
+</li>
+<li> <p><code>tidy_periods()</code> - Transform periods to a more useful format
+</p>
+</li>
+<li> <p><code>data_as_tidy_table()</code> - Flatten the data list and transform period data
+</p>
+</li>
+<li> <p><code>merge_tidy_tables()</code> - Merge multiple tables with tidy period data
+</p>
+</li>
+<li> <p><code>tidy_table_as_zoo()</code> - Turn a table produced by <code>data_as_tidy_table</code>,
+<code>merge_tidy_tables</code>, or <code>tidy_periods</code> as a <code>zoo</code> object, which can be
+further turned into an <code>xts</code> object
+</p>
+</li>
+</ul>
+<h3>Simplified Interface</h3>
+
+<p>These functions simplify the query generation, execution, and response
+processing into a single function call, including extended request periods
+that have to be broken down into multiple API requests. For most common use
+cases these are likely to be the only functions needed.
+</p>
+
+<ul>
+<li> <p><code>get_series_table()</code> - Request one series and return a data table
+</p>
+</li>
+<li> <p><code>get_series_tables()</code> - Request series and return list of data tables
+</p>
+</li>
+<li> <p><code>get_n_series_table()</code> - Request series and return one table of values
+</p>
+</li>
+</ul>
+</div>

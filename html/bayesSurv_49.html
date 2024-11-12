@@ -1,0 +1,463 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>bayesGspline</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>
+Summary for the density estimate based on the model with Bayesian
+G-splines.
+</h2>
+
+<h3>Description</h3>
+
+<p>Compute the estimate of the density function based on the values
+sampled using the MCMC (MCMC average evaluated in a
+grid of values) in a model where density is specified as
+a Bayesian G-spline.
+</p>
+<p>This function serves to summarize the MCMC chains related to the distributional parts 
+of the considered models obtained using the functions:
+<code>bayesHistogram</code>,
+<code>bayesBisurvreg</code>, <code>bayessurvreg2</code>, <code>bayessurvreg3</code>.
+</p>
+<p>If asked, this function returns also the values of the G-spline
+evaluated in a grid at each iteration of MCMC.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">bayesGspline(dir, extens="", extens.adjust="_b",
+   grid1, grid2, skip = 0, by = 1, last.iter, nwrite,
+   only.aver = TRUE, standard = FALSE, version = 0)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>dir</code></td>
+<td>
+<p>directory where to search for files (‘mixmoment.sim’,
+‘mweight.sim’, ‘mmean.sim’, ‘gspline.sim’) with the MCMC
+sample.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>extens</code></td>
+<td>
+<p>an extension used to distinguish different sampled
+G-splines if more G-splines were used in one simulation (e.g. with
+doubly-censored data or in the model where both the error term and the
+random intercept were defined as the G-splines). According to which
+<code>bayes*survreg*</code> function was used, specify the argument
+<code>extens</code> in the following way.
+</p>
+
+<dl>
+<dt>bayesHistogram:</dt>
+<dd>
+<p>always <code>extens = ""</code>
+</p>
+</dd>
+<dt>bayesBisurvreg:</dt>
+<dd>
+
+<ul>
+<li>
+<p> to compute the bivariate distribution of the <em>error</em> term for
+the <em>onset</em> time: <code>extens = ""</code>;
+</p>
+</li>
+<li>
+<p> to compute the bivariate distribution of the <em>error</em> term for
+the <em>event</em> time if there was doubly-censoring:
+<code>extens = "_2"</code>;
+</p>
+</li>
+</ul>
+</dd>
+<dt>bayessurvreg2:</dt>
+<dd>
+
+<ul>
+<li>
+<p> to compute the distribution of the <em>error</em> term for
+the <em>onset</em> time: <code>extens = ""</code>;
+</p>
+</li>
+<li>
+<p> to compute the distribution of the <em>error</em> term for
+the <em>event</em> time if there was doubly-censoring:
+<code>extens = "_2"</code>;
+</p>
+</li>
+</ul>
+</dd>
+<dt>bayessurvreg3:</dt>
+<dd>
+
+<ul>
+<li>
+<p> to compute the distribution of the <em>error</em> term for
+the <em>onset</em> time: <code>extens = ""</code>;
+</p>
+</li>
+<li>
+<p> to compute the distribution of the <em>error</em> term for
+the <em>event</em> time if there was doubly-censoring:
+<code>extens = "_2"</code>;
+</p>
+</li>
+<li>
+<p> to compute the distribution of the <em>random intercept</em> for the
+<em>onset</em> time: <code>extens = "_b"</code>;
+</p>
+</li>
+<li>
+<p> to compute the distribution of the <em>random intercept</em> term for
+the <em>event</em> time if there was doubly-censoring:
+<code>extens = "_b2"</code>;      
+</p>
+</li>
+</ul>
+</dd>  
+</dl>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>extens.adjust</code></td>
+<td>
+<p>this argument is applicable for the situation when
+the MCMC chains were created using the function
+<code>bayessurvreg3</code>, and when both the distribution of the
+error term and the random intercept was specified as the G-spline.
+</p>
+<p>In that case the location of the error term and the random intercept
+are separately not identifiable. Only the location of the sum
+<code class="reqn">\varepsilon + b</code> can be estimated. For this reason,
+the function <code>bayesGspline</code> always centers the distribution of
+the random intercept to have a zero mean and adds its original mean to
+the mean of the distribution of the error term.
+</p>
+<p>Argument <code>extens.adjust</code> is used to match correctly the files
+containing the G-spline of the random intercept corresponding to the
+particular error term. 
+</p>
+<p>The following values of <code>extens.adjust</code> should be used in the
+following situations:
+</p>
+
+<ul>
+<li>
+<p> if there are no doubly-censored data or if we are computing
+the distribution of the error term/random intercept from the model
+for the <em>onset</em> time then
+</p>
+
+<table><tr>
+<td style="text-align: center;">
+      <code>extens.adjust = "_b"</code>
+    </td>
+</tr></table>
+</li>
+<li>
+<p> if there are doubly-censored data and we are computing the
+distribution of the error term/random intercept from the model for
+the <em>event</em> time then
+</p>
+
+<table><tr>
+<td style="text-align: center;">
+      <code>extens.adjust = "_b2"</code>
+    </td>
+</tr></table>
+</li>
+</ul>
+</td>
+</tr>
+</table>
+<table>
+<tr style="vertical-align: top;">
+<td><code>grid1</code></td>
+<td>
+<p>grid of values from the first dimension at which the sampled 
+densities are to be evaluated.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>grid2</code></td>
+<td>
+<p>grid of values from the second dimension (if the G-spline
+was bivariate) at which the sampled densities are to be
+evaluated. This item is <code>missing</code> if the G-spline is univariate.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>skip</code></td>
+<td>
+<p>number of rows that should be skipped at the beginning of
+each *.sim file with the stored sample.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>by</code></td>
+<td>
+<p>additional thinning of the sample.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>last.iter</code></td>
+<td>
+<p>index of the last row from *.sim files that should be
+used. If not specified than it is set to the maximum available
+determined according to the file <code>mixmoment.sim</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nwrite</code></td>
+<td>
+<p>frequency with which is the user informed about the
+progress of computation (every <code>nwrite</code>th iteration count of
+iterations change).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>only.aver</code></td>
+<td>
+<p><code>TRUE/FALSE</code>, if <code>TRUE</code> only MCMC average is
+returned otherwise also values of the G-spline at each iteration are
+returned (which might ask for quite lots of memory).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>standard</code></td>
+<td>
+<p><code>TRUE/FALSE</code>, if <code>TRUE</code>, each G-spline is
+standardized to have zero mean and unit variance. Only applicable if
+<code>version</code> = 30 or 31, otherwise <code>standard</code> is always set to <code>FALSE</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>version</code></td>
+<td>
+
+<p>this argument indicates by which <code>bayes*survreg*</code> function the
+chains used by <code>bayesGspline</code> were created. Use the following:
+</p>
+
+<dl>
+<dt>bayesHistogram:</dt>
+<dd>
+<p><code>version = 0</code>;</p>
+</dd>
+<dt>bayesBisurvreg:</dt>
+<dd>
+<p><code>version = 0</code>;</p>
+</dd>
+<dt>bayessurvreg2:</dt>
+<dd>
+<p><code>version = 0</code>;</p>
+</dd>
+<dt>bayessurvreg3:</dt>
+<dd>
+<p><code>version = 30 </code> or <code> 31</code>.
+</p>
+<p>Use
+<code>version = 30</code> if you want to compute the density of the
+<em>error</em> term.
+</p>
+<p>Use
+<code>version = 31</code> if you want to compute the density of the
+<em>random intercept</em>.
+</p>
+<p>Use
+<code>version = 32</code> if you want to compute the density of the
+<em>error</em> term in the model with doubly-interval-censored data
+and bivariate normal distribution for random intercepts in the
+onset and time-to-event parts of the model OR if you have just
+interval-censored data and a simple AFT model without random
+effects and you want to compute the density of the <em>error</em>
+term of the model.
+</p>
+</dd>
+</dl>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>An object of class <code>bayesGspline</code> is returned. This object is a
+list with components
+<code>grid</code>, <code>average</code> for the univariate G-spline and
+components <code>grid1</code>, <code>grid2</code>, <code>average</code> for the bivariate G-spline.
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>grid</code></td>
+<td>
+<p>this is a grid of values (vector) at which the McMC average of the
+G-spline was computed.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>average</code></td>
+<td>
+<p>these are McMC averages of the G-spline (vector) evaluated in
+<code>grid</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>grid1</code></td>
+<td>
+<p>this is a grid of values (vector) for the first dimension
+at which the McMC average of the G-spline was computed.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>grid2</code></td>
+<td>
+<p>this is a grid of values (vector) for the second dimension
+at which the McMC average of the G-spline was computed.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>average</code></td>
+<td>
+<p>this is a matrix <code>length(grid1)</code> times
+<code>length(grid2)</code> with McMC averages of the G-spline evaluated in
+</p>
+
+<table>
+<tr>
+<td style="text-align: left;">
+      x1 = </td>
+<td style="text-align: center;"> ( grid1 </td>
+<td style="text-align: center;"> ... </td>
+<td style="text-align: center;"> grid1 ) </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+    </td>
+</tr>
+</table>
+<p>and
+</p>
+
+<table>
+<tr>
+<td style="text-align: left;">
+           </td>
+<td style="text-align: right;"> (</td>
+<td style="text-align: center;"> grid2  </td>
+<td style="text-align: left;"> ) </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+      x2 = </td>
+<td style="text-align: right;"> (</td>
+<td style="text-align: center;"> ...    </td>
+<td style="text-align: left;"> )  </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+	   </td>
+<td style="text-align: right;"> (</td>
+<td style="text-align: center;"> grid2  </td>
+<td style="text-align: left;"> ) </td>
+</tr>
+<tr>
+<td style="text-align: left;">   
+    </td>
+</tr>
+</table>
+</td>
+</tr>
+</table>
+<p>There exists a method to plot objects of the class <code>bayesGspline</code>.
+</p>
+
+
+<h3>Attributes</h3>
+
+<p>Additionally, the object of class <code>bayesGspline</code> has the following
+attributes:
+</p>
+
+<dl>
+<dt><code>sample.size</code></dt>
+<dd>
+<p>a length of the McMC sample used to compute the McMC average.
+</p>
+</dd>
+<dt><code>sample</code></dt>
+<dd>
+<p>G-spline evaluated in a grid of values. This attribute
+is present only if <code>only.aver = FALSE</code>.
+</p>
+<p>For a univariate G-spline this is a matrix with <code>sample.size</code> columns and
+length(grid1) rows.
+</p>
+<p>For a bivariate G-spline this is a matrix
+with <code>sample.size</code> columns and
+length(grid1)*length(grid2) rows.
+</p>
+</dd>
+</dl>
+<h3>Author(s)</h3>
+
+<p>Arnošt Komárek <a href="mailto:arnost.komarek@mff.cuni.cz">arnost.komarek@mff.cuni.cz</a>
+</p>
+
+
+<h3>References</h3>
+
+<p>Komárek, A. (2006).
+<em>Accelerated Failure Time Models for Multivariate
+Interval-Censored Data with Flexible Distributional Assumptions</em>.
+PhD. Thesis, Katholieke Universiteit Leuven, Faculteit Wetenschappen.
+</p>
+<p>Komárek, A. and Lesaffre, E. (2006).
+Bayesian semi-parametric accelerated failurew time model for paired
+doubly interval-censored data.
+<em>Statistical Modelling</em>, <b>6</b>, 3–22.
+</p>
+<p>Komárek, A. and Lesaffre, E. (2008).
+Bayesian accelerated failure time model with multivariate doubly-interval-censored data
+and flexible distributional assumptions.
+<em>Journal of the American Statistical Association</em>, <b>103</b>, 523–533.
+</p>
+<p>Komárek, A., Lesaffre, E., and Legrand, C. (2007).
+Baseline and treatment effect heterogeneity for survival
+times between centers using a random effects accelerated failure time
+model with flexible error distribution.
+<em>Statistics in Medicine,</em> <b>26</b>, 5457–5472.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## See the description of R commands for
+## the models described in
+## Komarek (2006),
+## Komarek and Lesaffre (2006),
+## Komarek and Lesaffre (2008),
+## Komarek, Lesaffre, and Legrand (2007).
+## 
+## R commands available
+## in the documentation
+## directory of this package
+##  - ex-tandmobPA.R and
+##    https://www2.karlin.mff.cuni.cz/~komarek/software/bayesSurv/ex-tandmobPA.pdf
+##  - ex-tandmobCS.R and
+##    https://www2.karlin.mff.cuni.cz/~komarek/software/bayesSurv/ex-tandmobCS.pdf
+##  - ex-eortc.R and
+##    https://www2.karlin.mff.cuni.cz/~komarek/software/bayesSurv/ex-eortc.pdf
+##
+</code></pre>
+
+
+</div>

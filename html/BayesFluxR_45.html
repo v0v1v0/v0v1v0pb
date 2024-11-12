@@ -1,0 +1,69 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>tensor_embed_mat</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Embed a matrix of timeseries into a tensor</h2>
+
+<h3>Description</h3>
+
+<p>This is used when working with recurrent networks, especially in
+the case of seq-to-one modelling. Creates overlapping subsequences
+of the data with length 'len_seq'. Returned dimensions are seq_len x num_vars x num_subsequences.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">tensor_embed_mat(mat, len_seq)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>mat</code></td>
+<td>
+<p>Matrix of time series</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>len_seq</code></td>
+<td>
+<p>subsequence length</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>A tensor of dimension: len_seq x num_vars x num_subsequences
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## Not run: 
+  ## Needs previous call to `BayesFluxR_setup` which is time
+  ## consuming and requires Julia and BayesFlux.jl
+  BayesFluxR_setup(installJulia=TRUE, seed=123)
+  net &lt;- Chain(RNN(5, 1))
+  like &lt;- likelihood.seqtoone_normal(net, Gamma(2.0, 0.5))
+  prior &lt;- prior.gaussian(net, 0.5)
+  init &lt;- initialise.allsame(Normal(0, 0.5), like, prior)
+  data &lt;- matrix(rnorm(5*1000), ncol = 5)
+  # Choosing sequences of length 10 and predicting one period ahead
+  tensor &lt;- tensor_embed_mat(data, 10+1)
+  x &lt;- tensor[1:10, , , drop = FALSE]
+  # Last value in each sequence is the target value
+  y &lt;- tensor[11,1,]
+  bnn &lt;- BNN(x, y, like, prior, init)
+  BNN.totparams(bnn)
+
+## End(Not run)
+
+</code></pre>
+
+
+</div>

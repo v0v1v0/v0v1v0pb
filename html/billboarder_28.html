@@ -1,0 +1,137 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>bb_export</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Export a Billboard to PNG</h2>
+
+<h3>Description</h3>
+
+<p>Export a Billboard to PNG
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">bb_export(bb, filename = NULL, download_label = "Export (.png)", ...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>bb</code></td>
+<td>
+<p>A <code>billboarder</code> <code>htmlwidget</code> object
+or a <code>billboarderProxy</code> <code>htmlwidget</code> object.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>filename</code></td>
+<td>
+<p>A string of the filename, excluding extension (will be <code>".png"</code>).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>download_label</code></td>
+<td>
+<p>Label to appear on the link to download PNG.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Additional arguments (not used).</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>A <code>billboard</code> <code>htmlwidget</code> object.
+</p>
+
+
+<h3>Note</h3>
+
+<p>This function has two uses:
+</p>
+
+<ul>
+<li>
+<p><strong>in shiny:</strong> you can export to PNG with an <code>observeEvent</code> by using <code>billboarderProxy</code>.
+</p>
+</li>
+<li>
+<p><strong>in markdown and in shiny:</strong> add a button to download chart as PNG.
+</p>
+</li>
+</ul>
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+# Add a button to download as PNG:
+
+data("equilibre_mensuel")
+billboarder() %&gt;% 
+  bb_linechart(
+    data = equilibre_mensuel,
+    mapping = bbaes(date, solde),
+    type = "spline"
+  ) %&gt;% 
+  bb_x_axis(
+    tick = list(format = "%Y-%m", fit = FALSE)
+  ) %&gt;% 
+  bb_export(
+    filename = "my-awesome-chart",
+    download_label = "Click to download"
+  )
+  
+
+# In shiny, you can use proxy :
+
+if (interactive()) {
+  library(shiny)
+  library(billboarder)
+  
+  ui &lt;- fluidPage(
+    fluidRow(
+      column(
+        width = 8, offset = 2,
+        tags$h1("Export billboard as PNG via Proxy"),
+        billboarderOutput(outputId = "mybb"),
+        actionButton(
+          inputId = "export", 
+          label = "Export", 
+          icon = icon("download")
+        )
+      )
+    )
+  )
+  
+  server &lt;- function(input, output, session) {
+    
+    output$mybb &lt;- renderBillboarder({
+      data("prod_par_filiere")
+      billboarder() %&gt;%
+        bb_barchart(
+          data = prod_par_filiere[, c("annee", "prod_hydraulique")],
+          color = "#102246"
+        ) %&gt;%
+        bb_y_grid(show = TRUE)
+    })
+    
+    observeEvent(input$export, {
+      billboarderProxy(shinyId = "mybb") %&gt;% 
+        bb_export(filename = "my-billboard-chart")
+    })
+    
+  }
+  
+  shinyApp(ui, server)
+}
+</code></pre>
+
+
+</div>

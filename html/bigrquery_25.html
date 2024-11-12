@@ -1,0 +1,114 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>bq_query</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Submit query to BigQuery</h2>
+
+<h3>Description</h3>
+
+<p>These submit a query (using <code>bq_perform_query()</code>) and then wait for it
+complete (with <code>bq_job_wait()</code>). All BigQuery queries save their results
+into a table (temporary or otherwise), so these functions return a bq_table
+which you can then query for more information.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">bq_project_query(x, query, destination_table = NULL, ..., quiet = NA)
+
+bq_dataset_query(
+  x,
+  query,
+  destination_table = NULL,
+  ...,
+  billing = NULL,
+  quiet = NA
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>Either a project (a string) or a bq_dataset.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>query</code></td>
+<td>
+<p>SQL query string.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>destination_table</code></td>
+<td>
+<p>A bq_table where results should be stored.
+If not supplied, results will be saved to a temporary table that lives
+in a special dataset. You must supply this parameter for large
+queries (&gt; 128 MB compressed).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Passed on to <code>bq_perform_query()</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>quiet</code></td>
+<td>
+<p>If <code>FALSE</code>, displays progress bar; if <code>TRUE</code> is silent;
+if <code>NA</code> picks based on whether or not you're in an interactive context.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>billing</code></td>
+<td>
+<p>If you query a dataset that you only have read access
+for, such as a public dataset, you must also submit a <code>billing</code> project.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>A bq_table
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+# Querying a project requires full name in query
+tb &lt;- bq_project_query(
+  bq_test_project(),
+  "SELECT count(*) FROM publicdata.samples.natality"
+)
+bq_table_fields(tb)
+bq_table_download(tb)
+
+# Querying a dataset sets default dataset so you can use bare table name,
+# but for public data, you'll need to set a project to bill.
+ds &lt;- bq_dataset("publicdata", "samples")
+tb &lt;- bq_dataset_query(ds,
+  query = "SELECT count(*) FROM natality",
+  billing = bq_test_project()
+)
+bq_table_download(tb)
+
+tb &lt;- bq_dataset_query(ds,
+  query = "SELECT count(*) FROM natality WHERE state = @state",
+  parameters = list(state = "KS"),
+  billing = bq_test_project()
+)
+bq_table_download(tb)
+
+</code></pre>
+
+
+</div>

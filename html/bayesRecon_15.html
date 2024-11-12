@@ -1,0 +1,259 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>reconc_BUIS</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>BUIS for Probabilistic Reconciliation of forecasts via conditioning</h2>
+
+<h3>Description</h3>
+
+<p>Uses the Bottom-Up Importance Sampling algorithm to draw samples from the reconciled
+forecast distribution, obtained via conditioning.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">reconc_BUIS(
+  A,
+  base_forecasts,
+  in_type,
+  distr,
+  num_samples = 20000,
+  suppress_warnings = FALSE,
+  seed = NULL
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>A</code></td>
+<td>
+<p>aggregation matrix (n_upper x n_bottom).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>base_forecasts</code></td>
+<td>
+<p>A list containing the base_forecasts, see details.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>in_type</code></td>
+<td>
+<p>A string or a list of length n_upper + n_bottom. If it is a list the i-th element is a string with two possible values:
+</p>
+
+<ul>
+<li>
+<p> 'samples' if the i-th base forecasts are in the form of samples;
+</p>
+</li>
+<li>
+<p> 'params'  if the i-th base forecasts are in the form of estimated parameters.
+</p>
+</li>
+</ul>
+<p>If it <code>in_type</code> is a string it is assumed that all base forecasts are of the same type.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>distr</code></td>
+<td>
+<p>A string or a list of length n_upper + n_bottom describing the type of base forecasts.
+If it is a list the i-th element is a string with two possible values:
+</p>
+
+<ul>
+<li>
+<p> 'continuous' or 'discrete' if <code>in_type[[i]]</code>='samples';
+</p>
+</li>
+<li>
+<p> 'gaussian', 'poisson' or 'nbinom' if <code>in_type[[i]]</code>='params'.
+</p>
+</li>
+</ul>
+<p>If <code>distr</code> is a string it is assumed that all distributions are of the same type.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>num_samples</code></td>
+<td>
+<p>Number of samples drawn from the reconciled distribution.
+This is ignored if <code>bottom_in_type='samples'</code>; in this case, the number of reconciled samples is equal to
+the number of samples of the base forecasts.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>suppress_warnings</code></td>
+<td>
+<p>Logical. If <code>TRUE</code>, no warnings about effective sample size
+are triggered. If <code>FALSE</code>, warnings are generated. Default is <code>FALSE</code>. See Details.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>seed</code></td>
+<td>
+<p>Seed for reproducibility.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The parameter <code>base_forecast</code> is a list containing n = n_upper + n_bottom elements.
+The first n_upper elements of the list are the upper base forecasts, in the order given by the rows of A.
+The elements from n_upper+1 until the end of the list are the bottom base forecasts, in the order given by the columns of A.
+</p>
+<p>The i-th element depends on the values of <code>in_type[[i]]</code> and <code>distr[[i]]</code>.
+</p>
+<p>If <code>in_type[[i]]</code>='samples', then <code>base_forecast[[i]]</code> is a vector containing samples from the base forecast distribution.
+</p>
+<p>If <code>in_type[[i]]</code>='params', then <code>base_forecast[[i]]</code> is a list containing the estimated:
+</p>
+
+<ul>
+<li>
+<p> mean and sd for the Gaussian base forecast if <code>distr[[i]]</code>='gaussian', see Normal;
+</p>
+</li>
+<li>
+<p> lambda for the Poisson base forecast if <code>distr[[i]]</code>='poisson', see Poisson;
+</p>
+</li>
+<li>
+<p> size and prob (or mu) for the negative binomial base forecast if <code>distr[[i]]</code>='nbinom', see NegBinomial.
+</p>
+</li>
+</ul>
+<p>See the description of the parameters <code>in_type</code> and <code>distr</code> for more details.
+</p>
+<p>Warnings are triggered from the Importance Sampling step if:
+</p>
+
+<ul>
+<li>
+<p> weights are all zeros, then the upper is ignored during reconciliation;
+</p>
+</li>
+<li>
+<p> the effective sample size is &lt; 200;
+</p>
+</li>
+<li>
+<p> the effective sample size is &lt; 1% of the sample size (<code>num_samples</code> if <code>in_type</code> is 'params' or the size of the base forecast if if <code>in_type</code> is 'samples').
+</p>
+</li>
+</ul>
+<p>Note that warnings are an indication that the base forecasts might have issues.
+Please check the base forecasts in case of warnings.
+</p>
+
+
+<h3>Value</h3>
+
+<p>A list containing the reconciled forecasts. The list has the following named elements:
+</p>
+
+<ul>
+<li> <p><code>bottom_reconciled_samples</code>: a matrix (n_bottom x <code>num_samples</code>) containing the reconciled samples for the bottom time series;
+</p>
+</li>
+<li> <p><code>upper_reconciled_samples</code>: a matrix (n_upper x <code>num_samples</code>) containing the reconciled samples for the upper time series;
+</p>
+</li>
+<li> <p><code>reconciled_samples</code>: a matrix (n x <code>num_samples</code>) containing the reconciled samples for all time series.
+</p>
+</li>
+</ul>
+<h3>References</h3>
+
+<p>Zambon, L., Azzimonti, D. &amp; Corani, G. (2024).
+<em>Efficient probabilistic reconciliation of forecasts for real-valued and count time series</em>.
+Statistics and Computing 34 (1), 21.
+<a href="https://doi.org/10.1007/s11222-023-10343-y">doi:10.1007/s11222-023-10343-y</a>.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>reconc_gaussian()</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+library(bayesRecon)
+
+# Create a minimal hierarchy with 2 bottom and 1 upper variable
+rec_mat &lt;- get_reconc_matrices(agg_levels=c(1,2), h=2)
+A &lt;- rec_mat$A
+S &lt;- rec_mat$S
+
+
+#1) Gaussian base forecasts
+
+#Set the parameters of the Gaussian base forecast distributions
+mu1 &lt;- 2
+mu2 &lt;- 4
+muY &lt;- 9
+mus &lt;- c(muY,mu1,mu2)
+
+sigma1 &lt;- 2
+sigma2 &lt;- 2
+sigmaY &lt;- 3
+sigmas &lt;- c(sigmaY,sigma1,sigma2)
+
+base_forecasts = list()
+for (i in 1:length(mus)) {
+base_forecasts[[i]] = list(mean = mus[[i]], sd = sigmas[[i]])
+}
+
+
+#Sample from the reconciled forecast distribution using the BUIS algorithm
+buis &lt;- reconc_BUIS(A, base_forecasts, in_type="params",
+                 distr="gaussian", num_samples=100000, seed=42)
+
+samples_buis &lt;- buis$reconciled_samples
+
+#In the Gaussian case, the reconciled distribution is still Gaussian and can be
+#computed in closed form
+Sigma &lt;- diag(sigmas^2)  #transform into covariance matrix
+analytic_rec &lt;- reconc_gaussian(A, base_forecasts.mu = mus,
+                                base_forecasts.Sigma = Sigma)
+
+#Compare the reconciled means obtained analytically and via BUIS
+print(c(S %*% analytic_rec$bottom_reconciled_mean))
+print(rowMeans(samples_buis))
+
+
+#2) Poisson base forecasts
+
+#Set the parameters of the Poisson base forecast distributions
+lambda1 &lt;- 2
+lambda2 &lt;- 4
+lambdaY &lt;- 9
+lambdas &lt;- c(lambdaY,lambda1,lambda2)
+
+base_forecasts &lt;- list()
+for (i in 1:length(lambdas)) {
+ base_forecasts[[i]] = list(lambda = lambdas[i])
+}
+
+#Sample from the reconciled forecast distribution using the BUIS algorithm
+buis &lt;- reconc_BUIS(A, base_forecasts, in_type="params",
+                          distr="poisson", num_samples=100000, seed=42)
+samples_buis &lt;- buis$reconciled_samples
+
+#Print the reconciled means
+print(rowMeans(samples_buis))
+
+</code></pre>
+
+
+</div>

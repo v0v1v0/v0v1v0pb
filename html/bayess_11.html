@@ -1,0 +1,133 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>gibbs</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>
+Gibbs sampler and Chib's evidence approximation 
+for a generic univariate mixture of normal distributions
+</h2>
+
+<h3>Description</h3>
+
+<p>This function implements a regular Gibbs sampling algorithm on the
+posterior distribution associated with a mixture of normal distributions, 
+taking advantage of the missing data structure. It then runs an averaging 
+of the simulations over all permutations of the component indices in order
+to avoid incomplete label switching and to validate Chib's representation
+of the evidence. This function reproduces <code>gibbsnorm</code> as its first stage,
+<em>however it may be much slower because of its second stage</em>.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">gibbs(niter, datha, mix)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>niter</code></td>
+<td>
+
+<p>number of Gibbs iterations
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>datha</code></td>
+<td>
+
+<p>sample vector
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>mix</code></td>
+<td>
+
+<p>list made of <code>k</code>, number of components, <code>p</code>, <code>mu</code>,
+and <code>sig</code>, starting values of the paramerers, all of size <code>k</code> (see
+example below)
+</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>k </code></td>
+<td>
+<p>number of components in the mixture (superfluous as it is invariant over the execution of the
+R code)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>mu </code></td>
+<td>
+<p>matrix of the Gibbs samples on the <code class="reqn">\mu_i</code> parameters</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>sig </code></td>
+<td>
+<p>matrix of the Gibbs samples on the <code class="reqn">\sigma_i</code> parameters</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>prog </code></td>
+<td>
+<p>matrix of the Gibbs samples on the mixture weights</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>lolik </code></td>
+<td>
+<p>vector of the observed log-likelihoods along iterations</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>chibdeno </code></td>
+<td>
+<p>denominator of Chib's approximation to the evidence (see example below)</p>
+</td>
+</tr>
+</table>
+<h3>References</h3>
+
+<p>Chib, S. (1995) Marginal likelihood from the Gibbs output. 
+<em>J. American Statist. Associ.</em> <b>90</b>, 1313-1321.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>gibbsnorm</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">faithdata=faithful[,1]
+mu=rnorm(3,mean=mean(faithdata),sd=sd(faithdata)/10)
+sig=1/rgamma(3,shape=10,scale=var(faithdata))
+mix=list(k=3,p=rdirichlet(par=rep(1,3)),mu=mu,sig=sig)
+resim3=gibbs(100,faithdata,mix)
+lulu=order(resim3$lolik)[100]
+lnum1=resim3$lolik[lulu]
+lnum2=sum(dnorm(resim3$mu[lulu,],mean=mean(faithdata),sd=resim3$sig[lulu,],log=TRUE)+
+dgamma(resim3$sig[lulu,],10,var(faithdata),log=TRUE)-2*log(resim3$sig[lulu,]))+
+sum((rep(0.5,mix$k)-1)*log(resim3$p[lulu,]))+
+lgamma(sum(rep(0.5,mix$k)))-sum(lgamma(rep(0.5,mix$k)))
+lchibapprox3=lnum1+lnum2-log(resim3$deno)
+</code></pre>
+
+
+</div>

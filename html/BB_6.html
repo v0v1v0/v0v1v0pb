@@ -1,0 +1,203 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>multiStart</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Nonlinear Optimization or Root-Finding with Multiple Starting Values</h2>
+
+<h3>Description</h3>
+
+<p>Start <code>BBsolve</code> or <code>BBoptim</code> from multiple starting 
+points to obtain multiple solutions and to test sensitivity to starting values.</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">  multiStart(par, fn, gr=NULL, action = c("solve", "optimize"), 
+	method=c(2,3,1),  lower=-Inf, upper=Inf,
+	project=NULL, projectArgs=NULL, 
+	control=list(),  quiet=FALSE, details=FALSE, ...) 
+  </code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>par</code></td>
+<td>
+<p>A real matrix, each row of which is an argument to <code>fn</code>,
+indicating initial guesses for solving a nonlinear system <code>fn = 0</code> 
+or for optimizing the objective function <code>fn</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>fn</code></td>
+<td>
+<p>see <code>BBsolve</code> or <code>BBoptim</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>gr</code></td>
+<td>
+<p>Only required for optimization.  See <code>BBoptim</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>action</code></td>
+<td>
+<p>A character string indicating whether to solve a nonlinear 
+system or to optimize.  Default is “solve”.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>method</code></td>
+<td>
+<p>see <code>BBsolve</code> or <code>BBoptim</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>upper</code></td>
+<td>
+<p>An upper bound for box constraints. See <code>spg</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>lower</code></td>
+<td>
+<p>An lower bound for box constraints. See <code>spg</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>project</code></td>
+<td>
+<p>A projection
+function or character string indicating its name. The projection
+function that takes a point in <code class="reqn">R^n</code> and 
+projects it onto a region that defines the constraints of the problem.  
+This is a vector-function that takes a real vector as argument and 
+returns a real vector of the same length. 
+See <code>spg</code> for more details.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>projectArgs</code></td>
+<td>
+<p>A list with arguments to the <code>project</code>  
+function.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>control</code></td>
+<td>
+<p>See <code>BBsolve</code> and <code>BBoptim</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>quiet</code></td>
+<td>
+<p>A logical variable (TRUE/FALSE). If <code>TRUE</code> warnings 
+and some additional information printing are suppressed.  
+Default is <code>quiet = FALSE</code>
+Note that the <code>control</code> variable <code>trace</code> and <code>quiet</code> 
+affect different printing, so if <code>trace</code> is not set to <code>FALSE</code> 
+there will be considerable printed output.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>details</code></td>
+<td>
+<p>Logical indicating if the result should include the full
+result from <code>BBsolve</code> or <code>BBoptim</code> for each starting value.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>arguments passed fn (via the optimization algorithm).</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The optimization or root-finder is run with each row of <code>par</code> indicating 
+initial guesses.
+</p>
+
+
+<h3>Value</h3>
+
+<p>list with elements <code>par</code>, <code>values</code>, and <code>converged</code>. 
+It optionally returns an attribute called “details”, which is a list as long as 
+the number of starting values, which contains the complete object returned 
+by <code>dfsane</code> or <code>spg</code> for each starting value.</p>
+
+
+<h3>References</h3>
+
+ 
+<p>R Varadhan and PD Gilbert (2009),  BB: An R Package for Solving a Large System of Nonlinear Equations and for Optimizing a High-Dimensional Nonlinear Objective Function, <em>J. Statistical Software</em>, 32:4, <a href="http://www.jstatsoft.org/v32/i04/">http://www.jstatsoft.org/v32/i04/</a>
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>BBsolve</code>,
+<code>BBoptim</code>,
+<code>dfsane</code>,
+<code>spg</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R"># Use a preset seed so the example is reproducable. 
+require("setRNG")
+old.seed &lt;- setRNG(list(kind="Mersenne-Twister", normal.kind="Inversion",
+    seed=1234))
+
+# Finding multiple roots of a nonlinear system
+brownlin &lt;- function(x) {
+# Brown's almost linear system(A.P. Morgan, ACM 1983)
+# two distinct solutions if n is even
+# three distinct solutions if n is odd  
+  	n &lt;- length(x)
+  	f &lt;- rep(NA, n)
+	nm1 &lt;- 1:(n-1)
+	f[nm1] &lt;- x[nm1] + sum(x) - (n+1)
+	f[n] &lt;- prod(x) - 1 
+	f
+}
+
+p &lt;- 9
+n &lt;- 50
+p0 &lt;- matrix(rnorm(n*p), n, p)  # n starting values, each of length p
+ans &lt;- multiStart(par=p0, fn=brownlin)
+pmat &lt;- ans$par[ans$conv, 1:p] # selecting only converged solutions
+ord1 &lt;- order(abs(pmat[,1]))
+round(pmat[ord1, ], 3)  # all 3 roots can be seen
+
+# An optimization example
+rosbkext &lt;- function(x){
+n &lt;- length(x)
+j &lt;- 2 * (1:(n/2))
+jm1 &lt;- j - 1
+sum(100 * (x[j] - x[jm1]^2)^2 + (1 - x[jm1])^2)
+}
+
+p0 &lt;- rnorm(50)
+spg(par=p0, fn=rosbkext)
+BBoptim(par=p0, fn=rosbkext)
+
+pmat &lt;- matrix(rnorm(100), 20, 5)  # 20 starting values each of length 5 
+ans &lt;- multiStart(par=pmat, fn=rosbkext, action="optimize")
+ans
+attr(ans, "details")[[1]]  # 
+
+pmat &lt;- ans$par[ans$conv, 1:5] # selecting only converged solutions
+round(pmat, 3)
+</code></pre>
+
+
+</div>

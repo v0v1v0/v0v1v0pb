@@ -1,0 +1,143 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>ssvs</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Stochastic Search Variable Selection</h2>
+
+<h3>Description</h3>
+
+<p><code>ssvs</code> employs stochastic search variable selection as proposed by George et al. (2008)
+to produce a draw of the precision matrix of the coefficients in a VAR model.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">ssvs(a, tau0, tau1, prob_prior, include = NULL)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>a</code></td>
+<td>
+<p>an M-dimensional vector of coefficient draws.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>tau0</code></td>
+<td>
+<p>an M-dimensional vector of prior standard deviations for restricted
+coefficients in vector <code>a</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>tau1</code></td>
+<td>
+<p>an M-dimensional vector of prior standard deviations for unrestricted
+coefficients in vector <code>a</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>prob_prior</code></td>
+<td>
+<p>an M-dimensional vector of prior inclusion probabilites for the coefficients
+in vector <code>a</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>include</code></td>
+<td>
+<p>an integer vector specifying the positions of coefficients in vector <code>a</code>, which should be
+included in the SSVS algorithm. If <code>NULL</code> (default), SSVS will be applied to all coefficients.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The function employs stochastic search variable selection (SSVS) as proposed
+by George et al. (2008) to produce a draw of the diagonal inverse prior covariance matrix
+<code class="reqn">\underline{V}^{-1}</code> and the corresponding vector of inclusion parameters <code class="reqn">\lambda</code>
+of the vectorised coefficient matrix <code class="reqn">a = vec(A)</code> for the VAR model
+</p>
+<p style="text-align: center;"><code class="reqn">y_t = A x_t + u_t,</code>
+</p>
+
+<p>where <code class="reqn">y_{t}</code> is a K-dimensional vector of endogenous variables,
+<code class="reqn">x_{t}</code> is a vector of explanatory variabes
+and the error term is <code class="reqn">u_t \sim \Sigma</code>.
+</p>
+
+
+<h3>Value</h3>
+
+<p>A named list containing two components:
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>v_i</code></td>
+<td>
+<p>an <code class="reqn">M \times M</code> inverse prior covariance matrix.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>lambda</code></td>
+<td>
+<p>an M-dimensional vector of inclusion parameters.</p>
+</td>
+</tr>
+</table>
+<h3>References</h3>
+
+<p>George, E. I., Sun, D., &amp; Ni, S. (2008). Bayesian stochastic search for VAR model
+restrictions. <em>Journal of Econometrics, 142</em>(1), 553–580.
+<a href="https://doi.org/10.1016/j.jeconom.2007.08.017">doi:10.1016/j.jeconom.2007.08.017</a>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+# Load data
+data("e1")
+data &lt;- diff(log(e1))
+
+# Generate model data
+temp &lt;- gen_var(data, p = 2, deterministic = "const")
+y &lt;- t(temp$data$Y)
+x &lt;- t(temp$data$Z)
+k &lt;- nrow(y)
+tt &lt;- ncol(y)
+m &lt;- k * nrow(x)
+
+# Obtain SSVS priors using the semiautomatic approach
+priors &lt;- ssvs_prior(temp, semiautomatic = c(0.1, 10))
+tau0 &lt;- priors$tau0
+tau1 &lt;- priors$tau1
+
+# Prior for inclusion parameter
+prob_prior &lt;- matrix(0.5, m)
+
+# Priors
+a_mu_prior &lt;- matrix(0, m)
+a_v_i_prior &lt;- diag(c(tau1^2), m)
+
+# Initial value of Sigma
+sigma_i &lt;- solve(tcrossprod(y) / tt)
+
+# Draw parameters
+a &lt;- post_normal(y = y, x = x, sigma_i = sigma_i,
+                 a_prior = a_mu_prior, v_i_prior = a_v_i_prior)
+
+# Run SSVS
+lambda &lt;- ssvs(a = a, tau0 = tau0, tau1 = tau1,
+               prob_prior = prob_prior)
+
+</code></pre>
+
+
+</div>

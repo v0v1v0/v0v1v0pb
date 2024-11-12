@@ -1,0 +1,372 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>MANOVA</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Multi-factor ANOVA.</h2>
+
+<h3>Description</h3>
+
+<p>Multi-factor ANOVA (between-subjects, within-subjects, and mixed designs),
+with and without covariates (ANCOVA).
+</p>
+<p>This function is based on and extends <code>afex::aov_ez()</code>.
+You only need to specify the data, dependent variable(s), and factors
+(between-subjects and/or within-subjects).
+Almost all results you need will be displayed together,
+including effect sizes (partial <code class="reqn">\eta^2</code>) and their confidence intervals (CIs).
+90% CIs for partial <code class="reqn">\eta^2</code> (two-sided) are reported, following Steiger (2004).
+In addition to partial <code class="reqn">\eta^2</code>, it also reports generalized <code class="reqn">\eta^2</code>, following Olejnik &amp; Algina (2003).
+</p>
+<p>How to prepare your data and specify the arguments of <code>MANOVA</code>?
+</p>
+
+<ul>
+<li> <p><strong>Wide-format data</strong> (one person in one row, and repeated measures in multiple columns):
+</p>
+
+<dl>
+<dt>Betweem-subjects design</dt>
+<dd>
+<p><code>MANOVA(data=, dv=, between=, ...)</code></p>
+</dd>
+<dt>Within-subjects design</dt>
+<dd>
+<p><code>MANOVA(data=, dvs=, dvs.pattern=, within=, ...)</code></p>
+</dd>
+<dt>Mixed design</dt>
+<dd>
+<p><code>MANOVA(data=, dvs=, dvs.pattern=, between=, within=, ...)</code></p>
+</dd>
+</dl>
+</li>
+<li> <p><strong>Long-format data</strong> (one person in multiple rows, and repeated measures in one column):
+</p>
+
+<dl>
+<dt>Betweem-subjects design</dt>
+<dd>
+<p>(not applicable)</p>
+</dd>
+<dt>Within-subjects design</dt>
+<dd>
+<p><code>MANOVA(data=, subID=, dv=, within=, ...)</code></p>
+</dd>
+<dt>Mixed design</dt>
+<dd>
+<p><code>MANOVA(data=, subID=, dv=, between=, within=, ...)</code></p>
+</dd>
+</dl>
+</li>
+</ul>
+<h3>Usage</h3>
+
+<pre><code class="language-R">MANOVA(
+  data,
+  subID = NULL,
+  dv = NULL,
+  dvs = NULL,
+  dvs.pattern = NULL,
+  between = NULL,
+  within = NULL,
+  covariate = NULL,
+  ss.type = "III",
+  sph.correction = "none",
+  aov.include = FALSE,
+  digits = 3,
+  file = NULL
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+<p>Data frame. Both <strong>wide-format</strong> and <strong>long-format</strong> are supported.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>subID</code></td>
+<td>
+<p>Subject ID (the column name). Only necessary for <strong>long-format</strong> data.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>dv</code></td>
+<td>
+<p>Dependent variable.
+</p>
+
+<ul>
+<li>
+<p> For <strong>wide-format</strong> data, <code>dv</code> only can be used for between-subjects designs.
+For within-subjects and mixed designs, please use <code>dvs</code> and <code>dvs.pattern</code>.
+</p>
+</li>
+<li>
+<p> For <strong>long-format</strong> data, <code>dv</code> is the outcome variable.
+</p>
+</li>
+</ul>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>dvs</code></td>
+<td>
+<p>Repeated measures. Only for <strong>wide-format</strong> data (within-subjects or mixed designs).
+</p>
+<p>Can be:
+</p>
+
+<ul>
+<li> <p><code>"start:stop"</code> to specify the range of variables
+(sensitive to the order of variables):
+</p>
+<p>e.g., <code>"A1B1:A2B3"</code> is matched to all variables in the data
+between <code>"A1B1"</code> and <code>"A2B3"</code>
+</p>
+</li>
+<li>
+<p> a character vector to directly specify variables
+(insensitive to the order of variables):
+</p>
+<p>e.g., <code>c("Cond1", "Cond2", "Cond3")</code> or <code>cc("Cond1, Cond2, Cond3")</code>
+</p>
+<p>See <code>cc</code> for its usage.
+</p>
+</li>
+</ul>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>dvs.pattern</code></td>
+<td>
+<p>If you use <code>dvs</code>, you should also specify the pattern of variable names
+using <em>regular expression</em>.
+</p>
+<p>Examples:
+</p>
+
+<ul>
+<li> <p><code>"Cond(.)"</code> extracts levels from <code>"Cond1", "Cond2", "Cond3", ...</code>
+You may rename the factor using the <code>within</code> argument (e.g., <code>within="Condition"</code>)
+</p>
+</li>
+<li> <p><code>"X(..)Y(..)"</code> extracts levels from <code>"X01Y01", "X02Y02", "XaaYbc", ...</code>
+</p>
+</li>
+<li> <p><code>"X(.+)Y(.+)"</code> extracts levels from <code>"X1Y1", "XaYb", "XaY002", ...</code>
+</p>
+</li>
+</ul>
+<p>Tips on regular expression:
+</p>
+
+<ul>
+<li> <p><code>"(.)"</code> extracts any single character (number, letter, and other symbols)
+</p>
+</li>
+<li> <p><code>"(.+)"</code> extracts &gt;= 1 character(s)
+</p>
+</li>
+<li> <p><code>"(.*)"</code> extracts &gt;= 0 character(s)
+</p>
+</li>
+<li> <p><code>"([0-9])"</code> extracts any single number
+</p>
+</li>
+<li> <p><code>"([a-z])"</code> extracts any single letter
+</p>
+</li>
+<li>
+<p> More information: <a href="https://regexr.com/">Link 1 (in English)</a> and
+<a href="https://www.jb51.net/shouce/jquery1.82/regexp.html">Link 2 (in Chinese)</a>
+</p>
+</li>
+</ul>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>between</code></td>
+<td>
+<p>Between-subjects factor(s). Multiple variables should be included in a character vector <code>c()</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>within</code></td>
+<td>
+<p>Within-subjects factor(s). Multiple variables should be included in a character vector <code>c()</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>covariate</code></td>
+<td>
+<p>Covariates. Multiple variables should be included in a character vector <code>c()</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ss.type</code></td>
+<td>
+<p>Type of sums of squares (SS) for ANOVA. Defaults to <code>"III"</code>.
+Possible values are <code>"II"</code>, <code>"III"</code>, <code>2</code>, or <code>3</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>sph.correction</code></td>
+<td>
+<p>[Only for repeated measures with &gt;= 3 levels]
+</p>
+<p>Sphericity correction method for adjusting the degrees of freedom (<em>df</em>) when the sphericity assumption is violated. Defaults to <code>"none"</code>.
+If Mauchly's test of sphericity is significant, you may set it to <code>"GG"</code> (Greenhouse-Geisser) or <code>"HF"</code> (Huynh-Feldt).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>aov.include</code></td>
+<td>
+<p>Include the <code>aov</code> object in the returned object?
+Defaults to <code>FALSE</code>, as suggested by <code>afex::aov_ez()</code>
+(please see the <code>include_aov</code> argument in this help page, which provides a detailed explanation).
+If <code>TRUE</code>, you should also specify <code>model.type="univariate"</code> in <code>EMMEANS</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>digits</code></td>
+<td>
+<p>Number of decimal places of output. Defaults to <code>3</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>file</code></td>
+<td>
+<p>File name of MS Word (<code>.doc</code>).</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>If observations are not uniquely identified in user-defined long-format data,
+the function takes averages across those multiple observations for each case.
+In technical details, it specifies <code>fun_aggregate=mean</code> in <code>afex::aov_ez()</code>
+and <code>values_fn=mean</code> in <code>tidyr::pivot_wider()</code>.
+</p>
+
+
+<h3>Value</h3>
+
+<p>A result object (list) returned by
+<code>afex::aov_ez()</code>,
+along with several other elements:
+<code>between</code>, <code>within</code>,
+<code>data.wide</code>, <code>data.long</code>.
+</p>
+
+
+<h3>Interaction Plot</h3>
+
+<p>You can save the returned object and use the <code>emmeans::emmip()</code> function
+to create an interaction plot (based on the fitted model and a formula specification).
+For usage, please see the help page of <code>emmeans::emmip()</code>.
+It returns an object of class <code>ggplot</code>, which can be easily modified and saved using <code>ggplot2</code> syntax.
+</p>
+
+
+<h3>References</h3>
+
+<p>Olejnik, S., &amp; Algina, J. (2003). Generalized eta and omega squared statistics: Measures of effect size for some common research designs.
+<em>Psychological Methods, 8</em>(4), 434–447.
+</p>
+<p>Steiger, J. H. (2004). Beyond the F test: Effect size confidence intervals and tests of close fit in the analysis of variance and contrast analysis.
+<em>Psychological Methods, 9</em>(2), 164–182.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>TTEST</code>, <code>EMMEANS</code>, <code>bruceR-demodata</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">#### Between-Subjects Design ####
+
+between.1
+MANOVA(between.1, dv="SCORE", between="A")
+
+between.2
+MANOVA(between.2, dv="SCORE", between=c("A", "B"))
+
+between.3
+MANOVA(between.3, dv="SCORE", between=c("A", "B", "C"))
+
+## How to create an interaction plot using `emmeans::emmip()`?
+## See help page for its usage: ?emmeans::emmip()
+m = MANOVA(between.2, dv="SCORE", between=c("A", "B"))
+emmip(m, ~ A | B, CIs=TRUE)
+emmip(m, ~ B | A, CIs=TRUE)
+emmip(m, B ~ A, CIs=TRUE)
+emmip(m, A ~ B, CIs=TRUE)
+
+
+#### Within-Subjects Design ####
+
+within.1
+MANOVA(within.1, dvs="A1:A4", dvs.pattern="A(.)",
+       within="A")
+## the same:
+MANOVA(within.1, dvs=c("A1", "A2", "A3", "A4"), dvs.pattern="A(.)",
+       within="MyFactor")  # renamed the within-subjects factor
+
+within.2
+MANOVA(within.2, dvs="A1B1:A2B3", dvs.pattern="A(.)B(.)",
+       within=c("A", "B"))
+
+within.3
+MANOVA(within.3, dvs="A1B1C1:A2B2C2", dvs.pattern="A(.)B(.)C(.)",
+       within=c("A", "B", "C"))
+
+
+#### Mixed Design ####
+
+mixed.2_1b1w
+MANOVA(mixed.2_1b1w, dvs="B1:B3", dvs.pattern="B(.)",
+       between="A", within="B")
+MANOVA(mixed.2_1b1w, dvs="B1:B3", dvs.pattern="B(.)",
+       between="A", within="B", sph.correction="GG")
+
+mixed.3_1b2w
+MANOVA(mixed.3_1b2w, dvs="B1C1:B2C2", dvs.pattern="B(.)C(.)",
+       between="A", within=c("B", "C"))
+
+mixed.3_2b1w
+MANOVA(mixed.3_2b1w, dvs="B1:B2", dvs.pattern="B(.)",
+       between=c("A", "C"), within="B")
+
+
+#### Other Examples ####
+
+data.new = mixed.3_1b2w
+names(data.new) = c("Group", "Cond_01", "Cond_02", "Cond_03", "Cond_04")
+MANOVA(data.new,
+       dvs="Cond_01:Cond_04",
+       dvs.pattern="Cond_(..)",
+       between="Group",
+       within="Condition")  # rename the factor
+
+# ?afex::obk.long
+MANOVA(afex::obk.long,
+       subID="id",
+       dv="value",
+       between=c("treatment", "gender"),
+       within=c("phase", "hour"),
+       cov="age",
+       sph.correction="GG")
+
+</code></pre>
+
+
+</div>

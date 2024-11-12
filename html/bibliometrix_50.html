@@ -1,0 +1,189 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>termExtraction</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Term extraction tool from textual fields of a manuscript</h2>
+
+<h3>Description</h3>
+
+<p>It extracts terms from a text field (abstract, title, author's keywords, etc.) of a bibliographic data frame.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">termExtraction(
+  M,
+  Field = "TI",
+  ngrams = 1,
+  stemming = FALSE,
+  language = "english",
+  remove.numbers = TRUE,
+  remove.terms = NULL,
+  keep.terms = NULL,
+  synonyms = NULL,
+  verbose = TRUE
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>M</code></td>
+<td>
+<p>is a data frame obtained by the converting function <code>convert2df</code>.
+It is a data matrix with cases corresponding to articles and variables to Field Tag in the original WoS or SCOPUS file.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Field</code></td>
+<td>
+<p>is a character object. It indicates the field tag of textual data :
+</p>
+
+<table>
+<tr>
+<td style="text-align: left;">
+<code>"TI"</code>
+</td>
+<td style="text-align: left;">   </td>
+<td style="text-align: left;"> Manuscript title</td>
+</tr>
+<tr>
+<td style="text-align: left;">
+<code>"AB"</code>
+</td>
+<td style="text-align: left;">   </td>
+<td style="text-align: left;"> Manuscript abstract</td>
+</tr>
+<tr>
+<td style="text-align: left;">
+<code>"ID"</code>
+</td>
+<td style="text-align: left;">   </td>
+<td style="text-align: left;"> Manuscript keywords plus</td>
+</tr>
+<tr>
+<td style="text-align: left;">
+<code>"DE"</code>
+</td>
+<td style="text-align: left;">   </td>
+<td style="text-align: left;"> Manuscript author's keywords</td>
+</tr>
+</table>
+<p>The default is <code>Field = "TI"</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ngrams</code></td>
+<td>
+<p>is an integer between 1 and 3. It indicates the type of n-gram to extract from texts. 
+An n-gram is a contiguous sequence of n terms. The function can extract n-grams composed by 1, 2, 3 or 4 terms. Default value is <code>ngrams=1</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>stemming</code></td>
+<td>
+<p>is logical. If TRUE the Porter Stemming algorithm is applied to all extracted terms. The default is <code>stemming = FALSE</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>language</code></td>
+<td>
+<p>is a character. It is the language of textual contents ("english", "german","italian","french","spanish"). The default is <code>language="english"</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>remove.numbers</code></td>
+<td>
+<p>is logical. If TRUE all numbers are deleted from the documents before term extraction. The default is <code>remove.numbers = TRUE</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>remove.terms</code></td>
+<td>
+<p>is a character vector. It contains a list of additional terms to delete from the documents before term extraction. The default is <code>remove.terms = NULL</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>keep.terms</code></td>
+<td>
+<p>is a character vector. It contains a list of compound words "formed by two or more terms" to keep in their original form in the term extraction process. The default is <code>keep.terms = NULL</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>synonyms</code></td>
+<td>
+<p>is a character vector. Each element contains a list of synonyms, separated by ";",  that will be merged into a single term (the first word contained in the vector element). The default is <code>synonyms = NULL</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>verbose</code></td>
+<td>
+<p>is logical. If TRUE the function prints the most frequent terms extracted from documents. The default is <code>verbose=TRUE</code>.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>the bibliometric data frame with a new column containing terms about the field tag indicated in the argument <code>Field</code>.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>convert2df</code> to import and convert an WoS or SCOPUS Export file in a bibliographic data frame.
+</p>
+<p><code>biblioAnalysis</code> function for bibliometric analysis
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R"># Example 1: Term extraction from titles
+
+data(scientometrics, package = "bibliometrixData")
+
+# vector of compound words
+keep.terms &lt;- c("co-citation analysis","bibliographic coupling")
+
+# term extraction
+scientometrics &lt;- termExtraction(scientometrics, Field = "TI", ngrams = 1,
+remove.numbers=TRUE, remove.terms=NULL, keep.terms=keep.terms, verbose=TRUE)
+
+# terms extracted from the first 10 titles
+scientometrics$TI_TM[1:10]
+
+
+#Example 2: Term extraction from abstracts
+
+data(scientometrics)
+
+# term extraction
+scientometrics &lt;- termExtraction(scientometrics, Field = "AB", ngrams = 2, 
+ stemming=TRUE,language="english",
+ remove.numbers=TRUE, remove.terms=NULL, keep.terms=NULL, verbose=TRUE)
+
+# terms extracted from the first abstract
+scientometrics$AB_TM[1]
+
+# Example 3: Term extraction from keywords with synonyms
+
+data(scientometrics)
+
+# vector of synonyms 
+synonyms &lt;- c("citation; citation analysis", "h-index; index; impact factor")
+
+# term extraction
+scientometrics &lt;- termExtraction(scientometrics, Field = "ID", ngrams = 1,
+synonyms=synonyms, verbose=TRUE)
+
+
+</code></pre>
+
+
+</div>

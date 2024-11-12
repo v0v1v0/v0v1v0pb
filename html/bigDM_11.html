@@ -1,0 +1,303 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>MCAR_INLA</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Fit a (scalable) spatial multivariate Poisson mixed model to areal count data where dependence between spatial patterns of the diseases is addressed through the use of M-models (Botella-Rocamora et al. 2015).</h2>
+
+<h3>Description</h3>
+
+<p>Fit a spatial multivariate Poisson mixed model to areal count data. The linear predictor is modelled as </p>
+<p style="text-align: center;"><code class="reqn">\log{r_{ij}}=\alpha_j + \theta_{ij}, \quad \mbox{for} \quad i=1,\ldots,n; \quad j=1,\ldots,J</code>
+</p>
+
+<p>where <code class="reqn">\alpha_j</code> is a disease-specific intercept and <code class="reqn">\theta_{ij}</code> is the spatial main effect of area <code class="reqn">i</code> for the <code class="reqn">j</code>-th disease.
+Following Botella-Rocamora et al. (2015), we rearrange the spatial effects into the matrix <code class="reqn">\mathbf{\Theta} = \{ \theta_{ij}: i=1, \ldots, I; j=1, \ldots, J \}</code> whose columns are spatial random effects and its joint distribution specifies how dependence within-diseases and between-diseases is defined.
+Several conditional autoregressive (CAR) prior distributions can be specified to deal with spatial dependence within-diseases, such as the intrinsic CAR prior (Besag et al. 1991), the CAR prior proposed by Leroux et al. (1999), and the proper CAR prior distribution.
+<br><br>
+As in the <code>CAR_INLA</code> function, three main modelling approaches can be considered:
+</p>
+
+<ul>
+<li>
+<p> the usual model with a global spatial random effect whose dependence structure is based on the whole neighbourhood graph of the areal units (<code>model="global"</code> argument)
+</p>
+</li>
+<li>
+<p> a Disjoint model based on a partition of the whole spatial domain where independent spatial CAR models are simultaneously fitted in each partition (<code>model="partition"</code> and <code>k=0</code> arguments)
+</p>
+</li>
+<li>
+<p> a modelling approach where <em>k</em>-order neighbours are added to each partition to avoid border effects in the Disjoint model (<code>model="partition"</code> and <code>k&gt;0</code> arguments).
+</p>
+</li>
+</ul>
+<p>For both the Disjoint and k-order neighbour models, parallel or distributed computation strategies can be performed to speed up computations by using the 'future' package (Bengtsson 2021).
+</p>
+<p>Inference is conducted in a fully Bayesian setting using the integrated nested Laplace approximation (INLA; Rue et al. (2009)) technique through the R-INLA package (<a href="https://www.r-inla.org/">https://www.r-inla.org/</a>).
+For the scalable model proposals (Orozco-Acosta et al. 2021), approximate values of the Deviance Information Criterion (DIC) and Watanabe-Akaike Information Criterion (WAIC) can also be computed.
+</p>
+<p>The function allows also to use the new hybrid approximate method that combines the Laplace method with a low-rank Variational Bayes correction to the posterior mean (van Niekerk et al. 2023) by including the <code>inla.mode="compact"</code> argument.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">MCAR_INLA(
+  carto = NULL,
+  data = NULL,
+  ID.area = NULL,
+  ID.disease = NULL,
+  ID.group = NULL,
+  O = NULL,
+  E = NULL,
+  W = NULL,
+  prior = "intrinsic",
+  model = "partition",
+  k = 0,
+  strategy = "simplified.laplace",
+  merge.strategy = "original",
+  compute.intercept = NULL,
+  compute.DIC = TRUE,
+  n.sample = 1000,
+  compute.fitted.values = FALSE,
+  save.models = FALSE,
+  plan = "sequential",
+  workers = NULL,
+  inla.mode = "classic",
+  num.threads = NULL
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>carto</code></td>
+<td>
+<p>object of class <code>SpatialPolygonsDataFrame</code> or <code>sf</code>. This object must contain at least the variable with the identifiers of the spatial areal units specified in the argument <code>ID.area</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+<p>object of class <code>data.frame</code> that must contain the target variables of interest specified in the arguments <code>ID.area</code>, <code>ID.disease</code>, <code>O</code> and <code>E</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ID.area</code></td>
+<td>
+<p>character; name of the variable that contains the IDs of spatial areal units. The values of this variable must match those given in the <code>carto</code> and <code>data</code> variable.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ID.disease</code></td>
+<td>
+<p>character; name of the variable that contains the IDs of the diseases.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ID.group</code></td>
+<td>
+<p>character; name of the variable that contains the IDs of the spatial partition (grouping variable). Only required if <code>model="partition"</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>O</code></td>
+<td>
+<p>character; name of the variable that contains the observed number of cases for each areal unit and disease.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>E</code></td>
+<td>
+<p>character; name of the variable that contains either the expected number of cases or the population at risk for each areal unit and disease.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>W</code></td>
+<td>
+<p>optional argument with the binary adjacency matrix of the spatial areal units. If <code>NULL</code> (default), this object is computed from the <code>carto</code> argument (two areas are considered as neighbours if they share a common border).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>prior</code></td>
+<td>
+<p>one of either <code>"intrinsic"</code> (default), <code>"Leroux"</code>, <code>"proper"</code>, or <code>"iid"</code> which specifies the prior distribution considered for the spatial random effect.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>model</code></td>
+<td>
+<p>one of either <code>"global"</code> or <code>"partition"</code> (default), which specifies the <em>Global model</em> or one of the scalable model proposal's (<em>Disjoint model</em> and <em>k-order neighbourhood model</em>, respectively).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>k</code></td>
+<td>
+<p>numeric value with the neighbourhood order used for the partition model. Usually k=2 or 3 is enough to get good results. If k=0 (default) the <em>Disjoint model</em> is considered. Only required if <code>model="partition"</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>strategy</code></td>
+<td>
+<p>one of either <code>"gaussian"</code>, <code>"simplified.laplace"</code> (default), <code>"laplace"</code> or <code>"adaptive"</code>, which specifies the approximation strategy considered in the <code>inla</code> function.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>merge.strategy</code></td>
+<td>
+<p>one of either <code>"mixture"</code> or <code>"original"</code> (default), which specifies the merging strategy to compute posterior marginal estimates of relative risks. See <code>mergeINLA</code> for further details.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>compute.intercept</code></td>
+<td>
+<p>CAUTION! This argument is deprecated from version 0.5.2.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>compute.DIC</code></td>
+<td>
+<p>logical value; if <code>TRUE</code> (default) then approximate values of the Deviance Information Criterion (DIC) and Watanabe-Akaike Information Criterion (WAIC) are computed.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>n.sample</code></td>
+<td>
+<p>numeric; number of samples to generate from the posterior marginal distribution of the linear predictor when computing approximate DIC/WAIC values. Default to 1000.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>compute.fitted.values</code></td>
+<td>
+<p>logical value (default <code>FALSE</code>); if <code>TRUE</code> transforms the posterior marginal distribution of the linear predictor to the exponential scale (risks or rates).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>save.models</code></td>
+<td>
+<p>logical value (default <code>FALSE</code>); if <code>TRUE</code> then a list with all the <code>inla</code> submodels is saved in '/temp/' folder, which can be used as input argument for the <code>mergeINLA</code> function.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>plan</code></td>
+<td>
+<p>one of either <code>"sequential"</code> or <code>"cluster"</code>, which specifies the computation strategy used for model fitting using the 'future' package.
+If <code>plan="sequential"</code> (default) the models are fitted sequentially and in the current R session (local machine). If <code>plan="cluster"</code> the models are fitted in parallel on external R sessions (local machine) or distributed in remote compute nodes.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>workers</code></td>
+<td>
+<p>character or vector (default <code>NULL</code>) containing the identifications of the local or remote workers where the models are going to be processed. Only required if <code>plan="cluster"</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>inla.mode</code></td>
+<td>
+<p>one of either <code>"classic"</code> (default) or <code>"compact"</code>, which specifies the approximation method used by INLA. See <code>help(inla)</code> for further details.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>num.threads</code></td>
+<td>
+<p>maximum number of threads the inla-program will use. See <code>help(inla)</code> for further details.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>For a full model specification and further details see the vignettes accompanying this package.
+</p>
+
+
+<h3>Value</h3>
+
+<p>This function returns an object of class <code>inla</code>. See the <code>mergeINLA</code> function for details.
+</p>
+
+
+<h3>References</h3>
+
+<p>Bengtsson H (2021).
+“A unifying framework for parallel and distributed processing in R using futures.”
+<em>The R Journal</em>, <b>13</b>(2), 273–291.
+<a href="https://doi.org/10.32614/RJ-2021-048">doi:10.32614/RJ-2021-048</a>.
+</p>
+<p>Besag J, York J, Mollié A (1991).
+“Bayesian image restoration, with two applications in spatial statistics.”
+<em>Annals of the Institute of Statistical Mathematics</em>, <b>43</b>(1), 1–20.
+<a href="https://doi.org/10.1007/bf00116466">doi:10.1007/bf00116466</a>.
+</p>
+<p>Botella-Rocamora P, Martinez-Beneito MA, Banerjee S (2015).
+“A unifying modeling framework for highly multivariate disease mapping.”
+<em>Statistics in Medicine</em>, <b>34</b>(9), 1548–1559.
+<a href="https://doi.org/10.1002/sim.6423">doi:10.1002/sim.6423</a>.
+</p>
+<p>Leroux BG, Lei X, Breslow N (1999).
+“Estimation of disease rates in small areas: A new mixed model for spatial dependence.”
+In Halloran ME, Berry D (eds.), <em>Statistical Models in Epidemiology, the Environment, and Clinical Trials</em>, 179–191.
+Springer-Verlag: New York.
+</p>
+<p>Rue H, Martino S, Chopin N (2009).
+“Approximate Bayesian inference for latent Gaussian models by using integrated nested Laplace approximations.”
+<em>Journal of the Royal Statistical Society: Series B (Statistical Methodology)</em>, <b>71</b>(2), 319–392.
+<a href="https://doi.org/10.1111/j.1467-9868.2008.00700.x">doi:10.1111/j.1467-9868.2008.00700.x</a>.
+</p>
+<p>Vicente G, Adin A, Goicoa T, Ugarte MD (2023).
+“High-dimensional order-free multivariate spatial disease mapping.”
+<em>Statistics and Computing</em>, <b>33</b>(5), 104.
+<a href="https://doi.org/10.1007/s11222-023-10263-x">doi:10.1007/s11222-023-10263-x</a>.
+</p>
+<p>van Niekerk J, Krainski E, Rustand D, Rue H (2023).
+“A new avenue for Bayesian inference with INLA.”
+<em>Computational Statistics &amp; Data Analysis</em>, <b>181</b>, 107692.
+<a href="https://doi.org/10.1016/j.csda.2023.107692">doi:10.1016/j.csda.2023.107692</a>.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## Not run: 
+if(require("INLA", quietly=TRUE)){
+
+  ## Load the sf object that contains the spatial polygons of the municipalities of Spain ##
+  data(Carto_SpainMUN)
+  str(Carto_SpainMUN)
+
+  ## Load the simulated cancer mortality data (three diseases) ##
+  data(Data_MultiCancer)
+  str(Data_MultiCancer)
+
+  ## Fit the Global model with an iCAR prior for the within-disease random effects ##
+  Global &lt;- MCAR_INLA(carto=Carto_SpainMUN, data=Data_MultiCancer,
+                      ID.area="ID", ID.disease="disease", O="obs", E="exp",
+                      prior="intrinsic", model="global", strategy="gaussian")
+  summary(Global)
+
+  ## Fit the Disjoint model with an iCAR prior for the within-disease random effects ##
+  ## using 4 local clusters to fit the models in parallel                            ##
+  Disjoint &lt;- MCAR_INLA(carto=Carto_SpainMUN, data=Data_MultiCancer,
+                        ID.area="ID", ID.disease="disease", O="obs", E="exp", ID.group="region",
+                        prior="intrinsic", model="partition", k=0, strategy="gaussian",
+                        plan="cluster", workers=rep("localhost",4))
+  summary(Disjoint)
+
+  ## 1st-order neighbourhood model with an iCAR prior for the within-disease random effects ##
+  ## using 4 local clusters to fit the models in parallel                                   ##
+  order1 &lt;- MCAR_INLA(carto=Carto_SpainMUN, data=Data_MultiCancer,
+                      ID.area="ID", ID.disease="disease", O="obs", E="exp", ID.group="region",
+                      prior="intrinsic", model="partition", k=1, strategy="gaussian",
+                      plan="cluster", workers=rep("localhost",4))
+  summary(order1)
+}
+
+## End(Not run)
+
+</code></pre>
+
+
+</div>

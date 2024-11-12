@@ -1,0 +1,147 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>bsearchtools-package</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>
+Binary Search Tools
+</h2>
+
+<h3>Description</h3>
+
+<p>Exposes the binary search based functions of the C++ standard library 
+(std::lower_bound, std::upper_bound) plus other convenience functions, allowing faster lookups on sorted vectors.
+It also includes a lightweight data.frame/matrix wrapper (DFI), which automatically creates indexes on the columns for faster lookups.
+</p>
+
+
+<h3>Details</h3>
+
+
+<table>
+<tr>
+<td style="text-align: left;">
+Package: </td>
+<td style="text-align: left;"> bsearchtools</td>
+</tr>
+<tr>
+<td style="text-align: left;">
+Type: </td>
+<td style="text-align: left;"> Package</td>
+</tr>
+<tr>
+<td style="text-align: left;">
+Version: </td>
+<td style="text-align: left;"> 0.0.61</td>
+</tr>
+<tr>
+<td style="text-align: left;">
+Date: </td>
+<td style="text-align: left;"> 2017-02-22</td>
+</tr>
+<tr>
+<td style="text-align: left;">
+License: </td>
+<td style="text-align: left;"> GPL (&gt;= 2)</td>
+</tr>
+<tr>
+<td style="text-align: left;">
+</td>
+</tr>
+</table>
+<p>This package allows to perform the most common binary search operations on sorted vectors 
+(integer, numeric, bool and charater vectors are supported).
+It exposes lower-bound/upper-bound functions working exactly like their the C++ standard library counterparts, 
+and some convenience functions allowing efficient values and ranges lookups.
+</p>
+<p>Note that these functions are especially designed to be used for non-vectorized operations (e.g. inside loops);
+for vectorized operations, the great <code>data.table</code> package already fullfills basically every R programmer needs.
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Marco Giuliano
+</p>
+<p>Maintainer: Marco Giuliano &lt;mgiuliano.mail@gmail.com&gt;
+</p>
+
+
+<h3>References</h3>
+
+<p>Project repository : https://github.com/digEmAll/bsearchtools/
+</p>
+<p>cpp reference page : http://en.cppreference.com/w/
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>sort</code>,
+<code>order</code>,
+<code>data.table</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">require(bsearchtools)
+
+######################################################
+### get indexes of values in range
+### search values in range [2,4]
+
+# N.B. v must be sorted !
+v1 &lt;- sort(c(3,5,7,10,4,8,13,3,2))
+
+indexesInRangeNumeric(v1,2,4)
+# is identical to:
+which(v1 &gt;= 2 &amp; v1 &lt;= 4)
+
+######################################################
+### What if vector is not sorted ? 
+### (and we're going to perform a lot of lookups on it)
+
+v2 &lt;- c(3,5,7,10,4,8,13,3,2)
+
+# we can create two intermediate vectors
+ordIdxs &lt;- order(v2)
+sortedV2 &lt;- v2[ordIdxs]
+
+# then use them as follows :
+ordIdxs[indexesInRangeNumeric(sortedV2,2,4)]
+
+# this returns the same indexes :
+# N.B. : 'which' returns ascending indexes while the previous line does not:
+# sort the result if you want them ascending
+which(v2 &gt;= 2 &amp; v2 &lt;= 4)
+
+######################################################
+###### N.B. the previous code is basically what is performed by DFI objects under the hood
+######      check DFI function documentation for further information
+DF &lt;- data.frame(v2=v2)
+DFIobj &lt;- DFI(DF)
+indexes &lt;- DFI.subset(DFIobj,RG('v2',2,4),return.indexes=TRUE)
+
+## Not run: 
+######################################################
+### big example to measure the performance difference
+set.seed(123) # for reproducibility
+sortedValues &lt;- sort(sample(1:1e4,1e5,replace=TRUE))
+
+# measure time difference doing same operation 500 times
+tm1 &lt;- system.time( for(i in 1:500) res2 &lt;- which(sortedValues &gt;= 7000 &amp; sortedValues &lt;= 7500))
+tm2 &lt;- system.time( for(i in 1:500) res1 &lt;- indexesInRangeInteger(sortedValues,7000,7500))
+
+print(paste("'which' took:",tm1["elapsed"]))
+print(paste("'indexesInRangeInteger' took:",tm2["elapsed"]))
+
+
+## End(Not run)
+
+
+</code></pre>
+
+
+</div>

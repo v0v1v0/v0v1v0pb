@@ -1,0 +1,218 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>bed_projectPCA</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Projecting PCA</h2>
+
+<h3>Description</h3>
+
+<p>Computing and projecting PCA of reference dataset to a target dataset.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">bed_projectPCA(
+  obj.bed.ref,
+  obj.bed.new,
+  k = 10,
+  ind.row.new = rows_along(obj.bed.new),
+  ind.row.ref = rows_along(obj.bed.ref),
+  ind.col.ref = cols_along(obj.bed.ref),
+  strand_flip = TRUE,
+  join_by_pos = TRUE,
+  match.min.prop = 0.5,
+  build.new = "hg19",
+  build.ref = "hg19",
+  liftOver = NULL,
+  ...,
+  verbose = TRUE,
+  ncores = 1
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>obj.bed.ref</code></td>
+<td>
+<p>Object of type bed, which is the mapping of the bed file of
+the reference data. Use <code>obj.bed &lt;- bed(bedfile)</code> to get this object.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>obj.bed.new</code></td>
+<td>
+<p>Object of type bed, which is the mapping of the bed file of
+the target data. Use <code>obj.bed &lt;- bed(bedfile)</code> to get this object.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>k</code></td>
+<td>
+<p>Number of principal components to compute and project.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ind.row.new</code></td>
+<td>
+<p>Rows to be used in the target data. Default uses them all.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ind.row.ref</code></td>
+<td>
+<p>Rows to be used in the reference data.
+Default uses them all.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ind.col.ref</code></td>
+<td>
+<p>Columns to be potentially used in the reference data.
+Default uses all the ones in common with target data.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>strand_flip</code></td>
+<td>
+<p>Whether to try to flip strand? (default is <code>TRUE</code>)
+If so, ambiguous alleles A/T and C/G are removed.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>join_by_pos</code></td>
+<td>
+<p>Whether to join by chromosome and position (default),
+or instead by rsid.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>match.min.prop</code></td>
+<td>
+<p>Minimum proportion of variants in the smallest data
+to be matched, otherwise stops with an error. Default is <code style="white-space: pre;">⁠20%⁠</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>build.new</code></td>
+<td>
+<p>Genome build of the target data. Default is <code>hg19</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>build.ref</code></td>
+<td>
+<p>Genome build of the reference data. Default is <code>hg19</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>liftOver</code></td>
+<td>
+<p>Path to liftOver executable. Binaries can be downloaded at
+<a href="https://hgdownload.cse.ucsc.edu/admin/exe/macOSX.x86_64/liftOver">https://hgdownload.cse.ucsc.edu/admin/exe/macOSX.x86_64/liftOver</a> for Mac
+and at <a href="https://hgdownload.cse.ucsc.edu/admin/exe/linux.x86_64/liftOver">https://hgdownload.cse.ucsc.edu/admin/exe/linux.x86_64/liftOver</a>
+for Linux.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+
+<p>Arguments passed on to <code>bed_autoSVD</code>
+</p>
+
+<dl>
+<dt><code>fun.scaling</code></dt>
+<dd>
+<p>A function with parameters <code>X</code> (or <code>obj.bed</code>), <code>ind.row</code> and
+<code>ind.col</code>, and that returns a data.frame with <code style="white-space: pre;">⁠$center⁠</code> and <code style="white-space: pre;">⁠$scale⁠</code> for the
+columns corresponding to <code>ind.col</code>, to scale each of their elements such as followed:
+</p>
+<p style="text-align: center;"><code class="reqn">\frac{X_{i,j} - center_j}{scale_j}.</code>
+</p>
+<p> Default uses binomial scaling.
+You can also provide your own <code>center</code> and <code>scale</code> by using <code>bigstatsr::as_scaling_fun()</code>.</p>
+</dd>
+<dt><code>roll.size</code></dt>
+<dd>
+<p>Radius of rolling windows to smooth log-p-values.
+Default is <code>50</code>.</p>
+</dd>
+<dt><code>int.min.size</code></dt>
+<dd>
+<p>Minimum number of consecutive outlier variants
+in order to be reported as long-range LD region. Default is <code>20</code>.</p>
+</dd>
+<dt><code>thr.r2</code></dt>
+<dd>
+<p>Threshold over the squared correlation between two variants.
+Default is <code>0.2</code>. Use <code>NA</code> if you want to skip the clumping step.</p>
+</dd>
+<dt><code>alpha.tukey</code></dt>
+<dd>
+<p>Default is <code>0.1</code>. The type-I error rate in outlier
+detection (that is further corrected for multiple testing).</p>
+</dd>
+<dt><code>min.mac</code></dt>
+<dd>
+<p>Minimum minor allele count (MAC) for variants to be included.
+Default is <code>10</code>. Can actually be higher because of <code>min.maf</code>.</p>
+</dd>
+<dt><code>min.maf</code></dt>
+<dd>
+<p>Minimum minor allele frequency (MAF) for variants to be included.
+Default is <code>0.02</code>. Can actually be higher because of <code>min.mac</code>.</p>
+</dd>
+<dt><code>max.iter</code></dt>
+<dd>
+<p>Maximum number of iterations of outlier detection.
+Default is <code>5</code>.</p>
+</dd>
+<dt><code>size</code></dt>
+<dd>
+<p>For one SNP, window size around this SNP to compute correlations.
+Default is <code>100 / thr.r2</code> for clumping (0.2 -&gt; 500; 0.1 -&gt; 1000; 0.5 -&gt; 200).
+If not providing <code>infos.pos</code> (<code>NULL</code>, the default), this is a window in
+number of SNPs, otherwise it is a window in kb (genetic distance).
+I recommend that you provide the positions if available.</p>
+</dd>
+</dl>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>verbose</code></td>
+<td>
+<p>Output some information on the iterations? Default is <code>TRUE</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ncores</code></td>
+<td>
+<p>Number of cores used. Default doesn't use parallelism.
+You may use <code>bigstatsr::nb_cores()</code>.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>A list of 3 elements:
+</p>
+
+<ul>
+<li> <p><code style="white-space: pre;">⁠$obj.svd.ref⁠</code>: big_SVD object computed from reference data.
+</p>
+</li>
+<li> <p><code style="white-space: pre;">⁠$simple_proj⁠</code>: simple projection of new data into space of reference PCA.
+</p>
+</li>
+<li> <p><code style="white-space: pre;">⁠$OADP_proj⁠</code>: Online Augmentation, Decomposition, and Procrustes (OADP)
+projection of new data into space of reference PCA.
+</p>
+</li>
+</ul>
+</div>

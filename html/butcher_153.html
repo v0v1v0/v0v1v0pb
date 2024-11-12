@@ -1,0 +1,138 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>axe-recipe</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Axing a recipe object.</h2>
+
+<h3>Description</h3>
+
+<p>recipe objects are created from the <span class="pkg">recipes</span> package, which is
+leveraged for its set of data pre-processing tools. These recipes work
+by sequentially defining each pre-processing step. The implementation
+of each step, however, results its own class so we bundle all the axe
+methods related to recipe objects in general here. Note that the
+butchered class is only added to the recipe as a whole, and not to each
+pre-processing step.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">## S3 method for class 'recipe'
+axe_env(x, verbose = FALSE, ...)
+
+## S3 method for class 'step'
+axe_env(x, ...)
+
+## S3 method for class 'step_arrange'
+axe_env(x, ...)
+
+## S3 method for class 'step_filter'
+axe_env(x, ...)
+
+## S3 method for class 'step_mutate'
+axe_env(x, ...)
+
+## S3 method for class 'step_slice'
+axe_env(x, ...)
+
+## S3 method for class 'step_impute_bag'
+axe_env(x, ...)
+
+## S3 method for class 'step_bagimpute'
+axe_env(x, ...)
+
+## S3 method for class 'step_impute_knn'
+axe_env(x, ...)
+
+## S3 method for class 'step_knnimpute'
+axe_env(x, ...)
+
+## S3 method for class 'step_geodist'
+axe_env(x, ...)
+
+## S3 method for class 'step_interact'
+axe_env(x, ...)
+
+## S3 method for class 'step_ratio'
+axe_env(x, ...)
+
+## S3 method for class 'quosure'
+axe_env(x, ...)
+
+## S3 method for class 'recipe'
+axe_fitted(x, verbose = FALSE, ...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>A model object.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>verbose</code></td>
+<td>
+<p>Print information each time an axe method is executed.
+Notes how much memory is released and what functions are
+disabled. Default is <code>FALSE</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Any additional arguments related to axing.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>Axed recipe object.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+library(recipes)
+data(biomass, package = "modeldata")
+
+biomass_tr &lt;- biomass[biomass$dataset == "Training",]
+rec &lt;- recipe(HHV ~ carbon + hydrogen + oxygen + nitrogen + sulfur,
+              data = biomass_tr) %&gt;%
+  step_center(all_predictors()) %&gt;%
+  step_scale(all_predictors()) %&gt;%
+  step_spatialsign(all_predictors())
+
+out &lt;- butcher(rec, verbose = TRUE)
+
+# Another recipe object
+wrapped_recipes &lt;- function() {
+  some_junk_in_environment &lt;- runif(1e6)
+  return(
+    recipe(mpg ~ cyl, data = mtcars) %&gt;%
+      step_center(all_predictors()) %&gt;%
+      step_scale(all_predictors()) %&gt;%
+      prep()
+  )
+}
+
+# Remove junk in environment
+cleaned1 &lt;- axe_env(wrapped_recipes(), verbose = TRUE)
+# Replace prepared training data with zero-row slice
+cleaned2 &lt;- axe_fitted(wrapped_recipes(), verbose = TRUE)
+
+# Check size
+lobstr::obj_size(cleaned1)
+lobstr::obj_size(cleaned2)
+
+</code></pre>
+
+
+</div>

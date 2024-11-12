@@ -1,0 +1,456 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>mbart2</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Multinomial BART for categorical outcomes with more categories</h2>
+
+<h3>Description</h3>
+
+<p>BART is a Bayesian “sum-of-trees” model.<br>
+For numeric response <code class="reqn">y</code>, we have
+<code class="reqn">y = f(x) +\epsilon</code>,
+where <code class="reqn">\epsilon \sim N(0, 1)</code>.<br>
+For a multinomial response <code class="reqn">y</code>, <code class="reqn">P(Y=y | x) = F(f(x))</code>,
+where <code class="reqn">F</code> denotes the standard Normal CDF (probit link) or the
+standard Logistic CDF (logit link).
+</p>
+<p>In both cases, <code class="reqn">f</code> is the sum of many tree models.
+The goal is to have very flexible inference for the uknown
+function <code class="reqn">f</code>.
+</p>
+<p>In the spirit of “ensemble models”,
+each tree is constrained by a prior to be a weak learner
+so that it contributes a
+small amount to the overall fit.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">mbart2(
+      x.train, y.train,
+      x.test=matrix(0,0,0), type='lbart',
+      ntype=as.integer(
+          factor(type,
+                 levels=c('wbart', 'pbart', 'lbart'))),
+      sparse=FALSE, theta=0, omega=1,
+      a=0.5, b=1, augment=FALSE, rho=NULL,
+      xinfo=matrix(0,0,0), usequants=FALSE,
+      rm.const=TRUE,
+      k=2, power=2, base=0.95,
+      tau.num=c(NA, 3, 6)[ntype],
+      offset=NULL, 
+      ntree=c(200L, 50L, 50L)[ntype], numcut=100L,
+      ndpost=1000L, nskip=100L,
+      keepevery=c(1L, 10L, 10L)[ntype],
+      printevery=100L, transposed=FALSE,
+      hostname=FALSE,
+      mc.cores = 2L, ## mc.bart only
+      nice = 19L,    ## mc.bart only
+      seed = 99L     ## mc.bart only
+     )
+
+mc.mbart2(
+         x.train, y.train,
+         x.test=matrix(0,0,0), type='lbart',
+         ntype=as.integer(
+             factor(type,
+                    levels=c('wbart', 'pbart', 'lbart'))),
+         sparse=FALSE, theta=0, omega=1,
+         a=0.5, b=1, augment=FALSE, rho=NULL,
+         xinfo=matrix(0,0,0), usequants=FALSE,
+         rm.const=TRUE,
+         k=2, power=2, base=0.95,
+         tau.num=c(NA, 3, 6)[ntype],
+         offset=NULL, 
+         ntree=c(200L, 50L, 50L)[ntype], numcut=100L,
+         ndpost=1000L, nskip=100L,
+         keepevery=c(1L, 10L, 10L)[ntype],
+         printevery=100L, transposed=FALSE,
+         hostname=FALSE,
+         mc.cores = 2L, ## mc.bart only
+         nice = 19L,    ## mc.bart only
+         seed = 99L     ## mc.bart only
+        )
+
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>x.train</code></td>
+<td>
+
+<p>Explanatory variables for training (in sample) data.<br>
+May be a matrix or a data frame,
+with (as usual) rows corresponding to observations and columns to variables.<br>
+If a variable is a factor in a data frame, it is replaced with dummies.
+Note that q dummies are created if q&gt;2 and
+one dummy is created if q=2, where q is the number of levels of the factor.
+<code>mbart2</code> will generate draws of <code class="reqn">f(x)</code> for each <code class="reqn">x</code>
+which is a row of <code>x.train</code>.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>y.train</code></td>
+<td>
+
+<p>Categorical dependent variable for training (in sample) data.<br></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>x.test</code></td>
+<td>
+
+<p>Explanatory variables for test (out of sample) data.<br>
+Should have same structure as <code>x.train</code>.<br><code>mbart2</code> will generate draws of <code class="reqn">f(x)</code> for each <code class="reqn">x</code> which is a row of <code>x.test</code>.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>type</code></td>
+<td>
+<p> You can use this argument to specify the type of fit.
+<code>'pbart'</code> for probit BART or <code>'lbart'</code> for logit BART. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ntype</code></td>
+<td>
+<p> The integer equivalent of <code>type</code> where
+<code>'pbart'</code> is 2 and <code>'lbart'</code> is 3.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>sparse</code></td>
+<td>
+<p>Whether to perform variable selection based on a
+sparse Dirichlet prior rather than simply uniform; see Linero
+2016.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>theta</code></td>
+<td>
+<p>Set <code class="reqn">theta</code> parameter; zero means random.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>omega</code></td>
+<td>
+<p>Set <code class="reqn">omega</code> parameter; zero means random.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>a</code></td>
+<td>
+<p>Sparse parameter for <code class="reqn">Beta(a, b)</code> prior:
+<code class="reqn">0.5&lt;=a&lt;=1</code> where lower values inducing more sparsity.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>b</code></td>
+<td>
+<p>Sparse parameter for <code class="reqn">Beta(a, b)</code> prior; typically,
+<code class="reqn">b=1</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>rho</code></td>
+<td>
+<p>Sparse parameter: typically <code class="reqn">rho=p</code> where <code class="reqn">p</code> is the
+number of covariates under consideration.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>augment</code></td>
+<td>
+<p>Whether data augmentation is to be performed in sparse
+variable selection.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>xinfo</code></td>
+<td>
+<p> You can provide the cutpoints to BART or let BART
+choose them for you.  To provide them, use the <code>xinfo</code>
+argument to specify a list (matrix) where the items (rows) are the
+covariates and the contents of the items (columns) are the
+cutpoints.  </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>usequants</code></td>
+<td>
+<p> If <code>usequants=FALSE</code>, then the
+cutpoints in <code>xinfo</code> are generated uniformly; otherwise,
+if <code>TRUE</code>, uniform quantiles are used for the cutpoints. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>rm.const</code></td>
+<td>
+<p> Whether or not to remove constant variables.</p>
+</td>
+</tr>
+</table>
+<table>
+<tr style="vertical-align: top;">
+<td><code>k</code></td>
+<td>
+
+
+
+
+<p>For categorical <code>y.train</code>,
+k is the number of prior standard deviations <code class="reqn">f(x)</code> is away from +/-3.
+
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>power</code></td>
+<td>
+
+<p>Power parameter for tree prior.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>base</code></td>
+<td>
+
+<p>Base parameter for tree prior.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>tau.num</code></td>
+<td>
+<p> The numerator in the <code>tau</code> definition, i.e.,
+<code>tau=tau.num/(k*sqrt(ntree))</code>. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>offset</code></td>
+<td>
+<p> With Multinomial
+BART, the centering is <code class="reqn">P(yj=1 | x) = F(fj(x) + offset[j])</code> where
+<code>offset</code> defaults to <code>F^{-1}(mean(y.train))</code>.  You can use
+the <code>offset</code> parameter to over-ride these defaults.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ntree</code></td>
+<td>
+
+<p>The number of trees in the sum.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>numcut</code></td>
+<td>
+
+<p>The number of possible values of c (see usequants).
+If a single number if given, this is used for all variables.
+Otherwise a vector with length equal to ncol(x.train) is required,
+where the <code class="reqn">i^{th}</code> element gives the number of c used for
+the <code class="reqn">i^{th}</code> variable in x.train.
+If usequants is false, numcut equally spaced cutoffs
+are used covering the range of values in the corresponding
+column of x.train.  If usequants is true, then  min(numcut, the number of unique values in the
+corresponding columns of x.train - 1) c values are used.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ndpost</code></td>
+<td>
+
+<p>The number of posterior draws returned.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nskip</code></td>
+<td>
+
+<p>Number of MCMC iterations to be treated as burn in.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>keepevery</code></td>
+<td>
+
+<p>Every keepevery draw is kept to be returned to the user.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>printevery</code></td>
+<td>
+
+<p>As the MCMC runs, a message is printed every printevery draws.
+</p>
+</td>
+</tr>
+</table>
+<table>
+<tr style="vertical-align: top;">
+<td><code>transposed</code></td>
+<td>
+
+<p>When running <code>mbart2</code> in parallel, it is more memory-efficient
+to transpose <code>x.train</code> and <code>x.test</code>, if any, prior to
+calling <code>mc.mbart2</code>.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>hostname</code></td>
+<td>
+
+<p>When running on a cluster occasionally it is useful
+to track on which node each chain is running; to do so
+set this argument to <code>TRUE</code>.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>seed</code></td>
+<td>
+
+<p>Setting the seed required for reproducible MCMC.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>mc.cores</code></td>
+<td>
+
+<p>Number of cores to employ in parallel.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nice</code></td>
+<td>
+
+<p>Set the job niceness.  The default
+niceness is 19: niceness goes from 0 (highest) to 19 (lowest).
+</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>BART is an Bayesian MCMC method.
+At each MCMC interation, we produce a draw from 
+
+
+<code class="reqn">f</code> in the categorical <code class="reqn">y</code> case.
+</p>
+<p>Thus, unlike a lot of other modelling methods in R, we do not produce
+a single model object from which fits and summaries may be extracted.
+The output consists of values <code class="reqn">f^*(x)</code>
+
+where * denotes a particular draw.
+The <code class="reqn">x</code> is either a row from the training data (x.train).
+</p>
+
+
+<h3>Value</h3>
+
+<p><code>mbart2</code> returns an object of type <code>mbart2</code> which is
+essentially a list. 
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>yhat.train</code></td>
+<td>
+<p> A matrix with <code>ndpost</code> rows and
+<code>nrow(x.train)*K</code> columns.  Each row corresponds to a draw
+<code class="reqn">f^*</code> from the posterior of <code class="reqn">f</code> and each column
+corresponds to an estimate for a row of <code>x.train</code>.  For the
+<code>i</code>th row of <code>x.train</code>, we provide the corresponding
+<code>(i-1)*K+j</code>th column of <code>yhat.train</code> where
+<code>j=1,...,K</code> indexes the categories.<br>
+Burn-in is dropped.  </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>yhat.train.mean</code></td>
+<td>
+<p>train data fits = mean of <code>yhat.train</code>
+columns.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>varcount</code></td>
+<td>
+<p>a matrix with <code>ndpost</code> rows and
+<code>nrow(x.train)</code> columns.  Each row is for a draw. For each
+variable (corresponding to the columns), the total count of the
+number of times that variable is used in a tree decision rule (over
+all trees) is given.</p>
+</td>
+</tr>
+</table>
+<p>In addition, the list
+has a <code>offset</code> vector giving the value used.
+</p>
+<p>Note that in the multinomial <code class="reqn">y</code> case <code>yhat.train</code> is 
+<code class="reqn">f(x) + offset[j]</code>.
+
+
+
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>gbart</code>, <code>alligator</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+N=500
+set.seed(12)
+x1=runif(N)
+x2=runif(N, max=1-x1)
+x3=1-x1-x2
+x.train=cbind(x1, x2, x3)
+y.train=0
+for(i in 1:N)
+    y.train[i]=sum((1:3)*rmultinom(1, 1, x.train[i, ]))
+table(y.train)/N
+
+##test mbart2 with token run to ensure installation works
+set.seed(99)
+post = mbart2(x.train, y.train, nskip=1, ndpost=1)
+
+## Not run: 
+set.seed(99)
+post=mbart2(x.train, y.train, x.train)
+##mc.post=mbart2(x.train, y.train, x.test, mc.cores=8, seed=99)
+
+K=3
+i=seq(1, N*K, K)-1
+for(j in 1:K)
+    print(cor(x.train[ , j], post$prob.test.mean[i+j])^2)
+
+
+## End(Not run)
+</code></pre>
+
+
+</div>

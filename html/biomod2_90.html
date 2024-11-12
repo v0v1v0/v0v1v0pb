@@ -1,0 +1,288 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>bm_FindOptimStat</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Calculate the best score according to a given evaluation method</h2>
+
+<h3>Description</h3>
+
+<p>This internal <span class="pkg">biomod2</span> function allows the user to find the threshold to 
+convert continuous values into binary ones leading to the best score for a given evaluation 
+metric.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">bm_FindOptimStat(
+  metric.eval = "TSS",
+  obs,
+  fit,
+  nb.thresh = 100,
+  threshold = NULL,
+  boyce.bg.env = NULL,
+  mpa.perc = 0.9
+)
+
+get_optim_value(metric.eval)
+
+bm_CalculateStat(misc, metric.eval = "TSS")
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>metric.eval</code></td>
+<td>
+<p>a <code>character</code> corresponding to the evaluation metric to be used, must 
+be either <code>POD</code>, <code>FAR</code>, <code>POFD</code>, <code>SR</code>, <code>ACCURACY</code>, <code>BIAS</code>, 
+<code>ROC</code>, <code>TSS</code>, <code>KAPPA</code>, <code>OR</code>, <code>ORSS</code>, <code>CSI</code>, <code>ETS</code>, 
+<code>BOYCE</code>, <code>MPA</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>obs</code></td>
+<td>
+<p>a <code>vector</code> of observed values (binary, <code>0</code> or <code>1</code>)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>fit</code></td>
+<td>
+<p>a <code>vector</code> of fitted values (continuous)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nb.thresh</code></td>
+<td>
+<p>an <code>integer</code> corresponding to the number of thresholds to be 
+tested over the range of fitted values</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>threshold</code></td>
+<td>
+<p>(<em>optional, default</em> <code>NULL</code>) <br> 
+A <code>numeric</code> corresponding to the threshold used to convert the given data</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>boyce.bg.env</code></td>
+<td>
+<p>(<em>optional, default</em> <code>NULL</code>) <br> 
+A <code>matrix</code>, <code>data.frame</code>, <code>SpatVector</code>
+or <code>SpatRaster</code> object containing values of 
+environmental variables (in columns or layers) extracted from the background 
+(<em>if presences are to be compared to background instead of absences or 
+pseudo-absences selected for modeling</em>)
+<br><em>Note that old format from <span class="pkg">raster</span> and <span class="pkg">sp</span> are still supported such as 
+<code>RasterStack</code> and <code>SpatialPointsDataFrame</code> objects. </em></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>mpa.perc</code></td>
+<td>
+<p>a <code>numeric</code> between <code>0</code> and <code>1</code> corresponding to the percentage 
+of correctly classified presences for Minimal Predicted Area (see <code>ecospat.mpa()</code> in 
+<span class="pkg">ecospat</span>)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>misc</code></td>
+<td>
+<p>a <code>matrix</code> corresponding to a contingency table</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+
+<dl>
+<dt>simple</dt>
+<dd>
+
+<ul>
+<li> <p><code>POD</code> : Probability of detection (hit rate)
+</p>
+</li>
+<li> <p><code>FAR</code> : False alarm ratio
+</p>
+</li>
+<li> <p><code>POFD</code> : Probability of false detection (fall-out)
+</p>
+</li>
+<li> <p><code>SR</code> : Success ratio
+</p>
+</li>
+<li> <p><code>ACCURACY</code> : Accuracy (fraction correct)
+</p>
+</li>
+<li> <p><code>BIAS</code> : Bias score (frequency bias)
+</p>
+</li>
+</ul>
+</dd>
+<dt>complex</dt>
+<dd>
+
+<ul>
+<li> <p><code>ROC</code> : Relative operating characteristic
+</p>
+</li>
+<li> <p><code>TSS</code> : True skill statistic (Hanssen and Kuipers discriminant, Peirce's 
+skill score)
+</p>
+</li>
+<li> <p><code>KAPPA</code> : Cohen's Kappa (Heidke skill score)
+</p>
+</li>
+<li> <p><code>OR</code> : Odds Ratio
+</p>
+</li>
+<li> <p><code>ORSS</code> : Odds ratio skill score (Yule's Q)
+</p>
+</li>
+<li> <p><code>CSI</code> : Critical success index (threat score)
+</p>
+</li>
+<li> <p><code>ETS</code> : Equitable threat score (Gilbert skill score)
+</p>
+</li>
+</ul>
+</dd>
+<dt>presence-only</dt>
+<dd>
+
+<ul>
+<li> <p><code>BOYCE</code> : Boyce index
+</p>
+</li>
+<li> <p><code>MPA</code> : Minimal predicted area (cutoff optimising MPA to predict 90% of 
+presences)
+</p>
+</li>
+</ul>
+</dd>
+</dl>
+<p>Optimal value of each method can be obtained with the <code>get_optim_value</code> function. <br><em>Please refer to the <a href="https://www.cawcr.gov.au/projects/verification/">CAWRC website 
+(section "Methods for dichotomous forecasts")</a> to get detailed description of each metric.</em>
+</p>
+<p>Note that if a value is given to <code>threshold</code>, no optimisation will be done., and 
+only the score for this threshold will be returned.
+</p>
+<p>The Boyce index returns <code>NA</code> values for <code>SRE</code> models because it can not be 
+calculated with binary predictions. <br> This is also the reason why some <code>NA</code> values 
+might appear for <code>GLM</code> models if they do not converge.
+</p>
+
+
+<h3>Value</h3>
+
+<p>A <code>1</code> row x <code>5</code> columns <code>data.frame</code> containing :
+</p>
+
+<ul>
+<li> <p><code>metric.eval</code> : the chosen evaluation metric
+</p>
+</li>
+<li> <p><code>cutoff</code> : the associated cut-off used to transform the continuous values into 
+binary
+</p>
+</li>
+<li> <p><code>sensitivity</code> : the sensibility obtained on fitted values with this threshold
+</p>
+</li>
+<li> <p><code>specificity</code> : the specificity obtained on fitted values with this threshold
+</p>
+</li>
+<li> <p><code>best.stat</code> : the best score obtained for the chosen evaluation metric
+</p>
+</li>
+</ul>
+<h3>Note</h3>
+
+<p>In order to break dependency loop between packages <span class="pkg">biomod2</span> and <span class="pkg">ecospat</span>, 
+code of <code>ecospat.boyce()</code> and <code>ecospat.mpa()</code> in <span class="pkg">ecospat</span>)
+functions have been copied within this file from version 3.2.2 (august 2022).
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Damien Georges
+</p>
+
+
+<h3>References</h3>
+
+
+<ul>
+<li>
+<p> Engler, R., Guisan, A., and Rechsteiner L. 2004. An improved approach for predicting 
+the distribution of rare and endangered species from occurrence and pseudo-absence data. 
+<em>Journal of Applied Ecology</em>, <b>41(2)</b>, 263-274.
+</p>
+</li>
+<li>
+<p> Hirzel, A. H., Le Lay, G., Helfer, V., Randin, C., and Guisan, A. 2006. Evaluating 
+the ability of habitat suitability models to predict species presences. <em>Ecological 
+Modelling</em>, <b>199(2)</b>, 142-152.
+</p>
+</li>
+</ul>
+<h3>See Also</h3>
+
+<p><code>ecospat.boyce()</code> and <code>ecospat.mpa()</code> in <span class="pkg">ecospat</span>, 
+<code>BIOMOD_Modeling</code>, <code>bm_RunModelsLoop</code>, 
+<code>BIOMOD_EnsembleModeling</code>
+</p>
+<p>Other Secundary functions: 
+<code>bm_BinaryTransformation()</code>,
+<code>bm_CrossValidation()</code>,
+<code>bm_MakeFormula()</code>,
+<code>bm_ModelingOptions()</code>,
+<code>bm_PlotEvalBoxplot()</code>,
+<code>bm_PlotEvalMean()</code>,
+<code>bm_PlotRangeSize()</code>,
+<code>bm_PlotResponseCurves()</code>,
+<code>bm_PlotVarImpBoxplot()</code>,
+<code>bm_PseudoAbsences()</code>,
+<code>bm_RunModelsLoop()</code>,
+<code>bm_SRE()</code>,
+<code>bm_SampleBinaryVector()</code>,
+<code>bm_SampleFactorLevels()</code>,
+<code>bm_Tuning()</code>,
+<code>bm_VariablesImportance()</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## Generate a binary vector
+vec.a &lt;- sample(c(0, 1), 100, replace = TRUE)
+
+## Generate a 0-1000 vector (random drawing)
+vec.b &lt;- runif(100, min = 0, max = 1000)
+
+## Generate a 0-1000 vector (biased drawing)
+BiasedDrawing &lt;- function(x, m1 = 300, sd1 = 200, m2 = 700, sd2 = 200) {
+  return(ifelse(x &lt; 0.5, rnorm(1, m1, sd1), rnorm(1, m2, sd2)))
+}
+vec.c &lt;- sapply(vec.a, BiasedDrawing)
+vec.c[which(vec.c &lt; 0)] &lt;- 0
+vec.c[which(vec.c &gt; 1000)] &lt;- 1000
+
+## Find optimal threshold for a specific evaluation metric
+bm_FindOptimStat(metric.eval = 'TSS', fit = vec.b, obs = vec.a)
+bm_FindOptimStat(metric.eval = 'TSS', fit = vec.c, obs = vec.a, nb.thresh = 100)
+bm_FindOptimStat(metric.eval = 'TSS', fit = vec.c, obs = vec.a, threshold = 280)
+
+
+</code></pre>
+
+
+</div>

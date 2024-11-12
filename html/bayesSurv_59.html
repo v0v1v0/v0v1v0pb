@@ -1,0 +1,283 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>predictive</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>
+Compute predictive quantities based on a Bayesian survival regression
+model fitted using bayessurvreg1 function.  
+</h2>
+
+<h3>Description</h3>
+
+<p>This function runs additional McMC to compute predictive survivor and
+hazard curves and predictive event times for specified values of
+covariates.
+</p>
+<p>Firstly, the function <code>bayessurvreg1</code> has to be used to
+obtain a sample from the posterior distribution of unknown quantities.
+</p>
+<p>Directly, posterior predictive quantiles and means of asked quantities
+are computed and stored in files.
+</p>
+<p>Function <code>predictive.control</code> serves only to perform some input
+checks inside the main function <code>predictive</code>.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">predictive(formula, random, time0 = 0, data = parent.frame(),
+     grid, type = "mixture", subset, na.action = na.fail,
+     quantile = c(0, 0.025, 0.5, 0.975, 1),                       
+     skip = 0, by = 1, last.iter, nwrite, only.aver = FALSE,
+     predict = list(Et=TRUE, t=FALSE, Surv=TRUE, hazard=FALSE, cum.hazard=FALSE),
+     store = list(Et=TRUE, t = FALSE, Surv = FALSE, hazard = FALSE, cum.hazard=FALSE),
+     Eb0.depend.mix = FALSE,
+     dir, toler.chol = 1e-10, toler.qr = 1e-10)
+
+predictive.control(predict, store, only.aver, quantile)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>formula</code></td>
+<td>
+<p>the same formula as that one used to sample from the
+posterior distribution of unknown quantities by the function
+<code>bayessurvreg1</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>random</code></td>
+<td>
+<p>the same <code>random</code> statement as that one used to sample from the
+posterior distribution of unknown quantities by the function
+<code>bayessurvreg1</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>time0</code></td>
+<td>
+<p>starting time for the survival model. This option is used
+to get correct hazard function in the case that the original model was
+<code class="reqn">\log(T-time0) = \dots</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+<p>optional data frame in which to interpret the variables
+occuring in the formulas. Usually, you create a new
+<code>data.frame</code> similar to that one used to obtain a sample from
+the posterior distribution. In this new <code>data.frame</code>, put
+covariate values equal to these for which predictive quantities are
+to be obtained. If <code>cluster</code> statement was used, assign a
+unique cluster identification to each observation. Response variable
+and a censoring indicator may be set to arbitrary values. They are
+only used in <code>formula</code> but are ignored for computation.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>grid</code></td>
+<td>
+<p>a list of length as number of observations in <code>data</code> or a vector
+giving grids of values where predictive survivor functions, hazards, cumulative
+hazards are to be evaluated. If it is a vector, same grid is used for all
+observations from <code>data</code>. Not needed if only <code>predict$t</code>
+or <code>predict$Et</code> are <code>TRUE</code>. If <code>time0</code> is different
+from zero your grid should start at <code>time0</code> and not at zero.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>type</code></td>
+<td>
+<p>a character string giving the type of assumed error distribution. Currently, valid
+are substrings of "mixture". In the future, "spline",
+"polya.tree" might be also implemented.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>subset</code></td>
+<td>
+<p>subset of the observations from the <code>data</code> to be
+used. This option will normally not be needed.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>na.action</code></td>
+<td>
+<p>function to be used to handle any <code>NA</code>s in the
+data. The user is discouraged to change a default value
+<code>na.fail</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>quantile</code></td>
+<td>
+<p>a vector of quantiles that are to be computed for each
+predictive quantity.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>skip</code></td>
+<td>
+<p>number of rows that should be skipped at the beginning of
+each *.sim file with the stored sample.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>by</code></td>
+<td>
+<p>additional thinning of the sample.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>last.iter</code></td>
+<td>
+<p>index of the last row from *.sim files that should be
+used. If not specified than it is set to the maximum available
+determined according to the file <code>mixmoment.sim</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nwrite</code></td>
+<td>
+<p>frequency with which is the user informed about the
+progress of computation (every <code>nwrite</code>th iteration count of
+iterations change).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>only.aver</code></td>
+<td>
+<p>if <code>TRUE</code> only posterior predictive mean is
+computed for all quantities and no quantiles.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>predict</code></td>
+<td>
+<p>a list of logical values indicating which predictive quantities are to be sampled.
+Components of the list:
+</p>
+
+<dl>
+<dt>Et</dt>
+<dd>
+<p>predictive expectations of survivor times</p>
+</dd>
+<dt>t</dt>
+<dd>
+<p>predictive survivor times</p>
+</dd>
+<dt>Surv</dt>
+<dd>
+<p>predictive survivor functions</p>
+</dd>
+<dt>hazard</dt>
+<dd>
+<p>predictive hazard functions</p>
+</dd>
+<dt>cum.hazard</dt>
+<dd>
+<p>predictive cumulative hazard functions</p>
+</dd>
+</dl>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>store</code></td>
+<td>
+<p>a list of logical values indicating which predictive
+quantities are to be stored in files as ‘predET*.sim’, ‘predT*.sim’,
+‘predS*.sim’, ‘predhazard*.sim’, ‘predcumhazard*.sim’. If you are
+interested only in posterior means or quantiles of the predictive
+quantities you do not have to store sampled values. Posterior means
+and quantiles are stored in files ‘quantET*.sim’, ‘quantT*.sim’,
+‘quantS*.sim’, ‘quanthazard*.sim’, ‘quantpredhazard*.sim’.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Eb0.depend.mix</code></td>
+<td>
+<p>a logical value indicating whether the mean of
+the random intercept (if included in the model) was given in a
+hierarchical model as an overall mean of the mixture in the error
+term. With <code>FALSE</code> (default) you have the same model as that
+one described in an accompanying paper. An ordinary user is
+discouraged from setting this to <code>TRUE</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>dir</code></td>
+<td>
+<p>a string giving a directory where previously simulated
+values were stored and where newly obtained quantities will be
+stored. On Unix, do not use ‘~/’ to specify your home directory.
+A full path must be given, e.g. ‘/home/arnost/’.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>toler.chol</code></td>
+<td>
+<p>tolerance for the Cholesky decomposition.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>toler.qr</code></td>
+<td>
+<p>tolerance for the QR decomposition.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>An integer which should be equal to zero if everything ran fine.
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Arnošt Komárek <a href="mailto:arnost.komarek@mff.cuni.cz">arnost.komarek@mff.cuni.cz</a>
+</p>
+
+
+<h3>References</h3>
+
+<p>Komárek, A. (2006).
+<em>Accelerated Failure Time Models for Multivariate
+Interval-Censored Data with Flexible Distributional Assumptions</em>.
+PhD. Thesis, Katholieke Universiteit Leuven, Faculteit Wetenschappen.
+</p>
+<p>Komárek, A. and Lesaffre, E. (2007).
+Bayesian accelerated failure time model for correlated interval-censored data
+with a normal mixture as an error distribution.
+<em>Statistica Sinica</em>, <b>17</b>, 549 - 569.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## See the description of R commands for
+## the models described in
+## Komarek (2006),
+## Komarek and Lesaffre (2007).
+##
+## R commands available
+## in the documentation
+## directory of this package as
+## - ex-cgd.R and
+##   https://www2.karlin.mff.cuni.cz/~komarek/software/bayesSurv/ex-cgd.pdf
+##
+## - ex-tandmobMixture.R and
+##   https://www2.karlin.mff.cuni.cz/~komarek/software/bayesSurv/ex-tandmobMixture.pdf
+##
+</code></pre>
+
+
+</div>

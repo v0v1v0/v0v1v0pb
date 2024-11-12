@@ -1,0 +1,250 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>fit.xyz</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2> Coordinate Superposition </h2>
+
+<h3>Description</h3>
+
+<p>Coordinate superposition with the Kabsch algorithm.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">fit.xyz(fixed, mobile,
+        fixed.inds  = NULL,
+        mobile.inds = NULL,
+        verbose=FALSE,
+        prefix= "", pdbext = "",
+        outpath = "fitlsq", full.pdbs=FALSE, 
+        ncore = 1, nseg.scale = 1, ...)
+
+rot.lsq(xx, yy,
+        xfit = rep(TRUE, length(xx)), yfit = xfit,
+        verbose = FALSE)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>fixed </code></td>
+<td>
+<p> numeric vector of xyz coordinates.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>mobile</code></td>
+<td>
+<p> numeric vector, numeric matrix, or an object with an
+<code>xyz</code> component containing one or more coordinate sets. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>fixed.inds</code></td>
+<td>
+<p> a vector of indices that selects the elements of
+<code>fixed</code> upon which fitting should be based.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>mobile.inds</code></td>
+<td>
+<p>  a vector of indices that selects the elements
+of <code>mobile</code> upon which fitting should be based.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>full.pdbs</code></td>
+<td>
+<p> logical, if TRUE “full” coordinate files
+(i.e. all atoms) are written to the location specified by
+<code>outpath</code>. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>prefix</code></td>
+<td>
+<p> prefix to mobile$id to locate “full” input PDB files.  Only
+required if <code>full.pdbs</code> is TRUE. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>pdbext</code></td>
+<td>
+<p> the file name extension of the input PDB files. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>outpath</code></td>
+<td>
+<p> character string specifing the output directory when
+<code>full.pdbs</code> is TRUE. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>xx</code></td>
+<td>
+<p> numeric vector corresponding to the moving ‘subject’
+coordinate set. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>yy</code></td>
+<td>
+<p> numeric vector corresponding to the fixed ‘target’
+coordinate set. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>xfit</code></td>
+<td>
+<p> logical vector with the same length as <code>xx</code>,  with
+TRUE elements corresponding to the subset of positions upon which
+fitting is to be performed. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>yfit</code></td>
+<td>
+<p> logical vector with the same length as <code>yy</code>,  with
+TRUE elements corresponding to the subset of positions upon which
+fitting is to be performed. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>verbose</code></td>
+<td>
+<p> logical, if TRUE more details are printed. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p> other parameters for <code>read.pdb</code>. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ncore </code></td>
+<td>
+<p> number of CPU cores used to do the calculation.
+<code>ncore&gt;1</code> requires package ‘parallel’ installed. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nseg.scale </code></td>
+<td>
+<p> split input data into specified number of segments
+prior to running multiple core calculation. </p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The function <code>fit.xyz</code> is a wrapper for the function
+<code>rot.lsq</code>, which performs the actual coordinate superposition.
+The function <code>rot.lsq</code> is an implementation of the Kabsch
+algorithm (Kabsch, 1978) and evaluates the optimal rotation matrix
+to minimize the RMSD between two structures.
+</p>
+<p>Since the Kabsch algorithm assumes that the number of points are the
+same in the two input structures, care should be taken to ensure that
+consistent atom sets are selected with <code>fixed.inds</code> and
+<code>mobile.inds</code>.
+</p>
+<p>Optionally, “full” PDB file superposition and output can be
+accomplished by setting <br><code>full.pdbs=TRUE</code>.  In that case, the
+input (<code>mobile</code>) passed to <code>fit.xyz</code> should be a list object
+obtained with the function <code>read.fasta.pdb</code>, since the
+components <code>id</code>, <code>resno</code> and <code>xyz</code> are required to
+establish correspondences.  See the examples below.
+</p>
+<p>In dealing with large vector and matrix, running on multiple
+cores, especially when <code>ncore&gt;&gt;1</code>, may ask for a large portion
+of system memory. To avoid the overuse of memory, input data is first
+split into segments (for xyz matrix, the splitting is along the row). 
+The number of data segments is equal to <code>nseg.scale*nseg.base</code>, where
+<code>nseg.base </code> is an integer determined by the dimension of the data.
+</p>
+
+
+<h3>Value</h3>
+
+<p>Returns moved coordinates.
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p> Barry Grant with <code>rot.lsq</code> contributions from Leo Caves </p>
+
+
+<h3>References</h3>
+
+<p>Grant, B.J. et al. (2006) <em>Bioinformatics</em> <b>22</b>, 2695–2696.
+</p>
+<p>Kabsch <em>Acta Cryst</em> (1978) <b>A34</b>, 827–828.
+</p>
+
+
+<h3>See Also</h3>
+
+ <p><code>rmsd</code>, <code>read.pdb</code>,
+<code>read.fasta.pdb</code>, <code>read.dcd</code> </p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+# PDB server connection required - testing excluded
+
+##--- Read an alignment &amp; Fit aligned structures
+aln  &lt;- read.fasta(system.file("examples/kif1a.fa",package="bio3d"))
+pdbs &lt;- read.fasta.pdb(aln)
+
+gaps &lt;- gap.inspect(pdbs$xyz)
+
+xyz &lt;- fit.xyz( fixed  = pdbs$xyz[1,],
+               mobile = pdbs$xyz,
+               fixed.inds  = gaps$f.inds,
+               mobile.inds = gaps$f.inds )
+
+#rmsd( xyz[, gaps$f.inds] )
+#rmsd( pdbs$xyz[, gaps$f.inds] )
+
+## Not run: 
+##-- Superpose again this time outputing PDBs
+xyz &lt;- fit.xyz( fixed = pdbs$xyz[1,],
+               mobile = pdbs,
+               fixed.inds  = gaps$f.inds,
+               mobile.inds = gaps$f.inds,
+               outpath = "rough_fit",
+               full.pdbs = TRUE)
+
+## End(Not run)
+
+##--- Fit two PDBs
+A &lt;- read.pdb("1bg2")
+A.ind &lt;- atom.select(A, resno=c(256:269), elety='CA')
+
+B &lt;- read.pdb("2kin")
+B.ind &lt;- atom.select(B, resno=c(257:270), elety='CA')
+
+xyz &lt;- fit.xyz(fixed=A$xyz, mobile=B$xyz,
+               fixed.inds=A.ind$xyz,
+               mobile.inds=B.ind$xyz)
+
+## Not run: 
+# Write out moved PDB
+C &lt;- B; C$xyz = xyz
+write.pdb(pdb=C, file = "moved.pdb")
+
+## End(Not run)
+</code></pre>
+
+
+</div>

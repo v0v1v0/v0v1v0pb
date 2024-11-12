@@ -1,0 +1,245 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>brm_marginal_draws</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>MCMC draws from the marginal posterior of an MMRM</h2>
+
+<h3>Description</h3>
+
+<p>Get marginal posterior draws from a fitted MMRM.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">brm_marginal_draws(
+  model,
+  data = model$brms.mmrm_data,
+  formula = model$brms.mmrm_formula,
+  transform = brms.mmrm::brm_transform_marginal(data = data, formula = formula,
+    average_within_subgroup = average_within_subgroup),
+  effect_size = attr(formula, "brm_allow_effect_size"),
+  average_within_subgroup = NULL,
+  use_subgroup = NULL,
+  control = NULL,
+  baseline = NULL
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>model</code></td>
+<td>
+<p>A fitted model object from <code>brm_model()</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+<p>A classed data frame from <code>brm_data()</code>, or an informative
+prior archetype from a function like <code>brm_archetype_successive_cells()</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>formula</code></td>
+<td>
+<p>An object of class <code>"brmsformula"</code> from <code>brm_formula()</code>
+or <code>brms::brmsformula()</code>. Should include the full mapping
+of the model, including fixed effects, residual correlation,
+and heterogeneity in the discrete-time-specific residual variance
+components.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>transform</code></td>
+<td>
+<p>Matrix with one row per marginal mean and one column
+per model parameter. <code>brm_marginal_draws()</code> uses this matrix
+to map posterior draws of model parameters to posterior draws of
+marginal means using matrix multiplication. Please use
+<code>brm_transform_marginal()</code> to compute this matrix and then modify
+only if necessary. See the methods vignettes for details on this
+matrix, as well as how <code>brms.mmrm</code> computes marginal means more
+generally.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>effect_size</code></td>
+<td>
+<p>Logical, <code>TRUE</code> to derive posterior samples
+of effect size (treatment effect divided by residual standard
+deviation). <code>FALSE</code> to omit. <code>brms.mmrm</code> does not support
+effect size when baseline or covariates are included
+in the <code>brm_formula_sigma()</code> formula. If <code>effect_size</code> is <code>TRUE</code>
+in this case, then <code>brm_marginal_draws()</code> will automatically
+omit effect size and throw an informative warning.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>average_within_subgroup</code></td>
+<td>
+<p><code>TRUE</code>, <code>FALSE</code>, or <code>NULL</code> to control
+whether nuisance parameters are averaged within subgroup levels
+in <code>brm_transform_marginal()</code>. Ignored if the <code>transform</code> argument
+is manually supplied by the user. See the help page of
+<code>brm_transform_marginal()</code> for details on the
+<code>average_within_subgroup</code> argument.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>use_subgroup</code></td>
+<td>
+<p>Deprecated. No longer used. <code>brm_marginal_draws()</code>
+no longer marginalizes over the subgroup declared
+in <code>brm_data()</code>. To marginalize over the subgroup, declare
+that variable in <code>covariates</code> instead.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>control</code></td>
+<td>
+<p>Deprecated. Set the control group level in <code>brm_data()</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>baseline</code></td>
+<td>
+<p>Deprecated. Set the control group level in <code>brm_data()</code>.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>A named list of tibbles of MCMC draws of the marginal posterior
+distribution of each treatment group and time point. These marginals
+are also subgroup-specific if <code>brm_formula()</code> included fixed effects
+that use the <code>subgroup</code> variable originally declared in <code>brm_data()</code>.
+In each tibble, there is 1 row per posterior sample and one column for
+each type of marginal distribution (i.e. each combination of treatment
+group and discrete time point. The specific <code>tibble</code>s in the returned
+list are described below:
+</p>
+
+<ul>
+<li> <p><code>response</code>: on the scale of the response variable.
+</p>
+</li>
+<li> <p><code>difference_time</code>: change from baseline: the
+<code>response</code> at a particular time minus the <code>response</code> at baseline
+(<code>reference_time</code>).
+Only returned if the <code>reference_time</code> argument of <code>brm_data()</code> was
+not <code>NULL</code> (i.e. if a baseline value for the time variable
+was identified).
+</p>
+</li>
+<li> <p><code>difference_group</code>: treatment effect:
+These samples depend on the values of <code>reference_group</code> and
+<code>reference_time</code> which were originally declared in <code>brm_data()</code>.
+<code>reference_group</code> is the control group, and <code>reference_time</code>
+is baseline. If baseline was originally given (via <code>reference_time</code>
+in <code>brm_data()</code>),
+then <code>difference_time</code> is the change-from-baseline value of
+each active group minus that of the control group.
+Otherwise, if baseline is omitted (i.e. <code>reference_time = NULL</code>
+(default) in <code>brm_data()</code>), then <code>difference_time</code> is the
+raw response at each active group minus that of the control group.
+</p>
+</li>
+<li> <p><code>difference_subgroup</code>: subgroup differences: the <code>difference_group</code>
+at each subgroup level minus the <code>difference_group</code> at the subgroup
+reference level (<code>reference_subgroup</code>). Only reported if a subgroup
+analysis was specified through the appropriate arguments to
+<code>brm_data()</code> and <code>brm_formula()</code>.
+</p>
+</li>
+<li> <p><code>effect</code>: effect size, defined as the treatment difference
+divided by the residual standard deviation. Omitted if
+the <code>effect_size</code> argument is <code>FALSE</code> or if the
+<code>brm_formula_sigma()</code> includes baseline or covariates.
+</p>
+</li>
+<li> <p><code>sigma</code>: posterior draws of linear-scale marginal standard deviations
+of residuals. Omitted if
+the <code>effect_size</code> argument is <code>FALSE</code> or if the
+<code>brm_formula_sigma()</code> includes baseline or covariates.
+</p>
+</li>
+</ul>
+<h3>Baseline</h3>
+
+<p>The returned values from <code>brm_marginal_draws()</code>
+depend on whether a baseline time point
+was declared through the <code>reference_time</code> argument of <code>brm_data()</code>.
+If <code>reference_time</code> was not <code>NULL</code>, then <code>brm_marginal_draws()</code> will
+calculate change from baseline, and it will calculate treatment
+differences as differences between change-from-baseline values.
+If <code>reference_time</code> was not <code>NULL</code>, then <code>brm_marginal_draws()</code> will
+not calculate change from baseline, and it will calculate treatment
+differences as differences between response values.
+</p>
+
+
+<h3>Separation string</h3>
+
+<p>Post-processing in <code>brm_marginal_draws()</code> names each of the
+group-by-time marginal means with the delimiting character string
+from <code>Sys.getenv("BRM_SEP", unset = "|")</code>. Neither the column names
+nor element names of the group and time variables can contain
+this string. To set a custom string yourself, use
+<code>Sys.setenv(BRM_SEP = "YOUR_CUSTOM_STRING")</code>.
+</p>
+
+
+<h3>See Also</h3>
+
+<p>Other marginals: 
+<code>brm_marginal_data()</code>,
+<code>brm_marginal_draws_average()</code>,
+<code>brm_marginal_grid()</code>,
+<code>brm_marginal_probabilities()</code>,
+<code>brm_marginal_summaries()</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">if (identical(Sys.getenv("BRM_EXAMPLES", unset = ""), "true")) {
+set.seed(0L)
+data &lt;- brm_data(
+  data = brm_simulate_simple()$data,
+  outcome = "response",
+  group = "group",
+  time = "time",
+  patient = "patient",
+  reference_group = "group_1",
+  reference_time = "time_1"
+)
+formula &lt;- brm_formula(
+  data = data,
+  baseline = FALSE,
+  baseline_time = FALSE
+)
+tmp &lt;- utils::capture.output(
+  suppressMessages(
+    suppressWarnings(
+      model &lt;- brm_model(
+        data = data,
+        formula = formula,
+        chains = 1,
+        iter = 100,
+        refresh = 0
+      )
+    )
+  )
+)
+brm_marginal_draws(data = data, formula = formula, model = model)
+}
+</code></pre>
+
+
+</div>

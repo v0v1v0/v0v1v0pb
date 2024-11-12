@@ -1,0 +1,177 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>simulate.btergm</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Simulate Networks from a <code>btergm</code> Object</h2>
+
+<h3>Description</h3>
+
+<p>Simulate networks from a <code>btergm</code> object using MCMC sampler.
+</p>
+<p>Simulate networks from an <code>mtergm</code> object using MCMC sampler.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">## S3 method for class 'btergm'
+simulate(
+  object,
+  nsim = 1,
+  seed = NULL,
+  index = NULL,
+  formula = getformula(object),
+  coef = object@coef,
+  verbose = TRUE,
+  ...
+)
+
+## S3 method for class 'mtergm'
+simulate(
+  object,
+  nsim = 1,
+  seed = NULL,
+  index = NULL,
+  formula = getformula(object),
+  coef = object@coef,
+  verbose = TRUE,
+  ...
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>object</code></td>
+<td>
+<p>A <code>btergm</code> or <code>mtergm</code> object, resulting from a call
+of the <code>btergm</code> or <code>mtergm</code> function.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nsim</code></td>
+<td>
+<p>The number of networks to be simulated. Note that for values
+greater than one, a <code>network.list</code> object is returned, which can be
+indexed just like a <code>list</code> object, for example <code>mynetworks[[1]]</code>
+for the first simulated network in the object <code>mynetworks</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>seed</code></td>
+<td>
+<p>Random number integer seed. See set.seed.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>index</code></td>
+<td>
+<p>Index of the network from which the new network(s) should be
+simulated. The index refers to the list of response networks on the
+left-hand side of the model formula. Note that more recent networks are
+located at the end of the list. By default, the last (= most recent)
+network is used.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>formula</code></td>
+<td>
+<p>A model formula from which the new network(s) should be
+simulated. By default, the formula is taken from the <code>btergm</code> object.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>coef</code></td>
+<td>
+<p>A vector of parameter estimates. By default, the coefficients are
+extracted from the given <code>btergm</code> object.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>verbose</code></td>
+<td>
+<p>Print additional details while running the simulations?</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Further arguments are handed over to the
+<code>simulate_formula</code> function in the <span class="pkg">ergm</span> package.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The <code>simulate.btergm</code> function is a wrapper for the
+<code>simulate_formula</code> function in the <span class="pkg">ergm</span> package (see
+<code>help("simulate.ergm")</code>). It can be used to simulate new networks from a
+<code>btergm</code> object. The <code>index</code> argument specifies from which of the
+original networks the new network(s) should be simulated. For example, if
+<code>object</code> is an estimation based on cosponsorship networks from the 99th
+to the 107th Congress (as in Desmarais and Cranmer 2012), and the
+cosponsorship network in the 108th Congress should be predicted using the
+<code>simulate.btergm</code> function, then the argument <code>index = 9</code> should be
+passed to the function because the network should be based on the 9th network
+in the list (that is, the latest network, which is the cosponsorship network
+for the 107th Congress). Note that all relevant objects (the networks and the
+covariates) must be present in the workspace (as was the case during the
+estimation of the model).
+</p>
+
+
+<h3>References</h3>
+
+<p>Desmarais, Bruce A. and Skyler J. Cranmer (2012): Statistical Mechanics of
+Networks: Estimation and Uncertainty. <em>Physica A</em> 391: 1865–1876.
+<a href="https://doi.org/10.1016/j.physa.2011.10.018">doi:10.1016/j.physa.2011.10.018</a>.
+</p>
+<p>Leifeld, Philip, Skyler J. Cranmer and Bruce A. Desmarais (2018): Temporal
+Exponential Random Graph Models with btergm: Estimation and Bootstrap
+Confidence Intervals. <em>Journal of Statistical Software</em> 83(6): 1–36.
+<a href="https://doi.org/10.18637/jss.v083.i06">doi:10.18637/jss.v083.i06</a>.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## Not run: 
+# fit a TERGM to some toy data
+library("network")
+set.seed(5)
+networks &lt;- list()
+for(i in 1:10){            # create 10 random networks with 10 actors
+  mat &lt;- matrix(rbinom(100, 1, .25), nrow = 10, ncol = 10)
+  diag(mat) &lt;- 0           # loops are excluded
+  nw &lt;- network(mat)       # create network object
+  networks[[i]] &lt;- nw      # add network to the list
+}
+covariates &lt;- list()
+for (i in 1:10) {          # create 10 matrices as covariate
+  mat &lt;- matrix(rnorm(100), nrow = 10, ncol = 10)
+  covariates[[i]] &lt;- mat   # add matrix to the list
+}
+fit &lt;- btergm(networks ~ edges + istar(2) +
+                edgecov(covariates), R = 100)
+
+# simulate 12 new networks from the last (= 10th) time step
+sim1 &lt;- simulate(fit, nsim = 12)
+
+# simulate 1 network from the first time step
+sim2 &lt;- simulate(fit, index = 1)
+
+# simulate network from t = 5 with larger covariate coefficient
+coefs &lt;- coef(fit)
+coefs["edgecov.covariates[[i]]"] &lt;- 0.5
+sim3 &lt;- simulate(fit, index = 5, coef = coefs)
+
+## End(Not run)
+
+</code></pre>
+
+
+</div>

@@ -1,0 +1,159 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>bayesPO_model</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Build a model to be used in the <code>bayesPO</code> fitting function</h2>
+
+<h3>Description</h3>
+
+<p>Constructor for <code>bayesPO_model-class</code> objects, built to facilitate
+the use of the fitting function. The output of this function has the
+necessary signature for the fit_bayesPO function to start the model fit.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">bayesPO_model(
+  po,
+  intensitySelection,
+  observabilitySelection,
+  intensityLink = "logit",
+  observabilityLink = "logit",
+  initial_values = 1,
+  joint_prior = prior(beta = NormalPrior(rep(0, length(intensitySelection) + 1), 10 *
+    diag(length(intensitySelection) + 1)), delta = NormalPrior(rep(0,
+    length(observabilitySelection) + 1), 10 * diag(length(observabilitySelection) + 1)),
+    lambdaStar = GammaPrior(1e-10, 1e-10)),
+  verbose = TRUE
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>po</code></td>
+<td>
+<p>A matrix whose rows represent the presence-only data and the
+columns the covariates observed at each position.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>intensitySelection</code></td>
+<td>
+<p>Either a numeric or character vector and
+represents the selection of covariates used for the intensity set. If
+numeric it is the positions of the columns and if character, the names of
+the columns.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>observabilitySelection</code></td>
+<td>
+<p>Either a numeric or character vector and
+represents the selection of covariates used for the observability set. If
+numeric it is the positions of the columns and if character, the names of
+the columns.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>intensityLink</code></td>
+<td>
+<p>A string to inform what link function the model has
+with respect to the intensity covariates. Current version accepts 'logit'.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>observabilityLink</code></td>
+<td>
+<p>A string to inform what link function the model has
+with respect to the observabilitycovariates. Current version accepts 'logit'.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>initial_values</code></td>
+<td>
+<p>Either a single integer, a single
+<code>bayesPO_initial-class</code> or a list containing
+<code>bayesPO_initial-class</code> objects. The length of the list will inform the
+model how many independent chains will be run. If an integer, that many
+initial values will be randomly generated.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>joint_prior</code></td>
+<td>
+<p>A <code>bayesPO_prior</code> object.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>verbose</code></td>
+<td>
+<p>Set to <code>FALSE</code> to suppress all messages to console.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>A <code>bayesPO_model</code> object with the requested slots. It is ready
+to be used in the <code>fit_bayesPO</code> function.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>initial</code>, <code>prior</code> and
+<code>fit_bayesPO</code>.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R"># Let us simulate some data to showcase the creation of the model.
+beta &lt;- c(-1, 2)
+delta &lt;- c(3, 4)
+lambdaStar &lt;- 1000
+
+total_points &lt;- rpois(1, lambdaStar)
+random_points &lt;- cbind(runif(total_points), runif(total_points))
+
+# Find covariate values to explain the species occurrence.
+# We give them a Gaussian spatial structure.
+Z &lt;- MASS::mvrnorm(1, rep(0, total_points), 3 * exp(-as.matrix(dist(random_points)) / 0.2))
+
+# Thin the points by comparing the retaining probabilities with uniforms
+# in the log scale to find the occurrences
+occurrences &lt;- log(runif(total_points)) &lt;= -log1p(exp(-beta[1] - beta[2] * Z))
+n_occurrences &lt;- sum(occurrences)
+occurrences_points &lt;- random_points[occurrences,]
+occurrences_Z &lt;- Z[occurrences]
+
+# Find covariate values to explain the observation bias.
+# Additionally create a regular grid to plot the covariate later.
+W &lt;- MASS::mvrnorm(1, rep(0, n_occurrences), 2 * exp(-as.matrix(dist(occurrences_points)) / 0.3))
+
+# Find the presence-only observations.
+po_sightings &lt;- log(runif(n_occurrences)) &lt;= -log1p(exp(-delta[1] - delta[2] * W))
+n_po &lt;- sum(po_sightings)
+po_points &lt;- occurrences_points[po_sightings, ]
+po_Z &lt;- occurrences_Z[po_sightings]
+po_W &lt;- W[po_sightings]
+
+# Now we create the model
+model &lt;- bayesPO_model(po = cbind(po_Z, po_W),
+  intensitySelection = 1, observabilitySelection = 2,
+  intensityLink = "logit", observabilityLink = "logit",
+  initial_values = 2, joint_prior = prior(
+    NormalPrior(rep(0, 2), 10 * diag(2)),
+    NormalPrior(rep(0, 2), 10 * diag(2)),
+    GammaPrior(1e-4, 1e-4)))
+# Check how it is.
+model
+</code></pre>
+
+
+</div>

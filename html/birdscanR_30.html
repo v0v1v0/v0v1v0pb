@@ -1,0 +1,185 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>saveMTR</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>saveMTR</h2>
+
+<h3>Description</h3>
+
+<p>saves MTR data to a .rds file in the directory <code>filepath</code>.
+If the directory is not existing it will be created if possible.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">saveMTR(
+  mtr,
+  filepath,
+  fileName = NULL,
+  fileNamePrefix = NULL,
+  dbName = NULL,
+  rotSelection = NULL,
+  pulseTypeSelection = NULL,
+  classAbbreviations = NULL
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>mtr</code></td>
+<td>
+<p>dataframe with MTR values created by the function <code>computeMTR</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>filepath</code></td>
+<td>
+<p>character string, path of the directory. If the directory
+does not exist it will be created if possible.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>fileName</code></td>
+<td>
+<p>Filename (string) for the file. If not set, the filename
+will be built using the input of the variables 'filenamePrefix', 'dbName',
+'classAbbreviations', and other info in the 'mtr' data. If set, overrides
+the automatic filename creation.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>fileNamePrefix</code></td>
+<td>
+<p>prefix of the filename (string). If not set, "mtr" is
+used. Different information about the MTR data will be appended to the
+filename.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>dbName</code></td>
+<td>
+<p>character string, name of the database. Used to create the
+filename, if 'fileName' is not provided.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>rotSelection</code></td>
+<td>
+<p>numeric vector, rotation selection which was used to
+filter protocols. Used to create the filename, if 'fileName' is not
+provided. If not set, the rotation selection will not be appended to the
+filename.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>pulseTypeSelection</code></td>
+<td>
+<p>character vector, pulse type selection which was
+used to filter protocols. Used to create the filename, if 'fileName' is not
+provided. If not set, the pulse type selection will not be appended to the
+filename.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>classAbbreviations</code></td>
+<td>
+<p>Two-column dataframe with character first column
+named 'class' and character second 'abbr', containing the full names of the
+classes and their abbreviations to use in the output filename.
+Default = NULL, meaning the abbreviations will be used that are stored in
+the package; See data(classAbbreviations). Used to create the filename, if
+'fileName' is not provided.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>No return value, used to save MTR to file.
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Fabian Hertner, <a href="mailto:fabian.hertner@swiss-birdradar.com">fabian.hertner@swiss-birdradar.com</a>;
+Birgen Haest, <a href="mailto:birgen.haest@vogelwarte.ch">birgen.haest@vogelwarte.ch</a>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## Not run: 
+# Set server, database, and other input settings
+# ===========================================================================
+  dbServer       = "MACHINE\\SERVERNAME"     # Set the name of your SQL server
+  dbName         = "db_Name"                   # Set the name of your database
+  dbDriverChar   = "SQL Server"                # Set either "SQL Server" or "PostgreSQL"
+  mainOutputDir  = file.path(".", "results")
+  radarTimeZone  = "Etc/GMT0"
+  targetTimeZone = "Etc/GMT0"
+  listOfRfFeaturesToExtract = c(167, 168)
+  siteLocation   = c(47.494427, 8.716432)
+  sunOrCivil     = "civil"
+  timeRangeData       = c("2021-01-15 00:00", "2021-01-31 00:00")
+ 
+# Get data
+# ===========================================================================
+  dbData = extractDbData(dbDriverChar                   = dbDriverChar,
+                         dbServer                       = dbServer, 
+                         dbName                         = dbName, 
+                         saveDbToFile                   = TRUE,
+                         dbDataDir                      = mainOutputDir,
+                         radarTimeZone                  = radarTimeZone,
+                         targetTimeZone                 = targetTimeZone,
+                         listOfRfFeaturesToExtract      = listOfRfFeaturesToExtract,
+                         siteLocation                   = siteLocation, 
+                         sunOrCivil                     = sunOrCivil)
+                         
+# Get sunrise/sunset 
+# ===========================================================================
+  sunriseSunset = twilight(timeRange = timeRangeData,
+                           latLon    = c(47.494427, 8.716432),
+                           timeZone  = targetTimeZone)
+                          
+# Get manual blind times
+# ===========================================================================
+  data(manualBlindTimes)
+  cManualBlindTimes = manualBlindTimes
+
+# Compute migration traffic rate
+# ===========================================================================
+  classSelection.mtr = c("insect")
+  mtrData = computeMTR(dbName                      = dbName, 
+                       echoes                      = dbData$echoData, 
+                       classSelection              = classSelection.mtr, 
+                       altitudeRange               = c(25, 1025),
+                       altitudeBinSize             = 50,
+                       timeRange                   = timeRangeData, 
+                       timeBinDuration_sec         = 1800,
+                       timeZone                    = targetTimeZone,
+                       sunriseSunset               = sunriseSunset,
+                       sunOrCivil                  = "civil",
+                       protocolData                = dbData$protocolData, 
+                       visibilityData              = dbData$visibilityData,
+                       manualBlindTimes            = cManualBlindTimes,
+                       saveBlindTimes              = FALSE,
+                       blindTimesOutputDir         = getwd(),
+                       blindTimeAsMtrZero          = NULL,
+                       propObsTimeCutoff           = 0, 
+                       computePerDayNight          = FALSE, 
+                       computeAltitudeDistribution = TRUE)   
+                       
+saveMTR(mtr      = mtrData,
+        filepath = getwd())
+
+## End(Not run)
+
+</code></pre>
+
+
+</div>

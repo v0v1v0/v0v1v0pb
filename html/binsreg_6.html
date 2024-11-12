@@ -1,0 +1,426 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>binsregselect</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Data-Driven IMSE-Optimal Partitioning/Binning Selection for Binscatter</h2>
+
+<h3>Description</h3>
+
+<p><code>binsregselect</code> implements data-driven procedures for selecting the number of bins for binscatter
+estimation. The selected number is optimal in minimizing integrated mean squared error (IMSE).
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">binsregselect(y, x, w = NULL, data = NULL, deriv = 0, bins = NULL,
+  pselect = NULL, sselect = NULL, binspos = "qs", nbins = NULL,
+  binsmethod = "dpi", nbinsrot = NULL, simsgrid = 20, savegrid = F,
+  vce = "HC1", useeffn = NULL, randcut = NULL, cluster = NULL,
+  dfcheck = c(20, 30), masspoints = "on", weights = NULL,
+  subset = NULL, norotnorm = F, numdist = NULL, numclust = NULL)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>y</code></td>
+<td>
+<p>outcome variable. A vector.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>independent variable of interest. A vector.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>w</code></td>
+<td>
+<p>control variables. A matrix, a vector or a <code>formula</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+<p>an optional data frame containing variables used in the model.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>deriv</code></td>
+<td>
+<p>derivative order of the regression function for estimation, testing and plotting.
+The default is <code>deriv=0</code>, which corresponds to the function itself.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>bins</code></td>
+<td>
+<p>a vector. <code>bins=c(p,s)</code> set a piecewise polynomial of degree <code>p</code> with <code>s</code> smoothness constraints
+for data-driven (IMSE-optimal) selection of the partitioning/binning scheme. By default, the function sets
+<code>bins=c(0,0)</code>, which corresponds to piecewise constant (canonical binscatter).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>pselect</code></td>
+<td>
+<p>vector of numbers within which the degree of polynomial <code>p</code> for point estimation is selected.
+<em>Note:</em> To implement the degree or smoothness selection, in addition to <code>pselect</code> or <code>sselect</code>,
+<code>nbins=#</code> must be specified.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>sselect</code></td>
+<td>
+<p>vector of numbers within which the number of smoothness constraints <code>s</code> for point estimation is selected.
+If not specified, for each value <code>p</code> supplied in the option <code>pselect</code>, only the
+piecewise polynomial with the maximum smoothness is considered, i.e., <code>s=p</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>binspos</code></td>
+<td>
+<p>position of binning knots.  The default is <code>binspos="qs"</code>, which corresponds to quantile-spaced
+binning (canonical binscatter).  The other option is <code>binspos="es"</code> for evenly-spaced binning.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nbins</code></td>
+<td>
+<p>number of bins for degree/smoothness selection. If <code>nbins=T</code> or <code>nbins=NULL</code> (default) is specified,
+the function selects the number of bins instead, given the specified degree and smoothness.
+If a vector with more than one number is specified, the command selects the number of bins within this vector.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>binsmethod</code></td>
+<td>
+<p>method for data-driven selection of the number of bins. The default is <code>binsmethod="dpi"</code>,
+which corresponds to the IMSE-optimal direct plug-in rule.  The other option is: <code>"rot"</code>
+for rule of thumb implementation.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nbinsrot</code></td>
+<td>
+<p>initial number of bins value used to construct the DPI number of bins selector.
+If not specified, the data-driven ROT selector is used instead.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>simsgrid</code></td>
+<td>
+<p>number of evaluation points of an evenly-spaced grid within each bin used for evaluation of
+the supremum (infimum or Lp metric) operation needed to construct confidence bands and hypothesis testing
+procedures. The default is <code>simsgrid=20</code>, which corresponds to 20 evenly-spaced
+evaluation points within each bin for approximating the supremum (infimum or Lp metric) operator.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>savegrid</code></td>
+<td>
+<p>if true, a data frame produced containing grid.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>vce</code></td>
+<td>
+<p>procedure to compute the variance-covariance matrix estimator. Options are
+</p>
+
+<ul>
+<li> <p><code>"const"</code> homoskedastic variance estimator.
+</p>
+</li>
+<li> <p><code>"HC0"</code> heteroskedasticity-robust plug-in residuals variance estimator
+without weights.
+</p>
+</li>
+<li> <p><code>"HC1"</code> heteroskedasticity-robust plug-in residuals variance estimator
+with hc1 weights. Default.
+</p>
+</li>
+<li> <p><code>"HC2"</code> heteroskedasticity-robust plug-in residuals variance estimator
+with hc2 weights.
+</p>
+</li>
+<li> <p><code>"HC3"</code> heteroskedasticity-robust plug-in residuals variance estimator
+with hc3 weights.
+</p>
+</li>
+</ul>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>useeffn</code></td>
+<td>
+<p>effective sample size to be used when computing the (IMSE-optimal) number of bins. This option
+is useful for extrapolating the optimal number of bins to larger (or smaller) datasets than
+the one used to compute it.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>randcut</code></td>
+<td>
+<p>upper bound on a uniformly distributed variable used to draw a subsample for bins/degree/smoothness selection.
+Observations for which <code>runif()&lt;=#</code> are used. # must be between 0 and 1.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>cluster</code></td>
+<td>
+<p>cluster ID. Used for compute cluster-robust standard errors.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>dfcheck</code></td>
+<td>
+<p>adjustments for minimum effective sample size checks, which take into account number of unique
+values of <code>x</code> (i.e., number of mass points), number of clusters, and degrees of freedom of
+the different statistical models considered. The default is <code>dfcheck=c(20, 30)</code>.
+See <a href="https://nppackages.github.io/references/Cattaneo-Crump-Farrell-Feng_2024_Stata.pdf">Cattaneo, Crump, Farrell and Feng (2024c)</a> for more details.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>masspoints</code></td>
+<td>
+<p>how mass points in <code>x</code> are handled. Available options:
+</p>
+
+<ul>
+<li> <p><code>"on"</code> all mass point and degrees of freedom checks are implemented. Default.
+</p>
+</li>
+<li> <p><code>"noadjust"</code> mass point checks and the corresponding effective sample size adjustments are omitted.
+</p>
+</li>
+<li> <p><code>"nolocalcheck"</code> within-bin mass point and degrees of freedom checks are omitted.
+</p>
+</li>
+<li> <p><code>"off"</code> "noadjust" and "nolocalcheck" are set simultaneously.
+</p>
+</li>
+<li> <p><code>"veryfew"</code> forces the function to proceed as if <code>x</code> has only a few number of mass points (i.e., distinct values).
+In other words, forces the function to proceed as if the mass point and degrees of freedom checks were failed.
+</p>
+</li>
+</ul>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>weights</code></td>
+<td>
+<p>an optional vector of weights to be used in the fitting process. Should be <code>NULL</code> or
+a numeric vector. For more details, see <code>lm</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>subset</code></td>
+<td>
+<p>optional rule specifying a subset of observations to be used.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>norotnorm</code></td>
+<td>
+<p>if true, a uniform density rather than normal density used for ROT selection.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>numdist</code></td>
+<td>
+<p>number of distinct values for selection. Used to speed up computation.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>numclust</code></td>
+<td>
+<p>number of clusters for selection. Used to speed up computation.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>nbinsrot.poly</code></td>
+<td>
+<p>ROT number of bins, unregularized.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nbinsrot.regul</code></td>
+<td>
+<p>ROT number of bins, regularized.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nbinsrot.uknot</code></td>
+<td>
+<p>ROT number of bins, unique knots.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nbinsdpi</code></td>
+<td>
+<p>DPI number of bins.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nbinsdpi.uknot</code></td>
+<td>
+<p>DPI number of bins, unique knots.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>prot.poly</code></td>
+<td>
+<p>ROT degree of polynomials, unregularized.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>prot.regul</code></td>
+<td>
+<p>ROT degree of polynomials, regularized.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>prot.uknot</code></td>
+<td>
+<p>ROT degree of polynomials, unique knots.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>pdpi</code></td>
+<td>
+<p>DPI degree of polynomials.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>pdpi.uknot</code></td>
+<td>
+<p>DPI degree of polynomials, unique knots.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>srot.poly</code></td>
+<td>
+<p>ROT number of smoothness constraints, unregularized.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>srot.regul</code></td>
+<td>
+<p>ROT number of smoothness constraints, regularized.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>srot.uknot</code></td>
+<td>
+<p>ROT number of smoothness constraints, unique knots.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>sdpi</code></td>
+<td>
+<p>DPI number of smoothness constraints.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>sdpi.uknot</code></td>
+<td>
+<p>DPI number of smoothness constraints, unique knots.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>imse.var.rot</code></td>
+<td>
+<p>Variance constant in IMSE expansion, ROT selection.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>imse.bsq.rot</code></td>
+<td>
+<p>Bias constant in IMSE expansion, ROT selection.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>imse.var.dpi</code></td>
+<td>
+<p>Variance constant in IMSE expansion, DPI selection.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>imse.bsq.dpi</code></td>
+<td>
+<p>Bias constant in IMSE expansion, DPI selection.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>int.result</code></td>
+<td>
+<p>Intermediate results, including a matrix of degree and smoothness (<code>deg_mat</code>),
+the selected numbers of bins (<code>vec.nbinsrot.poly</code>,<code>vec.nbinsrot.regul</code>,
+<code>vec.nbinsrot.uknot</code>, <code>vec.nbinsdpi</code>, <code>vec.nbinsdpi.uknot</code>),
+and the bias and variance constants in IMSE (<code>vec.imse.b.rot</code>,
+<code>vec.imse.v.rot</code>, <code>vec.imse.b.dpi</code>, <code>vec.imse.v.dpi</code>)
+under each rule (ROT or DPI), corresponding to each pair of degree and smoothness
+(each row in <code>deg_mat</code>).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>opt</code></td>
+<td>
+<p> A list containing options passed to the function, as well as total sample size <code>n</code>,
+number of distinct values <code>Ndist</code> in <code>x</code>, and number of clusters <code>Nclust</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>data.grid</code></td>
+<td>
+<p>A data frame containing grid.</p>
+</td>
+</tr>
+</table>
+<h3>Author(s)</h3>
+
+<p>Matias D. Cattaneo, Princeton University, Princeton, NJ. <a href="mailto:cattaneo@princeton.edu">cattaneo@princeton.edu</a>.
+</p>
+<p>Richard K. Crump, Federal Reserve Bank of New York, New York, NY. <a href="mailto:richard.crump@ny.frb.org">richard.crump@ny.frb.org</a>.
+</p>
+<p>Max H. Farrell, UC Santa Barbara, Santa Barbara, CA. <a href="mailto:mhfarrell@gmail.com">mhfarrell@gmail.com</a>.
+</p>
+<p>Yingjie Feng (maintainer), Tsinghua University, Beijing, China. <a href="mailto:fengyingjiepku@gmail.com">fengyingjiepku@gmail.com</a>.
+</p>
+
+
+<h3>References</h3>
+
+<p>Cattaneo, M. D., R. K. Crump, M. H. Farrell, and Y. Feng. 2024a: <a href="https://nppackages.github.io/references/Cattaneo-Crump-Farrell-Feng_2024_AER.pdf">On Binscatter</a>. American Economic Review 114(5): 1488-1514.
+</p>
+<p>Cattaneo, M. D., R. K. Crump, M. H. Farrell, and Y. Feng. 2024b: <a href="https://nppackages.github.io/references/Cattaneo-Crump-Farrell-Feng_2024_NonlinearBinscatter.pdf">Nonlinear Binscatter Methods</a>. Working Paper.
+</p>
+<p>Cattaneo, M. D., R. K. Crump, M. H. Farrell, and Y. Feng. 2024c: <a href="https://nppackages.github.io/references/Cattaneo-Crump-Farrell-Feng_2024_Stata.pdf">Binscatter Regressions</a>. Working Paper.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>binsreg</code>, <code>binstest</code>.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R"> x &lt;- runif(500); y &lt;- sin(x)+rnorm(500)
+ est &lt;- binsregselect(y,x)
+ summary(est)
+</code></pre>
+
+
+</div>

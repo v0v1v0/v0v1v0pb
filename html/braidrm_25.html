@@ -1,0 +1,269 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>findBestBraid</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Select Best BRAID Response Fit</h2>
+
+<h3>Description</h3>
+
+<p>Picks the most parsimonious BRAID fit from a standard set of commonly used
+variants
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">findBestBraid(
+  formula,
+  data,
+  defaults,
+  extended = FALSE,
+  weights = NULL,
+  start = NULL,
+  direction = 0,
+  lower = NULL,
+  upper = NULL,
+  prior = "moderate",
+  getCIs = TRUE,
+  useBIC = TRUE
+)
+
+## S3 method for class 'formula'
+findBestBraid(
+  formula,
+  data,
+  defaults,
+  extended = FALSE,
+  weights = NULL,
+  start = NULL,
+  direction = 0,
+  lower = NULL,
+  upper = NULL,
+  prior = "moderate",
+  getCIs = TRUE,
+  useBIC = TRUE
+)
+
+## Default S3 method:
+findBestBraid(
+  formula,
+  data,
+  defaults,
+  extended = FALSE,
+  weights = NULL,
+  start = NULL,
+  direction = 0,
+  lower = NULL,
+  upper = NULL,
+  prior = "moderate",
+  getCIs = TRUE,
+  useBIC = TRUE
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>formula</code></td>
+<td>
+<p>Either an object of class <code>formula</code> such as would be provided
+to a modeling function like <code>stats::lm()</code>, or a width-2 numeric array vector
+of concentration pairs (including 0 or Inf).  A formula should specify a
+single output as a function of two inputs, eg. <code>activity ~ conc1 + conc2</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+<p>If <code>forumula</code> is a symbolic formula, a data frame containing the
+specified values. If <code>formula</code> is a numeric array of concentrations, a
+numeric vector of response values, the same length as the number of rows of
+<code>formula</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>defaults</code></td>
+<td>
+<p>Default minimal and maximal effect values used to fix effect
+parameters during model selection.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>extended</code></td>
+<td>
+<p>Should models with an additional freely varying Ef parameter
+be included.  If <code>FALSE</code> (the default), ten models in which the maximal
+effect parameter Ef is constrained to be equal to one or more of the two
+individual maximal effect parameters will be tested; if <code>TRUE</code>, an additional
+two models in which Ef varies freely will be included.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>weights</code></td>
+<td>
+<p>A vector of weights (between 0 and 1) the same length as
+the data which determines the weight with which each measurement
+will impact the the sum of squared errors.  Weights will be multiplied by
+errors <em>before</em> squaring.  If <code>NULL</code> (the default) all weights will be set
+to 1. Can be a numeric vector, or the name of a column in <code>data</code> if <code>formula</code>
+is a symbolic formula</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>start</code></td>
+<td>
+<p>A BRAID parameter vector specifying the first guess where the
+non-linear optimization should begin.  May be a length 7, 8, or 9 vector,
+though a full length vector is always preferable.  If <code>NULL</code> (the default),
+it will be estimated from the data.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>direction</code></td>
+<td>
+<p>Determines the possible directionality of the BRAID
+model.  If 0 (the default) no additional constraints are placed on the
+parameters.  If greater than 0, the fitting will require that the maximal
+effects are all <em>greater</em> than or equal to the minimal effect.  If less
+than 0, the fitting will require that all maximal effect is <em>less</em> than or
+equal to the minimal effect.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>lower</code></td>
+<td>
+<p>A numeric vector of lower bounds on the fitted parameter values.
+May be the same length as the number of fitted parameters, or a full,
+length-9 vector. Missing or unspecified lower bounds may be included as <code>NA</code>
+or <code>Inf</code>; if unspecified, lower bounds on the first five parameters (IDMA,
+IDMB, na, nb, and kappa) will be automatically estimated from the data.
+Bounds on the minimal and maximal effect parameters however (E0, EfA, EfB,
+and Ef) will be assumed to be infinite unless specified.  A value of <code>NULL</code>,
+the default, will be treated as all lower parameter bounds being
+unspecified.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>upper</code></td>
+<td>
+<p>A numeric vector of upper bounds on the fitted parameter values.
+Used in the same way as <code>lower</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>prior</code></td>
+<td>
+<p>A character string specifying the desired Bayesian prior term
+for kappa, or an object of class <code>kappaPrior</code> genererated by the function
+<code>kappaPrior()</code>.  Allowed strings are "mild", "moderate" (the default),
+"high", or "none".  If a string is given, the kappa prior object will be
+estimated from the data using an initial ten-parameter fit to approximate
+measurement noise.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>getCIs</code></td>
+<td>
+<p>Should bootstrapped confidence intervals be estimated and
+added to the BRAID fit object. Default value is <code>TRUE</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>useBIC</code></td>
+<td>
+<p>If <code>TRUE</code> (the default), the best (read: most parsimonious)
+model will be selected from all tested models using the Bayesian information
+criterion (Schwarz 1978).  If <code>FALSE</code> the function will follow the convention
+of earlier versions of the <code>braidrm</code> package and use the Akaike information
+criterion (Akaike 1974).</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>When fitting real experimental data, it is not uncommon for a measured
+surface to contain such incomplete or noisy data that many of the parameters
+are highly underdetermined.  Unfortunately, in such cases, non-linear
+optimization can often resort to wildly implausible values to explain small
+variations in the data. To address this, this function runs multiple BRAID
+response fits, including some in which the minimal and maximal effect
+parameters are constrained to reasonable default values, to test if
+additional free parameters offer sufficiently improved fits to be included.
+</p>
+<p>When the parameter <code>extended</code> is set to <code>FALSE</code>, the function runs ten BRAID
+scenarios: five in which the minimal effect parameter is allowed to vary
+freely, and five in which it is fixed at the first default value.  The five
+tested models in each set represent five distinct configurations of the
+maximal effect parameters:
+</p>
+
+<ul>
+<li>
+<p> Both maximal effects are fixed the same value (the second default)
+</p>
+</li>
+<li>
+<p> Maximal effect EfA (and when it is larger, Ef) varies freely, but effect
+EfB is fixed at the second default
+</p>
+</li>
+<li>
+<p> Maximal effect EfB (and when it is larger, Ef) varies freely, but effect
+EfA is fixed at the second default
+</p>
+</li>
+<li>
+<p> The maximal effect Ef varies freely, and both EfA and EfB are constrained
+to be equal to it
+</p>
+</li>
+<li>
+<p> The maximal effects EfA and EfB both vary freely, and Ef is constrained to
+be equal to the larger of the two
+</p>
+</li>
+</ul>
+<p>When <code>extended</code> is <code>TRUE</code>, two additional models (one with E0 fixed and one
+in which it varies freely) are included, in which all three maximal effect
+parameters are allowed to vary freely and independently.
+</p>
+
+
+<h3>Value</h3>
+
+<p>An object of class <code>braidrm</code>.  It will contain all the fields of a
+standard <code>braidrm</code> object, and also an additional field, <code>allfits</code>
+containing a summary of the best fit model from each of the 10 or 12
+candidate models tested.
+</p>
+
+
+<h3>References</h3>
+
+<p>Akaike, Hirotugu. 1974. “A New Look at the Statistical Model Identification.”
+<em>IEEE Transactions on Automatic Control</em> <strong>19</strong> (6): 716–23.
+</p>
+<p>Schwarz, Gideon. 1978. “Estimating the Dimension of a Model.”
+<em>The Annals of Statistics</em>, 461–64.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">bfit1 &lt;- findBestBraid(measure ~ concA + concB, additiveExample,
+                       defaults=c(0,1))
+summary(bfit1)
+length(bfit1$allfits)
+
+bfit2 &lt;- findBestBraid(measure ~ concA + concB, additiveExample,
+                       defaults=c(0,2), extended=TRUE, getCIs = FALSE)
+summary(bfit2)
+length(bfit2$allfits)
+</code></pre>
+
+
+</div>

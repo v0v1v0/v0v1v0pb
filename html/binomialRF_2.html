@@ -1,0 +1,127 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>binomialRF</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>random forest feature selection based on binomial exact test</h2>
+
+<h3>Description</h3>
+
+<p><code>binomialRF</code> is the R implementation of the feature selection algorithm by (Zaim 2019)
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">binomialRF(X,y, fdr.threshold = .05,fdr.method = 'BY',
+                      ntrees = 2000, percent_features = .5,
+                      keep.both=FALSE, user_cbinom_dist=NULL,
+                      sampsize=round(nrow(X)*.63))
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>X</code></td>
+<td>
+<p>design matrix</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>y</code></td>
+<td>
+<p>class label</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>fdr.threshold</code></td>
+<td>
+<p>fdr.threshold for determining which set of features are significant</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>fdr.method</code></td>
+<td>
+<p>how should we adjust for multiple comparisons (i.e., <code>p.adjust.methods</code> =c("holm", "hochberg", "hommel", "bonferroni", "BH", "BY","fdr", "none"))</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ntrees</code></td>
+<td>
+<p>how many trees should be used to grow the <code>randomForest</code>?</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>percent_features</code></td>
+<td>
+<p>what percentage of L do we subsample at each tree? Should be a proportion between (0,1)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>keep.both</code></td>
+<td>
+<p>should we keep the naive binomialRF as well as the correlated adjustment</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>user_cbinom_dist</code></td>
+<td>
+<p>insert either a pre-specified correlated binomial distribution or calculate one via the R package <code>correlbinom</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>sampsize</code></td>
+<td>
+<p>how many samples should be included in each tree in the randomForest</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>a data.frame with 4 columns: Feature Name, Frequency Selected, Probability of Selecting it randomly, Adjusted P-value based on <code>fdr.method</code>
+</p>
+
+
+<h3>References</h3>
+
+<p>Zaim, SZ; Kenost, C.; Lussier, YA; Zhang, HH. binomialRF: Scalable Feature Selection and Screening for Random Forests to Identify Biomarkers and Their Interactions, bioRxiv, 2019.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">set.seed(324)
+
+###############################
+### Generate simulation data
+###############################
+
+X = matrix(rnorm(1000), ncol=10)
+trueBeta= c(rep(10,5), rep(0,5))
+z = 1 + X %*% trueBeta
+pr = 1/(1+exp(-z))
+y = as.factor(rbinom(100,1,pr))
+
+###############################
+### Run binomialRF
+###############################
+require(correlbinom)
+
+rho = 0.33
+ntrees = 250
+cbinom = correlbinom(rho, successprob =  calculateBinomialP(10, .5), trials = ntrees, 
+                               precision = 1024, model = 'kuk')
+
+binom.rf &lt;-binomialRF(X,y, fdr.threshold = .05,fdr.method = 'BY',
+                      ntrees = ntrees,percent_features = .5,
+                      keep.both=FALSE, user_cbinom_dist=cbinom,
+                      sampsize=round(nrow(X)*rho))
+
+print(binom.rf)
+</code></pre>
+
+
+</div>

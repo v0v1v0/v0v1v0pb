@@ -1,0 +1,233 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>idxOver</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>
+BIMETS Time Series Indexing
+</h2>
+
+<h3>Description</h3>
+
+<p>Bimets package extends the way users can access and modify time series data.
+<br><br><b>SELECTING BY YEAR-PERIOD</b>: Users can select observations by providing the related year and period . Selection and modification of data require the double square bracket syntax, <br> e.g. <code>ts[[year,period]] &lt;- value</code>, given <code>year</code> and <code>period</code> as positive integers. <br> Users can also assign an array of values to the input time series, starting from the <code>[[year,period]]</code> provided, <br> i.e. <code>ts[[year,period]] &lt;- c(value1,value2,...,valueN)</code>: in this case the input time series will be eventually extended in order to sequentially insert all values of the provided array <code>c(value1,value2,...,valueN)</code> starting from the provided <code>[[year,period]]</code> (see example). <br><br>
+Users can select observations also by using a single bi-dimensional argument, e.g. <code>ts[[start]]</code>, and by using two bi-dimensional arguments <code>ts[[start,end]]</code>, given <code>start &lt;- c(year1,period1); end &lt;- c(year2,period2)</code>: in this case all observation in <br><code>TSRANGE=c(year1,period1,year2,period2)</code> will be returned. <br> Assignments by using two-dimensional arguments are also allowed, e.g. <code>ts[[start]] &lt;- value; ts[[start,end]] &lt;- value; ts[[start,end]] &lt;- c(value1,...,valueN)</code> (see example)<br><br><b>SELECTING BY DATE</b>: users can select a single observation by date by using the syntax <code>ts['Date']</code> and  multiple observations by using <code>ts['StartDate/EndDate']</code> or <br><code>ts['StartDate'+(0:n)/f]</code>, given <code>f</code> as frequency, and <code>n</code> as observations count. <br> Data modification follows the same syntax: <br><code>ts['Date'] &lt;- value, ts['Date/Date'] &lt;- c(value1,value2,...,valueN)</code>, etc. Users can also provide the string representing only the year of selection, or the year and the month of selection. For quarterly and monthly time series it is possible to select dates by using instances of class <code>yearmon()</code> and <code>yearqtr()</code> (See example).<br><br><b>SELECTING BY INDICES</b>: (core R) Users can select observations by simply providing the array of requested indices, <br> e.g. <code>ts[c(idx1,idx2,...,idxN)]</code> while reading and <br><code>ts[c(idx1,idx2,...,idxN)] &lt;- c(value1,value2,...,valueN)</code> while modifying time series data.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>GETDATE</code><br><code>BIMETS configuration</code><br><code>date2yp</code><br><code>yq2yp</code><br><code>ym2yp</code><br><code>as.bimets</code><br><code>is.bimets</code><br><code>LOCS</code><br><code>NAMELIST</code><br><code>TABIT</code><br><code>ELIMELS</code><br></p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+  #day and month names can change depending on locale
+  Sys.setlocale('LC_ALL','C')
+  Sys.setlocale('LC_TIME','C')
+	
+  #monthly
+  #-------------------------------
+  print('MONTHLY GET by DATE')
+  
+  n &lt;- 25
+  
+  #create ts
+  ts1 &lt;- TIMESERIES((0:n),START=c(2000,1),FREQ=12) 
+  
+  print(ts1['2001-01']) #get Jan 2001
+  print(ts1[as.yearmon('Jan 2001')]) #get Jan 2001
+  print(ts1['2000-09/2001-01']) #get data from Sep 2000 to Jan 2001
+  print(ts1['2000-09/']) #get data from Sep 2000 
+  print(ts1['/2001-01']) #get data till Jan 2001
+  print(ts1['2001'])  #gat all data in year 2001
+  
+  #get 3 consecutive months starting from Jan 2001
+  print(ts1[as.yearmon('Jan 2001')+ 0:2/12]) 
+  
+  
+  print(ts1[c(2,4,5)]) #get observation number 2,4 and 5
+  
+  print('MONTHLY GET by YEAR-PERIOD')
+
+  print(ts1[[2000,5]]) #get year 2000 period 5
+  
+  #get year 2010 period 1 (out of range)
+  tryCatch({print(ts1[[2010,1]])},error=function(e){cat(e$message)})
+  
+  print(ts1[[2002,2]]) #get year 2002 period 2
+  
+  start &lt;- c(2001,2)
+  end &lt;- c(2001,4)
+  
+  print(ts1[[start]]) #get year 2001 period 2
+  print(ts1[[start,end]]) #get from year-period 2001-2 to 2001-4
+  
+  print('MONTHLY SET by DATE')
+
+  ts1['2000-08'] &lt;- 9.9 #assign to Aug 2000
+  ts1[as.yearmon('Feb 2001')] &lt;- 8.8 #assign to Feb 2001
+  
+  #assign 8.8 on Feb 2001 and give warning
+  ts1[as.yearmon('Feb 2001')]=c(8.8,7.7) 
+  
+  #assign same value to all observation in range Sep 2000 - Jan 2001
+  ts1['2000-09/2001-01'] &lt;- 11.11
+  
+  #assign repeatedly the two values to each observation starting from Sep 2001 
+  ts1['2001-09/'] &lt;- c(1.1,2.2) 
+  print(ts1)
+  
+  print('MONTHLY SET by YEAR-PERIOD')
+
+  ts1[[2000,5]] &lt;- NA #set year 2000 period 5
+  
+  #assign an array starting from year 2002 period 2 (extend time series)
+  ts1[[2002,2]] &lt;- c(-1,-2,-3,-4,-5) 
+  TABIT(ts1)
+  
+  #set by bi-dimensional arrays
+  ts1 &lt;- TIMESERIES((0:n),START=c(2000,1),FREQ=12) 
+  ts1[[c(2000,12)]] &lt;- NA
+  start &lt;- c(2001,2)
+  end &lt;- c(2001,4)
+  ts1[[start,end]] &lt;- 0 #assign single value
+  TABIT(ts1)
+  ts1[[start,end]] &lt;- c(-2,-4,-6) #assign multiple values
+  TABIT(ts1)
+  
+  
+  #quarterly
+  #-------------------------------
+  print('QUARTERLY GET by DATE')
+  
+  #create ts
+  ts1 &lt;- TSERIES((0:n),START=c(2000,1),FREQ=4)
+    
+  print(ts1[as.yearqtr('2001 Q1')]) #get 2001 Q1
+  print(ts1['2001']) #get all data in year 2001
+  
+  #get 4 consecutive quarters starting from 2002 Q2
+  print(ts1[as.yearqtr('2002 Q2')+ 0:3/4])  
+  
+  print(ts1['2003/']) #gat all data from 2003 Q1 
+  
+  print('QUARTERLY GET by YEAR-PERIOD')
+  
+  print(ts1[[2002,4]]) #get year 2002 period 4
+  
+  start &lt;- c(2001,2)
+  end &lt;- c(2001,4)
+  
+  print(ts1[[start]]) #get year 2001 period 2
+  print(ts1[[start,end]]) #get from year-period 2001-2 to 2001-4
+      
+  print('QUARTERLY SET by DATE')
+  
+  ts1[as.yearqtr('2001 Q1')] &lt;- 7.7 #assign to 2001 Q1
+  ts1['2002'] &lt;- NA #assign to all observations of 2002
+  
+  #assign to 3 quaters starting from 2003 Q2
+  ts1[as.yearqtr('2003 Q2')+ 0:2/4] &lt;- 0 
+  
+  ts1['2004/'] &lt;- -1 #assign to all observations starting from 2004
+  TABIT(ts1)
+  
+  print('QUARTERLY SET by YEAR-PERIOD')
+  
+  ts1[[2005,4]] &lt;- c(1,2,3) #assign array starting from year 2005 period 4
+  TABIT(ts1)
+  
+  #set by bi-dimensional arrays
+  ts1 &lt;- TIMESERIES((0:n),START=c(2000,1),FREQ=4) 
+  ts1[[c(2000,12)]] &lt;- NA
+  start &lt;- c(2001,2)
+  end &lt;- c(2001,4)
+  ts1[[start,end]] &lt;- 0 #assign single value
+  TABIT(ts1)
+  ts1[[start,end]] &lt;- c(-2,-4,-6) #assign multiple values
+  TABIT(ts1)
+  
+  #yearly 
+  #-------------------------------
+  print('YEARLY GET by DATE')
+  
+  #create ts
+  ts1 &lt;- TSERIES((1:n),START=c(2000,1),FREQ=1)
+  
+  print(ts1['2002-12-31']) #get 2002 data
+  print(ts1['2002'])  #get 2002 data
+  print(ts1['2000/2004'])  #get data from 2000 to 2004
+  print(ts1['2005/']) #get data starting from 2005
+  
+  print('YEARLY GET by YEAR-PERIOD')
+  
+  print(ts1[[2005,1]]) #get year 2005
+  #get year 2032 (out of range)
+  tryCatch({print(ts1[[2032,1]])},error=function(e){cat(e$message)})
+  
+  start &lt;- c(2001,1)
+  end &lt;- c(2002,1)
+  
+  print(ts1[[start]]) #get year 2001 
+  print(ts1[[start,end]]) #get from year 2001 to 2002
+  
+  
+  print('YEARLY SET by DATE')
+  
+  ts1['2004'] &lt;- NA #assign to 2004
+  ts1['2007/'] &lt;- 0.0 #assign starting from 2007
+  ts1['2000/2002'] &lt;- -1 #assign in range 2000/2002
+  TABIT(ts1)
+ 
+  print('YEARLY SET by YEAR-PERIOD')
+ 
+  ts1[[2005,1]] &lt;- NA #assign to 2005
+  ts1[[2014,1]] &lt;- c(-1,-2,-3) #assign array starting from 2014 (extend series)
+  TABIT(ts1)
+  
+  #set by bi-dimensional arrays
+  ts1 &lt;- TIMESERIES((0:n),START=c(2000,1),FREQ=1) 
+  ts1[[c(2000,12)]] &lt;- NA
+  start &lt;- c(2001,1)
+  end &lt;- c(2002,1)
+  ts1[[start,end]] &lt;- 0 #assign single value
+  TABIT(ts1)
+  ts1[[start,end]] &lt;- c(-2,-4) #assign multiple values
+  TABIT(ts1)
+  
+  #daily 
+  #-------------------------------
+  print('DAILY GET by DATE')
+  
+  #create ts
+  ts1 &lt;- TSERIES((1:n),START=c(2000,1),FREQ='D')
+  
+  print(ts1['2000-01-12']) #get Jan 12, 2000 data
+  
+  print('DAILY GET by YEAR-PERIOD')
+  
+  print(ts1[[2000,14]]) #get year 2000 period 14
+  #get year 2032 (out of range)
+  tryCatch({print(ts1[[2032,1]])},error=function(e){cat(e$message)})
+  
+  print('DAILY SET by DATE')
+  
+  ts1['2000-01-15'] &lt;- NA #assign to Jan 15, 2000
+  TABIT(ts1)
+  
+  print('DAILY SET by YEAR-PERIOD')
+  
+  ts1[[2000,3]] &lt;- NA #assign to Jan 3, 2000
+  
+  #assign array starting from 2000 period 35 (extend series)
+  ts1[[2000,35]] &lt;- c(-1,-2,-3)
+  TABIT(ts1)  
+   
+
+</code></pre>
+
+
+</div>

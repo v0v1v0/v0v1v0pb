@@ -1,0 +1,115 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>calc_prop_scr</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Create a Propensity Score Object</h2>
+
+<h3>Description</h3>
+
+<p>Calculate the propensity scores and ATT inverse probability
+weights for participants from internal and external datasets. Only the
+relevant treatment arms from each dataset should be read in (e.g., only
+the control arm from each dataset if creating a hybrid control arm).
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">calc_prop_scr(internal_df, external_df, id_col, model, ...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>internal_df</code></td>
+<td>
+<p>Internal dataset with one row per subject and all the
+variables needed to run the model</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>external_df</code></td>
+<td>
+<p>External dataset with one row per subject and all the
+variables needed to run the model</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>id_col</code></td>
+<td>
+<p>Name of the column in both datasets used to identify each
+subject. It must be the same across datasets</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>model</code></td>
+<td>
+<p>Model used to calculate propensity scores</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Optional arguments</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>For the subset of participants in both the external and internal
+studies for which we want to balance the covariate distributions (e.g.,
+external control and internal control participants if constructing a
+hybrid control arm), we define a study-inclusion propensity score for
+each participant as
+</p>
+<p style="text-align: center;"><code class="reqn">e(x_i) = P(S_i = 1 \mid x_i),</code>
+</p>
+
+<p>where <code class="reqn">x_i</code> denotes a vector of baseline covariates for the <code class="reqn">i</code>th
+participant and <code class="reqn">S_i</code> denotes the indicator that the participant is
+enrolled in the internal trial (<code class="reqn">S_i = 1</code> if internal, <code class="reqn">S_i = 0</code>
+if external). The estimated propensity score <code class="reqn">\hat{e}(x_i)</code> is obtained
+using logistic regression.
+</p>
+<p>An ATT inverse probability weight is calculated for each individual as
+</p>
+<p style="text-align: center;"><code class="reqn">\hat{a}_{0i} = \frac{\hat{e}(x_i)}{\hat{P}(S_i = s_i | x_i)} = s_i + (1 - s_i ) \frac{\hat{e}(x_i)}{1 - \hat{e}(x_i)}.</code>
+</p>
+
+<p>In a weighted estimator, data from participants in the external study
+are given a weight of <code class="reqn">\hat{e}(x_i)⁄(1 - \hat{e}(x_i))</code> whereas data
+from participants in the internal trial are given a weight of 1.
+</p>
+
+
+<h3>Value</h3>
+
+<p><code>prop_scr_obj</code> object, with the internal and the external data and
+the propensity score and inverse probability weight calculated for each
+subject.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R"># This can be used for both continuous and binary data
+library(dplyr)
+# Continuous
+calc_prop_scr(internal_df = filter(int_norm_df, trt == 0),
+                       external_df = ex_norm_df,
+                       id_col = subjid,
+                       model = ~ cov1 + cov2 + cov3 + cov4)
+# Binary
+calc_prop_scr(internal_df = filter(int_binary_df, trt == 0),
+                       external_df = ex_binary_df,
+                       id_col = subjid,
+                       model = ~ cov1 + cov2 + cov3 + cov4)
+
+</code></pre>
+
+
+</div>

@@ -1,0 +1,236 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>GLM helpers</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Helper functions to set-up for GLM analyses</h2>
+
+<h3>Description</h3>
+
+<p><code>setup_glm</code> is used to setup the data/objects for any function that uses
+the main GLM functionality in <code>brainGraph</code>.
+</p>
+<p><code>contrast_names</code> checks the dimensions of contrasts, generates contrast
+names, and sets column names for GLM functions. For F-contrasts, if a
+<code>matrix</code> is given, it converts it to a <code>list</code> to simplify processing
+later.
+</p>
+<p><code>add_nans</code> adds rows/columns (or higher dimensions) to model fit data
+for regions which were skipped (due to having a singular design matrix,
+usually).
+</p>
+<p><code>cxtxfun_3d</code> returns a function that calculates the “CXtX”
+matrix/array, used to calculate the standard error of a contrast. The
+function signature will be <code>f(contrast, xtx, rkC, ny)</code>.
+</p>
+<p><code>glm_data_table</code> is used in <code>brainGraph_GLM</code> and
+<code>brainGraph_mediate</code> to create a <code>data.table</code> with the
+<em>subject IDs</em> and column(s) for the graph- or vertex-level metric of
+interest.
+</p>
+<p><code>matrix2list</code> makes working with different contrast types (i.e., t or F)
+a little simpler.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">setup_glm(g.list, level, covars, X, contrasts, con.type, con.name, measure,
+  outcome, ...)
+
+contrast_names(contrasts, con.type, con.name, X)
+
+check_if_singular(QR)
+
+add_nans(fits, dimX, namesX, runX = names(fits$qr))
+
+cxtxfun_3d(con.type, transpose = TRUE)
+
+glm_data_table(g.list, level, measure)
+
+matrix2list(mat)
+
+maxfun(alternative)
+
+sortfun(alternative)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>g.list</code></td>
+<td>
+<p>A <code>brainGraphList</code> object</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>level</code></td>
+<td>
+<p>Character string; either <code>vertex</code> (default) or
+<code>graph</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>covars</code></td>
+<td>
+<p>A <code>data.table</code> of covariates</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>X</code></td>
+<td>
+<p>Numeric matrix, if you wish to supply your own design matrix.
+Ignored if <code>outcome != measure</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>contrasts</code></td>
+<td>
+<p>Numeric matrix (for T statistics) or list of matrices (for F
+statistics) specifying the contrast(s) of interest; if only one contrast is
+desired, you can supply a vector (for T statistics)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>con.type</code></td>
+<td>
+<p>Either <code>'t'</code> or <code>'f'</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>con.name</code></td>
+<td>
+<p>Character vector of the contrast name(s); if <code>contrasts</code>
+has row/list names, those will be used for reporting results</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>measure</code></td>
+<td>
+<p>Character string of the graph measure of interest</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>outcome</code></td>
+<td>
+<p>Character string specifying the name of the outcome variable,
+if it differs from the graph metric (<code>measure</code>)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Arguments passed to <code>brainGraph_GLM_design</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>QR</code></td>
+<td>
+<p>List of QR decompositions for each design matrix</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>fits</code></td>
+<td>
+<p>List object output by one of the model fitting functions (e.g.,
+<code>fastLmBG</code>)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>dimX</code></td>
+<td>
+<p>Integer vector containing the dimensions of the original design
+matrix/array (including singular designs)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>namesX</code></td>
+<td>
+<p>List of character vectors containing the dimension names from
+the original design matrix/array</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>runX</code></td>
+<td>
+<p>Character vector of regions for which models were fit</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>transpose</code></td>
+<td>
+<p>Logical indicating whether to transpose the output of the
+selected function. Ignored for F-contrasts. Should be <code>FALSE</code> for
+T-contrasts when the “Guttman” partition method is used. Default:
+<code>TRUE</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>mat</code></td>
+<td>
+<p>Numeric matrix in which each row is a single contrast vector</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>alternative</code></td>
+<td>
+<p>Character string, whether to do a two- or one-sided test.
+Default: <code>'two.sided'</code></p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>This function: removes unused levels from <code>covars</code> and <code>DT.y.m</code>,
+removes subjects with incomplete data, creates a design matrix (if not
+supplied), and supplies names to the contrast matrix.
+</p>
+<p>The “CXtX” matrix/array for T-contrasts is the diagonal of
+</p>
+<p style="text-align: center;"><code class="reqn">C (X^T X)^{-1} C^T</code>
+</p>
+
+<p>For F-contrasts, it is the <em>inverse</em> of the matrix:
+</p>
+<p style="text-align: center;"><code class="reqn">(C (X^T X)^{-1} C^T)^{-1}</code>
+</p>
+
+<p>where in both cases, <code class="reqn">C</code> is the contrast matrix and <code class="reqn">X</code> is the design
+matrix/array.
+</p>
+<p>For T-contrasts, the function will return a numeric vector/matrix with
+dimensions <code class="reqn">k \times r</code> where <code class="reqn">k</code> is the <em>number</em> of contrasts
+(i.e., the number of rows in the contrast matrix) and <code class="reqn">r</code> is the number
+of regions. For F-contrasts, the function would return a numeric array with
+dimensions <code class="reqn">k \times k \times r</code>, where <code class="reqn">k</code> is the rank of the
+contrast matrix and <code class="reqn">r</code> is the number of regions. If there is a single
+design for all regions, it will be a <code class="reqn">k \times k</code> matrix.
+</p>
+
+
+<h3>Value</h3>
+
+<p><code>contrast_names</code> – list containing the contrasts (matrix or
+list), contrast names, and number of contrasts
+</p>
+<p><code>add_nans</code> – the original <code>fits</code> object with <code>NaN</code> or
+<code>NA</code> inserted
+</p>
+<p><code>cxtxfun_3d</code> – A function with arguments for the contrast
+(numeric matrix), the “unscaled covariance” array, the (row) rank of
+the contrast, and the number of regions in the analysis (only used for
+F-contrasts)
+</p>
+<p><code>glm_data_table</code> - A <code>data.table</code> with one column
+containing the subject ID's and 1 or more columns with the graph- or
+vertex-level measure of interest.
+</p>
+<p><code>matrix2list</code> – A list with length equal to the number of rows
+of <code>C</code>
+</p>
+
+
+</div>

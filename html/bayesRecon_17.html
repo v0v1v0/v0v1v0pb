@@ -1,0 +1,181 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>reconc_MCMC</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>MCMC for Probabilistic Reconciliation of forecasts via conditioning</h2>
+
+<h3>Description</h3>
+
+<p>Uses Markov Chain Monte Carlo algorithm to draw samples from the reconciled
+forecast distribution, which is obtained via conditioning.
+</p>
+<p>This is a bare-bones implementation of the Metropolis-Hastings algorithm,
+we suggest the usage of tools to check the convergence.
+The function only works with Poisson or Negative Binomial base forecasts.
+</p>
+<p>The function <code>reconc_BUIS()</code> is generally faster on most hierarchies.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">reconc_MCMC(
+  A,
+  base_forecasts,
+  distr,
+  num_samples = 10000,
+  tuning_int = 100,
+  init_scale = 1,
+  burn_in = 1000,
+  seed = NULL
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>A</code></td>
+<td>
+<p>aggregation matrix (n_upper x n_bottom).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>base_forecasts</code></td>
+<td>
+<p>list of the parameters of the base forecast distributions, see details.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>distr</code></td>
+<td>
+<p>a string describing the type of predictive distribution.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>num_samples</code></td>
+<td>
+<p>number of samples to draw using MCMC.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>tuning_int</code></td>
+<td>
+<p>number of iterations between scale updates of the proposal.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>init_scale</code></td>
+<td>
+<p>initial scale of the proposal.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>burn_in</code></td>
+<td>
+<p>number of initial samples to be discarded.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>seed</code></td>
+<td>
+<p>seed for reproducibility.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The parameter <code>base_forecast</code> is a list containing n = n_upper + n_bottom elements.
+Each element is a list containing the estimated:
+</p>
+
+<ul>
+<li>
+<p> mean and sd for the Gaussian base forecast, see Normal, if <code>distr</code>='gaussian';
+</p>
+</li>
+<li>
+<p> lambda for the Poisson base forecast, see Poisson, if <code>distr</code>='poisson';
+</p>
+</li>
+<li>
+<p> size and prob (or mu) for the negative binomial base forecast, see NegBinomial, if <code>distr</code>='nbinom'.
+</p>
+</li>
+</ul>
+<p>The first n_upper elements of the list are the upper base forecasts, in the order given by the rows of A.
+The elements from n_upper+1 until the end of the list are the bottom base forecasts, in the order given by the columns of A.
+</p>
+
+
+<h3>Value</h3>
+
+<p>A list containing the reconciled forecasts. The list has the following named elements:
+</p>
+
+<ul>
+<li> <p><code>bottom_reconciled_samples</code>: a matrix (n_bottom x <code>num_samples</code>) containing reconciled samples for the bottom time series;
+</p>
+</li>
+<li> <p><code>upper_reconciled_samples</code>: a matrix (n_upper x <code>num_samples</code>) containing reconciled samples for the upper time series;
+</p>
+</li>
+<li> <p><code>reconciled_samples</code>: a matrix (n x <code>num_samples</code>) containing the reconciled samples for all time series.
+</p>
+</li>
+</ul>
+<h3>References</h3>
+
+<p>Corani, G., Azzimonti, D., Rubattu, N. (2024).
+<em>Probabilistic reconciliation of count time series</em>.
+International Journal of Forecasting 40 (2), 457-469.
+<a href="https://doi.org/10.1016/j.ijforecast.2023.04.003">doi:10.1016/j.ijforecast.2023.04.003</a>.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>reconc_BUIS()</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+library(bayesRecon)
+
+# Create a minimal hierarchy with 2 bottom and 1 upper variable
+rec_mat &lt;- get_reconc_matrices(agg_levels=c(1,2), h=2)
+A &lt;- rec_mat$A
+
+#Set the parameters of the Poisson base forecast distributions
+lambda1 &lt;- 2
+lambda2 &lt;- 4
+lambdaY &lt;- 9
+lambdas &lt;- c(lambdaY,lambda1,lambda2)
+
+base_forecasts = list()
+for (i in 1:length(lambdas)) {
+ base_forecasts[[i]] = list(lambda = lambdas[i])
+}
+
+#Sample from the reconciled forecast distribution using MCMC
+mcmc = reconc_MCMC(A, base_forecasts, distr = "poisson",
+                  num_samples = 30000, seed = 42)
+samples_mcmc &lt;- mcmc$reconciled_samples
+
+#Compare the reconciled means with those obtained via BUIS
+buis = reconc_BUIS(A, base_forecasts, in_type="params",
+                   distr="poisson", num_samples=100000, seed=42)
+samples_buis &lt;- buis$reconciled_samples
+
+print(rowMeans(samples_mcmc))
+print(rowMeans(samples_buis))
+
+</code></pre>
+
+
+</div>

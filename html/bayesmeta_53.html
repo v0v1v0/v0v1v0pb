@@ -1,0 +1,770 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>bmr</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>
+Bayesian random-effects meta-regression
+</h2>
+
+<h3>Description</h3>
+
+<p>This function allows to derive the posterior distribution of the
+parameters in a random-effects meta-regression and provides functions to
+evaluate joint and marginal posterior probability distributions, etc.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">  bmr(y, ...)
+  ## Default S3 method:
+bmr(y, sigma, labels = names(y),
+    X = matrix(1.0, nrow=length(y), ncol=1,
+               dimnames=list(labels,"intercept")),
+    tau.prior = "uniform",
+    beta.prior.mean = NULL,
+    beta.prior.sd = NULL,
+    beta.prior.cov = diag(beta.prior.sd^2,
+                          nrow=length(beta.prior.sd),
+                          ncol=length(beta.prior.sd)),
+    interval.type = c("shortest", "central"),
+    delta = 0.01, epsilon = 0.0001,
+    rel.tol.integrate = 2^16*.Machine$double.eps,
+    abs.tol.integrate = 0.0,
+    tol.uniroot = rel.tol.integrate, ...)
+  ## S3 method for class 'escalc'
+bmr(y, labels = NULL, ...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>y</code></td>
+<td>
+
+<p>vector of estimates, <em>or</em> an <code>escalc</code> object.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>sigma</code></td>
+<td>
+
+<p>vector of standard errors associated with <code>y</code>.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>labels</code></td>
+<td>
+
+<p>(optional) a vector of labels corresponding to <code>y</code> and <code>sigma</code>.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>X</code></td>
+<td>
+
+<p>(optional) the <em>regressor matrix</em> for the regression.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>tau.prior</code></td>
+<td>
+
+<p>a <code>function</code> returning the prior density for the heterogeneity
+parameter (<code class="reqn">\tau</code>) <em>or</em> a <code>character</code> string
+specifying one of the <em>default ‘non-informative’
+priors</em>; possible choices for the latter case are: 
+</p>
+
+<ul>
+<li> <p><code>"uniform"</code>: a uniform prior in <code class="reqn">\tau</code>
+</p>
+</li>
+<li> <p><code>"sqrt"</code>: a uniform prior in <code class="reqn">\sqrt{\tau}</code>
+</p>
+</li>
+<li> <p><code>"Jeffreys"</code>: the Jeffreys prior for <code class="reqn">\tau</code>
+</p>
+</li>
+<li> <p><code>"BergerDeely"</code>: the prior due to Berger and Deely (1988)
+</p>
+</li>
+<li> <p><code>"conventional"</code>: the conventional prior
+</p>
+</li>
+<li> <p><code>"DuMouchel"</code>: the DuMouchel prior
+</p>
+</li>
+<li> <p><code>"shrinkage"</code>: the ‘uniform shrinkage’ prior
+</p>
+</li>
+<li> <p><code>"I2"</code>: a uniform prior on the ‘relative heterogeneity’ <code class="reqn">I^2</code>
+</p>
+</li>
+</ul>
+<p>The default is <code>"uniform"</code> (which should be used with
+caution). The above priors are described in some more detail in the
+<code>bayesmeta()</code> help.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>beta.prior.mean, beta.prior.sd, beta.prior.cov</code></td>
+<td>
+
+<p>the mean and standard deviations, or covariance of the normal prior
+distribution for the effects <code class="reqn">\beta</code>. If unspecified, an
+(improper) uniform prior is used.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>interval.type</code></td>
+<td>
+
+<p>the type of (credible, prediction, shrinkage) interval to be
+returned by default; either <code>"shortest"</code> for shortest
+intervals, or <code>"central"</code> for central, equal-tailed intervals.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>delta, epsilon</code></td>
+<td>
+
+<p>the parameters specifying the desired accuracy for approximation of
+the <code class="reqn">\beta</code> posterior(s), and with that determining the number of
+<code class="reqn">\tau</code> support points being used internally. Smaller values
+imply greater accuracy and greater computational burden (Roever and
+Friede, 2017).
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>rel.tol.integrate, abs.tol.integrate, tol.uniroot</code></td>
+<td>
+
+<p>the <code>rel.tol</code>, <code>abs.tol</code> and <code>tol</code>
+‘accuracy’ arguments that are passed to
+the <code>integrate()</code> or <code>uniroot()</code> functions
+for internal numerical integration or root finding
+(see also the help there).
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+
+<p>other <code>bmr</code> arguments.
+</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The random-effects meta-regression model may be stated as
+</p>
+<p style="text-align: center;"><code class="reqn">y_i|x_i,\beta,\sigma_i,\tau \;\sim\; \mathrm{Normal}(\beta_1 x_{i,1}
+    + \beta_2 x_{i,2} + \ldots + \beta_d x_{i,d}, \;
+    \sigma_i^2 + \tau^2)</code>
+</p>
+
+<p>where the data (<code class="reqn">y</code>, <code class="reqn">\sigma</code>) enter as <code class="reqn">y_i</code>, the
+<code class="reqn">i</code>-th estimate, that is associated with standard error
+<code class="reqn">\sigma_i &gt; 0</code>, where <code class="reqn">i=1,...,k</code>. In addition to
+estimates and standard errors for the <code class="reqn">i</code>th observation,
+a set of covariables <code class="reqn">x_{i,j}</code> with <code class="reqn">j=1,...,d</code> are available
+for each estimate <code class="reqn">y_i</code>.
+</p>
+<p>The model includes <code class="reqn">d+1</code> unknown parameters,
+namely, the <code class="reqn">d</code> coefficients (<code class="reqn">\beta_1,...,\beta_d</code>), and the heterogeneity
+<code class="reqn">\tau</code>. Alternatively, the model may also be formulated via an
+intermediate step as
+</p>
+<p style="text-align: center;"><code class="reqn">y_i|\theta_i,\sigma_i \;\sim\; \mathrm{Normal}(\theta_i, \, \sigma_i^2),</code>
+</p>
+
+<p style="text-align: center;"><code class="reqn">\theta_i|\beta,x_i,\tau \;\sim\; \mathrm{Normal}(\beta_1 x_{i,1}
+  + \ldots + \beta_d x_{i,d}, \; \tau^2),</code>
+</p>
+
+<p>where the <code class="reqn">\theta_i</code> denote the <em>trial-specific</em> means
+that are then measured through the estimate <code class="reqn">y_i</code> with an
+associated measurement uncertainty <code class="reqn">\sigma_i</code>. The
+<code class="reqn">\theta_i</code> again differ from trial to trial (even for
+identical covariable vectors <code class="reqn">x_i</code>) and are
+distributed around a mean of <code class="reqn">\beta_1 x_{i,1}
+  + \ldots + \beta_d x_{i,d}</code> with
+standard deviation <code class="reqn">\tau</code>.
+</p>
+<p>It if often convenient to express the model in matrix notation, i.e.,
+</p>
+<p style="text-align: center;"><code class="reqn">y|\theta,\sigma \;\sim\; \mathrm{Normal}(\theta, \,
+    \Sigma)</code>
+</p>
+
+<p style="text-align: center;"><code class="reqn">\theta|X,\beta,\tau \;\sim\; \mathrm{Normal}(X \beta, \,
+    \tau I)</code>
+</p>
+
+<p>where <code class="reqn">y</code>, <code class="reqn">\sigma</code>, <code class="reqn">\beta</code> and <code class="reqn">\theta</code> now denote
+<code class="reqn">k</code>-dimensional vectors, <code class="reqn">X</code> is the (<code class="reqn">k \times d</code>) <em>regressor matrix</em>, and <code class="reqn">\Sigma</code> is a (<code class="reqn">k \times k</code>) diagonal covariance matrix containing the
+<code class="reqn">\sigma_i^2</code> values, while
+<code class="reqn">I</code> is the (<code class="reqn">k \times k</code>) identity matrix. The
+regressor matrix <code class="reqn">X</code> plays a crucial role here, as the
+‘<code>X</code>’ argument (with rows corresponding to studies, and
+columns corresponding to covariables) is required to specify the exact
+regression setup.
+</p>
+<p>Meta-regression allows the consideration of (study-level) covariables
+in a meta-analysis. Quite often, these may also be indicator variables
+(‘zero/one’ variables) simply identifying subgroups of studies.
+See also the examples shown below.
+</p>
+
+
+<h4>Connection to the simple random-effects model</h4>
+
+<p>The meta-regression model is a generalisation of the ‘simple’
+random-effects model that is implemented in the
+<code>bayesmeta()</code> function. Meta-regression reduces to the
+estimation of a single “intercept” term when the regressor
+matrix (<code class="reqn">X</code>) consists of a single column of
+ones (which is also the default setting in case the ‘<code>X</code>’
+argument is left unspecified). The single regression coefficient
+<code class="reqn">\beta_1</code> then is equivalent to the <code class="reqn">\mu</code> parameter
+from the simple random effects model (see also the ‘Examples’
+section below).
+</p>
+
+
+
+<h4>Specification of the regressor matrix</h4>
+
+<p> The actual
+regression model is specified through the regressor matrix <code class="reqn">X</code>,
+which is supplied via the ‘<code>X</code>’ argument, and which
+often may be specified in different ways. There usually is no unique
+solution, and what serves the present purpose best then depends on
+the context; see also the examples below. Sensible column names
+should be specified for <code>X</code>, as these will subsequently
+determine the labels for the associated parameters later on. Model
+specification via the regressor matrix has the advantage of being
+very explicit and transparent; if one prefers a
+<code>formula</code> interface instead, a regressor matrix may
+be generated via the ‘<code>model.matrix()</code>’
+function.
+</p>
+
+
+
+<h4>Prior specification</h4>
+
+<p>Priors for <code class="reqn">\beta</code> and <code class="reqn">\tau</code> are assumed to factor into
+into independent marginals <code class="reqn">p(\beta,\tau)=p(\beta)\times
+  p(\tau)</code> and either (improper)
+uniform or a normal priors may be specified for the regression coefficients
+<code class="reqn">\beta</code>. 
+For sensible prior choices for the heterogeneity parameter <code class="reqn">\tau</code>,
+see also Roever (2020), Roever <em>et al.</em> (2021) and the
+‘<code>bayesmeta()</code>’ function's help.
+</p>
+
+
+
+<h4>Accessing posterior density functions, etc.</h4>
+
+<p>Within the <code>bayesmeta()</code> function, access to posterior
+density, cumulative distribution function, quantile functtion,
+random number generation and posterior inverval computation is
+implemented via the <code>$dposterior()</code>, <code>$dposterior()</code>,
+<code>$pposterior()</code>, <code>$qposterior()</code>, <code>$rposterior()</code>
+and <code>$post.interval()</code> functions that are accessible as elements
+in the returned <code>list</code> object. Prediction and shrinkage
+estimation are available by setting additional arguments in the
+above functions.
+</p>
+<p>In the meta-regression context things get slightly more complicated,
+as the <code class="reqn">\beta</code> parameter may be of higher dimension. Hence, in the
+<code>bmr()</code> function, the three different types of distributions
+related to <em>posterior distribution</em>, <em>prediction</em> and
+<em>shrinkage</em> are split up into three groups of
+functions. For example, the posterior density is accessible via the
+<code>$dposterior()</code> function, the predictive distribution via the
+<code>$dpredict()</code> function, and the shrinkage estimates via the
+<code>$dshrink()</code> function. Analogous functions are returned for
+cumulative distribution, quantile function, etc.; see also the
+‘Value’ section below.
+</p>
+
+
+
+<h4>Computation</h4>
+
+<p>The <code>bmr()</code> function utilizes the same computational method
+as the <code>bayesmeta()</code> function to derive the posterior
+distribution, namely, the <abbr><span class="acronym">DIRECT</span></abbr> algorithm. Numerical
+accuracy of the computations is determined by the ‘<code>delta</code>’
+and ‘<code>epsilon</code>’ arguments (Roever and Friede,
+2017).
+</p>
+<p>A slight difference between the <code>bayesmeta()</code> and
+<code>bmr()</code> implementations exists in the determination of the grid
+approximation within the <abbr><span class="acronym">DIRECT</span></abbr> algorithm. While
+<code>bmr()</code> considers divergences w.r.t. the conditional posterior
+distributions <code class="reqn">p(\beta|\tau)</code>, <code>bayesmeta()</code> in addition
+considers divergences w.r.t. the shrinkage estimates, which in general
+leads to a denser binning (as one can see from the numbers of bins
+required; see the example below). A denser binning within the
+<code>bmr()</code> function may be achieved by reducing the
+‘<code>delta</code>’ argument.
+</p>
+
+
+
+<h3>Value</h3>
+
+<p>A list of class <code>bmr</code> containing the following elements:
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>y</code></td>
+<td>
+<p>vector of estimates (the input data).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>sigma</code></td>
+<td>
+<p>vector of standard errors corresponding
+to <code>y</code> (input data).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>X</code></td>
+<td>
+<p>the regressor matrix.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>k</code></td>
+<td>
+<p>number of data points (length of <code>y</code>, or rows of <code class="reqn">X</code>).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>d</code></td>
+<td>
+<p>number of coefficients (columns of <code>X</code>).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>labels</code></td>
+<td>
+<p>vector of labels corresponding to <code>y</code> and <code>sigma</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>variables</code></td>
+<td>
+<p>variable names for the <code class="reqn">\beta</code> coefficients
+(determined by the column names of the supplied <code>X</code> argument).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>tau.prior</code></td>
+<td>
+<p>the prior probability density function for <code class="reqn">\tau</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>tau.prior.proper</code></td>
+<td>
+<p>a <code>logical</code> flag indicating whether the
+heterogeneity prior appears to be proper (which is judged based on
+an attempted numerical integration of the density function).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>beta.prior</code></td>
+<td>
+<p>a <code>list</code> containing the prior mean vector and
+covariance matrix for the coefficients <code class="reqn">\beta</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>beta.prior.proper</code></td>
+<td>
+<p>a <code>logical</code> vector (of length <code class="reqn">d</code>)
+indicating whether the corresponding <code class="reqn">\beta</code> coefficient's prior is
+proper (i.e., finite prior mean and variance were specified).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>dprior</code></td>
+<td>
+<p>a <code>function(tau, beta, which.beta, log=FALSE)</code> of
+<code class="reqn">\tau</code> and/or <code class="reqn">\beta</code> parameters, returning either the joint or
+marginal prior probability density, depending on which parameter(s)
+is/are provided.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>likelihood</code></td>
+<td>
+<p>a <code>function(tau, beta, which.beta)</code> <code class="reqn">\tau</code>
+and/or <code class="reqn">\beta</code>, returning either the joint or marginal
+likelihood, depending on which parameter(s) is/are provided.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>dposterior, pposterior, qposterior, rposterior, post.interval</code></td>
+<td>
+<p>functions of <code class="reqn">\tau</code> and/or <code class="reqn">\beta</code> parameters,
+returning either the joint or marginal posterior probability density,
+(depending on which parameter(s) is/are provided), or cumulative
+distribution function, quantile function, random numbers or posterior intervals.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>dpredict, ppredict, qpredict, rpredict, pred.interval</code></td>
+<td>
+<p>functions
+of <code class="reqn">\beta</code> returning density, cumulative distribution
+function, quantiles, random numbers, or intervals for the
+<em>predictive distribution</em>. This requires specification of <code class="reqn">x</code>
+values to indicate what covariable values to consider. Use of
+‘<code>mean=TRUE</code>’ (the default) yields predictions for the
+<em>mean</em> (<code class="reqn">x'\beta</code> values), setting it to
+<code>FALSE</code> yields <em>predictions</em> (<code class="reqn">\theta</code> values).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>dshrink, pshrink, qshrink, rshrink, shrink.interval</code></td>
+<td>
+<p>functions
+of <code class="reqn">\theta</code> yielding density, cumulative distribution, quantiles,
+random numbers or posterior intervals for the <em>shrinkage
+estimates</em> of the individual <code class="reqn">\theta_i</code> parameters
+corresponding to the supplied <code class="reqn">y_i</code> data values
+(<code class="reqn">i=1,\ldots,k</code>). May be identified using the
+‘<code>which</code>’ argument via its index (<code class="reqn">i</code>) or a character
+string giving the corresponding study label.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>post.moments</code></td>
+<td>
+<p>a <code>function(tau)</code>
+returning conditional posterior moments (mean and covariance) of
+<code class="reqn">\beta</code> as a function of <code class="reqn">\tau</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>pred.moments</code></td>
+<td>
+<p>a <code>function(tau, x, mean=TRUE)</code>
+returning conditional posterior predictive moments (means and
+standard deviations) as a function of <code class="reqn">\tau</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>shrink.moments</code></td>
+<td>
+<p>a <code>function(tau, which)</code>
+returning conditional moments (means and standard deviations of
+shrinkage distributions) as a function of <code class="reqn">\tau</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>summary</code></td>
+<td>
+<p>a <code>matrix</code> listing some summary statistics, namely
+marginal posterior mode, median, mean, standard deviation
+and a (shortest) 95% credible intervals,
+of the marginal posterior distributions of <code class="reqn">\tau</code> and <code class="reqn">\beta_i</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>interval.type</code></td>
+<td>
+<p>the <code>interval.type</code> input argument
+specifying the type of interval to be returned by default.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ML</code></td>
+<td>
+<p>a <code>matrix</code> giving joint and marginal maximum-likelihood
+estimates of <code class="reqn">(\tau,\beta)</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>MAP</code></td>
+<td>
+<p>a <code>matrix</code> giving joint and marginal
+maximum-a-posteriori estimates of <code class="reqn">(\tau,\beta)</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>theta</code></td>
+<td>
+<p>a <code>matrix</code> giving the ‘shrinkage estimates’,
+i.e, summary statistics of the trial-specific means
+<code class="reqn">\theta_i</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>marginal.likelihood</code></td>
+<td>
+<p>the marginal likelihood of the data (this 
+number can only be computed if proper effect and heterogeneity priors 
+are specified).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>bayesfactor</code></td>
+<td>
+<p>Bayes factors and minimum Bayes factors for the
+hypotheses of <code class="reqn">\tau=0</code> and <code class="reqn">\beta_i=0</code>. These depend on the
+marginal likelihood and hence can only be computed if proper effect
+and/or heterogeneity priors are specified.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>support</code></td>
+<td>
+<p>a <code>list</code> giving the <code class="reqn">\tau</code> support points used
+internally in the grid approximation, along with their associated
+weights, and conditional mean and covariance of <code class="reqn">\beta</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>delta, epsilon</code></td>
+<td>
+<p>the ‘<code>delta</code>’ and ‘<code>epsilon</code>’
+input parameter determining numerical accuracy.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>rel.tol.integrate, abs.tol.integrate, tol.uniroot</code></td>
+<td>
+<p>the input
+parameters determining the numerical accuracy of the internally used
+<code>integrate()</code> and <code>uniroot()</code> functions.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>call</code></td>
+<td>
+<p>an object of class <code>call</code> giving the
+function call that generated the <code>bmr</code> object.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>init.time</code></td>
+<td>
+<p>the computation time (in seconds) used to generate
+the <code>bmr</code> object.</p>
+</td>
+</tr>
+</table>
+<h3>Author(s)</h3>
+
+<p>Christian Roever <a href="mailto:christian.roever@med.uni-goettingen.de">christian.roever@med.uni-goettingen.de</a>
+</p>
+
+
+<h3>References</h3>
+
+<p>C. Roever, T. Friede.
+Using the bayesmeta R package for Bayesian random-effects meta-regression.
+<em>Computer Methods and Programs in Biomedicine</em>,
+<b>299</b>:107303, 2023.
+<a href="https://doi.org/10.1016/j.cmpb.2022.107303">doi:10.1016/j.cmpb.2022.107303</a>.
+</p>
+<p>C. Roever.
+Bayesian random-effects meta-analysis using the bayesmeta R package.
+<em>Journal of Statistical Software</em>, <b>93</b>(6):1-51, 2020.
+<a href="https://doi.org/10.18637/jss.v093.i06">doi:10.18637/jss.v093.i06</a>.
+</p>
+<p>C. Roever, R. Bender, S. Dias, C.H. Schmid, H. Schmidli, S. Sturtz,
+S. Weber, T. Friede.
+On weakly informative prior distributions for the heterogeneity
+parameter in Bayesian random-effects meta-analysis.
+<em>Research Synthesis Methods</em>, <b>12</b>(4):448-474, 2021.
+<a href="https://doi.org/10.1002/jrsm.1475">doi:10.1002/jrsm.1475</a>.
+</p>
+<p>C. Roever, T. Friede.
+Discrete approximation of a mixture distribution via restricted divergence.
+<em>Journal of Computational and Graphical Statistics</em>,
+<b>26</b>(1):217-222, 2017.
+<a href="https://doi.org/10.1080/10618600.2016.1276840">doi:10.1080/10618600.2016.1276840</a>.
+</p>
+<p>A. Gelman, J.B. Carlin, H.S. Stern, D.B. Rubin. <em>Bayesian data
+analysis</em>. Chapman &amp; Hall / CRC, Boca Raton, 1997.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>bayesmeta</code>, <code>escalc</code>,
+<code>model.matrix</code>, <code>CrinsEtAl2014</code>,
+<code>RobergeEtAl2017</code>.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## Not run: 
+######################################################################
+# (1)  A simple example with two groups of studies
+
+# load data:
+data("CrinsEtAl2014")
+# compute effect measures (log-OR):
+crins.es &lt;- escalc(measure="OR",
+                   ai=exp.AR.events,  n1i=exp.total,
+                   ci=cont.AR.events, n2i=cont.total,
+                   slab=publication, data=CrinsEtAl2014)
+# show data:
+crins.es[,c("publication", "IL2RA", "exp.AR.events", "exp.total",
+            "cont.AR.events", "cont.total", "yi", "vi")]
+
+# specify regressor matrix:
+X &lt;- cbind("bas"=as.numeric(crins.es$IL2RA=="basiliximab"),
+           "dac"=as.numeric(crins.es$IL2RA=="daclizumab"))
+print(X)
+print(cbind(crins.es[,c("publication", "IL2RA")], X))
+# NB: regressor matrix specifies individual indicator covariates
+#     for studies with "basiliximab" and "daclizumab" treatment.
+
+# perform regression:
+bmr01 &lt;- bmr(y=crins.es$yi, sigma=sqrt(crins.es$vi),
+             labels=crins.es$publication, X=X)
+
+# alternatively, one may simply supply the "escalc" object
+# (yields identical results):
+bmr01 &lt;- bmr(crins.es, X=X)
+
+# show results:
+bmr01
+bmr01$summary
+plot(bmr01)
+pairs(bmr01)
+
+# NOTE: there are many ways to set up the regressor matrix "X"
+# (also affecting the interpretation of the involved parameters).
+# See the above specification and check out the following alternatives:
+X &lt;- cbind("bas"=1, "offset.dac"=c(1,0,1,0,0,0))
+X &lt;- cbind("intercept"=1, "offset"=0.5*c(1,-1,1,-1,-1,-1))
+# One may also use the "model.matrix()" function
+# to specify regressor matrices via the "formula" interface; e.g.:
+X &lt;- model.matrix( ~ IL2RA, data=crins.es)
+X &lt;- model.matrix( ~ IL2RA - 1, data=crins.es)
+
+
+######################################################################
+# (2)  A simple example reproducing a "bayesmeta" analysis:
+
+data("CrinsEtAl2014")
+crins.es &lt;- escalc(measure="OR",
+                   ai=exp.AR.events,  n1i=exp.total,
+                   ci=cont.AR.events, n2i=cont.total,
+                   slab=publication, data=CrinsEtAl2014)
+
+# a "simple" meta-analysis:
+bma02 &lt;- bayesmeta(crins.es,
+                   tau.prior=function(t){dhalfnormal(t, scale=0.5)},
+                   mu.prior.mean=0, mu.prior.sd=4)
+
+# the equivalent "intercept-only" meta-regression:
+bmr02 &lt;- bmr(crins.es,
+             tau.prior=function(t){dhalfnormal(t, scale=0.5)},
+             beta.prior.mean=0, beta.prior.sd=4)
+# the corresponding (default) regressor matrix:
+bmr02$X
+
+# compare computation time and numbers of bins used internally:
+cbind("seconds" = c("bayesmeta" = unname(bma02$init.time),
+                    "bmr"       = unname(bmr02$init.time)),
+      "bins"    = c("bayesmeta" = nrow(bma02$support),
+                    "bmr"       = nrow(bmr02$support$tau)))
+
+# compare heterogeneity estimates:
+rbind("bayesmeta"=bma02$summary[,1], "bmr"=bmr02$summary[,1])
+
+# compare effect estimates:
+rbind("bayesmeta"=bma02$summary[,2], "bmr"=bmr02$summary[,2])
+
+
+######################################################################
+# (3)  An example with binary as well as continuous covariables:
+
+# load data:
+data("RobergeEtAl2017")
+str(RobergeEtAl2017)
+head(RobergeEtAl2017)
+?RobergeEtAl2017
+
+# compute effect sizes (log odds ratios) from count data:
+es.pe  &lt;- escalc(measure="OR",
+                 ai=asp.PE.events,  n1i=asp.PE.total,
+                 ci=cont.PE.events, n2i=cont.PE.total,
+                 slab=study, data=RobergeEtAl2017,
+                 subset=complete.cases(RobergeEtAl2017[,7:10]))
+
+# show "bubble plot" (bubble sizes are
+# inversely proportional to standard errors):
+plot(es.pe$dose, es.pe$yi, cex=1/sqrt(es.pe$vi),
+     col=c("blue","red")[as.numeric(es.pe$onset)],
+     xlab="dose (mg)", ylab="log-OR (PE)", main="Roberge et al. (2017)")
+legend("topright", col=c("blue","red"), c("early onset", "late onset"), pch=1)
+
+# set up regressor matrix:
+# (individual intercepts and slopes for two subgroups):
+X &lt;- model.matrix(~ -1 + onset + onset:dose, data=es.pe)
+colnames(X) &lt;- c("intEarly", "intLate", "slopeEarly", "slopeLate")
+# check out regressor matrix (and compare to original data):
+print(X)
+
+# perform regression:
+bmr03 &lt;- bmr(es.pe, X=X)
+bmr03$summary
+
+# derive predictions from the model;
+# specify corresponding "regressor matrices":
+newx.early &lt;- cbind(1, 0, seq(50, 150, by=5), 0)
+newx.late  &lt;- cbind(0, 1, 0, seq(50, 150, by=5))
+# (note: columns correspond to "beta" parameters)
+
+# compute predicted medians and 95 percent intervals: 
+pred.early &lt;- cbind("median"=bmr03$qpred(0.5, x=newx.early),
+                    bmr03$pred.interval(x=newx.early))
+pred.late &lt;- cbind("median"=bmr03$qpred(0.5, x=newx.late),
+                    bmr03$pred.interval(x=newx.late))
+
+# draw "bubble plot": 
+plot(es.pe$dose, es.pe$yi, cex=1/sqrt(es.pe$vi),
+     col=c("blue","red")[as.numeric(es.pe$onset)],
+     xlab="dose (mg)", ylab="log-OR (PE)", main="Roberge et al. (2017)")
+legend("topright", col=c("blue","red"), c("early onset", "late onset"), pch=1)
+# add predictions to bubble plot:
+matlines(newx.early[,3], pred.early, col="blue", lty=c(1,2,2))
+matlines(newx.late[,4], pred.late, col="red", lty=c(1,2,2))
+
+
+## End(Not run)
+</code></pre>
+
+
+</div>

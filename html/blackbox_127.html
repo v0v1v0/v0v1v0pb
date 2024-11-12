@@ -1,0 +1,214 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>bboptim</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>
+Black-box function optimization
+</h2>
+
+<h3>Description</h3>
+
+<p><code>bboptim</code> implements optimization of a black-box function, possibly estimated with error, using prediction of the function by smoothing of its values in a given set of points, followed by a call to <code>optim</code> for optimization of the predicted function. <code>rbb</code> samples the parameter space of the function using a crude implementation of Expected Improvement (e.g. Bingham et al., 2014) methods: points with the highest predicted probability of improvement of the response value among a set of candidates sampled uniformly are retained.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">bboptim(data, ParameterNames = NULL, respName = NULL, control = list(),
+        force = FALSE, optimizers = blackbox.getOption("optimizers"), precision=1e-03)
+rbb(object,n=NULL,from=NULL,focus=0.75)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+
+<p>A data frame including both function parameters and function values (or “response” values).
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ParameterNames</code></td>
+<td>
+
+<p>A character vector, identifying the columns of the data that correspond to the function parameters. If NULL, all columns except the last are assumed to hold parameter values.   </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>respName</code></td>
+<td>
+
+<p>A character string, identifying the column of the data that corresponds to the function values. If NULL, the last column is assumed to hold function values.   </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>control</code></td>
+<td>
+<p>A list passed to the <code>control</code> argument of the <code>optim</code> function; e.g., <code>list(fnscale=-1)</code> for  maximization.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>force</code></td>
+<td>
+<p>Boolean, passed to <code>calcGCV</code>. TRUE forces the analysis of data without pairs of response values for given parameter values. This is <em>not</em> recommended as there <em>should</em> be such pairs. If the response is estimated with error, this is required for good smoothing. If it is deterministic, <code>bboptim</code> will learn it from the information provided by the pairs.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>optimizers</code></td>
+<td>
+<p>(A vector of) character strings, from which the optimization methods are selected. Default are that of <code>calcGCV</code> for the smoothing step, and <code>nloptr</code> with its own <code>"NLOPT_LN_BOBYQA"</code> method for the smoothed function maximization. See the source of the function for other possible methods (the latter being subject to change with little notice).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>object</code></td>
+<td>
+<p>An object of class <code>bboptim</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>n</code></td>
+<td>
+<p>Number of distinct points to be returned. n+1 points will be returned (see Details). If <code>NULL</code>, the following default value is used:
+<code>min(2^(np+1),floor(10*(1+3*log(np))))</code>, where <code>np</code> is the number of function parameters.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>from</code></td>
+<td>
+<p>A larger (&gt;2n) number of points from which <code>n</code> are selected by an expected inmprovement criterion. If NULL, a default value computed as <code>n*floor(10*(1+3*log(np)))</code>, where <code>np</code> is the number of function parameters, is used. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>focus</code></td>
+<td>
+<p>A number between 0 and 1. Determines the proportion of points that are sampled closer to the currently inferred maximum (see Details).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>precision</code></td>
+<td>
+<p>target value of prediction variance in inferred optimum.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+ <p><code>rbb</code> selects a proportion <code>1-focus</code> of the returned points according to expected improvement, from points sampled uniformly in a space defined by a tesselation of the fitted <code>object</code>'s parameter points. They are completed to n-1 points, by points similarly selected but within a space defined by a selection of fitted points with the best predicted response values. Finally, two replicates of the predicted optimum (the <code>optim</code> <code>$par</code> result contained in the <code>object</code>) are included. A total of n+1 points (n distinct) is thus returned.
+</p>
+<p>Global optimization cannot be proven, but it is tested by the following criteria: (1) the predicted optimum is close enough to the optimum among assessed parameter points (i.e. either the optimum parameters are well approached or the function is flat in some way), and (2) the prediction variance at the inferred optimum is low enough (so that the predictions used in the first criterion can be trusted). Accordingly, <code>conv_crits</code> has elements (1) <code>objective</code> that indicates whether <code>optr$value</code> betters <code>optr_fitted$value</code> by more than <code>control$reltol</code>, if given, or else by more than <code>sqrt(.Machine$double.eps)</code>; and (2) <code>precision</code> that indicates whether variance of prediction error at the inferred optimum is lower than the target <code>precision</code>. This variance is computed as described for <code>predict.HLfit</code>, with <code>variances=list(linPred=TRUE,dispVar=TRUE)</code>. 
+</p>
+
+
+<h3>Value</h3>
+
+<p><code>bboptim</code> returns an object of class <code>bboptim</code>, a list which includes
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>optr</code></td>
+<td>
+<p>the result of the <code>optim</code> call</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>RMSE</code></td>
+<td>
+<p>the root meant square prediction error of response at the optimum <code>optr$par</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>optr_fitted</code></td>
+<td>
+<p>the best of the fitted points, with its fitted response value and prediction RMSE</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>fit</code></td>
+<td>
+<p>the predictor of the response (an <code>HLfit</code> object as returned by <code>corrHLfit</code>, with a <code>predict</code> method, etc.)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>conv_crits</code></td>
+<td>
+<p>Indicators of convergence (see Details)</p>
+</td>
+</tr>
+</table>
+<p>and some other elements.
+</p>
+<p><code>rbb</code> returns a data frame.
+</p>
+
+
+<h3>References</h3>
+
+<p>D. Bingham, P. Ranjan, and W.J. Welch (2014) Design of Computer Experiments for Optimization, Estimation of Function Contours, and Related Objectives, pp. 109-124 in Statistics in Action: A Canadian Outlook (J.F. Lawless, ed.). Chapman and Hall/CRC.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R"># Classical toy example with optional noise
+fr &lt;- function(v,sd) {   ## Rosenbrock Banana function 
+  10 * (v["y"] - v["x"]^2)^2 + (1 - v["x"])^2 + rnorm(1,sd=sd)
+}
+set.seed(123)
+
+# Initial parameter values, including duplicates. See ?init_grid.
+parsp &lt;- init_grid(lower=c(x=0,y=0),upper=c(x=2,y=2),nUnique=25)
+
+#### Without noise
+# add function values
+simuls &lt;- cbind(parsp,bb=apply(parsp,1,"fr",sd=0))
+
+# optimization
+bbresu &lt;- bboptim(simuls)
+print(bbresu)
+
+# refine with additional points
+if (blackbox.getOption("example_maxtime")&gt;4) {
+ while ( any( ! bbresu$conv_crits) ) {
+  print(unlist(bbresu$optr[c("par","value")]))
+  candidates &lt;- rbb(bbresu)
+  newsimuls &lt;- cbind(candidates,bb=apply(candidates,1,"fr",sd=0))
+  bbresu &lt;- bboptim(rbind(bbresu$fit$data,newsimuls))
+ }
+ print(bbresu)
+}
+
+#### With noise
+
+if (blackbox.getOption("example_maxtime")&gt;78) {
+ set.seed(123)
+ simuls &lt;- cbind(parsp,bb=apply(parsp,1,"fr",sd=0.1))
+
+ bbresu &lt;- bboptim(simuls, precision=0.02)
+ 
+ while ( any( ! bbresu$conv_crits) ) {
+  print(unlist(bbresu$optr[c("par","value")]))
+  candidates &lt;- rbb(bbresu)
+  newsimuls &lt;- cbind(candidates,bb=apply(candidates,1,"fr",sd=0.1))
+  bbresu &lt;- bboptim(rbind(bbresu$fit$data,newsimuls), precision=0.02)
+ }
+ print(bbresu)
+}
+
+# basic plot
+## Not run: 
+require(spaMM)
+opt &lt;- bbresu$optr$par
+mapMM(bbresu$fit, decorations=points(opt[1],opt[2],cex=2,pch="+"))
+
+## End(Not run)
+</code></pre>
+
+
+</div>

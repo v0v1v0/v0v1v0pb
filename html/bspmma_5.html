@@ -1,0 +1,147 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>bf1</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Generate Chains for Computation of Bayes Factors</h2>
+
+<h3>Description</h3>
+
+<p>Generate nine matrices of MCMC output under the ordinary Dirichlet
+model, for nine fixed values of the precision parameter <code class="reqn">M</code>.
+This MCMC output is needed for computing Bayes factors.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">bf1(data,seed=1,ncycles=2000,d=c(.1,.1,0,1000),K=10,burnin=1000)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+<p>is a two-column matrix with a row for each study
+in the meta-analysis.  The first column is the log of estimate
+of relative risk, often a log(odds ratio).  The second column is
+the true or estimated standard error of the log(odds ratio).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>seed</code></td>
+<td>
+<p>is the value of the seed for starting the random number
+generator, which will be used before each of the nine calls to the
+function <code>dirichlet.o</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ncycles</code></td>
+<td>
+<p>is the number of cycles of the Markov chain.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>d</code></td>
+<td>
+<p>is a vector of length four with the values of the
+hyperparameters, in order, the location and scale of the Gamma
+inverse prior, mean and variance multiplier for the normal prior
+on <code class="reqn">\mu</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>K</code></td>
+<td>
+<p>is the number of summands to include when one uses
+Sethuraman's (1994) representation for getting the parameter
+<code class="reqn">\eta =</code> mean(<code class="reqn">F</code>).  If you do not intend
+to use this parameter, then take <code class="reqn">K</code> small, say
+<code class="reqn">K=10</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>burnin</code></td>
+<td>
+<p>is the number of Markov chain cycles to drop.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p><cite>Doss (2012)</cite> describes a method for estimating Bayes
+factors for many <code class="reqn">M</code> values in a Dirichlet mixing model;
+the method requires judicious selection of multiple hyperparameter
+points at which to estimate the posterior distribution by MCMC under
+the ordinary Dirichlet model.  The function <code>bf1</code> is used for
+estimating Bayes factors for conditional vs.\ ordinary Dirichlet
+models, and for comparing values of <code class="reqn">M</code> in the conditional
+model or in the ordinary model, for a range of the precision parameter
+<code class="reqn">M</code> which cover the range of values of interest in most
+practical problems.  The function <code>bf1</code> generates the MCMC
+output for a hard-wired selection of hyperparameters which work
+well to give low-variance estimates of Bayes factors of interest
+in practice.  Chains are generated for nine values of the Dirichlet
+precision parameter <code class="reqn">M</code>:
+<code class="reqn">.25, .5, 1, 2, 4, 8, 16, 32</code>,
+and <code class="reqn">64</code>.
+The rest of the Dirichlet model is specified by the parameters of the
+normal/inverse Gamma prior, which by default are 
+<code class="reqn">\vec{d} = (.1,.1,0,1000)</code>.  
+</p>
+
+
+<h3>Value</h3>
+
+<p>List with nine matrix components.  Each matrix has
+<code class="reqn">nr</code> rows and <code class="reqn">nc</code> columns, where
+<code class="reqn">nr=</code> <code>ncycles</code> <code class="reqn">-</code> <code>burnin</code>,
+<code class="reqn">nc=</code> (number of studies) <code class="reqn">+ 4</code> for the row label,
+the individual study parameter values, and the three overall
+parameters, <code class="reqn">\mu</code>, <code class="reqn">\tau</code>, and <code class="reqn">\eta</code>.
+</p>
+
+
+<h3>References</h3>
+
+<p>Doss, Hani (2012).  “Hyperparameter and model selection for
+nonparametric Bayes problems via Radon-Nikodym derivatives.”
+<em>Statistica Sinica</em>, 22, 1–26.
+</p>
+<p>Sethuraman, J. (1994).  “A constructive definition of Dirichlet
+priors.” <em>Statistica Sinica 4</em>, 639–650.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## Not run: 
+## Set up the data.
+
+data(breast.17) # the breast cancer dataset
+breast.data &lt;- as.matrix(breast.17) # put data in matrix object
+
+## Default values ncycles=2000, burnin=1000, seed=1
+##  CPU time is given from a run of the R command system.time() on an
+##  Intel $2.8$ GHz Q$9550$ running Linux
+chain1.list &lt;- bf1(breast.data) # 40.5 secs
+## Next get a second set of 9 chains, with a different seed 
+chain2.list &lt;- bf2(breast.data, seed=2) # 40.4 secs
+
+## Perhaps save for another time.
+save(chain1.list,chain2.list,file="breast-rdat-2lists-1000",compress=TRUE)
+
+## later session
+load("breast-rdat-2lists-1000")
+
+
+## End(Not run)
+</code></pre>
+
+
+</div>

@@ -1,0 +1,120 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>bin_apply</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Bin a variable (typically time) and compute an aggregate for each bin</h2>
+
+<h3>Description</h3>
+
+<p>This function is typically used to summarise (i.e. computing an aggregate of) a variable (<code>y</code>)
+for bins of a another variable <code>x</code> (typically time).
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">bin_apply(data, y, x = "t", x_bin_length = mins(30),
+  wrap_x_by = NULL, FUN = mean, ...)
+
+bin_apply_all(data, ...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+<p>data.table or behavr table (see details)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>y</code></td>
+<td>
+<p>variable or expression to be aggregated</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>variable or expression to be binned</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>x_bin_length</code></td>
+<td>
+<p>length of the bins (same unit as <code>x</code>)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>wrap_x_by</code></td>
+<td>
+<p>numeric value defining wrapping period. <code>NULL</code>, the default, means no wrapping (see details).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>FUN</code></td>
+<td>
+<p>function used to aggregate (e.g. mean, median, sum and so on)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>additional arguments to be passed to <code>FUN</code></p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p><code>bin_apply</code> expects data from a single individual, whilst
+<code>bin_apply_all</code> works on multiple individuals identified by a unique key.
+<code>wrapping</code> is typically used to compute averages across several periods.
+For instance, <code>wrap_x_by = days(1)</code>, means bins will aggregate values across several days.
+In this case, the resulting <code>x</code> can be interpreted as "time relative to the onset of the day" (i.e. Zeitgeber Time).
+</p>
+
+
+<h3>See Also</h3>
+
+
+<ul><li> <p>behavr – the documentation of the <code>behavr</code> object
+</p>
+</li></ul>
+<h3>Examples</h3>
+
+<pre><code class="language-R">metadata &lt;- data.frame(id = paste0("toy_experiment|",1:5))
+dt &lt;- toy_activity_data(metadata, duration = days(2))
+
+# average by 30min time bins, default
+dt_binned &lt;- bin_apply_all(dt, moving)
+# equivalent to
+dt_binned &lt;- dt[, bin_apply(.SD, moving), by = "id"]
+
+# if we want the opposite of moving:
+dt_binned &lt;- bin_apply_all(dt, !moving)
+
+# More advanced usage
+dt &lt;- toy_dam_data(metadata, duration = days(2))
+
+# sum activity per 60 minutes
+dt_binned &lt;- bin_apply_all(dt,
+                           activity,
+                           x = t,
+                           x_bin_length = mins(60),
+                           FUN = sum)
+
+
+# average activity. Time in ZT
+dt_binned &lt;- bin_apply_all(dt,
+                           activity,
+                           x = t,
+                           wrap_x_by = days(1)
+                           )
+</code></pre>
+
+
+</div>

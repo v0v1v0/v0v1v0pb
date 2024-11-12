@@ -1,0 +1,126 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>snp_MAX3</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>MAX3 statistic</h2>
+
+<h3>Description</h3>
+
+<p>Compute the MAX3 statistic, which tests for three genetic models
+(additive, recessive and dominant).
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">snp_MAX3(Gna, y01.train, ind.train = rows_along(Gna), val = c(0, 0.5, 1))
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>Gna</code></td>
+<td>
+<p>A FBM.code256
+(typically <code style="white-space: pre;">⁠&lt;bigSNP&gt;$genotypes⁠</code>).<br>
+You can have missing values in these data.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>y01.train</code></td>
+<td>
+<p>Vector of responses, corresponding to <code>ind.train</code>.
+<strong>Must be only 0s and 1s.</strong></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ind.train</code></td>
+<td>
+<p>An optional vector of the row indices that are used,
+for the training part. If not specified, all rows are used.
+<strong>Don't use negative indices.</strong></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>val</code></td>
+<td>
+<p>Computing <code class="reqn">\smash{\displaystyle\max_{x \in val}}~Z_{CATT}^2(x)</code>.
+</p>
+
+<ul>
+<li>
+<p> Default is <code>c(0, 0.5, 1)</code> and corresponds to the <em>MAX3</em> statistic.
+</p>
+</li>
+<li>
+<p> Only <code>c(0, 1)</code> corresponds to <em>MAX2</em>.
+</p>
+</li>
+<li>
+<p> And only <code>0.5</code> corresponds to the Armitage trend test.
+</p>
+</li>
+<li>
+<p> Finally, <code>seq(0, 1, length.out = L)</code> corresponds to <em>MAXL</em>.
+</p>
+</li>
+</ul>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p><strong>P-values associated with returned scores are in fact the minimum of the
+p-values of each test separately. Thus, they are biased downward.</strong>
+</p>
+
+
+<h3>Value</h3>
+
+<p>An object of classes <code>mhtest</code> and <code>data.frame</code> returning one
+score by SNP. See <code>methods(class = "mhtest")</code>.
+</p>
+
+
+<h3>References</h3>
+
+<p>Zheng, G., Yang, Y., Zhu, X., &amp; Elston, R. (2012).
+Robust Procedures. Analysis Of Genetic Association Studies, 151-206.
+<a href="https://doi.org/10.1007/978-1-4614-2245-7_6">doi:10.1007/978-1-4614-2245-7_6</a>.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">set.seed(1)
+
+# constructing a fake genotype big.matrix
+N &lt;- 50; M &lt;- 1200
+fake &lt;- snp_fake(N, M)
+G &lt;- fake$genotypes
+G[] &lt;- sample(as.raw(0:3), size = length(G), replace = TRUE)
+G[1:8, 1:10]
+
+# Specify case/control phenotypes
+fake$fam$affection &lt;- rep(1:2, each = N / 2)
+
+# Get MAX3 statistics
+y01 &lt;- fake$fam$affection - 1
+str(test &lt;- snp_MAX3(fake$genotypes, y01.train = y01))
+# p-values are not well calibrated
+snp_qq(test)
+# genomic control is not of much help
+snp_qq(snp_gc(test))
+
+# Armitage trend test (well calibrated because only one test)
+test2 &lt;- snp_MAX3(fake$genotypes, y01.train = y01, val = 0.5)
+snp_qq(test2)
+
+</code></pre>
+
+
+</div>

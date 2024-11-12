@@ -1,0 +1,272 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>mig.predict</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Generate posterior trajectories of net migration rates</h2>
+
+<h3>Description</h3>
+
+<p>Using the posterior parameter samples simulated by <code>run.mig.mcmc</code>,
+generate posterior trajectories for the net migration rates for all countries of
+the world, or all locations included in the estimation. This code <em>does not</em> adjust trajectories to ensure that net
+migration counts over all countries sum to zero.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">mig.predict(
+  mcmc.set = NULL,
+  end.year = 2100,
+  sim.dir = NULL,
+  replace.output = FALSE,
+  start.year = NULL,
+  nr.traj = NULL,
+  thin = NULL,
+  burnin = 20000,
+  use.cummulative.threshold = FALSE,
+  ignore.gcc.in.threshold = FALSE,
+  post.last.observed = c("obsdata", "alldata", "impute"),
+  save.as.ascii = 0,
+  output.dir = NULL,
+  seed = NULL,
+  verbose = TRUE,
+  ...
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>mcmc.set</code></td>
+<td>
+<p>Object of class <code>bayesMig.mcmc.set</code> corresponding to sampled
+parameter values for net migration model. If it is <code>NULL</code>, the object
+is loaded from the directory specified in <code>sim.dir</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>end.year</code></td>
+<td>
+<p>End year of the prediction</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>sim.dir</code></td>
+<td>
+<p>Directory with MCMC simulation results. It should be the same as
+the <code>output.dir</code> argument in <code>run.mig.mcmc</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>replace.output</code></td>
+<td>
+<p>Logical value. If <code>TRUE</code>, existing predictions in
+<code>output.dir</code> will be replaced by results of this run.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>start.year</code></td>
+<td>
+<p>Start year of the prediction, i.e. the first predicted year. By default the prediction is 
+started at the next time period after <code>present.year</code> set in the estimation
+step. If <code>start.year</code> is smaller than the default, the behavior is controlled by 
+the <code>post.last.observed</code> argument: Either data post <code>start.year</code> is ignored (default)
+or the projection is set to the available data (<code>post.last.observed = "a"</code>).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nr.traj</code></td>
+<td>
+<p>Number of trajectories to be generated. 
+If <code>NULL</code>, the argument <code>thin</code> is taken to determine the number of 
+trajectories. If both are <code>NULL</code>, the number of trajectories
+corresponds to the size of the parameter sample.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>thin</code></td>
+<td>
+<p>Thinning interval used for determining the number of trajectories. 
+Only relevant if <code>nr.traj</code> is <code>NULL</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>burnin</code></td>
+<td>
+<p>Number of iterations to be discarded from the beginning of the parameter traces.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>use.cummulative.threshold</code></td>
+<td>
+<p>If <code>TRUE</code> historical cummulative thresholds are applied
+to avoid sampling rates that are too extreme. The thresholds are
+derived over prior rates of all locations. As a time span for deriving the limits on projected rates, 
+at each projected time point, six prior time periods are used in a 5-year simulation, 
+corresponding to 30 years in an annual simulation.
+In a national simulation, prior rates of GCC countries (plus Western Sahara and Djibouti) are excluded 
+when deriving thresholds for non-GCC countries. If this option is used in a non-country simulation,
+e.g. in a sub-national settings, set the <code>ignore.gcc.in.threshold</code> argument to <code>TRUE</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ignore.gcc.in.threshold</code></td>
+<td>
+<p>If <code>use.cummulative.threshold</code> is <code>TRUE</code>, by default the GCC countries
+(plus Western Sahara and Djibouti) identified by numerical codes of the countries are excluded from computing 
+the historical cummulative thresholds for non-GCC countries. If this argument is <code>TRUE</code>, this distinction is not made. 
+It is important to set it to <code>TRUE</code> in a sub-national simulation to avoid any random overlaps 
+of UN codes and user-defined codes.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>post.last.observed</code></td>
+<td>
+<p>If a user-specific data file was used during estimation and the data 
+contained the “last.observed” column, this argument determines how to treat the time periods 
+between the last observed point and the start year of the prediction, for locations where there is
+a gap between them, or if short-term predictions were included in the file. It is also relevant
+if <code>start.year</code> is set to a smaller value than <code>present.year</code> in the estimation.
+Possible values are:
+</p>
+    
+<ul>
+<li> <p>“obsdata” or “o” (default) uses any non-missing observed data 
+provided in the data file during estimation, up to the time point defined by the argument <code>start.year</code> 
+(excluding the start year itself). 
+</p>
+</li>
+<li> <p>“alldata” or “a” would similarly use 
+the provided data but would use all data, even if it goes beyond the start year. This allows
+to use short-term deterministic projections for locations where it is available. 
+</p>
+</li>
+<li> <p>“impute” or “i” would ignore all data beyond the last observed data point 
+and impute the missing time periods.
+</p>
+</li>
+</ul>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>save.as.ascii</code></td>
+<td>
+<p>Either a number determining how many trajectories should be
+converted into an ASCII file, or 'all' in which case all trajectories are converted.
+It should be set to 0 if no conversion is desired. If this argument 
+is larger than zero, the resulting file can be used as input into population projection via <span class="pkg">bayesPop</span>,
+see Details.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>output.dir</code></td>
+<td>
+<p>Directory into which the resulting prediction object and the 
+trajectories are stored. If it is <code>NULL</code>, it is set to either <code>sim.dir</code>,
+or to <code>output.dir</code> of <code>mcmc.set$meta</code> if <code>mcmc.set</code> is given.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>seed</code></td>
+<td>
+<p>Seed of the random number generator. If <code>NULL</code> no seed is set. 
+Can be used to generate reproducible projections.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>verbose</code></td>
+<td>
+<p>Logical value. Switches log messages on and off.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Further arguments passed to the underlying functions.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The trajectories of net migration rates for each location are generated using the model of Azose &amp; Raftery (2015).
+Parameter samples  simulated via <code>run.mig.mcmc</code> are used from all chains, from which the given <code>burnin</code> 
+was discarded. They are evenly thinned to match <code>nr.traj</code> or using the <code>thin</code> argument. 
+Such thinned parameter traces, collapsed into one chain, if they do not already exist, are stored on disk 
+into the sub-directory ‘<span class="file">thinned_mcmc_<em>t</em>_<em>b</em></span>’ where <em>t</em> is the value  of <code>thin</code> and 
+<em>b</em> the value of <code>burnin</code>.
+</p>
+<p>The projection is run for all missing values before the present year, if any. 
+Medians over the trajectories are used as imputed values and the trajectories are discarded. 
+The process then continues by projecting the future values where all generated trajectories are kept.
+</p>
+<p>A special case is when the argument <code>start.year</code> is given that is smaller than or equal to
+the present year. In such a case, imputed missing values before present year are treated 
+as ordinary predictions (trajectories are kept). If <code>post.last.observed</code> is “a”, 
+all historical data between start year and present year are used as projections.
+</p>
+<p>The resulting prediction object is saved into ‘<span class="file">{output.dir}/predictions</span>’. Trajectories 
+for all locations are saved into the same directory in a binary format, one file per location. 
+At the end of the projection, if <code>save.as.ascii</code> is larger than 0, the function converts 
+the given number of trajectories into a CSV file, called ‘<span class="file">ascii_trajectories.csv</span>’ also located
+in the ‘<span class="file">predictions</span>’ directory. The converted trajectories are selected by equal spacing. 
+In addition to the converted trajectories, two summary files are created: one in a user-friendly format, the other using 
+a UN-specific coding, as described in <code>mig.write.projection.summary</code>.
+</p>
+<p>If it is desired to use these predictions as input to population projections in <span class="pkg">bayesPop</span>,
+enter the full file path of the ‘<span class="file">ascii_trajectories.csv</span>’ file into the <code>inputs</code> argument 
+of <code>bayesPop::pop.predict</code> as item <code>migtraj</code> and set the argument <code>mig.is.rate</code> appropriately.
+</p>
+
+
+<h3>Value</h3>
+
+<p>Object of class <code>bayesMig.prediction</code> which is a list with components
+containing details of the prediction. Key result component is an array of <code>quantiles</code> with dimensions
+(number of locations) x (number of computed quantiles) x (number of projected time points).
+First time point in the sequence is not a projection, but the last observed time period.
+</p>
+<p>Other key result components include <code>traj.mean.sd</code>, a summary of means and standard deviations for each country
+at each time point. See <code>bayesTFR.prediction</code> for more detail.
+</p>
+
+
+<h3>References</h3>
+
+<p>Azose, J. J., &amp; Raftery, A. E. (2015). 
+Bayesian probabilistic projection of international migration. Demography, 52(5), 1627-1650.
+<a href="https://doi.org/10.1007/s13524-015-0415-0">doi:10.1007/s13524-015-0415-0</a>.
+</p>
+<p>Azose, J.J., Ševčíková, H., Raftery, A.E. (2016): Probabilistic population projections with migration uncertainty. 
+Proceedings of the National Academy of Sciences 113:6460–6465. <a href="https://doi.org/10.1073/pnas.1606119113">doi:10.1073/pnas.1606119113</a>.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R"># Toy simulation for US states
+us.mig.file &lt;- file.path(find.package("bayesMig"), "extdata", "USmigrates.txt")
+sim.dir &lt;- tempfile()
+m &lt;- run.mig.mcmc(nr.chains = 2, iter = 30, thin = 1, my.mig.file = us.mig.file, 
+        output.dir = sim.dir, present.year = 2017, annual = TRUE)
+
+# Prediction
+pred &lt;- mig.predict(sim.dir = sim.dir, burnin = 5, end.year = 2050)
+# here unrealistic results since this is a toy simulation 
+mig.trajectories.plot(pred, "Hawaii", pi = 80, ylim = c(-0.02, 0.02)) 
+mig.trajectories.table(pred, "Hawaii")
+summary(pred, "California")
+
+# view locations included in the simulation
+get.countries.table(pred)
+
+unlink(sim.dir, recursive = TRUE)
+# For projections on national level, see ?bayesMig.
+</code></pre>
+
+
+</div>

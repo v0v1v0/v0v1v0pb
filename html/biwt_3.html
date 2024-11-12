@@ -1,0 +1,128 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>biwtCorrelation</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>A function to compute a weighted correlation based on Tukey's biweight</h2>
+
+<h3>Description</h3>
+
+<p>The following function compute a multivariate location and scale estimate based on Tukey's biweight weight function. </p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">biwt.cor(x, r=.2, output="matrix", median=TRUE, full.init=TRUE, absval=TRUE)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p> a <code class="reqn">g x n</code> matrix or data frame (<code class="reqn">g</code> is the number of observations (genes), <code class="reqn">n</code> is the number of measurements)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>r</code></td>
+<td>
+<p> breakdown (<code class="reqn">k/n</code> where <code class="reqn">k</code> is the largest number of measurements that can be replaced with arbitrarily large values while keeping the estimates bounded).  Default is r=.2. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>output</code></td>
+<td>
+<p> a character string specifying the output format.  Options are "matrix" (default), "vector", or "distance".  See value below</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>median</code></td>
+<td>
+<p> a logical command to determine whether the initialization is done using the coordinate-wise median and MAD^2 (TRUE, default) or using the minimum covariance determinant (MCD)  (FALSE).  Using the MCD is substantially slower.  The MAD is the median of the absolute deviations from the median.  See the R help file on <code>mad</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>full.init</code></td>
+<td>
+<p> a logical command to determine whether the initialization is done for each pair separately (FALSE) or only one time at the beginning using a random sample from the data matrix (TRUE, default).  Initializing for each pair separately is substantially slower.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>absval</code></td>
+<td>
+<p> a logical command to determine whether the distance should be measured as 1 minus the absolute value of the correlation (TRUE, default) or simply 1 minus the correlation (FALSE)</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>Using <code>biwt.est</code> to estimate the robust covariance matrix, a robust measure of correlation is computed using Tukey's biweight M-estimator.  The biweight correlation is essentially a weighted correlation where the weights are calculated based on the distance of each measurement to the data center with respect to the shape of the data.  The correlations are computed pair-by-pair because the weights should depend only on the pairwise relationship at hand and not the relationship between all the observations globally.  The biwt functions simply compute many pairwise correlations and create distance matrices for use in other algorithms (e.g., clustering).
+</p>
+<p>In order for the biweight estimates to converge, a reasonable initialization must be given.  Typically, using TRUE for the median and full.init arguments will provide acceptable initializations.  With particularly irregular data, the MCD should be used to give the initial estimate of center and shape.  With data sets in which the observations are orders of magnitudes different, full.init=FALSE should be specified.
+</p>
+
+
+<h3>Value</h3>
+
+<p>Specifying "matrix" for the ouput argument returns a matrix of the biweight correlations.
+</p>
+<p>Specifying "vector" for the ouput argument returns a vector consisting of the lower triangle of the correlation matrix stored by columns in a vector, say <code class="reqn">bwcor</code>. If <code class="reqn">g</code> is the number of observations and <code class="reqn">bwcor</code> is the correlation vector, then for <code class="reqn">i &lt; j &lt;= g</code>, the biweight correlation between (rows) <code class="reqn">i</code> and <code class="reqn">j</code> is <code class="reqn">bwcor[(j-1)*(j-2)/2 + i]</code>. The length of the vector is <code class="reqn">g*(g-1)/2</code>, i.e., of order <code class="reqn">g^2</code>. 
+</p>
+<p>Specifying "distance" for the ouput argument returns a matrix of the biweight distances (default is 1 minus absolute value of the biweight correlation).
+</p>
+
+
+<h3>Note</h3>
+
+<p>If there is too much missing data or if the initialization is not accurate, the function will compute the MCD for a given pair of observations before computing the biweight correlation (regardless of the initial settings given in the call to the function).
+</p>
+<p>The "vector" output option is given so that correlations can be stored as vectors which are less computationally intensive than matrices.
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Jo Hardin <a href="mailto:jo.hardin@pomona.edu">jo.hardin@pomona.edu</a> </p>
+
+
+<h3>References</h3>
+
+<p> Hardin, J., Mitani, A., Hicks, L., VanKoten, B.; <b>A Robust Measure of Correlation Between Two Genes on a Microarray</b>, <em>BMC Bioinformatics</em>, <b>8</b>:220; 2007.   </p>
+
+
+<h3>See Also</h3>
+
+<p><code>biwt.est</code> </p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+samp.data &lt;-t(mvrnorm(30,mu=c(0,0,0),
+	Sigma=matrix(c(1,.75,-.75,.75,1,-.75,-.75,-.75,1),ncol=3)))
+
+# To compute the 3 pairwise correlations from the sample data:
+
+samp.bw.cor &lt;- biwt.cor(samp.data, output="vector")
+samp.bw.cor
+
+# To compute the 3 pairwise correlations in matrix form:
+
+samp.bw.cor.mat &lt;- biwt.cor(samp.data)
+samp.bw.cor.mat
+
+# To compute the 3 pairwise distances in matrix form:
+
+samp.bw.dist.mat &lt;- biwt.cor(samp.data, output="distance")
+samp.bw.dist.mat
+
+# To convert the distances into an object of class `dist'
+
+as.dist(samp.bw.dist.mat)
+</code></pre>
+
+
+</div>

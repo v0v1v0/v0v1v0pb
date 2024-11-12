@@ -1,0 +1,161 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>reduceResultsList</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Apply Functions on Results</h2>
+
+<h3>Description</h3>
+
+<p>Applies a function on the results of your finished jobs and thereby collects
+them in a <code>list</code> or <code>data.table</code>.
+The later requires the provided function to return a list (or <code>data.frame</code>) of scalar values.
+See <code>rbindlist</code> for features and limitations of the aggregation.
+</p>
+<p>If not all jobs are terminated, the respective result will be <code>NULL</code>.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">reduceResultsList(
+  ids = NULL,
+  fun = NULL,
+  ...,
+  missing.val,
+  reg = getDefaultRegistry()
+)
+
+reduceResultsDataTable(
+  ids = NULL,
+  fun = NULL,
+  ...,
+  missing.val,
+  reg = getDefaultRegistry()
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>ids</code></td>
+<td>
+<p>[<code>data.frame</code> or <code>integer</code>]<br>
+A <code>data.frame</code> (or <code>data.table</code>)
+with a column named “job.id”.
+Alternatively, you may also pass a vector of integerish job ids.
+If not set, defaults to the return value of <code>findDone</code>.
+Invalid ids are ignored.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>fun</code></td>
+<td>
+<p>[<code>function</code>]<br>
+Function to apply to each result. The result is passed unnamed as first argument. If <code>NULL</code>, the identity is used.
+If the function has the formal argument “job”, the <code>Job</code>/<code>Experiment</code> is also passed to the function.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>[<code>ANY</code>]<br>
+Additional arguments passed to to function <code>fun</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>missing.val</code></td>
+<td>
+<p>[<code>ANY</code>]<br>
+Value to impute as result for a job which is not finished.
+If not provided and a result is missing, an exception is raised.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>reg</code></td>
+<td>
+<p>[<code>Registry</code>]<br>
+Registry. If not explicitly passed, uses the default registry (see <code>setDefaultRegistry</code>).</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p><code>reduceResultsList</code> returns a list of the results in the same order as the provided ids.
+<code>reduceResultsDataTable</code> returns a <code>data.table</code> with columns “job.id” and additional result columns
+created via <code>rbindlist</code>, sorted by “job.id”.
+</p>
+
+
+<h3>Note</h3>
+
+<p>If you have thousands of jobs, disabling the progress bar (<code>options(batchtools.progress = FALSE)</code>)
+can significantly increase the performance.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>reduceResults</code>
+</p>
+<p>Other Results: 
+<code>batchMapResults()</code>,
+<code>loadResult()</code>,
+<code>reduceResults()</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+### Example 1 - reduceResultsList
+tmp = makeRegistry(file.dir = NA, make.default = FALSE)
+batchMap(function(x) x^2, x = 1:10, reg = tmp)
+submitJobs(reg = tmp)
+waitForJobs(reg = tmp)
+reduceResultsList(fun = sqrt, reg = tmp)
+
+### Example 2 - reduceResultsDataTable
+tmp = makeExperimentRegistry(file.dir = NA, make.default = FALSE)
+
+# add first problem
+fun = function(job, data, n, mean, sd, ...) rnorm(n, mean = mean, sd = sd)
+addProblem("rnorm", fun = fun, reg = tmp)
+
+# add second problem
+fun = function(job, data, n, lambda, ...) rexp(n, rate = lambda)
+addProblem("rexp", fun = fun, reg = tmp)
+
+# add first algorithm
+fun = function(instance, method, ...) if (method == "mean") mean(instance) else median(instance)
+addAlgorithm("average", fun = fun, reg = tmp)
+
+# add second algorithm
+fun = function(instance, ...) sd(instance)
+addAlgorithm("deviation", fun = fun, reg = tmp)
+
+# define problem and algorithm designs
+library(data.table)
+prob.designs = algo.designs = list()
+prob.designs$rnorm = CJ(n = 100, mean = -1:1, sd = 1:5)
+prob.designs$rexp = data.table(n = 100, lambda = 1:5)
+algo.designs$average = data.table(method = c("mean", "median"))
+algo.designs$deviation = data.table()
+
+# add experiments and submit
+addExperiments(prob.designs, algo.designs, reg = tmp)
+submitJobs(reg = tmp)
+
+# collect results and join them with problem and algorithm paramters
+res = ijoin(
+  getJobPars(reg = tmp),
+  reduceResultsDataTable(reg = tmp, fun = function(x) list(res = x))
+)
+unwrap(res, sep = ".")
+</code></pre>
+
+
+</div>

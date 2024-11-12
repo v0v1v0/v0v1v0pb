@@ -1,0 +1,92 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>importObservations</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Import Observed Mass Flow Rates</h2>
+
+<h3>Description</h3>
+
+<p>Imports observed mass flow rates stored in a <code>*.csv</code> file and then organizes the data for use with the <code>BMB</code> function.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">importObservations(file, header = TRUE, csv.params = NULL)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>file</code></td>
+<td>
+<p>Character string containing the name of <code>*.csv</code> from file which data will be read.  See Details below for valid file structures.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>header</code></td>
+<td>
+<p>Logical indicating if the first row of <code>file</code> file contains header information.  Current implementation of <code>importObservations</code> discards this information.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>csv.params</code></td>
+<td>
+<p>List of arguments to be passed to <code>read.csv</code></p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The purpose of this function is to make it easy to import and structure loosely organized data contained in a <code>*.csv</code> into a list for use as the <code>y</code> argument passed to the <code>BMB</code> function.
+The entries in file must be organized as such:
+</p>
+
+<ul>
+<li>
+<p> The first column of <code>file</code> must contain an integer sample location. The value of this integer must correspond to the column number used to specify linear constraints in <code>constrainProcess</code>.  For example, data for a given component collected at sampling location <code class="reqn">y_2</code> should be indicated with a <code>2</code> in the first column of <code>file</code> used with <code>importObservations</code>.  In the <code>file</code> used with <code>constrainProcess</code>, the linear constraint(s) on <code class="reqn">y_2</code> are indicated in the second column.
+</p>
+</li>
+<li>
+<p> The second column of <code>file</code> must contain sample component names.  <strong>This field is case sensitive</strong>.  Ensure a given sample component is named consistently, including capitalization and spacing.
+</p>
+</li>
+<li>
+<p> Columns 3 to <code class="reqn">K+2</code> of <code>file</code> must contain observed mass flow rates for the <code class="reqn">K</code> collected sample sets.  All observations located in the same column should be collected at the same time.
+</p>
+</li>
+<li>
+<p> Sample components of interest must be specified for each location.  If a sample component is not detected at some locations, but is detected at others, this component should be included in <code>file</code> with a specified mass flow rate of 0, or a very small number.
+</p>
+</li>
+</ul>
+<p><code>importObservations</code> reads the contents of <code>file</code>, sorts the sampling locations numerically, then creates a list of data frames.  Each data frame contains the data for a single sample component.
+</p>
+
+
+<h3>Value</h3>
+
+<p>Returns a list of data frames.  Each data frame is named according to the unique sample components specified in the second column of <code>file</code>.  This list object is intended to be used as the argument <code>y</code> for the <code>BMB</code> function.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+ y &lt;- importObservations(file = system.file("extdata", "twonode_example.csv",
+                                      package = "BayesMassBal"),
+                   header = TRUE, csv.params = list(sep = ";"))
+
+## The linear constraints for this example data set are:
+C &lt;- matrix(c(1,-1,0,-1,0,0,1,-1,0,-1), byrow = TRUE, ncol = 5, nrow = 2)
+
+## The X matrix for this data set can be found using:
+X &lt;- constrainProcess(C = C)
+</code></pre>
+
+
+</div>

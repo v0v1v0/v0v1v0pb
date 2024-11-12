@@ -1,0 +1,168 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>reloo.brmsfit</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Compute exact cross-validation for problematic observations</h2>
+
+<h3>Description</h3>
+
+<p>Compute exact cross-validation for problematic observations for which
+approximate leave-one-out cross-validation may return incorrect results.
+Models for problematic observations can be run in parallel using the
+<span class="pkg">future</span> package.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">## S3 method for class 'brmsfit'
+reloo(
+  x,
+  loo = NULL,
+  k_threshold = 0.7,
+  newdata = NULL,
+  resp = NULL,
+  check = TRUE,
+  recompile = NULL,
+  future_args = list(),
+  ...
+)
+
+## S3 method for class 'loo'
+reloo(x, fit, ...)
+
+reloo(x, ...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>An <span style="font-family: Courier New, Courier; color: #666666;"><b>R</b></span> object of class <code>brmsfit</code> or <code>loo</code> depending
+on the method.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>loo</code></td>
+<td>
+<p>An <span style="font-family: Courier New, Courier; color: #666666;"><b>R</b></span> object of class <code>loo</code>. If <code>NULL</code>,
+brms will try to extract a precomputed <code>loo</code> object
+from the fitted model, added there via <code>add_criterion</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>k_threshold</code></td>
+<td>
+<p>The threshold at which Pareto <code class="reqn">k</code>
+estimates are treated as problematic. Defaults to <code>0.7</code>.
+See <code>pareto_k_ids</code>
+for more details.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>newdata</code></td>
+<td>
+<p>An optional data.frame for which to evaluate predictions. If
+<code>NULL</code> (default), the original data of the model is used. <code>NA</code>
+values within factors (excluding grouping variables) are interpreted as if
+all dummy variables of this factor are zero. This allows, for instance, to
+make predictions of the grand mean when using sum coding. <code>NA</code> values
+within grouping variables are treated as a new level.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>resp</code></td>
+<td>
+<p>Optional names of response variables. If specified, predictions
+are performed only for the specified response variables.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>check</code></td>
+<td>
+<p>Logical; If <code>TRUE</code> (the default), some checks
+check are performed if the <code>loo</code> object was generated
+from the <code>brmsfit</code> object passed to argument <code>fit</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>recompile</code></td>
+<td>
+<p>Logical, indicating whether the Stan model should be
+recompiled. This may be necessary if you are running <code>reloo</code> on
+another machine than the one used to fit the model.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>future_args</code></td>
+<td>
+<p>A list of further arguments passed to
+<code>future</code> for additional control over parallel
+execution if activated.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Further arguments passed to
+<code>update.brmsfit</code> and <code>log_lik.brmsfit</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>fit</code></td>
+<td>
+<p>An <span style="font-family: Courier New, Courier; color: #666666;"><b>R</b></span> object of class <code>brmsfit</code>.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>Warnings about Pareto <code class="reqn">k</code> estimates indicate observations
+for which the approximation to LOO is problematic (this is described in
+detail in Vehtari, Gelman, and Gabry (2017) and the
+<span class="pkg">loo</span> package documentation).
+If there are <code class="reqn">J</code> observations with <code class="reqn">k</code> estimates above
+<code>k_threshold</code>, then <code>reloo</code> will refit the original model
+<code class="reqn">J</code> times, each time leaving out one of the <code class="reqn">J</code>
+problematic observations. The pointwise contributions of these observations
+to the total ELPD are then computed directly and substituted for the
+previous estimates from these <code class="reqn">J</code> observations that are stored in the
+original <code>loo</code> object.
+</p>
+
+
+<h3>Value</h3>
+
+<p>An object of the class <code>loo</code>.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>loo</code>, <code>kfold</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## Not run: 
+fit1 &lt;- brm(count ~ zAge + zBase * Trt + (1|patient),
+            data = epilepsy, family = poisson())
+
+# throws warning about some pareto k estimates being too high
+(loo1 &lt;- loo(fit1))
+
+# no more warnings after reloo
+(reloo1 &lt;- reloo(fit1, loo = loo1, chains = 1))
+
+## End(Not run)
+
+</code></pre>
+
+
+</div>

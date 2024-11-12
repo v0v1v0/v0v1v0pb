@@ -1,0 +1,247 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>bst</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2> Boosting for Classification and Regression</h2>
+
+<h3>Description</h3>
+
+<p>Gradient boosting for optimizing loss functions with componentwise
+linear, smoothing splines, tree models as base learners.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">bst(x, y, cost = 0.5, family = c("gaussian", "hinge", "hinge2", "binom", "expo", 
+"poisson", "tgaussianDC", "thingeDC", "tbinomDC", "binomdDC", "texpoDC", "tpoissonDC",
+ "huber", "thuberDC", "clossR", "clossRMM", "closs", "gloss", "qloss", "clossMM",
+"glossMM", "qlossMM", "lar"), ctrl = bst_control(), control.tree = list(maxdepth = 1), 
+learner = c("ls", "sm", "tree"))
+## S3 method for class 'bst'
+print(x, ...)
+## S3 method for class 'bst'
+predict(object, newdata=NULL, newy=NULL, mstop=NULL, 
+type=c("response", "all.res", "class", "loss", "error"), ...)
+## S3 method for class 'bst'
+plot(x, type = c("step", "norm"),...)
+## S3 method for class 'bst'
+coef(object, which=object$ctrl$mstop, ...)
+## S3 method for class 'bst'
+fpartial(object, mstop=NULL, newdata=NULL)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p> a data frame containing the variables in the model.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>y</code></td>
+<td>
+<p> vector of responses. <code>y</code> must be in {1, -1} for <code>family</code> = "hinge".</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>cost</code></td>
+<td>
+<p> price to pay for false positive, 0 &lt; <code>cost</code> &lt; 1; price of false negative is 1-<code>cost</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>family</code></td>
+<td>
+<p> A variety of loss functions.
+<code>family</code> = "hinge" for hinge loss and <code>family</code>="gaussian" for squared error loss. 
+Implementing the negative gradient corresponding
+to the loss function to be minimized. For hinge loss, +1/-1 binary responses is used.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ctrl</code></td>
+<td>
+<p> an object of class <code>bst_control</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>type</code></td>
+<td>
+<p> type of prediction or plot, see <code>predict</code>, <code>plot</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>control.tree</code></td>
+<td>
+<p> control parameters of rpart. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>learner</code></td>
+<td>
+<p> a character specifying the component-wise base learner to be used:
+<code>ls</code> linear models, 
+<code>sm</code> smoothing splines,
+<code>tree</code> regression trees.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>object</code></td>
+<td>
+<p> class of <code>bst</code>. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>newdata</code></td>
+<td>
+<p> new data for prediction with the same number of columns as <code>x</code>. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>newy</code></td>
+<td>
+<p> new response. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>mstop</code></td>
+<td>
+<p> boosting iteration for prediction. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>which</code></td>
+<td>
+<p> at which boosting <code>mstop</code> to extract coefficients. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p> additional arguments. </p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>Boosting algorithms for classification and regression problems. In a classification problem, suppose <code class="reqn">f</code> is a classifier for a response <code class="reqn">y</code>. A cost-sensitive or weighted loss function is </p>
+<p style="text-align: center;"><code class="reqn">L(y,f,cost)=l(y,f,cost)\max(0, (1-yf))</code>
+</p>
+<p> For <code>family="hinge"</code>, 
+</p>
+<p style="text-align: center;"><code class="reqn">l(y,f,cost)= 
+1-cost, if \, y= +1;
+\quad cost, if \, y= -1</code>
+</p>
+<p> For <code>family="hinge2"</code>, 
+l(y,f,cost)= 1, if y = +1 and f &gt; 0 ; = 1-cost, if y = +1 and f &lt; 0; = cost, if y = -1 and f &gt; 0; = 1, if y = -1 and f &lt; 0. 
+</p>
+<p>For twin boosting if <code>twinboost=TRUE</code>, there are two types of adaptive boosting if <code>learner="ls"</code>: for <code>twintype=1</code>, weights are based on coefficients in the first round of boosting; for <code>twintype=2</code>, weights are based on predictions in the first round of boosting. See Buehlmann and Hothorn (2010).
+</p>
+
+
+<h3>Value</h3>
+
+<p>An object of class <code>bst</code> with <code>print</code>, <code>coef</code>,
+<code>plot</code> and <code>predict</code> methods are available for linear models.
+For nonlinear models, methods <code>print</code> and <code>predict</code> are available.
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>x, y, cost, family, learner, control.tree, maxdepth</code></td>
+<td>
+<p>These are input variables and parameters</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ctrl</code></td>
+<td>
+<p>the input <code>ctrl</code> with possible updated <code>fk</code> if <code>family="thingeDC", "tbinomDC", "binomdDC"</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>yhat</code></td>
+<td>
+<p>predicted function estimates</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ens</code></td>
+<td>
+<p>a list of length <code>mstop</code>. Each element is a fitted model to the pseudo residuals, defined as negative gradient of loss function at the current estimated function</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ml.fit</code></td>
+<td>
+<p>the last element of <code>ens</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ensemble</code></td>
+<td>
+<p>a vector of length <code>mstop</code>. Each element is the variable selected in each boosting step when applicable</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>xselect</code></td>
+<td>
+<p>selected variables in <code>mstop</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>coef</code></td>
+<td>
+<p>estimated coefficients in each iteration. Used internally only</p>
+</td>
+</tr>
+</table>
+<h3>Author(s)</h3>
+
+<p> Zhu Wang </p>
+
+
+<h3>References</h3>
+
+<p>Zhu Wang (2011),
+HingeBoost: ROC-Based Boost for Classification and Variable Selection.
+<em>The International Journal of Biostatistics</em>, <b>7</b>(1), Article 13.
+</p>
+<p>Peter Buehlmann and Torsten Hothorn (2010),
+Twin Boosting: improved feature selection and prediction,
+<em>Statistics and Computing</em>, <b>20</b>, 119-138.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>cv.bst</code> for cross-validated stopping iteration. Furthermore see
+<code>bst_control</code></p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">x &lt;- matrix(rnorm(100*5),ncol=5)
+c &lt;- 2*x[,1]
+p &lt;- exp(c)/(exp(c)+exp(-c))
+y &lt;- rbinom(100,1,p)
+y[y != 1] &lt;- -1
+x &lt;- as.data.frame(x)
+dat.m &lt;- bst(x, y, ctrl = bst_control(mstop=50), family = "hinge", learner = "ls")
+predict(dat.m)
+dat.m1 &lt;- bst(x, y, ctrl = bst_control(twinboost=TRUE, 
+coefir=coef(dat.m), xselect.init = dat.m$xselect, mstop=50))
+dat.m2 &lt;- rbst(x, y, ctrl = bst_control(mstop=50, s=0, trace=TRUE), 
+rfamily = "thinge", learner = "ls")
+predict(dat.m2)
+</code></pre>
+
+
+</div>

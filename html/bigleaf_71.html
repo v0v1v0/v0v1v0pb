@@ -1,0 +1,212 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>wind.profile</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Wind Speed at a Given Height in the Surface Layer</h2>
+
+<h3>Description</h3>
+
+<p>Wind speed at a given height above the canopy estimated from single-level
+measurements of wind speed.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">wind.profile(
+  data,
+  z,
+  Tair = "Tair",
+  pressure = "pressure",
+  ustar = "ustar",
+  H = "H",
+  wind = "wind",
+  zr,
+  zh,
+  d = NULL,
+  frac_d = 0.7,
+  z0m = NULL,
+  frac_z0m = NULL,
+  estimate_z0m = TRUE,
+  stab_correction = TRUE,
+  stab_formulation = c("Dyer_1970", "Businger_1971"),
+  constants = bigleaf.constants()
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+<p>Data.frame or matrix containing all required variables</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>z</code></td>
+<td>
+<p>Height above ground for which wind speed is calculated.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Tair</code></td>
+<td>
+<p>Air temperature (deg C)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>pressure</code></td>
+<td>
+<p>Atmospheric pressure (kPa)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ustar</code></td>
+<td>
+<p>Friction velocity (m s-1)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>H</code></td>
+<td>
+<p>Sensible heat flux (W m-2)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>wind</code></td>
+<td>
+<p>Wind speed at height zr (m s-1); only used if <code>stab_correction = TRUE</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>zr</code></td>
+<td>
+<p>Instrument (reference) height (m)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>zh</code></td>
+<td>
+<p>Canopy height (m)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>d</code></td>
+<td>
+<p>Zero-plane displacement height (-)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>frac_d</code></td>
+<td>
+<p>Fraction of displacement height on canopy height (-);
+only used if <code>d</code> is not available</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>z0m</code></td>
+<td>
+<p>Roughness length (m), optional; only used if <code>stab_correction = FALSE</code> (default=0.1)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>frac_z0m</code></td>
+<td>
+<p>Fraction of roughness length on canopy height (-), optional; only used if <code>z0m</code> is not provided.
+Default is 0.1.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>estimate_z0m</code></td>
+<td>
+<p>Should <code>z0m</code> be estimated from the logarithmic wind profile? If <code>TRUE</code> (the default),
+arguments <code>z0m</code> and <code>frac_z0m</code> are ignored.
+See <code>roughness.parameters</code> for details.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>stab_correction</code></td>
+<td>
+<p>Should stability correction be applied? Defaults to <code>TRUE</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>stab_formulation</code></td>
+<td>
+<p>Stability correction function used (If <code>stab_correction = TRUE</code>).
+Either <code>"Dyer_1970"</code> or <code>"Businger_1971"</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>constants</code></td>
+<td>
+<p>k - von-Karman constant (-) <br>
+Kelvin - conversion degree Celsius to Kelvin <br>
+cp - specific heat of air for constant pressure (J K-1 kg-1) <br>
+g - gravitational acceleration (m s-2)</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The underlying assumption is the existence of a logarithmic wind profile
+above the height d + z0m (the height at which wind speed mathematically reaches zero
+according to the Monin-Obukhov similarity theory).
+In this case, the wind speed at a given height z is given by:
+</p>
+<p style="text-align: center;"><code class="reqn">u(z) = (ustar/k) * (ln((z - d) / z0m) - \psi{m}</code>
+</p>
+
+<p>The roughness parameters zero-plane displacement height (d) and roughness length (z0m)
+can be approximated from <code>roughness.parameters</code>. <code class="reqn">\psi{m}</code> is omitted
+if <code>stab_correction = FALSE</code> (not recommended). If <code>estimate_z0m = TRUE</code>,
+z0m is first estimated from the wind profile equation and then used in the equation
+above for the calculation of <code>u(z)</code> (see e.g. Newman &amp; Klein 2014).
+</p>
+
+
+<h3>Value</h3>
+
+<p>A vector of wind speed at heights <code>z</code>.
+</p>
+
+
+<h3>Note</h3>
+
+<p>Note that this equation is only valid for z &gt;= d + z0m, and it is not 
+meaningful to calculate values closely above d + z0m. All values in <code>heights</code>
+smaller than d + z0m will return 0.
+</p>
+
+
+<h3>References</h3>
+
+<p>Monteith, J.L., Unsworth, M.H., 2008: Principles of Environmental Physics.
+3rd edition. Academic Press, London. 
+</p>
+<p>Newman, J.F., Klein, P.M., 2014: The impacts of atmospheric stability on
+the accuracy of wind speed extrapolation methods. Resources 3, 81-105.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>roughness.parameters</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">heights &lt;- seq(18,40,2)  # heights above ground for which to calculate wind speed
+df &lt;- data.frame(Tair=25,pressure=100,wind=c(3,4,5),ustar=c(0.5,0.6,0.65),H=c(200,230,250)) 
+ws &lt;- sapply(heights,function(x) wind.profile(df,z=x,zr=40,zh=25,d=16))
+colnames(ws) &lt;- paste0(heights,"m")
+
+</code></pre>
+
+
+</div>

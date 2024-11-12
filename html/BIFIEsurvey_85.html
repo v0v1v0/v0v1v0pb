@@ -1,0 +1,184 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>BIFIE.derivedParameters</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>
+Statistical Inference for Derived Parameters
+</h2>
+
+<h3>Description</h3>
+
+<p>This function performs statistical for derived parameters for objects of classes
+<code>BIFIE.by</code>,
+<code>BIFIE.correl</code>, <code>BIFIE.crosstab</code>, <code>BIFIE.freq</code>,
+<code>BIFIE.linreg</code>, <code>BIFIE.logistreg</code> and <code>BIFIE.univar</code>.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">BIFIE.derivedParameters( BIFIE.method, derived.parameters, type=NULL)
+
+## S3 method for class 'BIFIE.derivedParameters'
+summary(object,digits=4,...)
+
+## S3 method for class 'BIFIE.derivedParameters'
+coef(object,...)
+
+## S3 method for class 'BIFIE.derivedParameters'
+vcov(object,...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>BIFIE.method</code></td>
+<td>
+
+<p>Object of classes <code>BIFIE.by</code>, <code>BIFIE.correl</code>,
+<code>BIFIE.crosstab</code>,
+<code>BIFIE.freq</code>,  <code>BIFIE.linreg</code>,
+<code>BIFIE.logistreg</code> or <code>BIFIE.univar</code>
+(see <code>parnames</code> in the Output of these methods for saved parameters)
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>derived.parameters</code></td>
+<td>
+<p>List with <span style="font-family: Courier New, Courier; color: #666666;"><b>R</b></span> formulas for derived
+parameters (see Examples for specification)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>type</code></td>
+<td>
+<p>Only applies to <code>BIFIE.correl</code>. In case of <code>type="cov"</code>
+covariances instead of correlations are used for derived parameters.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>object</code></td>
+<td>
+<p>Object of class <code>BIFIE.derivedParameters</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>digits</code></td>
+<td>
+<p>Number of digits for rounding decimals in output</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Further arguments to be passed</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The distribution of derived parameters is derived by the direct
+calculation using original resampled parameters.
+</p>
+
+
+<h3>Value</h3>
+
+<p>A list with following entries
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>stat</code></td>
+<td>
+<p>Data frame with statistics</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>coef</code></td>
+<td>
+<p>Estimates of derived parameters</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>vcov</code></td>
+<td>
+<p>Covariance matrix of derived parameters</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>parnames</code></td>
+<td>
+<p>Parameter names</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>res_wald</code></td>
+<td>
+<p>Output of Wald test (global test regarding all parameters)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>More values</p>
+</td>
+</tr>
+</table>
+<h3>See Also</h3>
+
+<p>See also <code>BIFIE.waldtest</code> for multi-parameter tests.
+</p>
+<p>See <code>car::deltaMethod</code> for the Delta method assuming that the multivariate
+distribution of the parameters is
+asymptotically normal.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">#############################################################################
+# EXAMPLE 1: Imputed TIMSS dataset
+#            Inference for correlations and derived parameters
+#############################################################################
+
+data(data.timss1)
+data(data.timssrep)
+
+# create BIFIE.dat object
+bdat &lt;- BIFIEsurvey::BIFIE.data( data.list=data.timss1, wgt=data.timss1[[1]]$TOTWGT,
+           wgtrep=data.timssrep[, -1 ] )
+
+# compute correlations
+res1 &lt;- BIFIEsurvey::BIFIE.correl( bdat,
+            vars=c("ASSSCI", "ASMMAT", "books", "migrant" )  )
+summary(res1)
+res1$parnames
+  ##    [1] "ASSSCI_ASSSCI"   "ASSSCI_ASMMAT"   "ASSSCI_books"    "ASSSCI_migrant"
+  ##    [5] "ASMMAT_ASMMAT"   "ASMMAT_books"    "ASMMAT_migrant"  "books_books"
+  ##    [9] "books_migrant"   "migrant_migrant"
+
+# define four derived parameters
+derived.parameters &lt;- list(
+        # squared correlation of science and mathematics
+        "R2_sci_mat"=~ I( 100* ASSSCI_ASMMAT^2  ),
+        # partial correlation of science and mathematics controlling for books
+        "parcorr_sci_mat"=~ I( ( ASSSCI_ASMMAT - ASSSCI_books * ASMMAT_books ) /
+                            sqrt(( 1 - ASSSCI_books^2 ) * ( 1-ASMMAT_books^2 ) ) ),
+        # original correlation science and mathematics (already contained in res1)
+        "cor_sci_mat"=~ I(ASSSCI_ASMMAT),
+        # original correlation books and migrant
+        "cor_book_migra"=~ I(books_migrant)
+        )
+
+# statistical inference for derived parameters
+res2 &lt;- BIFIEsurvey::BIFIE.derivedParameters( res1, derived.parameters )
+summary(res2)
+</code></pre>
+
+
+</div>

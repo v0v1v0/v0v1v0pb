@@ -1,0 +1,143 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>predict.BayesSurvive</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Predict survival risk</h2>
+
+<h3>Description</h3>
+
+<p>Predict survival probability, (cumulative) hazard or (integrated) Brier
+scores based on Cox regression models
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">## S3 method for class 'BayesSurvive'
+predict(
+  object,
+  survObj.new,
+  type = "brier",
+  method = "mean",
+  times = NULL,
+  subgroup = 1,
+  verbose = TRUE,
+  ...
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>object</code></td>
+<td>
+<p>fitted object obtained with <code>BayesSurvive</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>survObj.new</code></td>
+<td>
+<p>a list containing observed data from new subjects with
+components <code>t</code>, <code>di</code>, <code>x</code>. If <code>type</code> is among
+<code>c("hazard", "cumhazard", "survival")</code>, only <code>survObj.new$X</code> is
+needed.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>type</code></td>
+<td>
+<p>option to chose for predicting brier scores with <code>type="brier"</code>
+or one of <code>type=c("brier", "hazard", "cumhazard", "survival")</code>)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>method</code></td>
+<td>
+<p>option to use the posterior mean (<code>"mean"</code>) of coefficients
+for prediction or Bayesian model averaging (<code>"BMA"</code>) for prediction</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>times</code></td>
+<td>
+<p>time points at which to evaluate the risks. If <code>NULL</code>
+(default), the event/censoring times are used. If <code>type="brier"</code>, the
+largest one of the <code>times</code> is used</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>subgroup</code></td>
+<td>
+<p>index of the subgroup in <code>survObj.new</code> for prediction.
+Default value is 1</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>verbose</code></td>
+<td>
+<p>logical value to print IBS of the NULL model and the Bayesian
+Cox model</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>not used</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>A list object including seven components with the first compoment as
+the specified argument <code>type</code>. The other components of the list are
+"se", "band", "type", "diag", "baseline" and "times", see function
+<code>riskRegression::predictCox</code> for details
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+library("BayesSurvive")
+set.seed(123)
+
+# Load the example dataset
+data("simData", package = "BayesSurvive")
+
+dataset &lt;- list(
+  "X" = simData[[1]]$X,
+  "t" = simData[[1]]$time,
+  "di" = simData[[1]]$status
+)
+
+# Initial value: null model without covariates
+initial &lt;- list("gamma.ini" = rep(0, ncol(dataset$X)))
+# Hyperparameters
+hyperparPooled &lt;- list(
+  "c0"     = 2, # prior of baseline hazard
+  "tau"    = 0.0375, # sd for coefficient prior
+  "cb"     = 20, # sd for coefficient prior
+  "pi.ga"  = 0.02, # prior variable selection probability for standard Cox models
+  "a"      = -4, # hyperparameter in MRF prior
+  "b"      = 0.1, # hyperparameter in MRF prior
+  "G"      = simData$G # hyperparameter in MRF prior
+)
+
+
+# run Bayesian Cox with graph-structured priors
+fit &lt;- BayesSurvive(
+  survObj = dataset, hyperpar = hyperparPooled,
+  initial = initial, nIter = 100
+)
+# predict survival probabilities of the train data
+predict(fit, survObj.new = dataset)
+
+
+</code></pre>
+
+
+</div>

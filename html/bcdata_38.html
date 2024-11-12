@@ -1,0 +1,92 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>filter.bcdc_promise</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Filter a query from bcdc_query_geodata()</h2>
+
+<h3>Description</h3>
+
+<p>Filter a query from Web Feature Service using dplyr
+methods. This filtering is accomplished lazily so that
+the full sf object is not read into memory until
+<code>collect()</code> has been called.
+</p>
+<p>See <code>dplyr::filter</code> for details.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">## S3 method for class 'bcdc_promise'
+filter(.data, ...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>.data</code></td>
+<td>
+<p>object of class <code>bcdc_promise</code> (likely passed from <code>bcdc_query_geodata()</code>)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Logical predicates with which to filter the results. Multiple
+conditions are combined with <code>&amp;</code>. Only rows where the condition evaluates to
+<code>TRUE</code> are kept. Accepts normal R expressions as well as any of the special
+CQL geometry functions such as <code>WITHIN()</code> or <code>INTERSECTS()</code>.
+If you know <code>CQL</code> and want to write a <code>CQL</code> query directly, write it enclosed
+in quotes, wrapped in the <code>CQL()</code> function. e.g., <code>CQL("ID = '42'")</code>.
+</p>
+<p>If your filter expression contains calls that need to be executed locally, wrap them
+in <code>local()</code> to force evaluation in R before the request is sent to the server.</p>
+</td>
+</tr>
+</table>
+<h3>Methods (by class)</h3>
+
+
+<ul><li> <p><code>filter(bcdc_promise)</code>: filter.bcdc_promise
+</p>
+</li></ul>
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+try(
+  crd &lt;- bcdc_query_geodata("regional-districts-legally-defined-administrative-areas-of-bc") %&gt;%
+    filter(ADMIN_AREA_NAME == "Cariboo Regional District") %&gt;%
+    collect()
+)
+
+try(
+  ret1 &lt;- bcdc_query_geodata("fire-perimeters-historical") %&gt;%
+    filter(FIRE_YEAR == 2000, FIRE_CAUSE == "Person", INTERSECTS(crd)) %&gt;%
+    collect()
+)
+
+# Use local() to force parts of your call to be evaluated in R:
+try({
+  # Create a bounding box around two points and use that to filter
+  # the remote data set
+  library(sf)
+  two_points &lt;- st_sfc(st_point(c(1164434, 368738)),
+                     st_point(c(1203023, 412959)),
+                     crs = 3005)
+
+  # Wrapping the call to `st_bbox()` in `local()` ensures that it
+  # is executed in R to make a bounding box that is then sent to
+  # the server for the filtering operation:
+  res &lt;- bcdc_query_geodata("local-and-regional-greenspaces") %&gt;%
+    filter(BBOX(local(st_bbox(two_points, crs = st_crs(two_points))))) %&gt;%
+    collect()
+})
+
+</code></pre>
+
+
+</div>

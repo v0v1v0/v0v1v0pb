@@ -1,0 +1,95 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>draw_p_subpops_tree</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Draw allele frequencies for subpopulations related by a tree</h2>
+
+<h3>Description</h3>
+
+<p>The allele frequency matrix <code>P</code> for <code>m_loci</code> loci (rows) and <code>k_subpops</code> subpopulations (columns) are drawn from the Balding-Nichols distribution.
+If the allele frequency in the parent node is <code>p</code> and the FST parameter of the child node from the parent node is <code>F</code>, then the allele frequency in the child node is drawn from
+<code>rbeta( 1, nu * p, nu * ( 1 - p ) )</code>,
+where <code>nu &lt;- 1 / F - 1</code>.
+This function iterates drawing allele frequencies through the tree structure, therefore allowing covariance between subpopulations that share branches.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">draw_p_subpops_tree(p_anc, tree_subpops, m_loci = NA, nodes = FALSE)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>p_anc</code></td>
+<td>
+<p>The scalar or length-<code>m_loci</code> vector of ancestral allele frequencies per locus.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>tree_subpops</code></td>
+<td>
+<p>The coancestry tree relating the <code>k_subpops</code> subpopulations.
+Must be a <code>phylo</code> object from the <code>ape</code> package (see <code>ape::read.tree()</code>).
+The edge lengths of this tree must be the FST parameters relating parent and child subpopulations.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>m_loci</code></td>
+<td>
+<p>If <code>p_anc</code> is scalar, optionally provide the desired number of loci (lest only one locus be simulated).
+Stops if both <code>length(p_anc) &gt; 1</code> and <code>m_loci</code> is not <code>NA</code> and they disagree.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nodes</code></td>
+<td>
+<p>If <code>FALSE</code> (default), returns allele frequencies of "tip" subpopulations only; otherwise returns all allele frequencies, including internal nodes.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>The <code>m_loci</code>-by-<code>k_subpops</code> matrix of independent subpopulation allele frequencies.
+If <code>nodes = FALSE</code>, columns include only tip subpopulations.
+If <code>nodes = TRUE</code>, internal node subpopulations are also included (in this case the input <code>p_anc</code> is returned in the column corresponding to the root node).
+In all cases subpopulations are ordered as indexes in the tree, which normally implies the tip nodes are listed first, followed by the internal nodes (as in <code>tree_subpops$edge</code> matrix, see <code>ape::read.tree()</code> for details).
+The <code>tree_subpops</code> tip and node names are copied to the column names of this output matrix (individual names may be blank if missing in tree (such as for internal nodes); column names are <code>NULL</code> if all <code>tree_subpops</code> tip labels were blank, regardless of internal node labels).
+If <code>p_anc</code> is length-<code>m_loci</code> with names, these names are copied to the row names of this output matrix.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>draw_p_subpops()</code> for version for independent subpopulations.
+</p>
+<p>For "phylo" tree class, see <code>ape::read.tree()</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R"># for simulating a tree with `rtree`
+library(ape)
+
+# a typical, non-trivial example
+# number of tip subpopulations
+k_subpops &lt;- 3
+# number of loci
+m_loci &lt;- 10
+# random vector of ancestral allele frequencies
+p_anc &lt;- draw_p_anc(m_loci)
+# simulate tree
+tree_subpops &lt;- rtree( k_subpops )
+# matrix of intermediate subpop allele freqs
+p_subpops &lt;- draw_p_subpops_tree(p_anc, tree_subpops)
+
+</code></pre>
+
+
+</div>

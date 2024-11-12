@@ -1,0 +1,299 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>BayesGLM</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>BayesGLM</h2>
+
+<h3>Description</h3>
+
+<p>Performs spatial Bayesian GLM for fMRI task activation
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">BayesGLM(
+  data,
+  vertices = NULL,
+  faces = NULL,
+  mesh = NULL,
+  mask = NULL,
+  task_names = NULL,
+  session_names = NULL,
+  combine_sessions = TRUE,
+  scale_BOLD = c("auto", "mean", "sd", "none"),
+  scale_design = TRUE,
+  Bayes = TRUE,
+  ar_order = 6,
+  ar_smooth = 5,
+  aic = FALSE,
+  num.threads = 4,
+  return_INLA = c("trimmed", "full", "minimal"),
+  verbose = 1,
+  meanTol = 1e-06,
+  varTol = 1e-06
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+<p>A list of sessions in the <code>"BfMRI.sess"</code> object format. Each
+session is a list with elements <code>"BOLD"</code>, <code>"design"</code>, and
+optionally <code>"nuisance"</code>. Each element should be a numeric matrix with
+<code class="reqn">T</code> rows. The name of each element in <code>data</code> is the name of that
+session. See <code>?is.BfMRI.sess</code> for details.
+</p>
+<p>Note that the argument <code>session_names</code> can be used instead of providing
+the session names as the names of the elements in <code>data</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>vertices, faces</code></td>
+<td>
+<p>If <code>Bayes</code>, the geometry data can be provided
+with either both the <code>vertices</code> and <code>faces</code> arguments, or with the
+<code>mesh</code> argument.
+</p>
+<p><code>vertices</code> is a <code class="reqn">V \times 3</code> matrix, where each row contains the
+Euclidean coordinates at which a given vertex in the mesh is located.
+<code class="reqn">V</code> is the number of vertices in the mesh.
+</p>
+<p><code>faces</code> is a <code class="reqn">F \times 3</code> matrix, where each row contains the
+vertex indices for a given triangular face in the mesh. <code class="reqn">F</code> is the
+number of faces in the mesh.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>mesh</code></td>
+<td>
+<p>If <code>Bayes</code>, the geometry data can be provided
+with either both the <code>vertices</code> and <code>faces</code> arguments, or with the
+<code>mesh</code> argument.
+</p>
+<p><code>mesh</code> is an <code>"inla.mesh"</code> object. This can be created for surface
+data using <code>make_mesh</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>mask</code></td>
+<td>
+<p>(Optional) A length <code class="reqn">V</code> logical vector indicating the
+vertices to include.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>task_names</code></td>
+<td>
+<p>(Optional) Names of tasks represented in design matrix.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>session_names</code></td>
+<td>
+<p>(Optional, and only relevant for multi-session modeling)
+Names of each session. Default: <code>NULL</code>. In <code>BayesGLM</code> this
+argument will overwrite the names of the list entries in <code>data</code>, if
+both exist.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>combine_sessions</code></td>
+<td>
+<p>If multiple sessions are provided, should their data
+be combined and analyzed as a single session?
+</p>
+<p>If <code>TRUE</code> (default), the multiple sessions will be concatenated along
+time after scaling and nuisance regression, but before prewhitening. If
+<code>FALSE</code>, each session will be analyzed separately, except that a single
+estimate of the AR model coefficients for prewhitening is used, estimated
+across all sessions.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>scale_BOLD</code></td>
+<td>
+<p>Option for scaling the BOLD response.
+</p>
+<p><code>"auto"</code> (default) will use <code>"mean"</code> scaling except if demeaned
+data is detected (if any mean is less than one), in which case <code>"sd"</code>
+scaling will be used instead.
+</p>
+<p><code>"mean"</code> scaling will scale the data to percent local signal change.
+</p>
+<p><code>"sd"</code> scaling will scale the data by local standard deviation.
+</p>
+<p><code>"none"</code> will only center the data, not scale it.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>scale_design</code></td>
+<td>
+<p>Scale the design matrix by dividing each column by its
+maximum and then subtracting the mean? Default: <code>TRUE</code>. If
+<code>FALSE</code>, the design matrix is centered but not scaled.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Bayes</code></td>
+<td>
+<p>If <code>TRUE</code> (default), will fit a spatial Bayesian GLM in
+addition to the classical GLM. (The classical GLM is always returned.)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ar_order</code></td>
+<td>
+<p>(numeric) Controls prewhitening. If greater than zero, this
+should be a number indicating the order of the autoregressive model to use
+for prewhitening. If zero, do not prewhiten. Default: <code>6</code>. For
+multi-session models, note that a single AR model is used; the parameters
+are estimated by averaging the estimates from each session.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ar_smooth</code></td>
+<td>
+<p>(numeric) FWHM parameter for smoothing the AR model
+coefficient estimates for prewhitening. Remember that
+<code class="reqn">\sigma = \frac{FWHM}{2*sqrt(2*log(2)}</code>. Set to <code>0</code> or <code>NULL</code>
+to not do any smoothing. Default: <code>5</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>aic</code></td>
+<td>
+<p>Use the AIC to select AR model order between <code>0</code> and
+<code>ar_order</code>? Default: <code>FALSE</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>num.threads</code></td>
+<td>
+<p>The maximum number of threads to use for parallel
+computations: prewhitening parameter estimation, and the inla-program model
+estimation. Default: <code>4</code>. Note that parallel prewhitening requires the
+<code>parallel</code> package.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>return_INLA</code></td>
+<td>
+<p>Return the INLA model object? (It can be large.) Use
+<code>"trimmed"</code> (default) to return only the more relevant results, which
+is enough for both <code>id_activations</code> and <code>BayesGLM2</code>,
+<code>"minimal"</code> to return just enough for <code>BayesGLM2</code> but not
+<code>id_activations</code>, or <code>"full"</code> to return the full output of
+<code>inla</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>verbose</code></td>
+<td>
+<p>Should updates be printed? Use <code>1</code> (default) for
+occasional updates, <code>2</code> for occasional updates as well as running INLA
+in verbose mode (if applicable), or <code>0</code> for no updates.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>meanTol, varTol</code></td>
+<td>
+<p>Tolerance for mean and variance of each data location.
+Locations which do not meet these thresholds are masked out of the analysis.
+Default: <code>1e-6</code> for both.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>A <code>"BayesGLM"</code> object: a list with elements
+</p>
+
+<dl>
+<dt>INLA_model_obj</dt>
+<dd>
+<p>The full result of the call to <code>INLA::inla</code>.</p>
+</dd>
+<dt>task_estimates</dt>
+<dd>
+<p>The task coefficients for the Bayesian model.</p>
+</dd>
+<dt>result_classical</dt>
+<dd>
+<p>Results from the classical model: task estimates, task standard error estimates, residuals, degrees of freedom, and the mask.</p>
+</dd>
+<dt>mesh</dt>
+<dd>
+<p>The model mesh including only the locations analyzed, i.e. within <code>mask</code>, without missing values, and meeting <code>meanTol</code> and <code>varTol</code>.</p>
+</dd>
+<dt>mesh_orig</dt>
+<dd>
+<p>The original mesh provided.</p>
+</dd>
+<dt>mask</dt>
+<dd>
+<p>A mask of <code>mesh_orig</code> indicating the locations inside <code>mesh</code>.</p>
+</dd>
+<dt>design</dt>
+<dd>
+<p>The design matrix, after centering and scaling, but before any nuisance regression or prewhitening.</p>
+</dd>
+<dt>task_names</dt>
+<dd>
+<p>The names of the tasks.</p>
+</dd>
+<dt>session_names</dt>
+<dd>
+<p>The names of the sessions.</p>
+</dd>
+<dt>hyperpar_posteriors</dt>
+<dd>
+<p>Hyperparameter posterior densities.</p>
+</dd>
+<dt>theta_estimates</dt>
+<dd>
+<p>Theta estimates from the Bayesian model.</p>
+</dd>
+<dt>posterior_Sig_inv</dt>
+<dd>
+<p>For joint group modeling.</p>
+</dd>
+<dt>mu_theta</dt>
+<dd>
+<p>For joint group modeling.</p>
+</dd>
+<dt>Q_theta</dt>
+<dd>
+<p>For joint group modeling.</p>
+</dd>
+<dt>y</dt>
+<dd>
+<p>For joint group modeling: The BOLD data after any centering, scaling, nuisance regression, or prewhitening.</p>
+</dd>
+<dt>X</dt>
+<dd>
+<p>For joint group modeling: The design matrix after any centering, scaling, nuisance regression, or prewhitening.</p>
+</dd>
+<dt>prewhiten_info</dt>
+<dd>
+<p>Vectors of values across locations: <code>phi</code> (AR coefficients averaged across sessions), <code>sigma_sq</code> (residual variance averaged across sessions), and AIC (the maximum across sessions).</p>
+</dd>
+<dt>call</dt>
+<dd>
+<p>match.call() for this function call.</p>
+</dd>
+</dl>
+<h3>INLA Requirement</h3>
+
+<p>This function requires the <code>INLA</code> package, which is not a CRAN package.
+See <a href="https://www.r-inla.org/download-install">https://www.r-inla.org/download-install</a> for easy installation instructions.
+</p>
+
+
+</div>

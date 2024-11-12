@@ -1,0 +1,290 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>RhodesEtAlPrior</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Heterogeneity priors for continuous outcomes (standardized mean
+differences) as proposed by Rhodes et al. (2015).</h2>
+
+<h3>Description</h3>
+
+<p>Use the prior specifications proposed in the paper by Rhodes et al.,
+based on an analysis of studies using standardized mean differences
+(SMD) that were published in the <em>Cochrane Database of Systematic Reviews</em>.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">RhodesEtAlPrior(outcome=c(NA, "obstetric outcome",
+  "resource use and hospital stay / process",
+  "internal and external structure-related outcome",
+  "general physical health and adverse event and pain and quality of life / functioning",
+  paste("signs / symptoms reflecting continuation / end of condition and infection",
+        "/ onset of new acute / chronic disease"),
+  "mental health outcome", "biological marker", "various subjectively measured outcomes"),
+  comparator1=c("pharmacological", "non-pharmacological", "placebo / control"),
+  comparator2=c("pharmacological", "non-pharmacological", "placebo / control"),
+  area=c("other", "respiratory", "cancer"))
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>outcome</code></td>
+<td>
+<p>The type of outcome investigated (see below for a list
+of possible values). The default (<code>NA</code>) is the general
+(marginal) setting, without considering meta-analysis
+characteristics as covariates.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>comparator1</code></td>
+<td>
+<p>One comparator's type.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>comparator2</code></td>
+<td>
+<p>The other comparator's type.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>area</code></td>
+<td>
+<p>The medical area.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+ 
+<p>Rhodes et al. conducted an analysis of studies listed in the
+<em>Cochrane Database of Systematic Reviews</em> that were investigating
+standardized mean differences (SMD) as endpoints. As a result, they
+proposed empirically motivated log-Student-<code class="reqn">t</code> prior distributions
+for the (squared!) heterogeneity parameter <code class="reqn">\tau^2</code>, depending on
+the particular type of outcome investigated and the type of comparison
+in question. The underlying <code class="reqn">t</code>-distribution's location and scale
+parameters here are internally stored in a 3-dimensional array (named
+<code>RhodesEtAlParameters</code>) and are most conveniently accessed using
+the <code>RhodesEtAlPrior()</code> function.
+</p>
+<p>The <code>outcome</code> argument specifies the type of outcome
+investigated. It may take one of the following values
+(partial matching is supported):
+</p>
+
+<ul>
+<li> <p><code>NA</code>
+</p>
+</li>
+<li> <p><code>"obstetric outcomes"</code>
+</p>
+</li>
+<li> <p><code>"resource use and hospital stay / process"</code>
+</p>
+</li>
+<li> <p><code>"internal and external structure-related outcome"</code>
+</p>
+</li>
+<li> <p><code>"general physical health and adverse event and pain and quality of life / functioning"</code>
+</p>
+</li>
+<li> <p><code>"signs / symptoms reflecting continuation / end of condition and infection / onset of new acute / chronic disease"</code>
+</p>
+</li>
+<li> <p><code>"mental health outcome"</code>
+</p>
+</li>
+<li> <p><code>"biological marker"</code>
+</p>
+</li>
+<li> <p><code>"various subjectively measured outcomes"</code>.
+</p>
+</li>
+</ul>
+<p>Specifying “<code>outcome=NA</code>” (the default) yields the
+<em>marginal</em> setting, without considering meta-analysis
+characteristics as covariates.
+</p>
+<p>The <code>comparator1</code> and <code>comparator2</code> arguments together
+specify the type of comparison in question.  These may take one of the
+following values (partial matching is supported):
+</p>
+
+<ul>
+<li> <p><code>"pharmacological"</code>
+</p>
+</li>
+<li> <p><code>"non-pharmacological"</code>
+</p>
+</li>
+<li> <p><code>"placebo / control"</code>.
+</p>
+</li>
+</ul>
+<p>Any combination is allowed for the <code>comparator1</code> and
+<code>comparator2</code> arguments, as long as not both arguments are set to
+<code>"placebo / control"</code>.
+The <code>area</code> argument specifies the medical context; possible
+values are:
+</p>
+
+<ul>
+<li> <p><code>"respiratory"</code>
+</p>
+</li>
+<li> <p><code>"cancer"</code>
+</p>
+</li>
+<li> <p><code>"other"</code> (the default).
+</p>
+</li>
+</ul>
+<p><b>Note</b> that the location and scale parameters refer to the
+logarithmic (<em>squared</em>) heterogeneity parameter <code class="reqn">\tau^2</code>,
+which is modelled using a Student-<code class="reqn">t</code> distribution with 5 degrees
+of freedom. When you want to use the prior specifications for
+<code class="reqn">\tau</code>, the square root, as the parameter (as is necessary when
+using the <code>bayesmeta()</code> function), you need to correct for the
+square root transformation. Taking the square root is equivalent to
+dividing by two on the log-scale, so the square root
+will still be log-Student-t distributed, but with halved location and
+scale parameters. The relevant transformations are already taken care
+of when using the resulting <code>$dprior()</code>, <code>$pprior()</code> and
+<code>$qprior()</code> functions; see also the example below.
+</p>
+
+
+<h3>Value</h3>
+
+<p>a list with elements
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>parameters</code></td>
+<td>
+<p>the location and scale parameters (corresponding to the
+logarithmic <em>squared</em> heterogeneity parameter <code class="reqn">\tau^2</code> as
+well as <code class="reqn">\tau</code>).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>outcome.type</code></td>
+<td>
+<p>the corresponding type of outcome.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>comparison.type</code></td>
+<td>
+<p>the corresponding type of comparison.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>medical.area</code></td>
+<td>
+<p>the medical context.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>dprior</code></td>
+<td>
+<p>a <code>function(tau)</code> returning the prior
+density of <code class="reqn">\tau</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>pprior</code></td>
+<td>
+<p>a <code>function(tau)</code> returning the prior cumulative
+distribution function (CDF) of <code class="reqn">\tau</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>qprior</code></td>
+<td>
+<p>a <code>function(p)</code> returning the prior quantile
+function (inverse CDF) of <code class="reqn">\tau</code>.</p>
+</td>
+</tr>
+</table>
+<h3>Author(s)</h3>
+
+<p>Christian Roever <a href="mailto:christian.roever@med.uni-goettingen.de">christian.roever@med.uni-goettingen.de</a>
+</p>
+
+
+<h3>References</h3>
+
+<p>K.M. Rhodes, R.M. Turner, J.P.T. Higgins.
+Predictive distributions were developed for the extent of
+heterogeneity in meta-analyses of continuous outcome data. 
+<em>Journal of Clinical Epidemiology</em>, <b>68</b>(1):52-60, 2015.
+<a href="https://doi.org/10.1016/j.jclinepi.2014.08.012">doi:10.1016/j.jclinepi.2014.08.012</a>.
+</p>
+<p>C. Roever, R. Bender, S. Dias, C.H. Schmid, H. Schmidli, S. Sturtz,
+S. Weber, T. Friede.
+On weakly informative prior distributions for the heterogeneity
+parameter in Bayesian random-effects meta-analysis.
+<em>Research Synthesis Methods</em>, <b>12</b>(4):448-474, 2021.
+<a href="https://doi.org/10.1002/jrsm.1475">doi:10.1002/jrsm.1475</a>.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>TurnerEtAlPrior</code>.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R"># determine prior distribution for a specific setting:
+RP &lt;- RhodesEtAlPrior("obstetric", "pharma", "placebo")
+print(RP$parameters)
+str(RP)
+# a prior 95 percent interval for tau:
+RP$qprior(c(0.025,0.975))
+
+# the general (marginal) setting:
+RP &lt;- RhodesEtAlPrior()
+print(RP$parameters)
+str(RP)
+# a prior 95 percent interval for tau:
+RP$qprior(c(0.025,0.975))
+
+## Not run: 
+# load "metafor" package:
+require("metafor")
+# load data:
+data("dat.normand1999")
+# compute effect sizes (standardized mean differences):
+es &lt;- escalc(measure="SMD", m1i=m1i, sd1i=sd1i, n1i=n1i,
+             m2i=m2i, sd2i=sd2i, n2i=n2i,
+             slab=source, data=dat.normand1999)
+
+# derive appropriate prior:
+RP &lt;- RhodesEtAlPrior("resource use", "non-pharma", "non-pharma")
+# show (central) prior 95 percent interval:
+RP$qprior(c(0.025, 0.975))
+# show prior 95 percent upper limit:
+RP$qprior(0.95)
+
+# perform meta analysis:
+bma &lt;- bayesmeta(es, tau.prior=RP$dprior)
+# show results:
+print(bma)
+plot(bma, which=4, prior=TRUE)
+
+## End(Not run)
+</code></pre>
+
+
+</div>

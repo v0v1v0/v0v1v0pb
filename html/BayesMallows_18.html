@@ -1,0 +1,175 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>compute_consensus</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Compute Consensus Ranking</h2>
+
+<h3>Description</h3>
+
+<p>Compute the consensus ranking using either cumulative
+probability (CP) or maximum a posteriori (MAP) consensus
+(Vitelli et al. 2018). For mixture models, the consensus
+is given for each mixture. Consensus of augmented ranks can also be
+computed for each assessor, by setting <code>parameter = "Rtilde"</code>.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">compute_consensus(model_fit, ...)
+
+## S3 method for class 'BayesMallows'
+compute_consensus(
+  model_fit,
+  type = c("CP", "MAP"),
+  parameter = c("rho", "Rtilde"),
+  assessors = 1L,
+  ...
+)
+
+## S3 method for class 'SMCMallows'
+compute_consensus(model_fit, type = c("CP", "MAP"), parameter = "rho", ...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>model_fit</code></td>
+<td>
+<p>A model fit.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Other arguments passed on to other methods. Currently not used.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>type</code></td>
+<td>
+<p>Character string specifying which consensus to compute. Either
+<code>"CP"</code> or <code>"MAP"</code>. Defaults to <code>"CP"</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>parameter</code></td>
+<td>
+<p>Character string defining the parameter for which to compute
+the consensus. Defaults to <code>"rho"</code>. Available options are <code>"rho"</code> and
+<code>"Rtilde"</code>, with the latter giving consensus rankings for augmented ranks.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>assessors</code></td>
+<td>
+<p>When <code>parameter = "rho"</code>, this integer vector is used to
+define the assessors for which to compute the augmented ranking. Defaults
+to <code>1L</code>, which yields augmented rankings for assessor 1.</p>
+</td>
+</tr>
+</table>
+<h3>References</h3>
+
+<p>Vitelli V, Sørensen, Crispino M, Arjas E, Frigessi A (2018).
+“Probabilistic Preference Learning with the Mallows Rank Model.”
+<em>Journal of Machine Learning Research</em>, <b>18</b>(1), 1–49.
+<a href="https://jmlr.org/papers/v18/15-481.html">https://jmlr.org/papers/v18/15-481.html</a>.
+</p>
+
+
+<h3>See Also</h3>
+
+<p>Other posterior quantities: 
+<code>assign_cluster()</code>,
+<code>compute_posterior_intervals()</code>,
+<code>get_acceptance_ratios()</code>,
+<code>heat_plot()</code>,
+<code>plot.BayesMallows()</code>,
+<code>plot.SMCMallows()</code>,
+<code>plot_elbow()</code>,
+<code>plot_top_k()</code>,
+<code>predict_top_k()</code>,
+<code>print.BayesMallows()</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R"># The example datasets potato_visual and potato_weighing contain complete
+# rankings of 20 items, by 12 assessors. We first analyse these using the
+# Mallows model:
+model_fit &lt;- compute_mallows(setup_rank_data(potato_visual))
+
+# Se the documentation to compute_mallows for how to assess the convergence of
+# the algorithm. Having chosen burin = 1000, we compute posterior intervals
+burnin(model_fit) &lt;- 1000
+# We then compute the CP consensus.
+compute_consensus(model_fit, type = "CP")
+# And we compute the MAP consensus
+compute_consensus(model_fit, type = "MAP")
+
+## Not run: 
+  # CLUSTERWISE CONSENSUS
+  # We can run a mixture of Mallows models, using the n_clusters argument
+  # We use the sushi example data. See the documentation of compute_mallows for
+  # a more elaborate example
+  model_fit &lt;- compute_mallows(
+    setup_rank_data(sushi_rankings),
+    model_options = set_model_options(n_clusters = 5))
+  # Keeping the burnin at 1000, we can compute the consensus ranking per cluster
+  burnin(model_fit) &lt;- 1000
+  cp_consensus_df &lt;- compute_consensus(model_fit, type = "CP")
+  # We can now make a table which shows the ranking in each cluster:
+  cp_consensus_df$cumprob &lt;- NULL
+  stats::reshape(cp_consensus_df, direction = "wide", idvar = "ranking",
+                 timevar = "cluster",
+                 varying = list(sort(unique(cp_consensus_df$cluster))))
+
+## End(Not run)
+
+## Not run: 
+  # MAP CONSENSUS FOR PAIRWISE PREFENCE DATA
+  # We use the example dataset with beach preferences.
+  model_fit &lt;- compute_mallows(setup_rank_data(preferences = beach_preferences))
+  # We set burnin = 1000
+  burnin(model_fit) &lt;- 1000
+  # We now compute the MAP consensus
+  map_consensus_df &lt;- compute_consensus(model_fit, type = "MAP")
+
+  # CP CONSENSUS FOR AUGMENTED RANKINGS
+  # We use the example dataset with beach preferences.
+  model_fit &lt;- compute_mallows(
+    setup_rank_data(preferences = beach_preferences),
+    compute_options = set_compute_options(save_aug = TRUE, aug_thinning = 2))
+  # We set burnin = 1000
+  burnin(model_fit) &lt;- 1000
+  # We now compute the CP consensus of augmented ranks for assessors 1 and 3
+  cp_consensus_df &lt;- compute_consensus(
+    model_fit, type = "CP", parameter = "Rtilde", assessors = c(1L, 3L))
+  # We can also compute the MAP consensus for assessor 2
+  map_consensus_df &lt;- compute_consensus(
+    model_fit, type = "MAP", parameter = "Rtilde", assessors = 2L)
+
+  # Caution!
+  # With very sparse data or with too few iterations, there may be ties in the
+  # MAP consensus. This is illustrated below for the case of only 5 post-burnin
+  # iterations. Two MAP rankings are equally likely in this case (and for this
+  # seed).
+  model_fit &lt;- compute_mallows(
+    setup_rank_data(preferences = beach_preferences),
+    compute_options = set_compute_options(
+      nmc = 1005, save_aug = TRUE, aug_thinning = 1))
+  burnin(model_fit) &lt;- 1000
+  compute_consensus(model_fit, type = "MAP", parameter = "Rtilde",
+                    assessors = 2L)
+
+## End(Not run)
+</code></pre>
+
+
+</div>

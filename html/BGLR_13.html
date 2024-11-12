@@ -1,0 +1,246 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>Multitrait</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Multi trait models</h2>
+
+<h3>Description</h3>
+
+<p>The Multitrait  function fits Bayesian multitrait models with arbitrary number of random effects ussing a Gibbs 
+sampler. The data equation is as follows:
+</p>
+y<sub>j</sub> = 1μ<sub>j</sub> + X<sub>Fj</sub> β<sub>Fj</sub>+X<sub>1</sub>β<sub>j1</sub> + ... +X<sub>k</sub>β<sub>jk</sub> + u<sub>j1</sub>+ ... + u<sub>jq</sub> + e<sub>j</sub>,
+<p>where:
+</p>
+
+<ul>
+<li>y<sub>j</sub> is a n-dimensional response vector of phenotypes (NAs allowed) with y<sub>ij</sub> representing the phenotypic record of the i-th subject for the j-th trait.
+</li>
+<li>μ<sub>j</sub> is an intercept.
+</li>
+<li>X<sub>Fj</sub> is a matrix of fixed effects.
+</li>
+<li>β<sub>Fj</sub> is a vector of fixed effects.
+</li>
+<li>X<sub>s</sub> is an incidence matrix for predictors that are common for all individuals (e.g. markers), s=1,...,k.
+</li>
+<li>β<sub>js</sub>  is a vector of regression coefficients, s=1,..,k. Different priors can be assigned to these regression coefficients (spike-slab and Gaussian) and regression coefficients are correlated across traits.
+</li>
+<li>u<sub>jr</sub> is a n-dimensional vector of random effects.
+</li>
+<li>e<sub>j</sub> is a n-dimensional vector of residuals.
+</li>
+</ul>
+<h3>Usage</h3>
+
+<pre><code class="language-R"> Multitrait(y, ETA, intercept=TRUE,resCov = list(df0=5,S0=NULL,type="UN"), 
+   R2=0.5, nIter=1000,burnIn=500,thin=10, saveAt="",verbose=TRUE)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>y</code></td>
+<td>
+<p>a matrix of dimension <code class="reqn">n \times t</code>, where <code class="reqn">n</code> is the number of individials in each trait, 
+<code class="reqn">t</code> is the number of traits, NAs are allowed.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ETA</code></td>
+<td>
+<p> (list) This is a two-level list used to specify the regression function (or linear predictor). 
+Regression on covariates and other types of random effects are specified in this two-level list. For instance:
+</p>
+<pre>ETA=list(list(X=W, model="FIXED"), 
+      list(X=Z,model="BRR"), 
+      list(K=G,model="RKHS"))</pre> 
+<p>specifies that the linear predictor should include: a linear regression on W with regression 
+coefficients treated as fixed effects (i.e., flat prior), plus regression on Z, with regression 
+coefficients modeled as in the Ridge Regression plus and a random effect with co-variance structure G.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>intercept</code></td>
+<td>
+<p>logical, if TRUE (default) an intercept is included.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nIter,burnIn, thin</code></td>
+<td>
+<p>(integer) the number of iterations, burn-in and thinning.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>resCov</code></td>
+<td>
+<p>A list used to define the co-variance matrix for model residuals (R). Four covariance strucures are 
+supported: i) Unstructured (<code>"UN"</code>), ii)Diagonal (<code>"DIAG"</code>), iii)Factor Analytic (<code>"FA"</code>) 
+and  iv)Recursive (<code>"REC"</code>), for example: 
+</p>
+<pre>resCov=list(type="UN", df0=4, S0=V)</pre> 
+<p>specifies an UN-structured covariance matrix, 
+with an Inverse Whishart prior with degree of freedom df0 (scalar) and scale matrix (t x t) V.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>saveAt</code></td>
+<td>
+<p>(string) this may include a path and a pre-fix that will be added to the name of the files that are saved as the program runs.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>R2</code></td>
+<td>
+<p>(numeric, <code>0&lt;R2&lt;1</code>) The proportion of co-variance that one expects, a priori, to be explained by the regression. Only used if 
+the hyper-parameters are not specified; if that is the case, internaly, hyper-paramters are set so that the prior modes are consistent with the 
+co-variance partition specified by R2 and the prior distribution is relatively flat at the mode.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>verbose</code></td>
+<td>
+<p>(logical) if TRUE the iteration history is printed, default TRUE.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p><em>Conditional distribution of the data</em>
+</p>
+<p>Model residuals are assumed to follow a multivariate normal distribution, with null mean and 
+covariance matrix   Cov((e'<sub>1</sub>,...,e'<sub>n</sub>)')=R<sub>0</sub> ⊗ I
+where R<sub>0</sub> is a t x t (within-subject) covariance matrix of model residuals
+and n-dimensional identity matrix. Therefore:
+</p>
+p(y<sub>i1</sub>,...,y<sub>it</sub> | θ )=MN(η<sub>i</sub>, R<sub>0</sub>)
+<p>where MN(.,.), denotes the multivariate normal distribution with mean 
+η<sub>i</sub> and covariance matrix 
+R<sub>0</sub>; here 
+η<sub>i</sub> is 
+a t-dimensional vector whose entries
+are the expected values of the response variable for the i-th individual. 
+</p>
+<p><em>Prior distribution</em>
+</p>
+<p>The prior distribution is structured hierarchically. The first level of the prior specifies the distribution 
+of the fixed and random effects given the codispersion parameters 
+(the covariance matrices of the random effects, see below). 
+The priors for the codispersion parameters are specified in a deeper level of the hierarchy.
+</p>
+<p>The intercepts and vectors of fixed effects are assigned flat prior 
+(each unknown is assigned a Gaussian prior with null mean and very large variance).
+</p>
+<p>The vectors of random effects u<sub>r</sub> 
+are assigned independent multivariate normal priors with null mean and covariance matrices 
+Cov(u<sub>r</sub>)=G<sub>r</sub>⊗K<sub>r</sub>,
+u<sub>r</sub> represent the vector of effects for the 
+r-th random effects (sorted by subject first and trait within subject),
+G<sub>r</sub> is an t x t (within-subject) covariance matrix
+of the r-th random effect and K<sub>r</sub> is 
+a user defined (between subjects) covariance matrix for the r-th
+random effect, for instance, may be a pedigree or marker-based 
+relationship matrix. The covariance matrix of random effects are assigned Inverse Wishart
+priors (for the case of unstructured options) or priors that are structured according to
+some model (diagonal, factor analytic or recursive).
+</p>
+<p>The vector or regression coefficients β<sub>s</sub>
+are assigned Gaussian  and Spike Slab priors whose 
+covariance matrixes depend on a Ω<sub>s</sub>
+covariance matrix of dimmensions t x t (within subject).
+The covariance matrix of random effects are assigned Inverse Wishart
+priors (for the case of unstructured options) or priors that are structured according to
+some model (diagonal, factor analytic or recursive).
+</p>
+<p><em>Algorithm</em>
+</p>
+<p>Internally, samples from all the model unknowns are drawn using a Gibbs sampler 
+(i.e., based on fully conditional distributions).
+</p>
+
+
+<h3>Value</h3>
+
+<p>List containing estimated posterior means and estimated posterior
+standard deviations.
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Gustavo de los Campos, Paulino Perez-Rodriguez
+</p>
+
+
+<h3>References</h3>
+
+<p>Burgueno, J., G. de los Campos, K. Weigel and J. Crossa. 2012. Genomic Prediction of Breeding Values when Modelling
+Genotype x Environment Interaction using Pedigree and Dense Molecular Markers. <em>Crop Sci.</em>, <b>52(2)</b>:707-719.
+</p>
+<p>de los Campos, G. and  D. Gianola. 2007. Factor analysis models for structuring covariance matrices of additive genetic 
+effects: a Bayesian implementation. <em>Genet. Sel. Evol.</em>, <b>39</b>:481-494.
+</p>
+<p>Cheng, H.,  K. Kadir, J., Zeng, D. Garrick and R. Fernando. 2018. Genomic Prediction from Multiple-Trait 
+Bayesian Regression Methods Using Mixture Priors. <em>Genetics</em>, <b>209(1)</b>: 89-103.
+</p>
+<p>Sorensen, D. and D. Gianola. 2002. Likelihood, Bayesian, and MCMC methods in quantitative genetics. 
+<em>Springer-Verlag, New York</em>.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+## Not run: 
+	
+library(BGLR)
+data(wheat)
+X&lt;-wheat.X
+K&lt;-wheat.A
+y&lt;-wheat.Y
+
+#Example 1, Spike Slab regression
+ETA1&lt;-list(list(X=X,model="SpikeSlab"))
+
+fm1&lt;-Multitrait(y=y,ETA=ETA1,nIter=1000,burnIn=500)
+
+#Example 2, Ridge Regression
+ETA2&lt;-list(list(X=X,model="BRR"))
+fm2&lt;-Multitrait(y=y,ETA=ETA2,nIter=1000,burnIn=500)
+
+#Example 3, Random effects with user defined covariance structure
+#for individuals derived from pedigree
+ETA3&lt;-list(list(K=K,model="RKHS"))
+fm3&lt;-Multitrait(y=y,ETA=ETA3,nIter=1000,burnIn=500)
+
+#Example 4, Markers and pedigree
+ETA4&lt;-list(list(X=X,model="BRR"), list(K=K,model="RKHS"))
+
+fm4&lt;-Multitrait(y=y,ETA=ETA4,nIter=1000,burnIn=500)
+
+#Example 5, recursive structures for within subject covariance matrix
+M1 &lt;- matrix(nrow = 4, ncol = 4, FALSE)
+M1[3, 2] &lt;- M1[4, 2] &lt;- TRUE # Adding recursion from trait 2 onto traits 3 and 4
+M1[4, 3] &lt;- TRUE # Adding recursion from trait 3 on trait 4
+
+ETA5&lt;-list(list(K=K,model="RKHS",Cov=list(type="REC",M=M1)))
+fm5&lt;-Multitrait(y=y,ETA=ETA5,nIter=1000,burnIn=500)
+
+#Example 6, diagonal residual covariance matrix with the predictor 
+#used in example 5
+residual1&lt;-list(type="DIAG")
+fm6&lt;-Multitrait(y=y,ETA=ETA5,resCov=residual1,nIter=1000,burnIn=500)
+
+
+## End(Not run)
+
+</code></pre>
+
+
+</div>

@@ -1,0 +1,226 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>distance2border</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>A function to compute the distance from spots to borders of classes</h2>
+
+<h3>Description</h3>
+
+<p>A function to compute the distance from spots to borders of classes
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">distance2border(
+  points,
+  img.classes,
+  x.microns,
+  y.microns,
+  z.microns,
+  class1,
+  class2 = NULL,
+  mask = array(TRUE, dim(img.classes)),
+  voxel = FALSE,
+  hist = FALSE,
+  main = "Minimal distance to border",
+  xlab = "Distance in Microns",
+  xlim = c(-0.3, 0.3),
+  n = 20,
+  stats = TRUE,
+  file = NULL,
+  silent = FALSE,
+  parallel = FALSE
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>points</code></td>
+<td>
+<p>Data frame containing the coordinates of points in microns as X-, Y-, and Z-variables.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>img.classes</code></td>
+<td>
+<p>3D array (or image) of classes for each voxel.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>x.microns</code></td>
+<td>
+<p>Size of image in x-direction in microns.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>y.microns</code></td>
+<td>
+<p>Size of image in y-direction in microns.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>z.microns</code></td>
+<td>
+<p>Size of image in z-direction in microns.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>class1</code></td>
+<td>
+<p>Which class is the reference class. If is.null(class2), the function computes the distance of points to the border of class (in img.classes).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>class2</code></td>
+<td>
+<p>Which class is the second reference class. If not is.null(class2), the function computes the distance of points from the border between classes class1 and class2. Default: class2=NULL.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>mask</code></td>
+<td>
+<p>Array of mask. Needs to have same dimension as img.classes. Only voxels with mask[i,j,k]==TRUE are used. Default: array(TRUE,dim(img.classes))</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>voxel</code></td>
+<td>
+<p>Logical. If TRUE, points coordinates are given as voxels rather than in microns.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>hist</code></td>
+<td>
+<p>Automatically plot histogram using hist() function. Default: FALSE.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>main</code></td>
+<td>
+<p>If (hist) title of histogram. Default: "Minimal distance to border".</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>xlab</code></td>
+<td>
+<p>If (hist) description of x axis. Default: "Distance in Microns".</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>xlim</code></td>
+<td>
+<p>If (hist) vector of range of x axis (in microns). Default: c(-.3,.3)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>n</code></td>
+<td>
+<p>If (hist) number of bins used in hist(). Default: 20.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>stats</code></td>
+<td>
+<p>If (hist) write statistics into plot. Default: TRUE.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>file</code></td>
+<td>
+<p>If (hist) the file name of the produced png. If NULL, the histogram is plotted to the standard device. Default: NULL.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>silent</code></td>
+<td>
+<p>if TRUE, function remains silent during running time</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>parallel</code></td>
+<td>
+<p>Logical. Can we use parallel computing?</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>This function computes the distances from points to the border of a class or the border between two classes. For the latter, only points in these two classes are used.
+</p>
+
+
+<h3>Value</h3>
+
+<p>The function returns a vector with distances. Negative values correspond to points lying in class1.
+</p>
+
+
+<h3>Note</h3>
+
+<p>Warning: So far no consistency check for arguments is done. E.g., distance2border(randompoints,img.classes=array(1,c(100,100,2)),3,3,1,class1=2) will fail with some cryptic error message (because class1 &gt; max(img.classes)).
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## Not run: 
+#simulate random data
+randompoints&lt;-data.frame("X"=runif(100,0,3),"Y"=runif(100,0,3),"Z"=runif(100,0,.5))
+# coordinates in microns!
+plot(randompoints$X,randompoints$Y,xlim=c(0,3),ylim=c(0,3),pch=19)
+
+# points in a circle
+circlepoints&lt;-read.table(system.file("extdata","kreispunkte.table",
+                               package="bioimagetools"),header=TRUE)
+plot(circlepoints$X,circlepoints$Y,xlim=c(0,3),ylim=c(0,3),pch=19)
+
+# a circle like image
+img&lt;-readTIF(system.file("extdata","kringel.tif",package="bioimagetools"))
+img&lt;-array(img,dim(img)) # save as array for easier handling
+img(img, z=1)
+
+#and a mask
+mask&lt;-readTIF(system.file("extdata","amask.tif",package="bioimagetools"))
+img(mask, z=1, col="greyinverted")
+
+xy.microns &lt;- 3 # size in x and y direction (microns)
+z.microns &lt;- 0.5 # size in z direction (microns)
+
+# distance from points to class 
+d1&lt;-distance2border(randompoints, img, xy.microns, xy.microns, z.microns, class1=1,hist=TRUE)
+d2&lt;-distance2border(circlepoints, img, xy.microns, xy.microns, z.microns, class1=1,hist=FALSE)
+plot(density(d2),type="l")
+lines(c(0,0),c(0,10),lty=3)
+lines(density(d1),col="blue")
+
+# use mask, should give some small changes
+d3&lt;-distance2border(circlepoints, img, xy.microns, xy.microns, z.microns, 
+                                                class1=1,mask=mask,hist=FALSE)
+plot(density(d2),type="l")
+lines(c(0,0),c(0,10),lty=3)
+lines(density(d3),col="blue")
+
+# distance from border between classes
+anotherimg&lt;-img+mask
+image(seq(0,3,length=300),seq(0,3,length=300),anotherimg[,,1])
+points(circlepoints,pch=19)
+d4&lt;-distance2border(circlepoints, anotherimg, xy.microns, xy.microns, z.microns, 
+                                                               class1=1,class2=2)
+plot(density(d4),lwd=2)
+
+# this should give the same answer
+d5&lt;-distance2border(circlepoints, anotherimg, xy.microns, xy.microns, z.microns, 
+                                                                class1=2,class2=1)
+lines(density(-d5),lty=3,col="blue",lwd=1.5)
+
+## End(Not run)
+</code></pre>
+
+
+</div>

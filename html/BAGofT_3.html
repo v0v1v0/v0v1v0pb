@@ -1,0 +1,107 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>testGlmBi</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Testing binomial regressions
+
+</h2>
+
+<h3>Description</h3>
+
+<p><code>testGlmBi</code> specifies a binomial regression as the classifier to test. It returns a function that can be taken as the input of ‘testModel’.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">testGlmBi(formula, link)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>formula</code></td>
+<td>
+
+<p>an object of class <code>"formula"</code> (or one that
+can be coerced to that class): a symbolic description of the
+model to test.
+
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>link</code></td>
+<td>
+<p>a specification for the model link function. Can be one of "logit", "probit", "cloglog".
+
+</p>
+</td>
+</tr>
+</table>
+<h3>References</h3>
+
+<p>Zhang, Ding and Yang (2021) "Is a Classification Procedure Good Enough?-A Goodness-of-Fit Assessment Tool for Classification Learning" arXiv preprint 	arXiv:1911.03063v2 (2021).
+
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## Not run: 
+###################################################
+# Generate a sample dataset.
+###################################################
+# set the random seed
+set.seed(20)
+# set the number of observations
+n &lt;- 200
+
+# generate covariates data
+x1dat &lt;- runif(n, -3, 3)
+x2dat &lt;- rnorm(n, 0, 1)
+x3dat &lt;- rchisq(n, 4)
+
+# set coefficients
+beta1 &lt;- 1
+beta2 &lt;- 1
+beta3 &lt;- 1
+
+# calculate the linear predictor data
+lindat &lt;- x1dat * beta1 + x2dat * beta2 + x3dat * beta3
+# calculate the probabilities by inverse logit link
+pdat &lt;- 1/(1 + exp(-lindat))
+
+# generate the response data
+ydat &lt;- sapply(pdat, function(x) stats :: rbinom(1, 1, x))
+
+# generate the dataset
+dat &lt;- data.frame(y = ydat, x1 = x1dat, x2 = x2dat,
+                    x3 = x3dat)
+
+###################################################
+# Obtain the testing result
+###################################################
+# Test a logistic regression that misses 'x3'. The partition
+# variables are 'x1', 'x2', and 'x3'.
+testRes &lt;- BAGofT(testModel =testGlmBi(formula = y ~ x1 + x2 , link = "logit"),
+       parFun = parRF(parVar = c("x1", "x2", "x3")),
+       data = dat)
+
+# the bootstrap p-value is 0. Therefore, the test is rejected
+print(testRes$p.value)
+
+# the variable importance from the adaptive partion shows that x3 is likely
+# to be the reason for the overfitting (,which is correct since the formula
+# fm misses the x3).
+print(VarImp(testRes))
+
+## End(Not run)
+</code></pre>
+
+
+</div>

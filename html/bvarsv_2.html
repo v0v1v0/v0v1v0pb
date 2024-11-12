@@ -1,0 +1,181 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>bvar.sv.tvp</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>
+Bayesian Analysis of a Vector Autoregressive Model with Stochastic Volatility and Time-Varying Parameters
+</h2>
+
+<h3>Description</h3>
+
+<p>Bayesian estimation of the flexible VAR model by Primiceri (2005) which allows for both stochastic volatility and time drift in the model parameters. 
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">bvar.sv.tvp(Y, p = 1, tau = 40, nf = 10, pdrift = TRUE, nrep = 50000, 
+nburn = 5000, thinfac = 10, itprint = 10000, save.parameters = TRUE, 
+k_B = 4, k_A = 4, k_sig = 1, k_Q = 0.01, k_S = 0.1, k_W = 0.01, 
+pQ = NULL, pW = NULL, pS = NULL)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>Y</code></td>
+<td>
+<p>Matrix of data, where rows represent time and columns are different variables. <code>Y</code> must have at least two columns.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>p</code></td>
+<td>
+<p>Lag length, greater or equal than 1 (the default)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>tau</code></td>
+<td>
+<p>Length of the training sample used for determining prior parameters via least squares (LS). That is, data in <code>Y[1:tau, ]</code> are used for estimating prior parameters via LS; formal Bayesian analysis is then performed for data in <code>Y[(tau+1):nrow(Y), ]</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nf</code></td>
+<td>
+<p>Number of future time periods for which forecasts are computed (integer, 1 or greater, defaults to 10).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>pdrift</code></td>
+<td>
+<p>Dummy, indicates whether or not to account for parameter drift when simulating forecasts (defaults to TRUE).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nrep</code></td>
+<td>
+<p>Number of MCMC draws excluding burn-in (defaults to 50000)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nburn</code></td>
+<td>
+<p>Number of MCMC draws used to initialize the sampler (defaults to 5000). These draws do not enter the computation of posterior moments, forecasts etc.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>thinfac</code></td>
+<td>
+<p>Thinning factor for MCMC output. Defaults to 10, which means that the forecast sequences (<code>fc.mdraws</code>, <code>fc.vdraws</code>, <code>fc.ydraws</code>, see below) contain only every tenth draw of the original sequence. Set <code>thinfac</code> to one to obtain the full MCMC sequence.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>itprint</code></td>
+<td>
+<p>Print every <code>itprint</code>-th iteration. Defaults to 10000. Set to very large value to omit printing altogether.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>save.parameters</code></td>
+<td>
+<p>If set to <code>TRUE</code>, parameter draws are saved in lists (these can be very large). Defaults to <code>TRUE</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>k_B, k_A, k_sig, k_Q, k_W, k_S, pQ, pW, pS</code></td>
+<td>
+<p>Quantities which enter the prior distributions, see the links below for details. Defaults to the exact values used in the original article by Primiceri.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>Beta.postmean</code></td>
+<td>
+<p>Posterior means of coefficients. This is an array of dimension <code class="reqn">[M, Mp+1, T]</code>, where <code class="reqn">T</code> denotes the number of time periods (= number of rows of <code>Y</code>), and <code class="reqn">M</code> denotes the number of system variables (= number of columns of <code>Y</code>). The submatrix <code class="reqn">[, , t]</code> represents the coefficient matrix at time <code class="reqn">t</code>. The intercept vector is stacked in the first column; the <code>p</code> coefficient matrices of dimension <code class="reqn">[M,M]</code> are placed next to it.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>H.postmean</code></td>
+<td>
+<p>Posterior means of error term covariance matrices. This is an array of dimension <code class="reqn">[M, M, T]</code>. The submatrix <code class="reqn">[, , t]</code> represents the covariance matrix at time <code class="reqn">t</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Q.postmean, S.postmean, W.postmean</code></td>
+<td>
+<p>Posterior means of various covariance matrices.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>fc.mdraws</code></td>
+<td>
+<p>Draws for the forecast mean vector at various horizons (three-dimensional array, where the first dimension corresponds to system variables, the second to forecast horizons, and the third to MCMC draws). <em>Note:</em> The third dimension will be equal to <code>nrep/thinfac</code>, apart from possible rounding issues.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>fc.vdraws</code></td>
+<td>
+<p>Draws for the forecast covariance matrix. Design similar to <code>fc.mdraws</code>, except that the first array dimension contains the lower-diagonal elements of the forecast covariance matrix.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>fc.ydraws</code></td>
+<td>
+<p>Simulated future observations. Design analogous to <code>fc.mdraws</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Beta.draws, H.draws</code></td>
+<td>
+<p>Matrices of parameter draws, can be used for computing impulse responses later on (see impulse.responses), and accessed via the helper function <code>parameter.draws</code>.
+These outputs are generated only if <code>save.parameters</code> has been set to <code>TRUE</code>. </p>
+</td>
+</tr>
+</table>
+<h3>Author(s)</h3>
+
+<p>Fabian Krueger, based on Matlab code by Dimitris Korobilis (see Koop and Korobilis, 2010). <em>Incorporates the corrigendum by Del Negro and Primiceri (2015), which points to an error in the original MCMC algorithm of Primiceri (2005).</em>
+</p>
+
+
+<h3>References</h3>
+
+<p>Del Negro, M. and Primicerio, G.E. (2015). ‘Time Varying Structural Vector Autoregressions and Monetary Policy: A Corrigendum’, Review of Economic Studies 82, 1342-1345. 
+</p>
+<p>Koop, G. and D. Korobilis (2010): ‘Bayesian Multivariate Time Series Methods for Empirical Macroeconomics’, Foundations and Trends in Econometrics 3, 267-358. Accompanying Matlab code available at <a href="https://sites.google.com/site/dimitriskorobilis/matlab">https://sites.google.com/site/dimitriskorobilis/matlab</a>.
+</p>
+<p>Primiceri, G.E. (2005): ‘Time Varying Structural Vector Autoregressions and Monetary Policy’, Review of Economic Studies 72, 821-852.
+</p>
+
+
+<h3>See Also</h3>
+
+<p>The helper functions <code>predictive.density</code> and <code>predictive.draws</code> provide simple access to the forecast distribution produced by <code>bvar.sv.tvp</code>. 
+Impulse responses can be computed using impulse.responses. For detailed examples and explanations, see the accompanying pdf file hosted at <a href="https://sites.google.com/site/fk83research/code">https://sites.google.com/site/fk83research/code</a>.</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## Not run: 
+
+# Load US macro data
+data(usmacro)
+
+# Estimate trivariate BVAR using default settings
+set.seed(5813)
+bv &lt;- bvar.sv.tvp(usmacro)
+
+
+## End(Not run)
+</code></pre>
+
+
+</div>

@@ -1,0 +1,289 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>bootSVD</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Calculates bootstrap distribution of PCA (i.e. SVD) results</h2>
+
+<h3>Description</h3>
+
+<p>Applies fast bootstrap PCA, using the method from (Fisher et al., 2014). Dimension of the sample is denoted by <code class="reqn">p</code>, and sample size is denoted by <code class="reqn">n</code>, with <code class="reqn">p&gt;n</code>.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">bootSVD(Y = NULL, K, V = NULL, d = NULL, U = NULL, B = 50,
+  output = "HD_moments", verbose = getOption("verbose"), bInds = NULL,
+  percentiles = c(0.025, 0.975), centerSamples = TRUE, pattern_V = "V_",
+  pattern_Vb = "Vb_")
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>Y</code></td>
+<td>
+<p>initial data sample, which can be either a matrix or a <code>ff</code> matrix. <code>Y</code> can be either tall (<code class="reqn">p</code> by <code class="reqn">n</code>) or wide (<code class="reqn">n</code> by <code class="reqn">p</code>). If <code>Y</code> is entered and <code>V</code>, <code>d</code> and <code>U</code> (see definitions below) are not entered, then <code>bootSVD</code> will also compute the SVD of <code>Y</code>. In this case where the SVD is computed, <code>bootSVD</code> will assume that the larger dimension of <code>Y</code> is <code class="reqn">p</code>, and the smaller dimension of code Y is <code class="reqn">n</code> (i.e. <code>bootSVD</code> assumes that (<code class="reqn">p&gt;n</code>). This assumption can be overriden by manually entering <code>V</code>, <code>U</code> and <code>d</code>.<br>
+For cases where the entire data matrix can be easily stored in memory (e.g. <code class="reqn">p&lt;50000</code>), it is generally appropriate to enter <code>Y</code> as a standard matrix. When <code>Y</code> is large enough that matrix algebra on <code>Y</code> is too demanding for memory though, <code>Y</code> should be entered as a <code>ff</code> object, where the actual data is stored on disk. If <code>Y</code> has class <code>ff</code>, and <code>V</code>, <code>d</code> or <code>U</code> is not entered, then block matrix algebra will be used to calculate the PCs and bootstrap PCs. The results of these calculations will be returned as <code>ff</code> objects as well.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>K</code></td>
+<td>
+<p>number of PCs to calculate the bootstrap distribution for.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>V</code></td>
+<td>
+<p>(optional) the (<code class="reqn">p</code> by <code class="reqn">n</code>) full matrix of <code class="reqn">p</code>-dimensional PCs for the sample data matrix. If <code>Y</code> is wide, these are the right singular vectors of <code>Y</code> (i.e. <code class="reqn">Y=UDV'</code>). If <code>Y</code> is tall, these are the left singular vectors of <code>Y</code> (i.e. <code class="reqn">Y=VDU'</code>). In general it is assumed that <code class="reqn">p&gt;n</code>, however, this can be overridden by setting <code>V</code> and <code>U</code> appropriately.<br>
+Like <code>Y</code>, the argument <code>V</code> can be either a standard matrix or a <code>ff</code> matrix. If <code>V</code> is a <code>ff</code> object, the bootstrap PCs, if requested, will be returned as <code>ff</code> objects as well.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>d</code></td>
+<td>
+<p>(optional) <code class="reqn">n</code>-length vector of the singular values of <code>Y</code>. For example, if <code>Y</code> is tall, then we have <code class="reqn">Y=VDU'</code> with <code>D=diag(d)</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>U</code></td>
+<td>
+<p>(optional) the (<code class="reqn">n</code> by <code class="reqn">n</code>) full set of <code class="reqn">n</code>-dimensional singular vectors of <code>Y</code>. If <code>Y</code> is wide, these are the left singular vectors of <code>Y</code> (i.e. <code class="reqn">Y=UDV'</code>). If <code>Y</code> is tall, these are the right singular vectors of <code>Y</code> (i.e. <code class="reqn">Y=VDU'</code>).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>B</code></td>
+<td>
+<p>number of bootstrap samples to compute.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>output</code></td>
+<td>
+<p>a vector telling which descriptions of the bootstrap distribution should be calculated. Can include any of the following: 'initial_SVD', 'HD_moments', 'full_HD_PC_dist', and 'HD_percentiles'. See below for explanations of these outputs.<br>
+For especially high dimensional cases, caution should be used if requesting 'full_HD_PC_dist' due to potential storage limitations.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>verbose</code></td>
+<td>
+<p>if TRUE, the function will print progress during calculation procedure.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>bInds</code></td>
+<td>
+<p>a (<code class="reqn">B</code> by <code class="reqn">n</code>) matrix of bootstrap indeces, where <code>B</code> is the number of bootstrap samples, and <code>n</code> is the sample size. The purpose of setting a specific bootstrap sampling index is to allow the results to be more precisely compared against standard bootstrap PCA calculations. If entered, the <code>bInds</code> argument will override the <code>B</code> argument.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>percentiles</code></td>
+<td>
+<p>a vector containing percentiles to be used to calculate element-wise percentiles across the bootstrap distribution (both across the distribution of  <code class="reqn">p</code>-dimensional components and the distribution of <code class="reqn">n</code>-dimensional components). For example, <code>percentiles=c(.025,.975)</code> will return the 2.5 and 97.5 percentiles, which can be used as <code class="reqn">95</code> percent bootstrap percentile CIs. Alternatively, a longer vector of percentiles can be entered.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>centerSamples</code></td>
+<td>
+<p>whether each bootstrap sample should be centered before calculating the SVD.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>pattern_V</code></td>
+<td>
+<p>if <code>Y</code> is a class <code>ff</code> object, then the returned PCs of <code>Y</code> will also be a class <code>ff</code> object. <code>pattern_V</code> is passed to <code>ff</code> in creation of the <code>initial_SVD</code> output. Specifically, <code>pattern_V</code> is a filename prefix used for storing the high dimensional PCs of the original sample.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>pattern_Vb</code></td>
+<td>
+<p>if <code>Y</code> or <code>V</code> is a class <code>ff</code> object, then the returned bootstrap PCs will also be class <code>ff</code> objects. <code>pattern_Vb</code> is passed to <code>ff</code> in creation of the <code>full_HD_PC_dist</code> output. Specifically, <code>pattern_Vb</code> is a filename prefix used for storing the high dimensional bootstrap PCs.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>Users might also consider changing the global options <code>ffbatchbytes</code>, from the <code>ff</code> package, and <code>mc.cores</code>, from the <code>parallel</code> package. When <code>ff</code> objects are entered as arguments for <code>bootSVD</code>, the required matrix algebra is done using block matrix alebra. The <code>ffbatchbytes</code> option determines the size of the largest block matrix that will be held in memory at any one time. The <code>mc.cores</code> option (set to 1 by default) determines the level of parallelization to use when calculating the high dimensional distribution of the bootstrap PCs (see <code>mclapply</code>).
+</p>
+
+
+<h3>Value</h3>
+
+<p><code>bootSVD</code> returns a list that can include any of the following elements, depending on what is specified in the <code>output</code> argument:
+</p>
+
+<dl>
+<dt>initial_SVD</dt>
+<dd>
+<p>The singular value decomposition of the centered, original data matrix. <code>initial_SVD</code> is a list containing <code>V</code>, the matrix of <code class="reqn">p</code>-dimensional principal components, <code>d</code>, the vector of singular values of <code>Y</code>, and <code>U</code>, the matrix of <code class="reqn">n</code>-dimensional singular vectors of <code>Y</code>.</p>
+</dd>
+<dt>HD_moments</dt>
+<dd>
+<p>A list containing the bootstrap expected value (<code>EPCs</code>), element-wise bootstrap variance (<code>varPCs</code>), and element-wise bootstrap standard deviation (<code>sdPCs</code>) for each of the <code class="reqn">p</code>-dimensional PCs. Each of these three elements of <code>HD_moments</code> is also a list, which contains <code class="reqn">K</code> vectors, one for each PC. <code>HD_moments</code> also contains <code>momentCI</code>, a <code class="reqn">K</code>-length list of (<code class="reqn">p</code> by 2) matrices containing element-wise moment based confidence intervals for the PCs.</p>
+</dd>
+<dt>full_HD_PC_dist</dt>
+<dd>
+<p>A <code class="reqn">B</code>-length list of matrices (or <code>ff</code> matrices), with the <code class="reqn">b^{th}</code> list element equal to the (<code class="reqn">p</code> by <code class="reqn">K</code>) matrix of high dimensional PCs for the <code class="reqn">b^{th}</code> bootstrap sample. <br>
+For especially high dimensional cases when the output is returned as <code>ff</code> matrices, caution should be used if requesting 'full_HD_PC_dist' due to potential storage limitations. <br>
+To reindex these PCs by <code class="reqn">k</code> (the PC index) as opposed to <code class="reqn">b</code> (the bootstrap index), see <code>reindexMatricesByK</code>. Again though, caution shoulded be used when reindexing PCs stored as <code>ff</code> objects, as this will double the number of files stored.</p>
+</dd>
+<dt>HD_percentiles</dt>
+<dd>
+<p>A list of <code class="reqn">K</code> matrices, each of dimension (<code class="reqn">p</code> by <code class="reqn">q</code>), where <code class="reqn">q</code> is the number of percentiles requested (i.e. <code class="reqn">q</code> = <code>length(percentiles)</code>). The <code class="reqn">k^{th}</code> matrix in <code>HD_percentiles</code> contains element-wise percentiles for the <code class="reqn">k^{th}</code>, <code class="reqn">p</code>-dimensional PC.</p>
+</dd>
+</dl>
+<p>In addition, the following results are always included in the output, regardless of what is specified in the <code>output</code> argument:
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>full_LD_PC_dist</code></td>
+<td>
+<p>A <code class="reqn">B</code>-length list of matrices, with the <code class="reqn">b^{th}</code> list element equal to the (<code class="reqn">p</code> by <code class="reqn">K</code>) matrix of PCs of the scores in the <code class="reqn">b^{th}</code> bootstrap sample. To reindex these vectors by <code class="reqn">k</code> (the PC index), see <code>reindexMatricesByK</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>d_dist</code></td>
+<td>
+<p>A <code>B</code>-length list of vectors, with the <code class="reqn">b^{th}</code> element of <code>d_dist</code> containing the <code class="reqn">n</code>-length vector of singular values from the <code class="reqn">b^{th}</code> bootstrap sample. To reindex these values by <code class="reqn">k</code> (the PC index), see <code>reindexVectorsByK</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>U_dist</code></td>
+<td>
+<p>A <code>B</code>-length list of (<code class="reqn">n</code> by <code class="reqn">K</code>) matrices, with the columns of the <code class="reqn">b^{th}</code> matrix containing the <code class="reqn">n</code>-length singular vectors from the <code class="reqn">b^{th}</code> bootstrap sample. To reindex these vectors by <code class="reqn">k</code> (the PC index), see <code>reindexMatricesByK</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>LD_moments</code></td>
+<td>
+<p>A list that is comparable to <code>HD_moments</code>, but that instead describes the variability of the <code class="reqn">n</code>-dimensional principal components of the resampled score matrices. <code>LD_moments</code> contains the bootstrap expected value (<code>EPCs</code>), element-wise bootstrap variances (<code>varPCs</code>), and element-wise bootstrap standard deviations (<code>sdPCs</code>) for each of the <code class="reqn">n</code>-dimensional PCs. Each of these three elements of <code>LD_moments</code> is also a list, which contains <code class="reqn">K</code> vectors, one for each PC. <code>LD_moments</code> also contains <code>momentCI</code>, a list of <code class="reqn">K</code> (<code class="reqn">n</code> by 2) matrices containing element-wise, moment-based confidence intervals for the PCs.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>LD_percentiles</code></td>
+<td>
+<p>A list of <code class="reqn">K</code> matrices, each of dimension (<code class="reqn">p</code> by <code class="reqn">q</code>), where <code class="reqn">q</code> is the number of percentiles requested (i.e. <code class="reqn">q</code> = <code>length(percentiles)</code>). The <code class="reqn">k^{th}</code> matrix in <code>LD_percentiles</code> contains element-wise percentiles for the <code class="reqn">k^{th}</code> <code class="reqn">n</code>-dimensional PC.
+</p>
+</td>
+</tr>
+</table>
+<h3>References</h3>
+
+<p>Aaron Fisher, Brian Caffo, and Vadim Zipunnikov. <em>Fast, Exact Bootstrap Principal Component Analysis for p&gt;1 million</em>. 2014. http://arxiv.org/abs/1405.0922
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">#use small n, small B, for a quick illustration
+set.seed(0)
+Y&lt;-simEEG(n=100, centered=TRUE, wide=TRUE) 
+b&lt;-bootSVD(Y, B=50, K=2, output= 
+ 	c('initial_SVD', 'HD_moments', 'full_HD_PC_dist',
+ 	'HD_percentiles'), verbose=interactive())
+b
+
+#explore results
+matplot(b$initial_SVD$V[,1:4],type='l',main='Fitted PCs',lty=1)
+legend('bottomright',paste0('PC',1:4),col=1:4,lty=1,lwd=2)
+
+######################
+# look specifically at 2nd PC
+k&lt;-2
+
+######
+#looking at HD variability
+
+#plot several draws from bootstrap distribution
+VsByK&lt;-reindexMatricesByK(b$full_HD_PC_dist)
+matplot(t(VsByK[[k]][1:20,]),type='l',lty=1,
+		main=paste0('20 Draws from bootstrap\ndistribution of HD PC ',k))
+
+#plot pointwise CIs
+matplot(b$HD_moments$momentCI[[k]],type='l',col='blue',lty=1,
+		main=paste0('CIs For HD PC ',k))
+matlines(b$HD_percentiles[[k]],type='l',col='darkgreen',lty=1)
+lines(b$initial_SVD$V[,k])
+legend('topright',c('Fitted PC','Moment CIs','Percentile CIs'),
+		lty=1,col=c('black','blue','darkgreen'))
+abline(h=0,lty=2,col='darkgrey')
+
+######
+# looking at LD variability
+
+# plot several draws from bootstrap distribution
+AsByK&lt;-reindexMatricesByK(b$full_LD_PC_dist)
+matplot(t(AsByK[[k]][1:50,]),type='l',lty=1,
+		main=paste0('50 Draws from bootstrap\ndistribution of LD PC ',k),
+	xlim=c(1,10),xlab='PC index (truncated)')
+
+# plot pointwise CIs
+matplot(b$LD_moments$momentCI[[k]],type='o',col='blue',
+		lty=1,main=paste0('CIs For LD PC ',k),xlim=c(1,10),
+		xlab='PC index (truncated)',pch=1)
+matlines(b$LD_percentiles[[k]],type='o',pch=1,col='darkgreen',lty=1)
+abline(h=0,lty=2,col='darkgrey')
+legend('topright',c('Moment CIs','Percentile CIs'),lty=1,
+		pch=1,col=c('blue','darkgreen'))
+#Note: variability is mostly due to rotations with the third and fourth PC.
+
+# Bootstrap eigenvalue distribution
+dsByK&lt;-reindexVectorsByK(b$d_dist)
+boxplot(dsByK[[k]]^2,main=paste0('Covariance Matrix Eigenvalue ',k),
+		ylab='Bootstrap Distribution',
+		ylim=range(c(dsByK[[k]]^2,b$initial_SVD$d[k]^2)))
+points(b$initial_SVD$d[k]^2,pch=18,col='red')
+legend('bottomright','Sample Value',pch=18,col='red')
+
+
+##################
+#Example with ff input
+library(ff)
+Yff&lt;-as.ff(Y, pattern='Y_')
+# If desired, change options in 'ff' package to
+# adjust the size of matrix blocks held in RAM.
+# For example:
+# options('ffbatchbytes'=100000)
+ff_dir&lt;-tempdir()
+pattern_V &lt;- paste0(ff_dir,'/V_')
+pattern_Vb &lt;- paste0(ff_dir,'/Vb_')
+bff &lt;- bootSVD(Yff, B=50, K=2, output=c('initial_SVD', 'HD_moments',
+ 	'full_HD_PC_dist', 'HD_percentiles'), pattern_V= pattern_V,
+ 	pattern_Vb=pattern_Vb, verbose=interactive())
+
+
+# Note that elements of full_HD_PC_dist and initial_SVD
+# have class 'ff'
+str(lapply(bff,function(x) class(x[[1]])))
+#Show some results of bootstrap draws
+plot(bff$full_HD_PC_dist[[1]][,k],type='l')
+#Reindexing by K will create a new set of ff files.
+VsByKff&lt;-reindexMatricesByK(bff$full_HD_PC_dist,
+ 	pattern=paste0(ff_dir,'/Vk_'))
+physical(bff$full_HD_PC_dist[[1]])$filename
+physical(VsByKff[[1]])$filename
+matplot(t(VsByKff[[k]][1:10,]),type='l',lty=1,
+main=paste0('Bootstrap Distribution of PC',k))
+
+
+# Saving and moving results:
+saveRDS(bff,file=paste0(ff_dir,'/bff.rds'))
+close(bff$initial_SVD$V)
+physical(bff$initial_SVD$V)$filename
+# If the 'ff' files on disk are moved or renamed,
+# this filename attribute can be changed:
+old_ff_path &lt;- physical(bff$initial_SVD$V)$filename
+new_ff_path &lt;- paste0(tempdir(),'/new_V_file.ff')
+file.rename(from= old_ff_path, to= new_ff_path)
+physical(bff$initial_SVD$V)$filename &lt;- new_ff_path
+matplot(bff$initial_SVD$V[,1:4],type='l',lty=1)
+
+</code></pre>
+
+
+</div>

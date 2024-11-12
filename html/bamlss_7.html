@@ -1,0 +1,104 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>bamlss.engine.helpers</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>
+BAMLSS Engine Helper Functions
+</h2>
+
+<h3>Description</h3>
+
+<p>These functions can be useful when setting up new model fitting engines that are based
+on the setup function <code>bamlss.engine.setup</code>. See the examples.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">## Functions to extract parameter states.
+get.par(x, what = NULL)
+get.state(x, what = NULL)
+set.par(x, replacement, what)
+
+## Function for setting starting values.
+set.starting.values(x, start)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>For function <code>get.par()</code> and <code>set.par()</code> argument <code>x</code> is a
+named numeric vector. For function <code>get.state()</code> argument <code>x</code> is an object
+of the <code>smooth.construct</code> list that is processed by function
+<code>bamlss.engine.setup</code>, i.e., which has a <code>"state"</code> object.
+For function <code>set.starting.values()</code> argument <code>x</code> is the <code>x</code> list, as
+returned from function <code>bamlss.frame</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>what</code></td>
+<td>
+<p>The name of the parameter(s) that should be extracted or replaced.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>replacement</code></td>
+<td>
+<p>The value(s) that should be used for replacement.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>start</code></td>
+<td>
+<p>The named numeric vector of starting values. The name convention is based
+on function <code>parameters</code>.</p>
+</td>
+</tr>
+</table>
+<h3>See Also</h3>
+
+<p><code>bamlss.engine.setup</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## Create a bamlss.frame.
+d &lt;- GAMart()
+bf &lt;- bamlss.frame(num ~ s(x1) + s(x2) + te(lon,lat), data = d, family = "gaussian")
+names(bf$x$mu$smooth.construct)
+
+## Use the setup function for
+## adding state elements.
+bf$x &lt;- bamlss.engine.setup(bf$x, df = c("s(x1)" = 1, "s(x2)" = 3))
+names(bf$x$mu$smooth.construct)
+
+## Extract regression coefficients.
+get.state(bf$x$mu$smooth.construct[["te(lon,lat)"]], "b")
+
+## Extract smoothing variances.
+get.state(bf$x$mu$smooth.construct[["te(lon,lat)"]], "tau2")
+
+## More examples.
+state &lt;- bf$x$mu$smooth.construct[["te(lon,lat)"]]$state
+get.par(state$parameters, "b")
+get.par(state$parameters, "tau2")
+
+state$parameters &lt;- set.par(state$parameters, c(0.1, 0.5), "tau2")
+get.par(state$parameters, "tau2")
+
+## Setting starting values.
+start &lt;- c("mu.s.s(x1).b" = 1:9, "mu.s.s(x1).tau2" = 0.1)
+bf$x &lt;- set.starting.values(bf$x, start = start)
+get.state(bf$x$mu$smooth.construct[["s(x1)"]], "b")
+get.state(bf$x$mu$smooth.construct[["s(x1)"]], "tau2")
+</code></pre>
+
+
+</div>

@@ -1,0 +1,154 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>lexpit</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Fit a linear-expit regression model</h2>
+
+<h3>Description</h3>
+
+<p>A direct probability model for regression with a binary outcome from observational data. Covariate effects are the sum of additive terms and an expit term, which allows some explanatory variables to be additive and others non-linear.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">lexpit(formula.linear,formula.expit,data,na.action=na.omit,
+					weights=NULL,strata=NULL,par.init=NULL,
+					warn = FALSE,
+					control.lexpit=list(max.iter=1000,tol=1E-7),...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>formula.linear</code></td>
+<td>
+<p>formula for linear model for binary outcome, <code>event~x1+x2+...</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>formula.expit</code></td>
+<td>
+<p>formula for expit model, linear in expit, <code>event~z1+z2+...</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+<p>data.frame containing the variables of <code>formula.linear</code> and <code>formula.expit</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>na.action</code></td>
+<td>
+<p>function specifying how missing data should be handled, na.action</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>weights</code></td>
+<td>
+<p>Vector of weights equal to the number of observations. For population-based case-control study, weights are the inverse sampling fractions for controls.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>strata</code></td>
+<td>
+<p>vector indicating the stratification for weighted regression with stratified observational data</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>par.init</code></td>
+<td>
+<p>list (optional) of initial parameters for <code>linear</code> and <code>expit</code> terms.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>warn</code></td>
+<td>
+<p>logical indicator whether to include warnings during algorithm fitting. Default of <code>FALSE</code> suppresses warnings when testing for feasible parameters.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>control.lexpit</code></td>
+<td>
+<p>list with control parameters for optimization algorithm</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Additional arguments passed to <code>constrOptim</code></p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p><code>lexpit</code> model uses a two-stage optimization procedure. At the first stage linear terms the solutions to the maximum of a pseudo log-likelihood using a constrained optimization algorithm with an adaptive barrier method, <code>constrOptim</code> (Lange, 2010). The second stage maximizes the pseudo log-likelihood with respect to the expit terms using iterative reweighted least squares with an offset term for the linear component of the model.
+</p>
+<p>Variance estimates are based on Taylor linearization (Shah, 2002). When <code>weights</code> are not NULL, it is assumed that the study is a case-control design. 
+</p>
+
+
+<h3>Value</h3>
+
+<p>Returns an object of class <code>lexpit</code>.
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>S. Kovalchik <a href="mailto:s.a.kovalchik@gmail.com">s.a.kovalchik@gmail.com</a></p>
+
+
+<h3>References</h3>
+
+<p>Kovalchik S, Varadhan R (2013). Fitting Additive Binomial Regression Models with the R Package blm. <em>Journal of Statistical Software</em>, 54(1), 1-18. URL: <a href="https://www.jstatsoft.org/v54/i01/">https://www.jstatsoft.org/v54/i01/</a>.
+</p>
+<p>Lange, K. (2010) <em>Numerical Analysis for Statisticians</em>, Springer.
+</p>
+<p>Shah, BV. (2002) Calculus of Taylor deviations. Joint Statistical Meetings.
+</p>
+
+
+<h3>See Also</h3>
+
+<p>constrOptim, nlm</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+data(ccdata)
+
+fit &lt;- lexpit(y~female,y~packyear,weights = ccdata$w,
+       		strata=ccdata$strata,data=ccdata)
+
+summary(fit)
+
+# LEXPIT MODEL FOR BLADDER CANCER RISK BY AGE 70
+formula.linear &lt;- bladder70~female * smoke_status
+formula.expit &lt;- bladder70~redmeat+fiber.centered+I(fiber.centered^2)
+
+# ADDITIVE EFFECTS FOR GENDER AND SMOKING
+# LOGISTIC EFFECTS FOR FIBER AND REDMEAT CONSUMPTION
+data(aarp)
+
+fit &lt;- lexpit(formula.linear, formula.expit, aarp, weight=aarp$w)
+logLik(fit)
+
+model.formula(fit)
+
+# SUMMARY
+summary(fit)
+confint(fit)
+
+# FITTED ABSOLUTE RISK PER 1,000 PERSONS
+head(predict(fit)*1000)
+</code></pre>
+
+
+</div>

@@ -1,0 +1,96 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>as.one.mode</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Conversion of a network matrix</h2>
+
+<h3>Description</h3>
+
+<p>This helper function converts a bipartite matrix into a one-mode matrix.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">as.one.mode(web, fill = 0, project="full", weighted=TRUE)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>web</code></td>
+<td>
+<p>A matrix with lower trophic level species as rows, higher trophic level species 
+as columns and number of interactions as entries.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>fill</code></td>
+<td>
+<p>What shall unobserved combinations be represented as in the one-mode matrix (see below)? Defaults to 0. Set to NA if links not possible for bipartite networks should be masked (i.e. those within a level).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>project</code></td>
+<td>
+<p>There are different ways to convert a two-mode (bipartite) network into one-mode networks. The most common is to focus on one set (e.g. the n pollinators) and compute a n x n matrix with entries between species that pollinate the same plant (“higher”). Similarly, one can compute a k x k matrix for the k plant species (“lower”). Or, finally and the default, one can compute an (n+k) x (n+k) matrix in which only the observed interactions are present (“full”). This is in fact a near-trivial, symmetric matrix with 0s between species of the same trophic level.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>weighted</code></td>
+<td>
+<p>Logical; shall the strength of links be included in the one-mode output? Defaults to TRUE, but can be set to FALSE to turn a weighted two-mode into a binary one-mode network.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>In bipartite (or: two-mode) networks, participants are of different types (e.g. pollinators and plants, actors and parties in social research). Hence, a party cannot connect to another party except through actors. A pollinator interacts with another pollinator only through the host plant.
+</p>
+<p>Much network theory, however, is based on one-mode networks, where all participants are listed in one vector, i.e. plants and pollinators alike, actors together with events. This function here transforms the more condensed bipartite representation into a one-mode-representation, filling the unobserved type of interactions (i.e. plants with plants and pollinators with pollinators) with 0 (unless you specify it differently in <span class="option">fill</span>).
+</p>
+<p>The lower trophic level (e.g. plants or rows) is listed first, then the higher trophic level (e.g. pollinators or columns). Hence, pollinator 2 becomes species number r+2, where r is the number of rows of the network matrix.
+</p>
+<p>In addition to the "full" projection, there are "inner" projections, yielding a network <b>only</b> of the lower or higher level (hence the argument <span class="option">project="lower"/"higher"/"full"</span>). Such an inner projection inevitably loses information: if two pollinators pollinate three plant species, then they are connected in such a projection through 3 links. The weight of each link will be different, but in the projection only one weight can be given. This is where the information is lost. Several indices (betweenness, centrality) depend on one-mode projections of this kind. Still, the user should always ask herself, whether the projection might not have unintended consequences!
+</p>
+<p>If <span class="option">weighted=TRUE</span>, then the returned one-mode network contains the parallel minimum of the observed interactions between two species. That means, if two species A and B interact with species 1 to 5 in the other group, then the two interaction vectors for A with 1 to 5 and B with 1 to 5 are placed next to each other, and for every species 1 to 5 the minimum for each of these 5 values for the two vectors is retained (the parallel minimum). The idea is that the similarity between A and B is driven by their lowest communality in interactions. Next, the five parallel minimum values are added to yield the final weight for this link.
+</p>
+<p>The benefit of this conversion is access to the wonderful R-package Social Network Analysis (<span class="pkg">sna</span>), with its many one-mode indices (such as <code>betweenness</code>, <code>closeness</code>, <code>centralization</code>, <code>degree</code>, <code>kpath.census</code> and so forth). Furthermore, <code>gplot</code> in that package also provides cool network depictions well worth checking out.
+</p>
+<p>With respect to <span class="pkg">bipartite</span>, <code>as.one.mode</code> is employed in the function <code>nodespec</code>, which itself uses the <span class="pkg">sna</span>-function <code>geodist</code>.
+</p>
+
+
+<h3>Value</h3>
+
+<p>A matrix of dimension (n+k) x (n+k), where n and k are the dimensions of the input web. Both dimensions are given the names of the original web (first the lower, then the higher trophic level).
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p> Carsten F. Dormann <a href="mailto:carsten.dormann@biom.uni-freiburg.de">carsten.dormann@biom.uni-freiburg.de</a> </p>
+
+
+<h3>See Also</h3>
+
+<p>Function <code>projecting_tm</code> in package <span class="pkg">tnet</span> provide an analogous ways of converting two-modes into one-modes. This function can be accessed after transforming the web-matrix into an edge list using <code>web2edges</code>.</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">data(Safariland)
+image(Safariland)
+image(as.one.mode(Safariland))
+par(xpd=TRUE, mar=c(0, 6, 0, 6))
+gplot(as.one.mode(Safariland, project="lower"), 
+	label=rownames(Safariland), gmode="graph", 
+	label.cex=0.6, vertex.cex=2, vertex.col="green")
+</code></pre>
+
+
+</div>

@@ -1,0 +1,168 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>bsgw.crossval</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>
+Convenience functions for cross-validation-based selection of shrinkage parameter in the bsgw model.
+</h2>
+
+<h3>Description</h3>
+
+<p><code>bsgw.crossval</code> calculates cross-validation-based, out-of-sample log-likelihood of a bsgw model for a data set, given the supplied folds. <code>bsgw.crossval.wrapper</code> applies <code>bsgw.crossval</code> to a set of combinations of shrinkage parameters (<code>lambda</code>,<code>lambdas</code>) and produces the resulting vector of log-likelihood values as well as the specific combination of shrinkage parameters associated with the maximum log-likelihood. <code>bsgw.generate.folds</code> generates random partitions, while <code>bsgw.generate.folds.eventbalanced</code> generates random partitions with events evenly distributed across partitions. The latter feature is useful for cross-valiation of small data sets with low event rates, since it prevents over-accumulation of events in one or two partitions, and lack of events altogether in other partitions.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">bsgw.generate.folds(ntot, nfold=5)
+bsgw.generate.folds.eventbalanced(formula, data, nfold=5)
+bsgw.crossval(data, folds, all=FALSE, print.level=1
+  , control=bsgw.control(), ncores=1, ...)
+bsgw.crossval.wrapper(data, folds, all=FALSE, print.level=1
+  , control=bsgw.control(), ncores=1
+  , lambda.vec=exp(seq(from=log(0.01), to=log(100), length.out = 10)), lambdas.vec=NULL
+  , lambda2=if (is.null(lambdas.vec)) cbind(lambda=lambda.vec, lambdas=lambda.vec)
+      else as.matrix(expand.grid(lambda=lambda.vec, lambdas=lambdas.vec))
+  , plot=TRUE, ...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>ntot</code></td>
+<td>
+<p>Number of observations to create partitions for. It must typically be set to <code>nrow(data)</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nfold</code></td>
+<td>
+<p>Number of folds or partitions to generate.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>formula</code></td>
+<td>
+<p>Survival formula, used to extract the binary <code>status</code> field from the data. Right-hand side of the formula is ignored, so a formula of the form <code>Surv(time,status)~1</code> is sufficient.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+<p>Data frame used in model training and prediction.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>folds</code></td>
+<td>
+<p>An integer vector of length <code>nrow(data)</code>, defining fold/partition membership of each observation. For example, in 5-fold cross-validation for a data set of 200 observations, <code>folds</code> must be a 200-long vector with elements from the set <code>{1,2,3,4,5}</code>. Convenience functions <code>bsgw.generate.folds</code> and <code>bsgw.generate.folds.eventbalanced</code> can be used to generate the <code>folds</code> vector for a given survival data frame.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>all</code></td>
+<td>
+<p>If <code>TRUE</code>, estimation objects from each cross-validation task is collected and returned for diagnostics purposes.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>print.level</code></td>
+<td>
+<p>Verbosity of progress report.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>control</code></td>
+<td>
+<p>List of control parameters, usually the output of bsgw.control.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ncores</code></td>
+<td>
+<p>Number of cores for parallel execution of cross-validation code.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>lambda.vec</code></td>
+<td>
+<p>Vector of shrinkage parameters to be tested for scale-parameter coefficients.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>lambdas.vec</code></td>
+<td>
+<p>Vector of shrinkage parameters to be tested for shape-parameter coefficients.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>lambda2</code></td>
+<td>
+<p>A data frame that enumerates all combinations of <code>lambda</code> and <code>lambdas</code> to be tested. By default, it is constructed from forming all permutations of <code>lambda.vec</code> and <code>lambdas.vec</code>. If <code>lambdas.vec=NULL</code>, it will only try equal values of the two parameters in each combination.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>plot</code></td>
+<td>
+<p>If <code>TRUE</code>, and if the <code>lambda</code> and <code>lambdas</code> entries in <code>lambda2</code> are identical, a plot of <code>loglike</code> as a function of either vector is produced.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Other arguments to be passed to bsgw.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>Functions <code>bsgw.generate.folds</code> and <code>bsgw.generate.folds.eventbalanced</code> produce integer vectors of length <code>ntot</code> or <code>nrow(data)</code> respectively. The output of these functions can be directly passed to <code>bsgw.crossval</code> or <code>bsgw.crossval.wrapper</code>. Function <code>bsgw.crossval</code> returns the log-likelihood of data under the assumed bsgw model, calculated using a cross-validation scheme with the supplied <code>fold</code> parameter. If <code>all=TRUE</code>, the estimation objects for each of the <code>nfold</code> estimation jobs will be returned as the "estobjs" attribute of the returned value. Function <code>bsgw.crossval.wrapper</code> returns a list with elements <code>lambda</code> and <code>lambdas</code>, the optimal shrinkage parameters for scale and shape coefficients, respectively. Additionally, the following attributes are attached:
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>loglike.vec</code></td>
+<td>
+<p>Vector of log-likelihood values, one for each tested combination of <code>lambda</code> and <code>lambdas</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>loglike.opt</code></td>
+<td>
+<p>The maximum log-likelihood value from the <code>loglike.vec</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>lambda2</code></td>
+<td>
+<p>Data frame with columns <code>lambda</code> and <code>lambdas</code>. Each row of this data frame contains one combination of shrinkage parameters that are tested in the wrapper function.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>estobjs</code></td>
+<td>
+<p>If <code>all=TRUE</code>, a list of length <code>nrow(lambda2)</code> is returned, with each element being itself a list of <code>nfold</code> estimation objects associated with each call to the <code>bsgw</code> function. This object can be examined by the user for diagnostic purposes, e.g. by applying plot against each object.</p>
+</td>
+</tr>
+</table>
+<h3>Author(s)</h3>
+
+<p>Alireza S. Mahani, Mansour T.A. Sharabiani</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">library("survival")
+data(ovarian)
+folds &lt;- bsgw.generate.folds.eventbalanced(Surv(futime, fustat) ~ 1, ovarian, 5)
+cv &lt;- bsgw.crossval(ovarian, folds, formula=Surv(futime, fustat) ~ ecog.ps + rx
+  , control=bsgw.control(iter=50, nskip=10), print.level = 3)
+cv2 &lt;- bsgw.crossval.wrapper(ovarian, folds, formula=Surv(futime, fustat) ~ ecog.ps + rx
+  , control=bsgw.control(iter=50, nskip=10)
+  , print.level=3, lambda.vec=exp(seq(from=log(0.1), to=log(1), length.out = 3)))
+</code></pre>
+
+
+</div>

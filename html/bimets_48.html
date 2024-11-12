@@ -1,0 +1,368 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>MULTMATRIX</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>
+Compute the multiplier matrix of a BIMETS model
+</h2>
+
+<h3>Description</h3>
+
+<p>This function computes the matrix of both impact and interim multipliers, for a selected set of endogenous variables (i.e. <code>TARGET</code>) with respect to a selected set of exogenous variables (i.e. <code>INSTRUMENT</code>), by subtracting the results from different simulations in each period of the provided time range (i.e. <code>TSRANGE</code>). The simulation algorithms are the same as those used for the <code>SIMULATE</code> operation. <br><br>
+The <code>MULTMATRIX</code> procedure is articulated as follows:<br><br>
+1- simultaneous simulations are done;<br><br>
+2- the first simulation establishes the base line solution (without shocks);<br><br>
+3- the other simulations are done with shocks applied to each of the <code>INSTRUMENT</code> one at a time for every period in <code>TSRANGE</code>;<br><br>
+4- each simulation follows the defaults described in the <code>SIMULATE</code> help page, but has to be <code>STATIC</code> for the IMPACT multipliers and <code>DYNAMIC</code> for INTERIM multipliers;<br><br>
+5- given <code>MM_SHOCK</code> shock amount as a very small positive number, derivatives are computed by subtracting the base line solution of the <code>TARGET</code> from the shocked solution, then dividing by the value of the base line <code>INSTRUMENT</code> time the <code>MM_SHOCK</code>.<br><br><br>
+The IMPACT multipliers measure the effects of impulse exogenous changes on the endogenous variables in the same time period. They can be defined as partial derivatives of each current endogenous variable with respect to each current exogenous variable, all other exogenous variables being kept constant.<br></p>
+<p>Given <code class="reqn">Y(t)</code> an endogenous variable at time <code class="reqn">t</code> and <code class="reqn">X(t)</code> an exogenous variable at time <code class="reqn">t</code> the impact multiplier <code class="reqn">m(Y,X,t)</code> is defined as <code class="reqn">m(Y,X,t) = \partial Y(t)/\partial X(t)</code> and can be approximated by <code class="reqn">m(Y,X,t)\approx(Y_{shocked}(t)-Y(t))/(X_{shocked}(t)-X(t))</code>, with <code class="reqn">Y_{shocked}(t)</code> the values fo the simulated endogenous variable <code class="reqn">Y</code> at time <code class="reqn">t</code> when <code class="reqn">X(t)</code> is shocked to <code class="reqn">X_{shocked}(t)=X(t)(1+MM\_SHOCK)</code>
+<br><br> The INTERIM or delay-<code>r</code> multipliers measure the delay-<code>r</code> effects of impulse exogenous changes on the endogenous variables in the same time period. The delay-<code>r</code> multipliers of the endogenous variable <code>Y</code> with respect to the exogenous variable <code>X</code> related to a dynamic simulation from time <code>t</code> to time <code>t+r</code> can be defined as the partial derivative of the current endogenous variable <code>Y</code> at time <code>t+r</code> with respect to the exogenous variable <code>X</code> at time <code>t</code>, all other exogenous variables being kept constant.<br></p>
+<p>Given <code class="reqn">Y(t+r)</code> an endogenous variable at time <code class="reqn">t+r</code> and <code class="reqn">X(t)</code> an exogenous variable at time <code class="reqn">t</code> the impact interim or delay-<code>r</code> multiplier <code class="reqn">m(Y,X,t,r)</code> is defined as <code class="reqn">m(Y,X,t,r) = \partial Y(t+r)/\partial X(t)</code> and can be approximated by <code class="reqn">m(Y,X,t,r)\approx(Y_{shocked}(t+r)-Y(t+r))/(X_{shocked}(t)-X(t))</code>, with <code class="reqn">Y_{shocked}(t+r)</code> the values fo the simulated endogenous variable <code class="reqn">Y</code> at time <code class="reqn">t+r</code> when <code class="reqn">X(t)</code> is shocked to <code class="reqn">X_{shocked}(t)=X(t)(1+MM\_SHOCK)</code>
+<br><br>
+Users can also declare an endogenous variable as the <code>INSTRUMENT</code> variable. In this case, the constant adjustment (see <code>SIMULATE</code>) related to the provided endogenous variable will be used as the <code>INSTRUMENT</code> exogenous variable (see example);
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">MULTMATRIX(model=NULL,
+           simAlgo='GAUSS-SEIDEL',
+           TSRANGE=NULL,
+           simType='DYNAMIC',
+           simConvergence=0.01,
+           simIterLimit=100,
+           ZeroErrorAC=FALSE,
+           BackFill=0,
+           Exogenize=NULL,
+           ConstantAdjustment=NULL,
+           verbose=FALSE,
+           verboseSincePeriod=0,
+           verboseVars=NULL,
+           TARGET=NULL,
+           INSTRUMENT=NULL,
+           MM_SHOCK=0.00001,
+           quietly=FALSE,
+           JACOBIAN_SHOCK=1e-4,
+           JacobianDrop=NULL,
+           forceForwardLooking=FALSE,
+           avoidCompliance=FALSE,
+           ...)		   
+
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>model</code></td>
+<td>
+<p>see <code>SIMULATE</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>simAlgo</code></td>
+<td>
+<p>see <code>SIMULATE</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>TSRANGE</code></td>
+<td>
+<p>see <code>SIMULATE</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>simType</code></td>
+<td>
+<p>see <code>SIMULATE</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>simConvergence</code></td>
+<td>
+<p>see <code>SIMULATE</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>simIterLimit</code></td>
+<td>
+<p>see <code>SIMULATE</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ZeroErrorAC</code></td>
+<td>
+<p>see <code>SIMULATE</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>BackFill</code></td>
+<td>
+<p>see <code>SIMULATE</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Exogenize</code></td>
+<td>
+<p>see <code>SIMULATE</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ConstantAdjustment</code></td>
+<td>
+<p>see <code>SIMULATE</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>verbose</code></td>
+<td>
+<p>see <code>SIMULATE</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>verboseSincePeriod</code></td>
+<td>
+<p>see <code>SIMULATE</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>verboseVars</code></td>
+<td>
+<p>see <code>SIMULATE</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>TARGET</code></td>
+<td>
+<p>  A <code>character</code> array built with the names of the endogenous variables for which the multipliers are requested </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>INSTRUMENT</code></td>
+<td>
+
+<p>A <code>character</code> array built with the names of the exogenous variables with respect to which the multipliers are evaluated. Users can also declare an endogenous variable as <code>INSTRUMENT</code> variable: in this case the constant adjustment (see <code>SIMULATE</code>) related to the provided endogenous variable will be used as the instrument exogenous variable
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>MM_SHOCK</code></td>
+<td>
+<p>The value of the shock added to <code>INSTRUMENT</code> variables in the derivative calculation of the multipliers. The default value is <code>0.00001</code> times the value of the exogenous variable
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>quietly</code></td>
+<td>
+<p>see <code>SIMULATE</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>JACOBIAN_SHOCK</code></td>
+<td>
+<p>see <code>SIMULATE</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>JacobianDrop</code></td>
+<td>
+<p>see <code>SIMULATE</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>forceForwardLooking</code></td>
+<td>
+<p>see <code>SIMULATE</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>avoidCompliance</code></td>
+<td>
+<p>see <code>SIMULATE</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>see <code>SIMULATE</code></p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>This function will add a new element named <code>MultiplierMatrix</code> into the output BIMETS model object.<br><br>
+The new <code>MultiplierMatrix</code> element is a <br><code>(NumPeriods * Nendogenous) X (NumPeriods * Nexogenous)</code> matrix,<br> with <code>NumPeriods</code> as the number of periods specified in the <code>TSRANGE</code>, <code>Nendogeous</code> the count of the endogenous variables in the <code>TARGET</code> array and <code>Nexogenous</code> the count of the exogenous variables in the <code>INSTRUMENT</code> array. <br><br> The arguments passed to the function call during the latest <code>MULTMATRIX</code> run will be inserted into the <code>'__SIM_PARAMETERS__'</code> element of the model <code>simulation</code> list (see <code>SIMULATE</code>); this data can be helpful in order to replicate the multiplier matrix results. <br><br>
+Row and column names in the output multiplier matrix identify the variables and the periods involved in the derivative solution, with the syntax <code>VARIABLE_PERIOD</code> (see example).
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>MDL</code><br><code>LOAD_MODEL</code><br><code>ESTIMATE</code><br><code>SIMULATE</code><br><code>STOCHSIMULATE</code><br><code>RENORM</code><br><code>TIMESERIES</code><br><code>BIMETS indexing</code><br><code>BIMETS configuration</code><br></p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+
+#define model
+myModelDefinition&lt;-
+"MODEL 
+COMMENT&gt; Klein Model 1 of the U.S. Economy 
+
+COMMENT&gt; Consumption
+BEHAVIORAL&gt; cn
+TSRANGE 1921 1 1941 1
+EQ&gt; cn =  a1 + a2*p + a3*TSLAG(p,1) + a4*(w1+w2) 
+COEFF&gt; a1 a2 a3 a4
+
+COMMENT&gt; Investment
+BEHAVIORAL&gt; i
+TSRANGE 1921 1 1941 1
+EQ&gt; i = b1 + b2*p + b3*TSLAG(p,1) + b4*TSLAG(k,1)
+COEFF&gt; b1 b2 b3 b4
+
+COMMENT&gt; Demand for Labor
+BEHAVIORAL&gt; w1 
+TSRANGE 1921 1 1941 1
+EQ&gt; w1 = c1 + c2*(y+t-w2) + c3*TSLAG(y+t-w2,1)+c4*time
+COEFF&gt; c1 c2 c3 c4
+
+COMMENT&gt; Gross National Product
+IDENTITY&gt; y
+EQ&gt; y = cn + i + g - t
+
+COMMENT&gt; Profits
+IDENTITY&gt; p
+EQ&gt; p = y - (w1+w2)
+
+COMMENT&gt; Capital Stock
+IDENTITY&gt; k
+EQ&gt; k = TSLAG(k,1) + i
+
+END"
+
+#define model data
+myModelData&lt;-list(
+  cn
+  =TIMESERIES(39.8,41.9,45,49.2,50.6,52.6,55.1,56.2,57.3,57.8,55,50.9,
+              45.6,46.5,48.7,51.3,57.7,58.7,57.5,61.6,65,69.7,
+              START=c(1920,1),FREQ=1),
+  g
+  =TIMESERIES(4.6,6.6,6.1,5.7,6.6,6.5,6.6,7.6,7.9,8.1,9.4,10.7,10.2,9.3,10,
+              10.5,10.3,11,13,14.4,15.4,22.3,
+              START=c(1920,1),FREQ=1),
+  i
+  =TIMESERIES(2.7,-.2,1.9,5.2,3,5.1,5.6,4.2,3,5.1,1,-3.4,-6.2,-5.1,-3,-1.3,
+              2.1,2,-1.9,1.3,3.3,4.9,
+              START=c(1920,1),FREQ=1),
+  k
+  =TIMESERIES(182.8,182.6,184.5,189.7,192.7,197.8,203.4,207.6,210.6,215.7,
+              216.7,213.3,207.1,202,199,197.7,199.8,201.8,199.9,
+              201.2,204.5,209.4,
+              START=c(1920,1),FREQ=1),
+  p
+  =TIMESERIES(12.7,12.4,16.9,18.4,19.4,20.1,19.6,19.8,21.1,21.7,15.6,11.4,
+              7,11.2,12.3,14,17.6,17.3,15.3,19,21.1,23.5,
+              START=c(1920,1),FREQ=1),
+  w1
+  =TIMESERIES(28.8,25.5,29.3,34.1,33.9,35.4,37.4,37.9,39.2,41.3,37.9,34.5,
+              29,28.5,30.6,33.2,36.8,41,38.2,41.6,45,53.3,
+              START=c(1920,1),FREQ=1),
+  y
+  =TIMESERIES(43.7,40.6,49.1,55.4,56.4,58.7,60.3,61.3,64,67,57.7,50.7,41.3,
+              45.3,48.9,53.3,61.8,65,61.2,68.4,74.1,85.3,
+              START=c(1920,1),FREQ=1),
+  t
+  =TIMESERIES(3.4,7.7,3.9,4.7,3.8,5.5,7,6.7,4.2,4,7.7,7.5,8.3,5.4,6.8,7.2,
+              8.3,6.7,7.4,8.9,9.6,11.6,
+              START=c(1920,1),FREQ=1),
+  time 
+  =TIMESERIES(NA,-10,-9,-8,-7,-6,-5,-4,-3,-2,-1,0,1,2,3,4,5,6,7,8,9,10,
+              START=c(1920,1),FREQ=1),
+  w2
+  =TIMESERIES(2.2,2.7,2.9,2.9,3.1,3.2,3.3,3.6,3.7,4,4.2,4.8,5.3,5.6,6,6.1,
+              7.4,6.7,7.7,7.8,8,8.5,
+              START=c(1920,1),FREQ=1)
+)
+
+#load model and model data
+myModel&lt;-LOAD_MODEL(modelText=myModelDefinition)
+myModel&lt;-LOAD_MODEL_DATA(myModel,myModelData)
+
+#estimate model
+myModel&lt;-ESTIMATE(myModel)
+
+#calculate impact multipliers of Government Expenditure 'g' and
+#Government Wage Bill 'w2' with respect of Consumption 'cn' and
+#Gross National Product 'y' in the Klein model on the year 1941:
+
+myModel&lt;-MULTMATRIX(myModel,
+                  symType='STATIC',
+                  TSRANGE=c(1941,1,1941,1),
+                  INSTRUMENT=c('w2','g'),
+                  TARGET=c('cn','y'))
+                  
+#Multiplier Matrix:    100.00%
+#...MULTMATRIX OK
+
+print(myModel$MultiplierMatrix)
+#          w2_1      g_1
+#cn_1 0.4540346 1.671956
+#y_1  0.2532000 3.653260
+
+#Results show that the impact multiplier of "y"
+#with respect to "g" is +3.65
+#If we change Government Expenditure 'g' value in 1941 
+#from 22.3 (its historical value) to 23.3 (+1) 
+#then the simulated Gross National Product "y" 
+#in 1941 changes from 95.2 to 99, 
+#thusly roughly confirming the +3.65 impact multiplier.
+#Note that "g" appears only once in the model definition, and only 
+#in the "y" equation, with a coefficient equal to one. (Keynes would approve)
+
+
+
+#multi-period interim multipliers
+myModel&lt;-MULTMATRIX(myModel,
+                   TSRANGE=c(1940,1,1941,1),
+                   INSTRUMENT=c('w2','g'),
+                   TARGET=c('cn','y'))
+
+#output multipliers matrix (note the zeros when the period
+#of the INSTRUMENT is greater than the period of the TARGET)
+print(myModel$MultiplierMatrix)
+#           w2_1      g_1      w2_2      g_2
+#cn_1  0.4478202 1.582292 0.0000000 0.000000
+#y_1   0.2433382 3.510971 0.0000000 0.000000
+#cn_2 -0.3911001 1.785042 0.4540346 1.671956
+#y_2  -0.6251177 2.843960 0.2532000 3.653260
+
+
+#multiplier matrix with endogenous variable 'w1' as instrument
+#note the ADDFACTOR suffix in the column name, referring to the
+#constant adjustment of the endogneous 'w1'
+myModel&lt;-MULTMATRIX(myModel,
+                    TSRANGE=c(1940,1,1941,1),
+                    INSTRUMENT=c('w2','w1'),
+                    TARGET=c('cn','y'))
+
+#Multiplier Matrix:    100.00%
+#...MULTMATRIX OK
+myModel$MultiplierMatrix
+#           w2_1 w1_ADDFACTOR_1      w2_2 w1_ADDFACTOR_2
+#cn_1  0.4478202      0.7989328 0.0000000      0.0000000
+#y_1   0.2433382      0.4341270 0.0000000      0.0000000
+#cn_2 -0.3911001     -0.4866248 0.4540346      0.8100196
+#y_2  -0.6251177     -0.9975073 0.2532000      0.4517209
+
+
+</code></pre>
+
+
+</div>

@@ -1,0 +1,108 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>bayesPop-package</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>
+Probabilistic Population Projection
+</h2>
+
+<h3>Description</h3>
+
+<p>The package allows to generate population projections for all countries of the world using several probabilistic components, such as total fertility rate (TFR) and life expectancy. Generating subnational projections is also supported. 
+</p>
+
+
+<h3>Details</h3>
+
+<p>The main function is called <code>pop.predict</code>. It uses trajectories of TFR from the <span class="pkg">bayesTFR</span> package and life expectancy from the <span class="pkg">bayesLife</span> package and for each trajectory it computes a population projection using the cohort component method. It results in probabilistic age and sex specific projections. Various plotting functions are available for results visualization (<code>pop.trajectories.plot</code>, <code>pop.pyramid</code>, <code>pop.trajectories.pyramid</code>, <code>pop.map</code>), as well as a summary function. Aggregations can be derived using <code>pop.aggregate</code>. An expression language is available to obtain the distribution of various population quantities. 
+</p>
+<p>Subnational projections can be generated using <code>pop.predict.subnat</code>. Function <code>pop.aggregate.subnat</code> aggregates such projections.
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Hana Sevcikova, Adrian Raftery, Thomas Buettner
+</p>
+<p>Maintainer: Hana Sevcikova &lt;hanas@uw.edu&gt;
+</p>
+
+
+<h3>References</h3>
+
+<p>H. Sevcikova, A. E. Raftery (2016). bayesPop: Probabilistic
+Population Projections. Journal of Statistical Software, 75(5), 1-29.
+<a href="https://doi.org/10.18637/jss.v075.i05">doi:10.18637/jss.v075.i05</a>
+</p>
+<p>A. E. Raftery,  N. Li, H. Sevcikova, P. Gerland, G. K. Heilig (2012). Bayesian probabilistic population projections for all countries. Proceedings of the National Academy of Sciences 109:13915-13921. <a href="https://doi.org/10.1073/pnas.1211452109">doi:10.1073/pnas.1211452109</a>
+</p>
+<p>P. Gerland, A. E. Raftery, H. Sevcikova, N. Li, D. Gu, T. Spoorenberg, L. Alkema, B. K. Fosdick, J. L. Chunn, N. Lalic, G. Bay, T. Buettner, G. K. Heilig,  J. Wilmoth (2014). World Population Stabilization Unlikely This Century. Science 346:234-237.
+</p>
+<p>H. Sevcikova, N. Li, V. Kantorova, P. Gerland and A. E. Raftery (2015). Age-Specific Mortality and Fertility Rates for Probabilistic Population Projections. arXiv:1503.05215. <a href="https://arxiv.org/abs/1503.05215">https://arxiv.org/abs/1503.05215</a>
+
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>bayesTFR</code>, <code>bayesLife</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## Not run: 
+sim.dir &lt;- tempfile()
+# Generates population projection for one country
+country &lt;- "Netherlands"
+pred &lt;- pop.predict(countries=country, output.dir=sim.dir)
+summary(pred, country)
+pop.trajectories.plot(pred, country)
+dev.off()
+pop.trajectories.plot(pred, country, sum.over.ages=TRUE)
+pop.pyramid(pred, country)
+pop.pyramid(pred, country, year=2100, age=1:26)
+unlink(sim.dir, recursive=TRUE)
+
+## End(Not run)
+
+# Here are commands needed to run probabilistic projections
+# from scratch, i.e. including TFR and life expectancy.
+# Note that running the first four commands 
+# (i.e. predicting TFR and life expectancy) can take 
+# LONG time (up to several days; see below for possible speed-up). 
+# For a toy simulation, set the number of iterations (iter) 
+# to a small number.
+## Not run: 
+sim.dir.tfr &lt;- "directory/for/TFR"
+sim.dir.e0 &lt;-  "directory/for/e0"
+sim.dir.pop &lt;- "directory/for/pop"
+
+# Estimate TFR parameters (speed-up by including parallel=TRUE)
+run.tfr.mcmc(iter="auto", output.dir=sim.dir.tfr, seed=1)
+
+# Predict TFR (if iter above &lt; 4000, reduce burnin and nr.traj accordingly)
+tfr.predict(sim.dir=sim.dir.tfr, nr.traj=2000, burnin=2000)
+
+# Estimate e0 parameters (females) (speed-up by including parallel=TRUE)
+# Can be run independently of the two commands above
+run.e0.mcmc(sex="F", iter="auto", output.dir=sim.dir.e0, seed=1)
+
+# Predict female and male e0	
+# (if iter above &lt; 22000, reduce burnin and nr.traj accordingly)
+e0.predict(sim.dir=sim.dir.e0, nr.traj=2000, burnin=20000)
+
+# Population prediction
+pred &lt;- pop.predict(output.dir=sim.dir.pop, verbose=TRUE, 
+    inputs = list(tfr.sim.dir=sim.dir.tfr, 
+                  e0F.sim.dir=sim.dir.e0, e0M.sim.dir="joint_"))
+pop.trajectories.plot(pred, "Madagascar", nr.traj=50, sum.over.ages=TRUE)
+pop.trajectories.table(pred, "Madagascar")
+
+## End(Not run)
+</code></pre>
+
+
+</div>

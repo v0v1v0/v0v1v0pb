@@ -1,0 +1,240 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>powerBuyseTest</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Performing simulation studies with BuyseTest</h2>
+
+<h3>Description</h3>
+
+<p>Performs a simulation studies for several sample sizes.
+Returns estimates, their standard deviation, the average estimated standard error, and the rejection rate.
+Can also be use for power calculation or to approximate the sample size needed to reach a specific power.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">powerBuyseTest(
+  sim,
+  sample.size,
+  n.rep = c(1000, 10),
+  null = c(netBenefit = 0),
+  cpus = 1,
+  export.cpus = NULL,
+  seed = NULL,
+  conf.level = NULL,
+  power = NULL,
+  max.sample.size = 2000,
+  alternative = NULL,
+  order.Hprojection = NULL,
+  transformation = NULL,
+  trace = 1,
+  ...
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>sim</code></td>
+<td>
+<p>[function] take two arguments:
+the sample size in the control group (<code>n.C</code>) and the sample size in the treatment group (<code>n.C</code>)
+and generate datasets. The datasets must be data.frame objects or inherits from data.frame.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>sample.size</code></td>
+<td>
+<p>[integer vector or matrix, &gt;0] the group specific sample sizes relative to which the simulations should be perform.
+When a vector, the same sample size is used for each group. Alternatively can be a matrix with two columns, one for each group (respectively T and C).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>n.rep</code></td>
+<td>
+<p>[integer, &gt;0] the number of simulations.
+When specifying the power instead of the sample size, should be a vector of length 2 where the second element indicates the number of simulations used to identify the sample size.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>null</code></td>
+<td>
+<p>[numeric vector] For each statistic of interest, the null hypothesis to be tested.
+The vector should be named with the names of the statistics.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>cpus</code></td>
+<td>
+<p>[integer, &gt;0] the number of CPU to use. Default value is 1.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>export.cpus</code></td>
+<td>
+<p>[character vector] name of the variables to export to each cluster.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>seed</code></td>
+<td>
+<p>[integer, &gt;0] Random number generator (RNG) state used when starting the simulation study.
+If <code>NULL</code> no state is set.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>conf.level</code></td>
+<td>
+<p>[numeric, 0-1] type 1 error level.
+Default value read from <code>BuyseTest.options()</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>power</code></td>
+<td>
+<p>[numeric, 0-1] type 2 error level used to determine the sample size. Only relevant when <code>sample.size</code> is not given. See details.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>max.sample.size</code></td>
+<td>
+<p>[interger, 0-1] sample size used to approximate the sample size achieving the requested type 1 and type 2 error (see details).
+Can have length 2 to indicate the sample in each group (respectively T and C) when the groups have unequal sample size.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>alternative</code></td>
+<td>
+<p>[character] the type of alternative hypothesis: <code>"two.sided"</code>, <code>"greater"</code>, or <code>"less"</code>.
+Default value read from <code>BuyseTest.options()</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>order.Hprojection</code></td>
+<td>
+<p>[integer 1,2] the order of the H-project to be used to compute the variance of the net benefit/win ratio.
+Default value read from <code>BuyseTest.options()</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>transformation</code></td>
+<td>
+<p>[logical] should the CI be computed on the logit scale / log scale for the net benefit / win ratio and backtransformed.
+Otherwise they are computed without any transformation.
+Default value read from <code>BuyseTest.options()</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>trace</code></td>
+<td>
+<p>[integer] should the execution of the function be traced?</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>other arguments (e.g. <code>scoring.rule</code>, <code>method.inference</code>) to be passed to <code>initializeArgs</code>.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p><b>Sample size calculation</b>: to approximate the sample size achieving the requested type 1 (<code class="reqn">\alpha</code>) and type 2 error (<code class="reqn">\beta</code>),
+GPC are applied on a large sample (as defined by the argument <code>max.sample.size</code>): <code class="reqn">N^*=m^*+n^*</code> where <code class="reqn">m^*</code> is the sample size in the control group and <code class="reqn">n^*</code> is the sample size in the active group.
+Then the effect (<code class="reqn">\delta</code>) and the asymptotic variance of the estimator (<code class="reqn">\sigma^2</code>) are estimated. The total sample size is then deduced as (two-sided case):
+</p>
+<p style="text-align: center;"><code class="reqn">\hat{N} = \hat{\sigma}^2\frac{(u_{1-\alpha/2}+u_{1-\beta})^2}{\hat{\delta}^2}</code>
+</p>
+<p> from which the group specific sample sizes are deduced: <code class="reqn">\hat{m}=\hat{N}\frac{m^*}{N^*}</code> and <code class="reqn">\hat{n}=\hat{N}\frac{n^*}{N^*}</code>. Here <code class="reqn">u_x</code> denotes the x-quantile of the normal distribution. <br>
+This approximation can be improved by increasing the sample size (argument <code>max.sample.size</code>) and/or by performing it multiple times based on a different dataset and average estimated sample size per group (second element of argument <code>n.rep</code>). <br>
+To evaluate the approximation, a simulation study is then performed with the estimated sample size. It will not exactly match the requested power but should provide a reasonnable guess which can be refined with further simulation studies. The larger the sample size (and/or number of CPUs) the more accurate the approximation.
+</p>
+<p><b>seed</b>: the seed is used to generate one seed per simulation. These simulation seeds are the same whether one or several CPUs are used.
+</p>
+
+
+<h3>Value</h3>
+
+<p>An S4 object of class  <code>S4BuysePower</code>.
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Brice Ozenne
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">library(data.table)
+
+#### Using simBuyseTest ####
+## save time by not generating TTE outcomes
+simBuyseTest2 &lt;- function(...){simBuyseTest(..., argsCont = NULL, argsTTE = NULL)}
+
+## only point estimate
+## Not run: 
+pBT &lt;- powerBuyseTest(sim = simBuyseTest2, sample.size = c(10, 25, 50, 75, 100), 
+                  formula = treatment ~ bin(toxicity), seed = 10, n.rep = 1000,
+                  method.inference = "none", keep.pairScore = FALSE, cpus = 5)
+summary(pBT)
+model.tables(pBT)
+
+## End(Not run)
+
+## point estimate with rejection rate
+
+## Not run: 
+powerBuyseTest(sim = simBuyseTest2, sample.size = c(10, 50, 100), 
+               formula = treatment ~ bin(toxicity), seed = 10, n.rep = 1000,
+               method.inference = "u-statistic", trace = 4)
+
+## End(Not run)
+
+#### Using user defined simulation function ####
+## power calculation for Wilcoxon test
+simFCT &lt;- function(n.C, n.T){
+    out &lt;- rbind(cbind(Y=stats::rt(n.C, df = 5), group=0),
+                 cbind(Y=stats::rt(n.T, df = 5), group=1) + 1)
+    return(data.table::as.data.table(out))
+}
+simFCT2 &lt;- function(n.C, n.T){
+    out &lt;- rbind(cbind(Y=stats::rt(n.C, df = 5), group=0),
+                 cbind(Y=stats::rt(n.T, df = 5), group=1) + 0.25)
+    return(data.table::as.data.table(out))
+}
+
+
+## Not run: 
+powerW &lt;- powerBuyseTest(sim = simFCT, sample.size = c(5,10,20,30,50,100),
+                         n.rep = 1000, formula = group ~ cont(Y), cpus = "all")
+summary(powerW)
+
+## End(Not run) 
+
+## sample size needed to reach (approximately) a power
+## based on summary statistics obtained on a large sample 
+## Not run: 
+sampleW &lt;- powerBuyseTest(sim = simFCT, power = 0.8, formula = group ~ cont(Y), 
+                         n.rep = c(1000,10), max.sample.size = 2000, cpus = 5,
+                         seed = 10)
+nobs(sampleW)
+summary(sampleW) ## not very accurate but gives an order of magnitude
+
+sampleW2 &lt;- powerBuyseTest(sim = simFCT2, power = 0.8, formula = group ~ cont(Y), 
+                         n.rep = c(1000,10), max.sample.size = 2000, cpus = 5,
+                         seed = 10)
+summary(sampleW2) ## more accurate when the sample size needed is not too small
+
+## End(Not run)
+
+</code></pre>
+
+
+</div>

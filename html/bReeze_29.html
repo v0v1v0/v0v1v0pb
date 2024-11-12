@@ -1,0 +1,356 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>aep</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Calculation of annual energy production</h2>
+
+<h3>Description</h3>
+
+<p>Calculates annual energy production (AEP) from a site's wind profile and wind turbine characteristics.</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">aep(profile, pc, hub.h, rho=1.225, avail=1, bins=c(5,10,15,20), 
+  sectoral=FALSE, digits=c(3,0,0,3), print=TRUE)
+
+## S3 method for class 'aep'
+plot(x, show.total=TRUE, ...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>profile</code></td>
+<td>
+<p>Wind profile object created by <code>profile</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>pc</code></td>
+<td>
+<p>Power curve object created by <code>pc</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>hub.h</code></td>
+<td>
+<p>Hub heigth of wind turbine as numeric value.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>rho</code></td>
+<td>
+<p>Air density as numeric value. Default is <code>1.225</code> kg/m3 according to the International Standard Atmosphere (ISA) at sea level and 15°C.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>avail</code></td>
+<td>
+<p>Availability of turbine as numeric value between <code>0</code> (not available at all) and <code>1</code> (100% available).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>bins</code></td>
+<td>
+<p>Edges of wind speed bins as numeric vector or <code>NULL</code> if only total AEP is desired. Default values are <code>c(5, 10, 15, 20)</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>sectoral</code></td>
+<td>
+<p>If <code>TRUE</code>, wind speeds are extrapolated to hub height using the wind profiles of each direction sector. Otherwise the general profile (<code>"all"</code>) is used for extrapolation (default).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>digits</code></td>
+<td>
+<p>Number of decimal places to be used for results as numeric vector. The first value is used for <code>wind.speed</code>, the second for <code>operation</code>, the third for <code>aep</code> and the fourth for <code>capacity</code> results. Default is <code>c(3,0,0,3)</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>print</code></td>
+<td>
+<p>If <code>TRUE</code>, results are printed directly.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>AEP object, created by <code>aep</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>show.total</code></td>
+<td>
+<p>If <code>TRUE</code> (the default) the total AEP is added to the plot.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Arguments to be passed to methods. For optional graphical parameters see below.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>For a wind turbine the mean energy production can be expressed by
+</p>
+<p style="text-align: center;"><code class="reqn">E = T \, \int_{v_{in}}^{v_{out}} \! f(v) \, p(v)</code>
+</p>
+
+<p>where <code class="reqn">f(v)</code> is the probability density function of the wind speed <code class="reqn">v</code>, <code class="reqn">p(v)</code> is the power curve of the turbine and <code class="reqn">T</code> is the production time period. Energy production starts at the turbine's cut-in wind speed <code class="reqn">v_{in}</code> and stops at cut-out wind speed <code class="reqn">v_{out}</code>.
+</p>
+<p>Based on this fundamental expression, <code>aep</code> calculates the annual energy production as follows:   
+</p>
+<p style="text-align: center;"><code class="reqn">AEP = A_{turb} \, \frac{\rho}{\rho_{pc}} \, H \, \sum_{b=1}^{n} \! W(v_b) \, P(v_b)</code>
+</p>
+
+<p>where <code class="reqn">A_{turb}</code> is the average availability of the turbine, <code class="reqn">\rho</code> is the air density of the site and <code class="reqn">\rho_{pc}</code> is the air density, the power curve is defined for. <code class="reqn">W(v_b)</code> is the probability of the wind speed bin <code class="reqn">v_b</code>, estimated by the Weibull distribution and <code class="reqn">P(v_b)</code> is the power output for that wind speed bin. <code class="reqn">H</code> is the number of operational hours – the production time period of the AEP is per definition 8760 hours.
+</p>
+<p>The wind speed <code class="reqn">v_h</code> at hub height <code class="reqn">h</code> of the turbine is extrapolated from the measured wind speed <code class="reqn">v_{ref}</code> at reference height <code class="reqn">h_{ref}</code> using the Hellman exponential law (see <code>profile</code>): 
+</p>
+<p style="text-align: center;"><code class="reqn">v_h = v_{ref} \, \left(\frac{h}{h_{ref}} \right)^\alpha</code>
+</p>
+
+<p>The productive suitability of a wind turbine for a site can be evaluated by the capacity factor <code class="reqn">CF</code>. This factor is defined as the ratio of average power output of a turbine to the theoretical maximum power output. Using the AEP as the average power output, the rated power <code class="reqn">P_{rated}</code> of a turbine and the maximum operational hours of a year we get:
+</p>
+<p style="text-align: center;"><code class="reqn">CF = \frac{AEP}{P_{rated} \, 8760}</code>
+</p>
+
+
+
+<h3>Value</h3>
+
+<p>Returns a list containing:
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>wind.speed</code></td>
+<td>
+<p>Mean wind speed for each direction sector.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>operation</code></td>
+<td>
+<p>Operational hours per year for each direction sector.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>total</code></td>
+<td>
+<p>Total annual energy production for each direction sector.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Annual energy production per wind speed bin for each direction sector.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>capacity</code></td>
+<td>
+<p>Capacity factor of the wind turbine.</p>
+</td>
+</tr>
+</table>
+<h3>Optional graphical parameters</h3>
+
+<p>The following graphical parameters can optionally be added to customize the plot:
+</p>
+
+<ul>
+<li> <p><code>border.leg</code>: Border colour(s) for the legend. One colour for each wind speed bin or a single colour – default is same as <code>col</code>.
+</p>
+</li>
+<li> <p><code>bty.leg</code>: Type of box to be drawn around the legend. Allowed values are <code>"n"</code> (no box, the default) and <code>"o"</code>.
+</p>
+</li>
+<li> <p><code>cex</code>: Amount by which text on the plot should be scaled relative to the default (which is <code>1</code>), as numeric. To be used for scaling of all texts at once.
+</p>
+</li>
+<li> <p><code>cex.axis</code>: Amount by which axis annotations should be scaled, as numeric value.
+</p>
+</li>
+<li> <p><code>cex.lab</code>: Amount by which axis labels should be scaled, as numeric value.
+</p>
+</li>
+<li> <p><code>cex.leg</code>: Amount by which legend text should be scaled, as numeric value.
+</p>
+</li>
+<li> <p><code>circles</code>: Manual definition of circles to be drawn, as numeric vector of the form c(inner circle, outer circle, interval between the circles).
+</p>
+</li>
+<li> <p><code>col</code>: Vector of colours – one colour for each wind speed bin or a single colour if <code>aep</code> only contains the total AEP.
+</p>
+</li>
+<li> <p><code>col.axis</code>: Colour to be used for axis annotations – default is <code>"gray45"</code>.
+</p>
+</li>
+<li> <p><code>col.border</code>: Colour to be used for sector borders – default is <code>NULL</code> (no border is drawn).
+</p>
+</li>
+<li> <p><code>col.circle</code>: Colour to be used for circles – default is <code>"gray45"</code>.
+</p>
+</li>
+<li> <p><code>col.cross</code>: Colour to be used for axis lines – default is <code>"gray45"</code>.
+</p>
+</li>
+<li> <p><code>col.lab</code>: Colour to be used for axis labels – default is <code>"black"</code>.
+</p>
+</li>
+<li> <p><code>col.leg</code>: Colour to be used for legend text – default is <code>"black"</code>.
+</p>
+</li>
+<li> <p><code>fg</code>: If <code>TRUE</code>, sectors are plotted in foreground (on top of axis lines and circles) – default is <code>FALSE</code>.
+</p>
+</li>
+<li> <p><code>lty.circle</code>: Line type of circles – default is <code>"dashed"</code>. See <code>par</code> for available line types.
+</p>
+</li>
+<li> <p><code>lty.cross</code>: Line type of axis lines – default is <code>"solid"</code>. See <code>par</code> for available line types.
+</p>
+</li>
+<li> <p><code>lwd.border</code>: Line width of the sector borders – default is <code>0.5</code>. Only used if <code>col.border</code> is set.
+</p>
+</li>
+<li> <p><code>lwd.circle</code>: Line width of circles, as numeric value – default is <code>0.7</code>.
+</p>
+</li>
+<li> <p><code>lwd.cross</code>: Line width of axis lines, as numeric value – default is <code>0.7</code>.
+</p>
+</li>
+<li> <p><code>pos.axis</code>: Position of axis labels in degree, as numeric value – default is <code>60</code>.
+</p>
+</li>
+<li> <p><code>sec.space</code>: Space between plotted sectors, as numeric value between <code>0</code> and <code>1</code> – default is <code>0.2</code>.
+</p>
+</li>
+<li> <p><code>title.leg</code>: Alternative legend title, as string.
+</p>
+</li>
+<li> <p><code>type</code>: If <code>"n"</code> nothing is plotted.
+</p>
+</li>
+<li> <p><code>width.leg</code>: Widths of legend space relative to plot space, as numeric value between <code>0</code> and <code>1</code>. If <code>0</code>, the legend is omitted, default value is <code>0.2</code>.
+</p>
+</li>
+<li> <p><code>x.intersp</code>: Horizontal interspacing factor for legend text, as numeric – default is <code>0.4</code>.
+</p>
+</li>
+<li> <p><code>y.intersp</code>: Vertical line distance for legend text, as numeric – default is <code>0.4</code>.
+</p>
+</li>
+</ul>
+<h3>Note</h3>
+
+<p>Sectoral extrapolation should be used carefully. Some sector's profile might be abnormal – particularly in case of short measurement periods (&lt;= one year) and/or few samples per sector – causing biased results. Always check the profiles and set <code>sectoral</code> to <code>FALSE</code> to get more robust results.
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Christian Graul</p>
+
+
+<h3>References</h3>
+
+<p>Burton, T., Sharpe, D., Jenkins, N., Bossanyi, E. (2001) <em>Wind Energy Handbook</em>. New York: Wiley
+</p>
+<p>Fördergesellschaft Windenergie e.V. (2007) Technical Guidelines for Wind Turbines, Part 6: Determination of Wind Potential and Energy Yields, Revision 7
+</p>
+<p>International Organisation for Standardization (1975) ISO 2533:1975 Standard Atmosphere. ISO Standard
+</p>
+<p>Jangamshetti, S.H., Rau, V.G. (1999) Site Matching of Wind Turbine Generators: A Case Study. <em>IEEE Transaction on Energy Conversion</em> <b>14</b>(4), 1537–1543
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>windprofile</code></p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## Not run: 
+## load and prepare data
+data("winddata", package="bReeze")
+set1 &lt;- set(height=40, v.avg=winddata[,2], v.std=winddata[,5],
+  dir.avg=winddata[,14])
+set2 &lt;- set(height=30, v.avg=winddata[,6], v.std=winddata[,9],
+  dir.avg=winddata[,16])
+ts &lt;- timestamp(timestamp=winddata[,1])
+neubuerg &lt;- mast(timestamp=ts, set1, set2)
+neubuerg &lt;- clean(mast=neubuerg)
+
+
+## calculate AEP
+# calculate wind profile
+neubuerg.wp &lt;- profile(mast=neubuerg, v.set=c(1,2), dir.set=1, 
+  print=FALSE)
+
+# load power curve
+pw.56 &lt;- pc("PowerWind_56_900kW.wtg")
+
+# calculate AEP
+aep(profile=neubuerg.wp, pc=pw.56, hub.h=71)
+
+# calculate AEP with site specific air density and availability of 97
+aep(profile=neubuerg.wp, pc=pw.56, hub.h=71, rho=1.195, avail=0.97)
+
+# calculate total AEP using sectoral profiles
+aep(profile=neubuerg.wp, pc=pw.56, hub.h=71, sectoral=TRUE)
+
+# calculate AEP for 1 m/s speed bins and without binning
+aep(profile=neubuerg.wp, pc=pw.56, hub.h=71, bins=seq(0,25))
+aep(profile=neubuerg.wp, pc=pw.56, hub.h=71, bins=NULL)
+
+# change number of digits and hide results
+aep(profile=neubuerg.wp, pc=pw.56, hub.h=71, digits=c(1,1,1,1))
+neubuerg.aep &lt;- aep(profile=neubuerg.wp, pc=pw.56, hub.h=71, print=FALSE)
+neubuerg.aep
+
+
+## plot AEP objects
+# default
+plot(neubuerg.aep)
+
+# omit total AEP
+plot(neubuerg.aep, show.total=FALSE)
+
+# change colours and text sizes
+plot(neubuerg.aep, col=gray(5:0 / 5), cex=0.8)
+
+# manual definition of circles
+plot(neubuerg.aep, circles=c(250, 750, 250))
+
+# plot sectors in foreground
+plot(neubuerg.aep, fg=TRUE)
+
+# change position of axis labels
+plot(neubuerg.aep, pos.axis=135)
+
+# no legend
+plot(neubuerg.aep, width.leg=0)
+
+# freaky
+plot(neubuerg.aep, border.leg=heat.colors(5), bty.leg="o", 
+  cex.axis=0.5, cex.lab=2, cex.leg=0.5, circles=c(80, 800, 80), 
+  col=rainbow(5), col.axis="green", col.border="orange", 
+  col.circle="purple", col.cross="yellow", col.lab="pink", 
+  col.leg="lightblue", fg=TRUE, lwd.border=2, lwd.circle=3, 
+  lwd.cross=4, lty.circle="12345678", lty.cross="87654321", 
+  sec.space=0.6, title.leg="* WiNd SpEeD *", x.intersp=2, y.intersp=5)
+
+## End(Not run)
+</code></pre>
+
+
+</div>

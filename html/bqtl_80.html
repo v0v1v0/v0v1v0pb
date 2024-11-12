@@ -1,0 +1,194 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>swap</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2> MCMC sampling of multigene models</h2>
+
+<h3>Description</h3>
+
+<p>Given a k-gene model as a starting point, one gene is deleted and
+another is sampled in its place. This is done using an approximation to
+the posterior. Then another gene is deleted and another sampled,...
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">swap(varcov, invars, rparm, nreps, ana.obj, ...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>varcov</code></td>
+<td>
+<p>The result of <code>make.varcov</code> </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>invars</code></td>
+<td>
+<p> Vector of
+numerical indexes of <code>ana.obj$reg.names</code> telling which
+variables to start in the model. The first of these is immediately
+removed, so it is merely a placeholder.  The number of genes in the
+model is therefore <code>k &lt;- length(invars)</code> (except when
+<code>ana.obj$method=="F2"</code> when it is <code>k &lt;-
+      length(unique(col(ana.obj$reg.names)[invars]))</code>)  </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>rparm</code></td>
+<td>
+<p>Scalar or vector with <code>nrow(varcov$var.x)</code> elements;
+the 'ridge' parameters for the independent variables - larger values
+imply more shrinkage or a more concentrated prior for the regresion
+coefficients.  </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nreps</code></td>
+<td>
+<p> How many cycles (of <code>k</code> samples each) to perform.  </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ana.obj</code></td>
+<td>
+<p> An <code>analysis.object</code> — see make.analysis.obj</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Additional arguments override the default choices of
+candidate loci (<code>locs</code>), prior for locus (<code>locs.prior</code>),
+or method specified by <code>ana.obj</code>. Also, the default prior for
+model (<code>combo.prior</code>) when <code>ana.obj$method=="F2" can be
+      overridden. See swapbc1 and swapf2 for details. </code>
+</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>An MCMC sampler for loci using the object of <code> make.varcov </code> is
+executed.  This sampler uses the exact posterior probability under the
+assumed correctness of the regression model using expected genotypes
+given marker values.  This amounts to linearizing the likelihood with
+respect to the  (possibly unknown) locus states.  For models where the
+loci are fully informative markers this is the true posterior.
+</p>
+<p>The chain is implemented as follows: given a set of regressor
+variables to start, one variable is removed, all regressor
+variables not in the model are examined to determine the effect of each
+on the posterior.  One variable is sampled.  The process is repeated until
+each variable has been removed and a new one sampled in its place
+(possibly the same variable that was removed is sampled).  And this whole
+cycle is repeated <code>nreps</code> times.  
+</p>
+
+
+<h3>Value</h3>
+
+<p>A list with components:
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>config</code></td>
+<td>
+<p> A k by k by nreps array (or, for
+<code>ana.obj$method=="F2"</code>, a 2k by k by nreps array) of the
+locations (variables) sampled in each iteration.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>posteriors</code></td>
+<td>
+<p> A vector of length <code>k*nreps</code> with the
+posteriors of the models.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>coefs</code></td>
+<td>
+<p>A k by k matrix of the regression coefficients(or, for
+<code>ana.obj$method=="F2"</code>, a 2k by nreps matrix).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>call</code></td>
+<td>
+<p>The call to <code>swap</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>cond</code></td>
+<td>
+<p>The <code>k*nreps</code> posterior probabilities of the k-1 gene
+models.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>marg</code></td>
+<td>
+<p>The <code>k*nreps</code> marginal posteriors for all k gene
+models that could be formed  using  the current k-1 gene model</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>alt.marginal</code></td>
+<td>
+<p>A vector with <code>length(locs)</code> (or <code>2*length(locs)</code>) elements.  At
+each step, the posterior associated with  each candidate locus is
+added to an element of this vector.  After all steps are finished,
+the result is normalized to sum to one.  This turns out to be a
+stable estimate of the marginal posterior. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>alt.coef</code></td>
+<td>
+<p>A vector with <code>length(locs)</code> (or
+<code>2*length(locs)</code>) elements.  At each step, the product of each
+posterior times the coefficient(s) associated with a candidate locus
+is added to an element of this 
+vector.  After all steps are finished, the result is normalized by
+the total marginal posterior.  This turns out to be a stable
+estimate of the marginal (over all models) posterior mean of the
+regression coefficients. </p>
+</td>
+</tr>
+</table>
+<h3>Author(s)</h3>
+
+<p>Charles C. Berry <a href="mailto:cberry@ucsd.edu">cberry@ucsd.edu</a> </p>
+
+
+<h3>References</h3>
+
+<p>Berry C.C. (1998) Computationally Efficient Bayesian QTL Mapping in
+Experimental Crosses. <em>ASA Proceedings of the Biometrics
+Section,</em> 164-169. 
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">data( little.ana.bc )
+little.vc &lt;- varcov( bc.phenotype~locus(all), little.ana.bc)
+little.4 &lt;- swap( little.vc, c(1,15,55,75), rparm=1, 50, little.ana.bc )
+little.4.smry &lt;- summary( little.4 )
+print(c("Bayes Factor (3 vs 4)"=little.4.smry$ratio$mean))
+par(mfrow=c(3,2))
+plot( little.ana.bc, little.4.smry$loc.posterior, type="h",
+ ylab="E(genes)" )
+rm(little.4,little.vc,little.ana.bc)
+</code></pre>
+
+
+</div>

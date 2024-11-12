@@ -1,0 +1,167 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>amlps</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Bayesian additive partial linear modeling with Laplace-P-splines.</h2>
+
+<h3>Description</h3>
+
+<p>Fits an additive partial linear model to data using an
+approximate Bayesian inference technique based on penalized regression
+splines and Laplace approximations. Smooth additive terms are specified as a
+linear combination of of a large number of cubic B-splines. To counterbalance
+the roughness of the fit, a discrete penalty on neighboring spline
+coefficients is imposed in the spirit of Eilers and Marx (1996). The error
+of the model is assumed to be Gaussian with zero mean and finite variance.
+</p>
+<p>The optimal amount of smoothing is determined by a grid-based exploration of
+the posterior penalty space when the number of smooth terms is small to
+moderate. When the dimension of the penalty space is large, the optimal
+smoothing parameter is chosen to be the value that maximizes the
+(log-)posterior of the penalty vector.
+
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">amlps(formula, data, K = 30, penorder = 2, cred.int = 0.95)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>formula</code></td>
+<td>
+<p>A formula object where the ~ operator separates the response
+from the covariates of the linear part <code>z1,z2,..</code> and the smooth
+terms. A smooth term is specified by using the notation <code>sm(.)</code>.
+For instance, the formula <code>y ~ z1+sm(x1)+sm(x2)</code> specifies an
+additive model of the form <em>E(y)=b0+b1z1+f1(x1)+f2(x2)</em>, where
+<em>b0, b1</em> are the regression coefficients of the linear part and
+<em>f1(.)</em> and <em>f2(.)</em> are smooth functions of the continuous
+covariates <em>x1</em> and <em>x2</em> respectively.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+<p>Optional. A data frame to match the variable names provided
+in formula.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>K</code></td>
+<td>
+<p>A positive integer specifying the number of cubic B-spline
+functions in the basis used to model the smooth terms. Default is
+<code>K = 30</code> and allowed values are <code>15 &lt;= K &lt;= 60</code>. The same basis
+dimension is used for each smooth term in the model. Also, the
+computational cost to fit the model increases with <code>K</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>penorder</code></td>
+<td>
+<p>The penalty order used on finite differences of the
+coefficients of contiguous B-splines. Can be either 2 for a second-order
+penalty (the default) or 3 for a third-order penalty.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>cred.int</code></td>
+<td>
+<p>The level of the pointwise credible interval to be computed
+for the coefficients in the linear part of the model.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The B-spline basis used to approximate a smooth additive component
+is computed with  the function <code>cubicbs</code>. The lower (upper)
+bound of the B-spline basis is taken to be the minimum (maximum) value of
+the covariate associated to the smooth. For identifiability
+purposes, the B-spline matrices (computed over the observed covariates)
+are centered. The centering consists is subtracting from each column of the
+B-spline matrix, the corresponding column average of another B-spline matrix
+computed on a fine grid of equidistant values in the domain of the smooth
+term.
+</p>
+<p>A hierarchical Gamma prior is imposed on the roughness penalty vector
+and Jeffreys' prior is imposed on the precision of the error. A
+Newton-Raphson algorithm is used to compute the posterior
+mode of the (log-)posterior penalty vector. The latter algorithm uses
+analytically derived versions of the gradient and Hessian. When the number
+of smooth terms in the model is smaller or equal to 4, a grid-based strategy
+is used for posterior exploration of the penalty space. Above that
+threshold, the optimal amount of smoothness is determined by the posterior
+maximum value of the penalty vector. This strategy allows to keep the
+computational burden to fit the model relatively low and to conserve good
+statistical performance.
+</p>
+
+
+<h3>Value</h3>
+
+<p>An object of class <code>amlps</code> containing several components from
+the fit. Details can be found in <code>amlps.object</code>. Details on
+the output printed by <code>amlps</code> can be found in
+<code>print.amlps</code>. Fitted smooth terms can be visualized with the
+<code>plot.amlps</code> routine.
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Oswaldo Gressani <a href="mailto:oswaldo_gressani@hotmail.fr">oswaldo_gressani@hotmail.fr</a>.
+</p>
+
+
+<h3>References</h3>
+
+<p>Eilers, P.H.C. and Marx, B.D. (1996). Flexible smoothing with
+B-splines and penalties. <em>Statistical Science</em>, <strong>11</strong>(2): 89-121.
+</p>
+<p>Fan, Y. and Li, Q. (2003). A kernel-based method for estimating
+additive partially linear models. <em>Statistica Sinica</em>, <strong>13</strong>(3):
+739-762.
+</p>
+<p>Gressani, O. and Lambert, P. (2018). Fast Bayesian inference
+using Laplace approximations in a flexible promotion time cure model based
+on P-splines. <em>Computational Statistical &amp; Data Analysis</em> <strong>124</strong>:
+151-167.
+</p>
+<p>Opsomer, J. D. and Ruppert, D. (1999). A root-n consistent
+backfitting estimator for semiparametric additive modeling. <em>Journal of
+Computational and Graphical Statistics</em>, <strong>8</strong>(4): 715-732.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>cubicbs</code>, <code>amlps.object</code>,
+<code>print.amlps</code>, <code>plot.amlps</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">### Classic simulated data example (with simgamdata)
+
+set.seed(17)
+sim.data &lt;- simgamdata(setting = 2, n = 200, dist = "gaussian", scale = 0.4)
+data &lt;- sim.data$data  # Simulated data frame
+
+# Fit model
+fit &lt;- amlps(y ~ z1 + z2 + sm(x1) + sm(x2), data = data, K = 15)
+fit
+
+</code></pre>
+
+
+</div>

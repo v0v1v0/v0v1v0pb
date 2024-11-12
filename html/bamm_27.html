@@ -1,0 +1,182 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>diversity_range_analysis</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>range_diversity_analysis: diversity analysis</h2>
+
+<h3>Description</h3>
+
+<p>diversity_range_analysis biodiversity indices related to
+diversity-range plots
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">diversity_range_analysis(
+  pam,
+  xy_mat = NULL,
+  lower_interval = 0.05,
+  upper_interval = 0.95,
+  raster_templete = NULL,
+  niter = 100,
+  return_null_dfield = FALSE,
+  randal = "indep_swap",
+  parallel = TRUE,
+  n_cores = 2
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>pam</code></td>
+<td>
+<p>A Presence-Absence-Matrix of matrix class or sparse matrix.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>xy_mat</code></td>
+<td>
+<p>A two dimensional matrix with longitude and latitude data.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>lower_interval</code></td>
+<td>
+<p>Lower interval.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>upper_interval</code></td>
+<td>
+<p>Upper interval.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>raster_templete</code></td>
+<td>
+<p>A raster template.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>niter</code></td>
+<td>
+<p>Number of iterations to obtain the distribution.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>return_null_dfield</code></td>
+<td>
+<p>If TRUE the null distribution of dispersal field
+will be returned.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>randal</code></td>
+<td>
+<p>Randomization algorithm applied to the PAM.
+Possible choices "curveball","fastball" and "indep_swap".</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>parallel</code></td>
+<td>
+<p>If TRUE the computations will be performed in parallel.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>n_cores</code></td>
+<td>
+<p>Number of cores for the parallel computation.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>For more information about the biodiversity indices
+see Soberon and Cavner (2015). For detail about the diversity range analysis
+see Soberon et al. (2022). To plot diversity range results use
+<code>plot</code> method for objects of class
+<code>diversity_range</code>.
+</p>
+<p>For details about randomization algorithms applied to the PAM see
+<code>null_dispersion_field_distribution</code>.
+</p>
+
+
+<h3>Value</h3>
+
+<p>An object of class  <code>diversity_range</code>. The main
+result is the diversity range analysis which shows jointly two indices
+describing the community composition of every cell in the grid:
+(1) the relative number of species, and (2) the mean dispersion field
+(see plot method for <code>plot</code> (Soberon et al. 2022).
+The contains 12 slots with different measurements of biodiversity such
+as alpha diversity (species richness in each site or pixel),
+omega (size of the area of distribution of each species),
+dispersion field (the standardized size of the area of distribution of
+all species occurring in each pixel).
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Luis Osorio-Olvera &amp; Jorge Soberón
+</p>
+
+
+<h3>References</h3>
+
+<p>Soberón J, Cobos ME, Nuñez-Penichet C (2021).
+“Visualizing species richness and site similarity from presence-absence matrices.”
+<em>Biodiversity Informatics</em>, <b>16</b>(1), 20–27.
+<a href="https://doi.org/10.17161/bi.v16i1.14782">doi:10.17161/bi.v16i1.14782</a>, <a href="https://journals.ku.edu/jbi/article/view/14782">https://journals.ku.edu/jbi/article/view/14782</a>..
+</p>
+<p>Soberon J, Cavner J (2015).
+“Indices of Biodiversity Pattern Based on Presence-Absence Matrices: A GIS Implementation.”
+<em>Biodiversity Informatics</em>, <b>10</b>, 22–34..
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">set.seed(111)
+pam &lt;- matrix(rbinom(10000,1,0.5),nrow = 100,ncol = 1000)
+rdivan &lt;- bamm::diversity_range_analysis(pam=pam,
+                                         parallel = FALSE,
+                                         niter = 10,
+                                         return_null_dfield=TRUE)
+bamm::plot(rdivan,plot_type="diversity_range")
+# Lagomorphos
+
+lagos_path &lt;- system.file("extdata/conejos",
+                          package = "bamm")
+enm_path &lt;- list.files(lagos_path,
+                       pattern = ".tif",
+                       full.names = TRUE)
+en_models &lt;- raster::stack(enm_path) &gt;0.01
+nonas &lt;- which(!is.na(en_models[[1]][]))
+xy_mat &lt;- sp::coordinates(en_models[[1]])[ nonas,]
+pam &lt;- bamm::models2pam(en_models,sparse=FALSE)
+
+rdivan &lt;- bamm::diversity_range_analysis(pam=pam,
+                                         xy_mat=xy_mat,
+                                         raster_templete = en_models[[1]],
+                                         parallel=TRUE,
+                                         n_cores=2,
+                                         return_null_dfield=TRUE)
+bamm::plot(rdivan,plot_type="diversity_range")
+bamm::plot(rdivan,plot_type="diversity_range_map")
+if(require(plotly) &amp;&amp; require(crosstalk)){
+#bamm::plot(rdivan,plot_type="diversity_range_interactive")
+}
+
+</code></pre>
+
+
+</div>

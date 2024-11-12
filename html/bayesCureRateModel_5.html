@@ -1,0 +1,427 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>cure_rate_MC3</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>
+Main function of the package
+</h2>
+
+<h3>Description</h3>
+
+<p>Runs a Metropolis Coupled MCMC (MC<code class="reqn">^3</code>) sampler in order to estimate the joint posterior distribution of the model. 
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">cure_rate_MC3(formula, data, nChains = 12, mcmc_cycles = 15000, 
+	alpha = NULL,nCores = 1, sweep = 5, mu_g = 1, s2_g = 1, 
+	a_l = 2.1, b_l = 1.1, mu_b = NULL, 
+	Sigma = NULL, g_prop_sd = 0.045, 
+	lambda_prop_scale = 0.03, b_prop_sd = NULL, 
+	initialValues = NULL, plot = TRUE, adjust_scales = FALSE, 
+	verbose = FALSE, tau_mala = 1.5e-05, mala = 0.15, 
+	promotion_time = list(distribution = "weibull", 
+	prior_parameters = matrix(rep(c(2.1, 1.1), 2), byrow = TRUE, 2, 2), 
+	prop_scale = c(0.1, 0.2)), single_MH_in_f = 0.2, c_under = 1e-9)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>formula</code></td>
+<td>
+
+<p>an object of class <code>formula</code>: a symbolic description of the model to be fitted. The left-hand side should be a <code>Surv</code> object, a class inherited from the <span class="pkg">survival</span> package. The binary censoring indicators are interpreted as a time-to-event (1) or as a censoring time (0).
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+
+<p>a data frame containing all variable names included in <code>formula</code>. 
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nChains</code></td>
+<td>
+
+<p>Positive integer corresponding to the number of heated chains in the MC<code class="reqn">^3</code> scheme.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>mcmc_cycles</code></td>
+<td>
+
+<p>Length of the generated MCMC sample. Default value: 15000. Note that each MCMC cycle consists of <code>sweep</code> (see below) usual MCMC iterations. 
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>alpha</code></td>
+<td>
+
+<p>A decreasing sequence in <code class="reqn">[1,0)</code> of <code>nChains</code> temperatures (or heat values). The first value should always be equal to 1, which corresponds to the target posterior distribution (that is, the first chain). 
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nCores</code></td>
+<td>
+
+<p>The number of cores used for parallel processing. In case where <code>nCores</code> &gt; 1, the <code>nChains</code> will be processed in parallel using <code>nCores</code> cores. This may speed up significantly the run-time of the algorithm in Linux or macOS, but it is not suggested in Windows. 
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>sweep</code></td>
+<td>
+
+<p>The number of usual MCMC iterations per MCMC cycle. Default value: 10.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>mu_g</code></td>
+<td>
+
+<p>Parameter <code class="reqn">a_{\gamma}</code> of the prior distribution of <code class="reqn">\gamma</code>.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>s2_g</code></td>
+<td>
+
+<p>Parameter <code class="reqn">b_{\gamma}</code> of the prior distribution of <code class="reqn">\gamma</code>.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>a_l</code></td>
+<td>
+
+<p>Shape parameter <code class="reqn">a_{\lambda}</code> of the Inverse Gamma prior distribution of <code class="reqn">\lambda</code>.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>b_l</code></td>
+<td>
+
+<p>Scale parameter <code class="reqn">b_{\lambda}</code> of the Inverse Gamma prior distribution of <code class="reqn">\lambda</code>.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>mu_b</code></td>
+<td>
+
+<p>Mean (<code class="reqn">\boldsymbol\mu</code>) of the multivariate normal prior distribution of regression coefficients. Should be a vector whose length is equal to <code class="reqn">k</code>, i.e. the number of columns of the design matrix <code>X</code>. Default value: rep(0, k). 
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Sigma</code></td>
+<td>
+
+<p>Covariance matrix of the multivariate normal prior distribution of regression coefficients.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>g_prop_sd</code></td>
+<td>
+
+<p>The scale of the proposal distribution for single-site updates of the <code class="reqn">\gamma</code> parameter.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>lambda_prop_scale</code></td>
+<td>
+
+<p>The scale of the proposal distribution for single-site updates of the <code class="reqn">\lambda</code> parameter.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>b_prop_sd</code></td>
+<td>
+
+<p>The scale of the proposal distribution for the update of the <code class="reqn">\beta</code> parameter (regression coefficients).
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>initialValues</code></td>
+<td>
+
+<p>A list of initial values for each parameter (optional).
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>plot</code></td>
+<td>
+
+<p>Plot MCMC sample on the run. Default: TRUE.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>adjust_scales</code></td>
+<td>
+
+<p>Boolean. If TRUE the MCMC sampler runs an initial phase of a small number of iterations in order to tune the scale of the proposal distributions in the Metropolis-Hastings steps.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>verbose</code></td>
+<td>
+
+<p>Print progress on the terminal if TRUE.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>tau_mala</code></td>
+<td>
+
+<p>Scale of the Metropolis adjusted Langevin diffussion proposal distribution.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>mala</code></td>
+<td>
+
+<p>A number between <code class="reqn">[0,1]</code> indicating the proportion of times the sampler attempts a MALA proposal. Thus, the probability of attempting a typical Metropolis-Hastings move is equal to 1 - <code>mala</code>.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>promotion_time</code></td>
+<td>
+<p>A list with details indicating the parametric family of distribution describing the promotion time and corresponding prior distributions. See 'details'.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>single_MH_in_f</code></td>
+<td>
+
+<p>The probability for attempting a series of single site updates in the typical Metropolis-Hastings move. Otherwise,  with probability 1 - <code>single_MH_in_f</code> a Metropolis-Hastings move will attempt to update all continuous parameters simultaneously. It only makes sense when <code>mala &lt; 1</code>.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>c_under</code></td>
+<td>
+
+<p>A small positive number (much smaller than 1) which is used as a threshold in the CDF of the promotion time for avoiding underflows in the computation of the log-likelihood function. Default value: 1e-9.
+</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>It is advised to scale all continuous explanatory variables in the design matrix, so their sample mean and standard deviations are equal to 0 and 1, respectively. 
+The <code>promotion_time</code> argument should be a list containing the following entries
+</p>
+
+<dl>
+<dt>
+<code>distribution</code> </dt>
+<dd>
+<p>  Character string specifying the family of distributions <code class="reqn">\{F(\cdot;\boldsymbol\alpha);\boldsymbol\alpha\in\mathcal A\}</code> describing the promotion time.</p>
+</dd>
+<dt>
+<code>prior_parameters</code> </dt>
+<dd>
+<p>  Values of hyper-parameters in the prior distribution of the parameters <code class="reqn">\boldsymbol\alpha</code>.</p>
+</dd>
+<dt>
+<code>prop_scale</code> </dt>
+<dd>
+<p>  The scale of the proposal distributions for each parameter in <code class="reqn">\boldsymbol\alpha</code>.</p>
+</dd>
+<dt>
+<code>K</code> </dt>
+<dd>
+<p> Optional. The number of mixture components in case where a mixture model is fitted, that is, when setting <code>distribution</code> to either <code>'gamma_mixture'</code> or <code>'user_mixture'</code>. </p>
+</dd>
+<dt>
+<code>dirichlet_concentration_parameter</code> </dt>
+<dd>
+<p>  Optional. Relevant only in the case of the <code>'gamma_mixture'</code> or <code>'user_mixture'</code>. Positive scalar (typically, set to 1) determining the (common) concentration parameter of the Dirichlet prior distribution of mixing proportions. </p>
+</dd>
+</dl>
+<p>The <code>distribution</code> specifies the distributional family of promotion time and corresponds to a character string with available choices: <code>'exponential'</code>, <code>'weibull'</code>, <code>'gamma'</code>, <code>'logLogistic'</code>, <code>'gompertz'</code>, <code>'lomax'</code>, <code>'dagum'</code>, <code>'gamma_mixture'</code>. User defined promotion time distributions and finite mixtures of them can be also fitted using the options <code>'user'</code> and <code>'user_mixture'</code>, respectively. In this case, the user should specify the distributional family in a separate argument named <code>define</code> which is passed as an additional entry in the <code>promotion_time</code>. This function should accept two input arguments <code>y</code> and <code>a</code> corresponding to the observed data (vector of positive numbers) and the parameters of the distribution (vector of positives). Pay attention to the positivity requirement of the parameters: if this is not the case, the user should suitably reparameterize the distribution in terms of positive parameters.
+</p>
+<p>The joint prior distribution of <code class="reqn">\boldsymbol\alpha = (\alpha_1,\ldots,\alpha_d)</code> factorizes into products of inverse Gamma distributions for all (positive) parameters of <code class="reqn">F</code>. Moreover, in the case of <code>'gamma_mixture'</code>, the joint prior also consists of another term to the Dirichlet prior distribution  on the mixing proportions. 
+</p>
+<p>The <code>prop_scale</code> argument should be a vector with length equal to the length of vector <code class="reqn">d</code> (number of elements in <code class="reqn">\boldsymbol\alpha</code>), containing (positive) numbers which correspond to the scale of the proposal distribution. Note that these scale parameters are used only as initial values in case where <code>adjust_scales = TRUE</code>.
+</p>
+
+
+<h3>Value</h3>
+
+<p>An object of class <code>bayesCureModel</code>, i.e. a list with the following entries
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>mcmc_sample </code></td>
+<td>
+<p>Object of class <code>mcmc</code> (see the <span class="pkg">coda</span> package), containing the generated MCMC sample for the target chain. The column names correspond to 
+</p>
+
+<dl>
+<dt>
+<code>g_mcmc</code> </dt>
+<dd>
+<p> Sampled values for parameter <code class="reqn">\gamma</code></p>
+</dd>
+<dt>
+<code>lambda_mcmc</code> </dt>
+<dd>
+<p> Sampled values for parameter <code class="reqn">\lambda</code></p>
+</dd>
+<dt>
+<code>alpha1_mcmc</code>... </dt>
+<dd>
+<p> Sampled values for parameter <code class="reqn">\alpha_1</code>... of the promotion time distribution <code class="reqn">F(\cdot;\alpha_1,\ldots,\alpha_d)</code>. The subsequent <code class="reqn">d-1</code> columns contain the sampled values for all remaining parameters, <code class="reqn">\alpha_2,...,\ldots,\alpha_d</code>, where <code class="reqn">d</code> depens on the family used in <code>promotion_time</code>.</p>
+</dd>
+<dt>
+<code>b0_mcmc</code> </dt>
+<dd>
+<p> Sampled values for the constant term of the regression (present only in the case where the design matrix <code>X</code> contains a column of 1s).</p>
+</dd>
+<dt>
+<code>b1_mcmc</code>... </dt>
+<dd>
+<p> Sampled values for the regression coefficient for the first explanatory variable, and similar for all subsequent columns.</p>
+</dd>
+</dl>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>latent_status_censored </code></td>
+<td>
+<p> A data frame with the simulated binary latent status for each censored item. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>complete_log_likelihood </code></td>
+<td>
+<p>The complete log-likelihood for the target chain.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>swap_accept_rate</code></td>
+<td>
+<p> the acceptance rate of proposed swappings between adjacent MCMC chains.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>all_cll_values </code></td>
+<td>
+<p>The complete log-likelihood for all chains.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>input_data_and_model_prior</code></td>
+<td>
+<p>the input data, model specification and selected prior parameters values.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>log_posterior</code></td>
+<td>
+<p>the logarithm of the (non-augmented) posterior distribution (after integrating the latent cured-status parameters out), up to a normalizing constant.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>map_estimate</code></td>
+<td>
+<p>The Maximum A Posterior estimate of parameters.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>BIC</code></td>
+<td>
+<p>Bayesian Information Criterion of the fitted model.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>AIC</code></td>
+<td>
+<p>Akaike Information Criterion of the fitted model.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>residuals</code></td>
+<td>
+<p>The Cox-Snell residuals of the fitted model.</p>
+</td>
+</tr>
+</table>
+<h3>Note</h3>
+
+<p>The core function is <code>cure_rate_mcmc</code>.
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Panagiotis Papastamoulis
+</p>
+
+
+<h3>References</h3>
+
+<p>Papastamoulis and Milienos (2024). Bayesian inference and cure rate modeling for event history data. TEST doi: 10.1007/s11749-024-00942-w.
+</p>
+<p>Plummer M, Best N, Cowles K, Vines K (2006). "CODA: Convergence Diagnosis and Output Analysis for MCMC." R News, 6(1), 7-11. 
+</p>
+<p>Therneau T (2024). A Package for Survival Analysis in R. R package version 3.7-0, https://CRAN.R-project.org/package=survival. 
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>cure_rate_mcmc</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R"># simulate toy data just for cran-check purposes        
+	set.seed(10)
+        n = 4
+        # censoring indicators
+        stat = rbinom(n, size = 1, prob = 0.5)
+        # covariates
+        x &lt;- matrix(rnorm(2*n), n, 2)
+        # observed response variable 
+        y &lt;- rexp(n)
+#	define a data frame with the response and the covariates        
+        my_data_frame &lt;- data.frame(y, stat, x1 = x[,1], x2 = x[,2])
+	fit1 &lt;- cure_rate_MC3(survival::Surv(y, stat) ~ x1 + x2, 
+		data = my_data_frame,
+		promotion_time = list(distribution = 'weibull'),
+		nChains = 2, nCores = 1, 
+		mcmc_cycles = 3, sweep = 2)
+
+</code></pre>
+
+
+</div>

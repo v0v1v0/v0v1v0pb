@@ -1,0 +1,111 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>predict.brulee_multinomial_reg</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Predict from a <code>brulee_multinomial_reg</code>
+</h2>
+
+<h3>Description</h3>
+
+<p>Predict from a <code>brulee_multinomial_reg</code>
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">## S3 method for class 'brulee_multinomial_reg'
+predict(object, new_data, type = NULL, epoch = NULL, ...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>object</code></td>
+<td>
+<p>A <code>brulee_multinomial_reg</code> object.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>new_data</code></td>
+<td>
+<p>A data frame or matrix of new predictors.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>type</code></td>
+<td>
+<p>A single character. The type of predictions to generate.
+Valid options are:
+</p>
+
+<ul>
+<li> <p><code>"class"</code> for hard class predictions
+</p>
+</li>
+<li> <p><code>"prob"</code> for soft class predictions (i.e., class probabilities)
+</p>
+</li>
+</ul>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>epoch</code></td>
+<td>
+<p>An integer for the epoch to make predictions. If this value
+is larger than the maximum number that was fit, a warning is issued and the
+parameters from the last epoch are used. If left <code>NULL</code>, the epoch
+associated with the smallest loss is used.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Not used, but required for extensibility.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>A tibble of predictions. The number of rows in the tibble is guaranteed
+to be the same as the number of rows in <code>new_data</code>.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+if (torch::torch_is_installed()) {
+
+  library(recipes)
+  library(yardstick)
+
+  data(penguins, package = "modeldata")
+
+  penguins &lt;- penguins %&gt;% na.omit()
+
+  set.seed(122)
+  in_train &lt;- sample(1:nrow(penguins), 200)
+  penguins_train &lt;- penguins[ in_train,]
+  penguins_test  &lt;- penguins[-in_train,]
+
+  rec &lt;- recipe(island ~ ., data = penguins_train) %&gt;%
+    step_dummy(species, sex) %&gt;%
+    step_normalize(all_numeric_predictors())
+
+  set.seed(3)
+  fit &lt;- brulee_multinomial_reg(rec, data = penguins_train, epochs = 5)
+  fit
+
+  predict(fit, penguins_test) %&gt;%
+    bind_cols(penguins_test) %&gt;%
+    conf_mat(island, .pred_class)
+}
+
+</code></pre>
+
+
+</div>

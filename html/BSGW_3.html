@@ -1,0 +1,440 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>bsgw</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>
+Bayesian Survival using Generalized Weibull Regression
+</h2>
+
+<h3>Description</h3>
+
+<p>Bayesian survival model - with stratification and shrinkage - using Weibull regression on both scale and shape parameters, resulting in time-dependent (i.e. dynamic) hazard ratios.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">bsgw(formula, data, formulas=formula, weights, subset, na.action=na.fail, init="survreg"
+  , ordweib=FALSE, scale=0, control=bsgw.control(), print.level=2)
+bsgw.control(scalex=TRUE, iter=1000, burnin=round(iter/2), sd.thresh=1e-4
+  , lambda=0.0, lambdas=lambda, nskip=round(iter/10), alpha.min=0.1, alpha.max=10.0
+  , beta.max=log(20), betas.max=5.0, memlim.gb=8)
+## S3 method for class 'bsgw'
+print(x, ...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>formula</code></td>
+<td>
+<p>Survival formula expressing the time/status variables as well as covariates used in regression on scale parameter. Currently, only right and left censoring is supported. Must include intercept term.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+<p>Data frame containing the covariates and response variable.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>formulas</code></td>
+<td>
+<p>Formula expressing the covariates used in regression on shape parameter. No left-hand side is necessary since the response variable information is extracted from <code>formula</code>. Default value is <code>formula</code>. Must include intercept term.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>weights</code></td>
+<td>
+<p>Optional vector of case weights. *Not supported yet*</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>subset</code></td>
+<td>
+<p>Subset of the observations to be used in the fit. *Not supported yet*</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>na.action</code></td>
+<td>
+<p>Missing-data filter function. *Not supported yet (only na.fail behavior works)*</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>init</code></td>
+<td>
+<p>Initialization behavior. Currently, three options are supported: 1) If <code>init="survreg"</code>, an ordinary Weibull regression is performed and coefficients are used to initialize the bsgw MCMC run. 2) If <code>init</code> is a <code>survreg</code> object, e.g. from a previous Weibull regression fit, the object can be directly passed as parameter. 3) If <code>init</code> is any other value, or if <code>survreg</code> produces error or warning, we simply set all coefficients to zero.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ordweib</code></td>
+<td>
+<p>If <code>TRUE</code>, a Bayesian ordinary Weibull model is estimated, in which any covariates in <code>formulas</code> are stripped away, and the inverse-logit transformation in the shape-parameter regression is replaced with a simple exponential transformation. If shrinkage parameters are kept at 0, the result is a Bayesian equivalent of an ordinary Weibull regression.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>scale</code></td>
+<td>
+<p>If <code>scale&gt;0</code>, the value of the shape parameter is fixed, i.e. not estimated from data.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>control</code></td>
+<td>
+<p>See <code>bsgw.control</code> for a description of the parameters inside the <code>control</code> list.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>print.level</code></td>
+<td>
+<p>Controlling verbosity level.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>scalex</code></td>
+<td>
+<p>If <code>TRUE</code>, each covariate vector is centered and scaled before model estimation. The scaling parameters are saved in return object, and used in subsequent calls to <code>predict</code> function. Users are strongly advised against turning this feature off, since the quality of Gibbs sampling MCMC is greatly enhanced by covariate centering and scaling.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>iter</code></td>
+<td>
+<p>Number of MCMC samples to draw.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>burnin</code></td>
+<td>
+<p>Number of initial MCMC samples to discard before calculating summary statistics.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>sd.thresh</code></td>
+<td>
+<p>Threshold for standard deviation of a covariate (after possible centering/scaling). If below the threshold, the corresponding coefficient is removed from sampling, i.e. its value is clamped to zero.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>lambda</code></td>
+<td>
+<p>Bayesian Lasso shrinkage parameter for scale-parameter coefficients.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>lambdas</code></td>
+<td>
+<p>Bayesian Lasso shrinkage parameter for shape-parameter coefficients.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nskip</code></td>
+<td>
+<p>Controlling how often to print progress report during MCMC run. For example, if <code>nskip=10</code>, progress will be reported after 10,20,30,... samples.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>alpha.min</code></td>
+<td>
+<p>Lower bound on the shape parameter.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>alpha.max</code></td>
+<td>
+<p>Upper bound on the shape parameter.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>beta.max</code></td>
+<td>
+<p>Upper bound on absolute value of coefficients of scale parameter (with the exception of the intercept).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>betas.max</code></td>
+<td>
+<p>Upper bound on absolute value of coefficients of shape parameter (with the exception of the intercept).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>memlim.gb</code></td>
+<td>
+<p>User-specified limit on total memory (in GB) available during prediction. Hazard, cumulative hazard, and survival prediction objects are all three-dimensional arrays which can quickly grow very large, depending on data length, number of MCMC samples collected, and number of time points along which prediction is made.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>Object of class 'bsgw', usually the result of a call to the <code>bsgw</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Arguments to be passed to/from other methods.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>The function <code>bsgw.control</code> returns a list with elements identical to the input parameters. The function <code>bsgw</code> returns an object of class <code>bsgw</code>, with the following components:
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>call</code></td>
+<td>
+<p>The matched call.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>formula</code></td>
+<td>
+<p>Same as input.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>formulas</code></td>
+<td>
+<p>Same as input.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>weights</code></td>
+<td>
+<p>Same as input. *Not supported yet*</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>subset</code></td>
+<td>
+<p>Same as input. *Not supported yet*</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>na.action</code></td>
+<td>
+<p>Same as input. *Not supported yet* (current behavior is <code>na.fail</code>)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>init</code></td>
+<td>
+<p>Initial values for scale and shape coefficients used in MCMC sampling, either by performing an ordinary Weibull regression or by extracting estimated coefficients from a previously-performed such regression.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ordweib</code></td>
+<td>
+<p>Same as input.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>survreg.scale.ref</code></td>
+<td>
+<p>Value of scale parameter, estimated using ordinary Weibull regression by calling the <code>survreg</code> function in the <code>survival</code> package.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ordreg</code></td>
+<td>
+<p>The <code>"survreg"</code> object returned from calling the same function for initialization of coefficients.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>scale</code></td>
+<td>
+<p>Same as input.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>control</code></td>
+<td>
+<p>Same as input.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>X</code></td>
+<td>
+<p>Model matrix used for regression on scale parameter, after potential centering and scaling. The corresponding vector of coefficients is called <code>beta</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Xs</code></td>
+<td>
+<p>Model matrix used for regression on shape parameter, after potential centering and scaling. The corresponding vector of coefficients is called <code>betas</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>y</code></td>
+<td>
+<p>Survival response variable (time and status) used in the model.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>contrasts</code></td>
+<td>
+<p>The contrasts used for scale-parameter coefficients.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>contrastss</code></td>
+<td>
+<p>The contrasts used for shape-parameter coefficients.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>xlevels</code></td>
+<td>
+<p>A record of the levels of the factors used in fitting for scale parameter regression.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>xlevelss</code></td>
+<td>
+<p>A record of the levels of the factors used in fitting for shape parameter regression.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>terms</code></td>
+<td>
+<p>The terms object used for scale parameter regression.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>termss</code></td>
+<td>
+<p>The terms object used for shape parameter regression.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>colnamesX</code></td>
+<td>
+<p>Names of columns for <code>X</code>, also names of scale coefficients.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>colnamesXs</code></td>
+<td>
+<p>Names of columns for <code>Xs</code>, also names of shape coefficients.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>apply.scale.X</code></td>
+<td>
+<p>Index of columns of <code>X</code> where scaling has been applied.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>apply.scale.Xs</code></td>
+<td>
+<p>Index of columns of <code>Xs</code> where scaling has been applied.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>centerVec.X</code></td>
+<td>
+<p>Vector of centering parameters for columns of <code>X</code> indicated by <code>apply.scale.X</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>scaleVec.X</code></td>
+<td>
+<p>Vector of scaling parameters for columns of <code>X</code> indicated by <code>apply.scale.X</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>centerVec.Xs</code></td>
+<td>
+<p>Vector of centering parameters for columns of <code>Xs</code> indicated by <code>apply.scale.Xs</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>scaleVec.Xs</code></td>
+<td>
+<p>Vector of scaling parameters for columns of <code>Xs</code> indicated by <code>apply.scale.Xs</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>idx</code></td>
+<td>
+<p>Vector of indexes into <code>X</code> for which sampling occured. All columns of <code>X</code> whose standard deviation falls below <code>sd.thresh</code> are excluded from sampling and their corresponding coefficients are clamped to <code>0</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>idxs</code></td>
+<td>
+<p>Vector of indexes into <code>Xs</code> for which sampling occured. All columns of <code>Xs</code> whose standard deviation falls below <code>sd.thresh</code> are excluded from sampling and their corresponding coefficients are clamped to <code>0</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>median</code></td>
+<td>
+<p>List of median values, with elements including <code>beta</code> (coefficients of scale regression), <code>betas</code> (coefficients of shape regression), <code>survreg.scale</code> (value of <code>surgreg</code>-style scale parameter for all training set observations).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>smp</code></td>
+<td>
+<p>List of coefficient samples, with the following elements: 1) <code>beta</code> (scale parameter coefficients), 2) <code>betas</code> (shape parameter coefficients), 3) <code>lp</code> (vector of linear predictor for scale parameter, within-sample), 4) <code>loglike</code> (log-likelihood of model), 5) <code>logpost</code> (log-posterior of mode, i.e. log-likelihood plus the shrinkage term). The last two entities are used during within-sample prediction of response, i.e. during a subsequent call to <code>predict</code>. Each parameter has <code>control$iter</code> samples.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>km.fit</code></td>
+<td>
+<p>Kaplan-Meyer fit to training data. Used in plot.bsgw method.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>tmax</code></td>
+<td>
+<p>Maximum time value in training set. Used in predict.bsgw for automatic selection of the <code>tvec</code> parameter.</p>
+</td>
+</tr>
+</table>
+<h3>Author(s)</h3>
+
+<p>Alireza S. Mahani, Mansour T.A. Sharabiani</p>
+
+
+<h3>References</h3>
+
+<p>Mazucheli J., Louzada-Neto F. and Achnar J.A. (2002). Lifetime models with nonconstant shape parameters. <em>Confiabilidade. III Jornada Regional de Estatistica e II Semana da Estatistica, Maringa</em>.
+</p>
+<p>Neal R.M. (2003). Slice Sampling. <em>Annals of Statistics</em>, <b>31</b>, 705-767.
+</p>
+<p>Park T. and Casella G. (2008). The Bayesian Lasso. <em>Journal of the American Statistical Association</em>, <b>103</b>, 681-686.
+</p>
+
+
+<h3>See Also</h3>
+
+<p>For calculating median and lower/upper bounds on coefficients, use summary.bsgw.
+</p>
+<p>For prediction, use predict.bsgw.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## model estimation using 800 samples, printing progress every 100 samples
+library("survival")
+data(ovarian)
+est &lt;- bsgw(Surv(futime, fustat) ~ ecog.ps + rx, ovarian
+            , control=bsgw.control(iter=400, nskip=100))
+
+## comparing shape of Weibull curves between ordinary Weibull and bsgw
+## since in bsgw shape is dependent on covariates, only a population average is meaningful
+## Note that survreg-style scale is inverse of bsgw shape parameter, see survreg help page
+west &lt;- survreg(Surv(futime, fustat) ~ ecog.ps + rx, ovarian)
+cat("constant survreg-style scale parameter:", west$scale, "\n")
+cat("population average of survreg-style scale parameter from bsgw model:"
+  , mean(est$median$survreg.scale), "\n")
+</code></pre>
+
+
+</div>

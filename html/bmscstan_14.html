@@ -1,0 +1,162 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>pairwise.BMSC</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Pairwise contrasts</h2>
+
+<h3>Description</h3>
+
+<p>Calculate pairwise comparisons between marginal posterior distributions divided by group levels
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">pairwise.BMSC(mdl, contrast, covariate = NULL, who = "delta")
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>mdl</code></td>
+<td>
+<p>An object of class <code>BMSC</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>contrast</code></td>
+<td>
+<p>Character value giving the name of the coefficient whose levels need to be compared.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>covariate</code></td>
+<td>
+<p>at the moment is silent</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>who</code></td>
+<td>
+<p>parameter to choose the estimates to contrast
+</p>
+
+<dl>
+<dt>control</dt>
+<dd>
+<p>only the controls</p>
+</dd>
+<dt>singlecase</dt>
+<dd>
+<p>only the single case <code class="reqn">(\beta + \delta)</code></p>
+</dd>
+<dt>delta</dt>
+<dd>
+<p>only the difference between the single case and controls</p>
+</dd>
+</dl>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>a <code>pairwise.BMSC</code> object
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R"> 
+
+######################################
+# simulation of controls' group data
+######################################
+
+# Number of levels for each condition and trials
+NCond1  &lt;- 2
+NCond2  &lt;- 2
+Ntrials &lt;- 8
+NSubjs  &lt;- 30
+
+betas &lt;- c( 0 , 0 , 0 ,  0.2)
+
+data.sim &lt;- expand.grid(
+  trial      = 1:Ntrials,
+  ID         = factor(1:NSubjs),
+  Cond1      = factor(1:NCond1),
+  Cond2      = factor(1:NCond2)
+)
+
+contrasts(data.sim$Cond1) &lt;- contr.sum(2)
+contrasts(data.sim$Cond2) &lt;- contr.sum(2)
+
+### d.v. generation
+y &lt;- rep( times = nrow(data.sim) , NA )
+
+# cheap simulation of individual random intercepts
+set.seed(1)
+rsubj &lt;- rnorm(NSubjs , sd = 0.1)
+
+for( i in 1:length( levels( data.sim$ID ) ) ){
+
+  sel &lt;- which( data.sim$ID == as.character(i) )
+
+  mm  &lt;- model.matrix(~ Cond1 * Cond2 , data = data.sim[ sel , ] )
+
+  set.seed(1 + i)
+  y[sel] &lt;- mm %*% as.matrix(betas + rsubj[i]) +
+    rnorm( n = Ntrials * NCond1 * NCond2 )
+
+}
+
+data.sim$y &lt;- y
+
+# just checking the simulated data...
+boxplot(y~Cond1*Cond2, data = data.sim)
+
+######################################
+# simulation of patient data
+######################################
+
+betas.pt &lt;- c( 0 , 0.8 , 0 ,  0)
+
+data.pt &lt;- expand.grid(
+  trial      = 1:Ntrials,
+  Cond1      = factor(1:NCond1),
+  Cond2      = factor(1:NCond2)
+)
+
+contrasts(data.pt$Cond1) &lt;- contr.sum(2)
+contrasts(data.pt$Cond2) &lt;- contr.sum(2)
+
+### d.v. generation
+mm  &lt;- model.matrix(~ Cond1 * Cond2 , data = data.pt )
+
+set.seed(5)
+data.pt$y &lt;- (mm %*% as.matrix(betas.pt) +
+                rnorm( n = Ntrials * NCond1 * NCond2 ))[,1]
+
+# just checking the simulated data...
+boxplot(y~Cond1*Cond2, data = data.pt)
+
+mdl &lt;- BMSC(y ~ Cond1 * Cond2 + ( 1 | ID ),
+            data_ctrl = data.sim, data_sc = data.pt, seed = 77,
+            typeprior = "cauchy", s = 1)
+
+summary(mdl)
+
+pp_check(mdl)
+
+
+pairwise.BMSC( mdl, contrast = "Cond11:Cond21")
+
+
+
+</code></pre>
+
+
+</div>

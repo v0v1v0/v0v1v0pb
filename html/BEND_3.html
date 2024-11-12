@@ -1,0 +1,341 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>Bayes_PREM</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Bayesian Piecewise Random Effects Model (PREM) + Extensions</h2>
+
+<h3>Description</h3>
+
+<p>Estimates a Bayesian piecewise random effects model (PREM), with some useful extensions. There are three model options included in this function:
+</p>
+
+<ul>
+<li> <p><code>PREM</code> estimates a Bayesian piecewise random effects model with a latent number of changepoints (default). Allows the inclusion of outcome-predictive covariates (<code>CI-PREM</code>).
+</p>
+</li>
+<li> <p><code>PREMM</code> estimates a piecewise random effects mixture model for a given number of latent classes and a latent number of possible changepoints in each class.
+</p>
+</li>
+<li> <p><code>CI-PREMM</code> estimates a covariate influenced piecewise random effects mixture model for a given number of latent classes and a latent number of possible changepoints in each class. Allows the inclusion of outcome- and/or class-predictive covariates.
+See Lock et al. (2018) and Lamm (2022) for more details.
+</p>
+</li>
+</ul>
+<h3>Usage</h3>
+
+<pre><code class="language-R">Bayes_PREM(
+  data,
+  id_var,
+  time_var,
+  y_var,
+  n_class = 1,
+  max_cp = 2,
+  class_predictive_vars = NULL,
+  outcome_predictive_vars = NULL,
+  scale_prior = "uniform",
+  alpha = 1,
+  cp_prior = "binomial",
+  binom_prob = 0.5,
+  iters_adapt = 1000,
+  iters_burn_in = 20000,
+  iters_sampling = 30000,
+  thin = 15,
+  save_full_chains = FALSE,
+  save_conv_chains = FALSE,
+  verbose = TRUE
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+<p>Data frame in long format, where each row describes a measurement occasion for a given individual. It is assumed that each individual has the same number of assigned timepoints (a.k.a., rows). There can be missingness in the outcome (<code>y_var</code>), but there cannot be missingness in time (<code>time_var</code>).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>id_var</code></td>
+<td>
+<p>Name of column that contains ids for individuals with repeated measures in a longitudinal dataset.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>time_var</code></td>
+<td>
+<p>Name of column that contains the time variable. This column cannot contain any missing values.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>y_var</code></td>
+<td>
+<p>Name of column that contains the outcome variable. Missing values should be denoted by NA.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>n_class</code></td>
+<td>
+<p>Number of latent classes (default = 1). Note, CI-PREMM only allows for two classes.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>max_cp</code></td>
+<td>
+<p>Maximum number of changepoints in each latent class (default = 2).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>class_predictive_vars</code></td>
+<td>
+<p>Name(s) of column(s) that contain class-predictive covariates (time-invariant only). Give a vector of names if multiple covariates. Note, there cannot be any missingness in the covariates.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>outcome_predictive_vars</code></td>
+<td>
+<p>Name(s) of column(s) that contain outcome-predictive covariates (time-varying or -invariant). Give a vector of names if multiple covariates. Note, there cannot be any missingness in the covariates.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>scale_prior</code></td>
+<td>
+<p>Prior for the scale parameter for the hierarchical random effects. Options include: ‘uniform’ (scaled uniform prior; default) or ‘hc’ (scaled half-cauchy prior).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>alpha</code></td>
+<td>
+<p>Concentration parameter for Dirichlet prior for latent classes (default = 1). This can be a vector of values corresponding to the number of classes (specified by n_class). Note, this is not used for CI-PGMM.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>cp_prior</code></td>
+<td>
+<p>Prior for the number of changepoints in each class. Options include: 'binomial' (default) or 'uniform'.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>binom_prob</code></td>
+<td>
+<p>Probability for binomial prior, if specified (default = 0.5).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>iters_adapt</code></td>
+<td>
+<p>(optional) Number of iterations for adaptation of jags model (default = 1000).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>iters_burn_in</code></td>
+<td>
+<p>(optional) Number of iterations for burn-in (default = 20000).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>iters_sampling</code></td>
+<td>
+<p>(optional) Number of iterations for posterior sampling (default = 30000).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>thin</code></td>
+<td>
+<p>(optional) Thinning interval for posterior sampling (default = 15).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>save_full_chains</code></td>
+<td>
+<p>Logical indicating whether the MCMC chains from rjags should be saved (default = FALSE). Note, this should not be used regularly as it will result in an object with a large file size.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>save_conv_chains</code></td>
+<td>
+<p>Logical indicating whether the MCMC chains from rjags should be saved but only for the parameters monitored for convergence (default = FALSE). This would be useful for plotting traceplots for relevant model parameters to evaluate convergence behavior. Note, this should not be used regularly as it will result in an object with a large file size.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>verbose</code></td>
+<td>
+<p>Logical controlling whether progress messages/bars are generated (default = TRUE).</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>For more information on the model equation and priors implemented in this function, see Lamm et al. (2022; CI-PREMM) and Lock et al. (2018; PREMM).
+</p>
+
+
+<h3>Value</h3>
+
+<p>A list (an object of class <code>PREM</code>) with elements:
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>Convergence</code></td>
+<td>
+<p>Potential scale reduction factor (PSRF) for each parameter (<code>parameter_psrf</code>), Gelman multivariate scale reduction factor (<code>multivariate_psrf</code>), and mean PSRF (<code>mean_psrf</code>) to assess model convergence.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Model_Fit</code></td>
+<td>
+<p>Deviance (<code>deviance</code>), effective number of parameters (<code>pD</code>), and Deviance information criterion (<code>dic</code>) to assess model fit.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Fitted_Values</code></td>
+<td>
+<p>Vector giving the fitted value at each timepoint for each individual (same length as long data).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Parameter_Estimates</code></td>
+<td>
+<p>Data frame with posterior mean and 95% credible intervals for each model parameter.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Run_Time</code></td>
+<td>
+<p>Total run time for model fitting.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Full_MCMC_Chains</code></td>
+<td>
+<p>If save_full_chains=TRUE, raw MCMC chains from rjags.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Convergence_MCMC_Chains</code></td>
+<td>
+<p>If save_conv_chains=TRUE, raw MCMC chains from rjags but only for the parameters monitored for convergence.</p>
+</td>
+</tr>
+</table>
+<p><code>Class_Information</code> contains a list with elements:
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>class_membership</code></td>
+<td>
+<p>Vector of length n with class membership assignments for each individual.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>individ_class_probability</code></td>
+<td>
+<p>nxC matrix with each individual’s probabilities of belonging to each class conditional on their class-predictive covariates (when applicable) and growth curve.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>unconditional_class_probability</code></td>
+<td>
+<p>This output will differ based on which model was fit. For a PREM or CI-PREM, this will equal 1 as there is only one class. For a PREMM or CI-PREMM with only outcome-predictive covariates, this will be a vector of length C denoting the population probability of belonging to each class. For a CI-PREMM with class-predictive covariates, this will be a vector of length n denoting the probability of each individual belonging to the non-reference class (Class 2) based on their class-predictive covariates only.</p>
+</td>
+</tr>
+</table>
+<h3>Author(s)</h3>
+
+<p>Corissa T. Rohloff, Rik Lamm, Eric F. Lock
+</p>
+
+
+<h3>References</h3>
+
+<p>Lamm, R. (2022). Incorporation of covariates in Bayesian piecewise growth mixture models. https://hdl.handle.net/11299/252533
+</p>
+<p>Lock, E. F., Kohli, N., &amp; Bose, M. (2018). Detecting multiple random changepoints in Bayesian piecewise growth mixture models. Psychometrika, 83(3), 733–750. https://doi.org/10.1007/s11336-017-9594-5
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+# load simulated data
+data(SimData_PREM)
+# plot observed data
+plot_BEND(data = SimData_PREM,
+          id_var = "id",
+          time_var = "time",
+          y_var = "y")
+
+# PREM ---------------------------------------------------------------------------------
+# fit Bayes_PREM()
+results_prem &lt;- Bayes_PREM(data = SimData_PREM,
+                           id_var = "id",
+                           time_var = "time",
+                           y_var = "y")
+# result summary
+summary(results_prem)
+# plot fitted results
+plot_BEND(data = SimData_PREM,
+          id_var = "id",
+          time_var = "time",
+          y_var = "y",
+          results = results_prem)
+
+# CI-PREM ---------------------------------------------------------------------------------
+# fit Bayes_PREM()
+results_ciprem &lt;- Bayes_PREM(data = SimData_PREM,
+                             id_var = "id",
+                             time_var = "time",
+                             y_var = "y",
+                             outcome_predictive_vars = "outcome_pred_1")
+# result summary
+summary(results_ciprem)
+# plot fitted results
+plot_BEND(data = SimData_PREM,
+          id_var = "id",
+          time_var = "time",
+          y_var = "y",
+          results = results_ciprem)
+
+# PREMM ---------------------------------------------------------------------------------
+# fit Bayes_PREM()
+results_premm &lt;- Bayes_PREM(data = SimData_PREM,
+                            id_var = "id",
+                            time_var = "time",
+                            y_var = "y",
+                            n_class = 2)
+# result summary
+summary(results_premm)
+# plot fitted results
+plot_BEND(data = SimData_PREM,
+          id_var = "id",
+          time_var = "time",
+          y_var = "y",
+          results = results_premm)
+
+
+# CI-PREMM ---------------------------------------------------------------------------------
+# fit Bayes_PREM()
+results_cipremm &lt;- Bayes_PREM(data = SimData_PREM,
+                              id_var = "id",
+                              time_var = "time",
+                              y_var = "y",
+                              n_class = 2,
+                              class_predictive_vars = c("class_pred_1", "class_pred_2"),
+                              outcome_predictive_vars = "outcome_pred_1")
+# result summary
+summary(results_cipremm)
+# plot fitted results
+plot_BEND(data = SimData_PREM,
+          id_var = "id",
+          time_var = "time",
+          y_var = "y",
+          results = results_cipremm)
+
+
+</code></pre>
+
+
+</div>

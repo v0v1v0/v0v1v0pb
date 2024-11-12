@@ -1,0 +1,254 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>sp_bgsmtr</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>A Bayesian Spatial Model for Imaging Genetics</h2>
+
+<h3>Description</h3>
+
+<p>Fits a Bayesian spatial model that allows for two types of correlation typically seen in structural brain imaging data. First, the spatial correlation in the imaging phenotypes obtained from neighbouring regions of the brain. Second, the correlation between corresponding measures on opposite hemispheres.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">sp_bgsmtr(
+  X,
+  Y,
+  method = "MCMC",
+  rho = NULL,
+  lambdasq = NULL,
+  alpha = NULL,
+  A = NULL,
+  c.star = NULL,
+  FDR_opt = TRUE,
+  WAIC_opt = TRUE,
+  iter_num = 10000,
+  burn_in = 5001
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>X</code></td>
+<td>
+<p>A d-by-n matrix; d is the number of SNPs and n is the number of subjects. Each row of X should correspond to a particular SNP
+and each column should correspond to a particular subject. Each element of X should give the number of minor alleles for the corresponding
+SNP and subject. The function will center each row of X to have mean zero prior to running the Gibbs sampling algorithm.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Y</code></td>
+<td>
+<p>A c-by-n matrix; c is the number of phenotypes (brain imaging measures) and n is the number of subjects. Each row of
+Y should correspond to a particular phenotype and each column should correspond to a particular subject. Each element of Y should give
+the measured value for the corresponding phentoype and subject. The function will center and scale each row of Y to have mean zero and unit
+variance prior to running the Gibbs sampling algorithm.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>method</code></td>
+<td>
+<p>A string, either 'MCMC' or 'MFVB'. If 'MCMC', the Gibbs sampling method will be used. If 'MFVB', mean field variational Bayes method will be used.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>rho</code></td>
+<td>
+<p>Spatial cohesion paramter. If no value is assigned, it takes 0.95 by default.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>lambdasq</code></td>
+<td>
+<p>A tuning paratmeter. If no value is assigned, the algorithm will estimate and assign a value for it based on a moment estimate.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>alpha</code></td>
+<td>
+<p>Bayesian False Discovery Rate (FDR) level. Default level is 0.05.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>A</code></td>
+<td>
+<p>A c/2 by c/2 neighborhood structure matrix for different brain regions.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>c.star</code></td>
+<td>
+<p>The threshold for computing posterior tail probabilities p_ij for Bayesian FDR as defined in Section 3.2 of  Song, Ge et al.(2019). If not specified the default is to set this threshold as the minimum posterior standard deviation, where the minimum is taken over all regression coefficients in the model.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>FDR_opt</code></td>
+<td>
+<p>A logical operator for computing Bayesian FDR. By default, it's TRUE.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>WAIC_opt</code></td>
+<td>
+<p>A logical operator for computing WAIC from MCMC method. By default, it's TRUE.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>iter_num</code></td>
+<td>
+<p>Positive integer representing the total number of iterations to run the Gibbs sampler. Defaults to 10,000.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>burn_in</code></td>
+<td>
+<p>Nonnegative integer representing the number of MCMC samples to discard as burn-in. Defaults to 5001.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>A list with following elements
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>WAIC</code></td>
+<td>
+<p>WAIC is computed from the MCMC output if "MCMC" is chosen for method.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>lower_boud</code></td>
+<td>
+<p>Lower bound from MFVB output if "MFVB is choosen for method.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Gibbs_setup</code></td>
+<td>
+<p>A list providing values for the input parameters of the function.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>lambdasq_est</code></td>
+<td>
+<p>Estimated value for tunning parameter lambda-squared.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Gibbs_W_summaries</code></td>
+<td>
+<p>A list with five components, each component being a d-by-c matrix giving some posterior summary of the regression parameter
+matrix W, where the ij-th element of W represents the association between the i-th SNP and j-th phenotype.
+</p>
+<p>-Gibbs_W_summaries$W_post_mean is a d-by-c matrix giving the posterior mean of W.
+</p>
+<p>-Gibbs_W_summaries$W_post_mode is a d-by-c matrix giving the posterior mode of W.
+</p>
+<p>-Gibbs_W_summaries$W_post_sd is a d-by-c matrix giving the posterior standard deviation for each element of W.
+</p>
+<p>-Gibbs_W_summaries$W_2.5_quantile is a d-by-c matrix giving the posterior 2.5 percent quantile for each element of W.
+</p>
+<p>-Gibbs_W_summaries$W_97.5_quantile is a d-by-c matrix giving the posterior 97.5 percent quantile for each element of W.'</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>FDR_summaries</code></td>
+<td>
+<p>A list with three components providing the summaries for estimated Bayesian FDR results for both MCMC and MFVB methods. Details for Bayesian FDR computation could be found at Morris et al.(2008).
+</p>
+<p>-sensitivity_rate is the estimated sensitivity rate for each region.
+</p>
+<p>-specificity_rate is the estimated specificity rate for each region.
+</p>
+<p>-significant_snp_idx is the index of estimated significant/important SNPs for each region.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>MFVB_summaries</code></td>
+<td>
+<p>A list with four components, each component is the mean field variational bayes approximation summary of model paramters.
+</p>
+<p>-Number of Iteration is how many iterations it takes for convergence.
+</p>
+<p>-W_post_mean is MFVB approximation of W.
+</p>
+<p>-Sigma_post_mean is MFVB approximation of Sigma.
+</p>
+<p>-omega_post_mean is MFVB approximation of Omega.
+</p>
+</td>
+</tr>
+</table>
+<h3>Author(s)</h3>
+
+<p>Yin Song, <a href="mailto:yinsong@uvic.ca">yinsong@uvic.ca</a>
+</p>
+<p>Shufei Ge, <a href="mailto:shufeig@sfu.ca">shufeig@sfu.ca</a>
+</p>
+<p>Farouk S. Nathoo, <a href="mailto:nathoo@uvic.ca">nathoo@uvic.ca</a>
+</p>
+<p>Liangliang Wang, <a href="mailto:lwa68@sfu.ca">lwa68@sfu.ca</a>
+</p>
+<p>Jiguo Cao, <a href="mailto:jiguo_cao@sfu.ca">jiguo_cao@sfu.ca</a>
+</p>
+
+
+<h3>References</h3>
+
+<p>Song, Y., Ge, S., Cao, J., Wang, L., Nathoo, F.S., A Bayesian Spatial Model for Imaging Genetics. arXiv:1901.00068.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">data(sp_bgsmtr_example_data)
+names(sp_bgsmtr_example_data)
+
+
+## Not run: 
+
+# Run the example data with Gibbs sampling and compute Bayesian FDR as follow:
+
+fit_mcmc = sp_bgsmtr(X = sp_bgsmtr_example_data$SNP_data,
+Y = sp_bgsmtr_example_data$BrainMeasures, method = "MCMC",
+A = sp_bgsmtr_example_data$neighborhood_structure, rho = 0.8,
+FDR_opt = TRUE, WAIC_opt = TRUE,lambdasq = 1000, iter_num = 10000)
+
+# MCMC estimation results for regression parameter W and estimated Bayesian FDR summaries
+
+fit_mcmc$Gibbs_W_summaries
+fit_mcmc$FDR_summaries
+
+# The WAIC could be also obtained as:
+
+fit_mcmc$WAIC
+
+# Run the example data with mean field variational Bayes and compute Bayesian FDR as follow:
+
+fit_mfvb = sp_bgsmtr(X = sp_bgsmtr_example_data$SNP_data,
+Y = sp_bgsmtr_example_data$BrainMeasures, method = "MFVB",
+A = sp_bgsmtr_example_data$neighborhood_structure, rho = 0.8,FDR_opt = FALSE,
+lambdasq = 1000, iter_num = 10000)
+
+# MFVB estimated results for regression parameter W and estimated Bayesian FDR summaries
+fit_mfvb$MFVB_summaries
+fit_mfvb$FDR_summaries
+
+# The corresponding lower bound of MFVB method after convergence is obtained as:
+fit_mfvb$lower_boud
+
+
+## End(Not run)
+
+</code></pre>
+
+
+</div>

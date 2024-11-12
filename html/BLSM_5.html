@@ -1,0 +1,197 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>estimate_latent_positions</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>BLSM simulation</h2>
+
+<h3>Description</h3>
+
+<p>Core function of the BLSM package: run a simulation to obtain the positions of the network nodes 
+in the latent space for each sampled iteration.
+</p>
+<p>The positions are simulated accordingly to the model assumptions, please refer to BLSM for further information. 
+The output of the function can be used to retrieve and compare specific iterations, observe their evolution or simply compute
+the average positions (more details in the descriptions and examples below).
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">estimate_latent_positions(Y, W, procrustean = TRUE, k = 2, alpha = 2,
+  nscan = 8 * 10^5, burn_in = 5 * 10^5, odens = 10^3, zdelta = 1,
+  z_norm_prior_mu = 0, z_norm_prior_sd = 10, adelta = 0.3,
+  a_exp_prior_a = 1, a_exp_prior_b = 1, dynamic_plot = FALSE,
+  dynamic_circles = FALSE, ...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>Y</code></td>
+<td>
+<p>Adjacency matrix of the network</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>W</code></td>
+<td>
+<p>(Optional) BLSM Weight matrix of the network</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>procrustean</code></td>
+<td>
+<p>Boolean to include/exclude (<code>TRUE/FALSE</code>) the Procrustean Transform step in the algorithm. Set <code>TRUE</code> by default.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>k</code></td>
+<td>
+<p>Space dimensionality</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>alpha</code></td>
+<td>
+<p>Starting value of the <code class="reqn">\alpha</code> variable</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nscan</code></td>
+<td>
+<p>Number of iterations</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>burn_in</code></td>
+<td>
+<p>Burn-in value (starting iterations to be discarded)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>odens</code></td>
+<td>
+<p>Thinning: only 1 iteration every <code>odens</code> will be sampled and stored in the output</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>zdelta</code></td>
+<td>
+<p>Standard deviation of the Gaussian proposal for latent positions</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>z_norm_prior_mu</code></td>
+<td>
+<p>Mean of the Gaussian prior distribution for latent positions</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>z_norm_prior_sd</code></td>
+<td>
+<p>Standard deviation of the Gaussian prior distribution for latent positions</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>adelta</code></td>
+<td>
+<p>The uniform proposal for <code class="reqn">\alpha</code> is defined on the <code class="reqn">[-adelta,+adelta]</code> interval</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>a_exp_prior_a</code></td>
+<td>
+<p>Shape parameter of the Gamma prior distribution for <code class="reqn">\alpha</code>. As the value is usually set to 1 the prior is an exponential distribution.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>a_exp_prior_b</code></td>
+<td>
+<p>Rate parameter of the Gamma prior distribution for <code class="reqn">\alpha</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>dynamic_plot</code></td>
+<td>
+<p>Boolean to plot dynamically the simulated positions (one update every <code>odens</code> iterations)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>dynamic_circles</code></td>
+<td>
+<p>Boolean to add circles of radius <code class="reqn">\alpha</code> to the dynamic plots</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Additional parameters that can be passed to plot_latent_positions</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>Returns a "BLSM object" (<code>blsm_obj</code>), i.e. a list containing:
+</p>
+
+<ul>
+<li> <p><code>Alpha </code><code class="reqn">\alpha</code> values from the sampled iterations
+</p>
+</li>
+<li> <p><code>Likelihood </code>Log-likelihood values from the sampled iterations
+</p>
+</li>
+<li> <p><code>Iterations </code>Latent space coordinates from the sampled iterations. Latent positions are stored in a
+3D array whose dimensions are given by (1: number of nodes, 2: space dimensionality, 3: number of iterations).
+In the non-Procrustean framework the latent distances are given instead of the positions: another 3D array is returned, whose dimensions
+are given by (1: number of nodes, 2: number of nodes, 3: number of iterations). The command needed in order to get the average values over the iterations for
+either the positions or the distances is <code>rowMeans(blsm_obj$Iterations, dims=2)</code> (see example below).
+</p>
+</li>
+<li> <p><code>StartingPositions </code>Latent space coordinates right after the initialization step. In the non-Procrustean framework starting distances are given instead.
+</p>
+</li>
+<li> <p><code>Matrix </code>Original matrices of the network (adjacency and BLSM weights)
+</p>
+</li>
+<li> <p><code>Parameters </code>List of parameters specified during the call to estimate_latent_positions
+</p>
+</li>
+</ul>
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+## Not run: 
+ # Procrustean version followed by clustering
+ blsm_obj = estimate_latent_positions(example_adjacency_matrix,  
+                          burn_in = 3*10^4, nscan = 10^5, dynamic_plot = TRUE)
+                          
+ avg_latent_positions = rowMeans(blsm_obj$Iterations, dims=2)                   
+ h_cl = hclust(dist(avg_latent_positions), method="complete")
+ n = 3
+ latent_space_clusters = cutree(h_cl, k=n)
+ print(latent_space_clusters)
+ plot(avg_latent_positions, col=rainbow(n)[latent_space_clusters], pch=20)
+ 
+ # Non-Procrustean version followed by clustering                    
+ blsm_obj_2 = estimate_latent_positions(example_adjacency_matrix, procrustean=FALSE,
+                          burn_in = 3*10^4, nscan = 10^5)
+ avg_latent_distances = rowMeans(blsm_obj_2$Iterations, dims=2)
+ h_cl = hclust(as.dist(avg_latent_distances), method="complete")
+ n = 3
+ latent_space_clusters_2 = cutree(h_cl, k=n)
+ print(latent_space_clusters_2)
+                           
+ # Weighted network 
+ blsm_obj_3 = estimate_latent_positions(example_adjacency_matrix, example_weights_matrix, 
+                          burn_in = 10^5, nscan = 2*10^5, dynamic_plot = TRUE)
+
+## End(Not run)
+</code></pre>
+
+
+</div>

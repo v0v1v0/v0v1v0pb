@@ -1,0 +1,529 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>gtReg</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Fitting group testing regression models</h2>
+
+<h3>Description</h3>
+
+<p>Fits the group testing regression model specified
+through a symbolic description of the linear predictor and
+descriptions of the group testing setting. This function allows
+for fitting regression models with simple pooling, halving, or array
+testing data.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">gtReg(
+  type = "sp",
+  formula,
+  data,
+  groupn = NULL,
+  subg = NULL,
+  coln = NULL,
+  rown = NULL,
+  arrayn = NULL,
+  retest = NULL,
+  sens = 1,
+  spec = 1,
+  linkf = c("logit", "probit", "cloglog"),
+  method = c("Vansteelandt", "Xie"),
+  sens.ind = NULL,
+  spec.ind = NULL,
+  start = NULL,
+  control = gtRegControl(...),
+  ...
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>type</code></td>
+<td>
+<p><kbd>"sp"</kbd> for simple pooling (Dorfman testing with
+or without retests), <kbd>"halving"</kbd> for halving
+protocol, or <kbd>"array"</kbd> for array testing. See 'Details' for
+descriptions of the group testing algorithms.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>formula</code></td>
+<td>
+<p>an object of class "formula" (or one that
+can be coerced to that class); a symbolic description of
+the model to be fitted. The details of model specification
+are under 'Details'.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+<p>an optional data frame, list, or environment
+(or object coercible by <kbd>as.data.frame</kbd> to a data frame)
+containing the variables in the model. If not found in data,
+the variables are taken from <kbd>environment(formula)</kbd>,
+typically the environment from which <code>gtReg</code> is called.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>groupn</code></td>
+<td>
+<p>a vector, list, or data frame of the group
+numbers that designates individuals to groups (for use with
+simple pooling, <kbd>type = "sp"</kbd>, or the halving protocol,
+<kbd>type = "halving"</kbd>).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>subg</code></td>
+<td>
+<p>a vector, list, or data frame of the group numbers
+that designates individuals to subgroups (for use with the
+halving protocol, <kbd>type = "halving"</kbd>).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>coln</code></td>
+<td>
+<p>a vector, list, or data frame that specifies the
+column group number for each sample (for use with array
+testing, <kbd>type = "array"</kbd>).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>rown</code></td>
+<td>
+<p>a vector, list, or data frame that specifies the
+row group number for each sample (for use with array testing,
+<kbd>type = "array"</kbd>).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>arrayn</code></td>
+<td>
+<p>a vector, list, or data frame that specifies the
+array number for each sample (for use with array testing,
+<kbd>type = "array"</kbd>).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>retest</code></td>
+<td>
+<p>a vector, list, or data frame of individual
+retest results. Default value is <kbd>NULL</kbd> for no retests.
+See 'Details' for details on how to specify <kbd>retest</kbd>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>sens</code></td>
+<td>
+<p>sensitivity of the test. Default value is set
+to 1.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>spec</code></td>
+<td>
+<p>specificity of the test. Default value is set
+to 1.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>linkf</code></td>
+<td>
+<p>a character string specifying one of the three
+link functions for a binomial model: <kbd>"logit"</kbd> (default),
+<kbd>"probit"</kbd>, or <kbd>"cloglog"</kbd>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>method</code></td>
+<td>
+<p>the method to fit the regression model.
+Options include <kbd>"Vansteelandt"</kbd> (default) or <kbd>"Xie"</kbd>.
+The <kbd>"Vansteelandt"</kbd> option finds estimates by directly
+maximizing the likelihood function based on the group responses,
+while the <kbd>"Xie"</kbd> option uses the EM algorithm to
+maximize the likelihood function in terms of the unobserved
+individual responses.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>sens.ind</code></td>
+<td>
+<p>sensitivity of the individual retests. If NULL,
+set to be equal to <kbd>sens</kbd>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>spec.ind</code></td>
+<td>
+<p>specificity of the individual retests. If NULL,
+set to be equal to <kbd>spec</kbd>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>start</code></td>
+<td>
+<p>starting values for the parameters in the linear
+predictor.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>control</code></td>
+<td>
+<p>a list of parameters for controlling the fitting
+process in method <kbd>"Xie"</kbd>. These parameters will be passed
+to the <code>gtRegControl</code> function for use.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>arguments to be passed to <code>gtRegControl</code> by
+default. See argument <kbd>control</kbd>.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>With simple pooling and halving, a typical predictor
+has the form <kbd>groupresp ~ covariates</kbd> where <kbd>groupresp</kbd>
+is the (numeric) group response vector. With array testing,
+individual samples are placed in a matrix-like grid where
+samples are pooled within each row and within each column.
+This leads to two kinds of group responses: row and column
+group responses. Thus, a typical predictor has the form
+<kbd>cbind(col.resp, row.resp) ~ covariates</kbd>, where
+<kbd>col.resp</kbd> is the (numeric) column group response vector
+and <kbd>row.resp</kbd> is the (numeric) row group response vector.
+For all methods, <kbd>covariates</kbd> is a series of terms which
+specifies a linear predictor for individual responses.
+Note that it is actually the unobserved individual responses,
+not the observed group responses, which are modeled by the
+covariates. When denoting group responses (<kbd>groupresp</kbd>,
+<kbd>col.resp</kbd>, and <kbd>row.resp</kbd>), a 0 denotes a negative
+response and a 1 denotes a positive response, where the
+probability of an individual positive response is being
+modeled directly.
+</p>
+<p>A terms specification of the form
+<kbd>first + second</kbd> indicates all the terms in <kbd>first</kbd>
+together with all the terms in <kbd>second</kbd> with duplicates
+removed. A specification of the form <kbd>first:second</kbd>
+indicates the set of terms obtained by taking the interactions
+of all terms in <kbd>first</kbd> with all terms in <kbd>second</kbd>.
+The specification <kbd>first*second</kbd> indicates the cross of
+<kbd>first</kbd> and <kbd>second</kbd>. This is the same as <kbd>first +
+second + first:second</kbd>. The terms in the formula will be
+re-ordered so that main effects come first, followed by the
+interactions, all second-order, all third-order, and so on;
+to avoid this, pass a terms object as the formula.
+</p>
+<p>For simple pooling (<kbd>type = "sp"</kbd>), the functions <kbd>gtreg.fit</kbd>,
+<kbd>EM</kbd>, and <kbd>EM.ret</kbd>, where the first corresponds to Vansteelandt's
+method described in Vansteelandt et al. (2000) and the last two correspond
+to Xie's method described in Xie (2001), are called to carry out the
+model fitting. The <kbd>gtreg.fit</kbd> function uses the <kbd>optim</kbd>
+function with default method <kbd>"Nelder-Mead"</kbd> to maximize
+the likelihood function of the observed group responses.
+If this optimization method produces a Hessian matrix of all
+zero elements, the <kbd>"SANN"</kbd> method in <kbd>optim</kbd> is
+employed to find the coefficients and Hessian matrix. For
+the <kbd>"SANN"</kbd> method, the number of iterations in <kbd>optim</kbd>
+is set to be 10000. For the background on the use of <kbd>optim</kbd>,
+see <kbd>help(optim)</kbd>.
+</p>
+<p>The <kbd>EM</kbd> and <kbd>EM.ret</kbd> functions apply Xie's EM
+algorithm to the likelihood function written in terms of the
+unobserved individual responses; the functions use <kbd>glm.fit</kbd>
+to update the parameter estimates within each M step. The
+<kbd>EM</kbd> function is used when there are no retests and
+<kbd>EM.ret</kbd> is used when individual retests are available.
+Thus, within the <kbd>retest</kbd> argument, individual observations
+in observed positive groups are 0 (negative) or 1 (positive);
+the remaining individual observations are <kbd>NA</kbd>s, meaning
+that no retest is performed for them. Retests cannot be used
+with Vansteelandt's method; a warning message will be given
+in this case, and the individual retests will be ignored in
+the model fitting. There could be slight differences in the
+estimates between Vansteelandt's and Xie's methods (when
+retests are not available) due to different convergence criteria.
+</p>
+<p>With simple pooling (i.e., Dorfman testing, two-stage hierarchical
+testing), each individual appears in exactly one pool. When only the
+group responses are observed, the null degrees of freedom are the number
+of groups minus 1 and the residual degrees of freedom are the number of
+groups minus the number of parameters. When individual retests are
+observed too, it is an open research question for what the degrees of
+freedom and the deviance for the null model should be; therefore, the
+degrees of freedom and <kbd>null.deviance</kbd> will not be displayed.
+</p>
+<p>Under the halving protocol, the <kbd>EM.halving</kbd> function
+applies Xie's EM algorithm to the
+likelihood function written in terms of the unobserved
+individual responses; the functions use <kbd>glm.fit</kbd> to update
+the parameter estimates within each M step. In the halving
+protocol, if the initial group tests positive, it is split
+into two subgroups. The two subgroups are subsequently tested
+and if either subgroup tests positive, the third and final
+step is to test all individuals within the subgroup. Thus,
+within <kbd>subg</kbd>, subgroup responses in observed positive
+groups are 0 (negative) or 1 (positive); the remaining
+subgroup responses are <kbd>NA</kbd>s, meaning that no tests are
+performed for them. The individual retests are similarly coded.
+</p>
+<p>With array testing (also known as matrix pooling), the
+<kbd>EM.mp</kbd> function applies Xie's
+EM algorithm to the likelihood function written in terms of the
+unobserved individual responses. In each E step, the Gibbs
+sampling technique is used to estimate the conditional
+probabilities. Because of the large number of Gibbs samples
+needed to achieve convergence, the model fitting process could
+be quite slow, especially when multiple positive rows and
+columns are observed. In this case, we can either increase the
+Gibbs sample size to help achieve convergence or loosen the
+convergence criteria by increasing <kbd>tol</kbd> at the expense
+of perhaps poorer estimates. If follow-up retests are performed,
+the retest results going into the model will help achieve
+convergence faster with the same Gibbs sample size and
+convergence criteria. In each M step, we use <kbd>glm.fit</kbd> to
+update the parameter estimates.
+</p>
+<p>For simple pooling, <kbd>retest</kbd> provides individual retest
+results for Dorfman's retesting procedure. Under the halving
+protocol, <kbd>retest</kbd> provides individual retest results
+within a subgroup that tests positive. The <kbd>retest</kbd>
+argument provides individual retest results, where a 0
+denotes negative and 1 denotes positive status. An <kbd>NA</kbd>
+denotes that no retest is performed for that individual.
+The default value is <kbd>NULL</kbd> for no retests.
+</p>
+<p>For simple pooling, <kbd>control</kbd> provides parameters for
+controlling the fitting process in the <kbd>"Xie"</kbd> method only.
+</p>
+<p><kbd>gtReg</kbd> returns an object of class <kbd>"gtReg"</kbd>.
+The function <kbd>summary</kbd> (i.e., <code>summary.gtReg</code>
+is used to obtain or print a summary of the results.
+The group testing function <kbd>predict</kbd> (i.e.,
+<code>predict.gtReg</code>) is used to make predictions
+on <kbd>"gtReg"</kbd> objects.
+</p>
+
+
+<h3>Value</h3>
+
+<p>An object of class <kbd>"gtReg"</kbd>, a list which may include:
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>coefficients</code></td>
+<td>
+<p>a named vector of coefficients.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>hessian</code></td>
+<td>
+<p>estimated Hessian matrix of the negative
+log-likelihood function. This serves as an estimate of the
+information matrix.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>residuals</code></td>
+<td>
+<p>the response residuals. This is the difference
+of the observed group responses and the fitted group
+responses. Not included for array testing.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>fitted.values</code></td>
+<td>
+<p>the fitted mean values of group responses.
+Not included for array testing.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>deviance</code></td>
+<td>
+<p>the deviance between the fitted model and the
+saturated model. Not included for array testing.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>aic</code></td>
+<td>
+<p>Akaike's Information Criterion. This is minus twice
+the maximized log-likelihood plus twice the number of
+coefficients. Not included for array testing.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>null.deviance</code></td>
+<td>
+<p>the deviance for the null model,
+comparable with <kbd>deviance</kbd>. The null model will
+include only the intercept, if there is one in the model.
+Provided for simple pooling, <kbd>type = "sp"</kbd>, only.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>counts</code></td>
+<td>
+<p>the number of iterations in <kbd>optim</kbd>
+(Vansteelandt's method) or the number of iterations in the
+EM algorithm (Xie's method, halving, and array testing).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Gibbs.sample.size</code></td>
+<td>
+<p>the number of Gibbs samples
+generated in each E step. Provided for array testing,
+<kbd>type = "array"</kbd>, only.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>df.residual</code></td>
+<td>
+<p>the residual degrees of freedom.
+Provided for simple pooling, <kbd>type = "sp"</kbd>, only.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>df.null</code></td>
+<td>
+<p>the residual degrees of freedom for the null model.
+Provided for simple pooling, <kbd>type = "sp"</kbd>, only.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>z</code></td>
+<td>
+<p>the vector of group responses. Not included for array testing.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>call</code></td>
+<td>
+<p>the matched call.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>formula</code></td>
+<td>
+<p>the formula supplied.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>terms</code></td>
+<td>
+<p>the terms object used.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>method</code></td>
+<td>
+<p>the method (<kbd>"Vansteelandt"</kbd> or <kbd>"Xie"</kbd>)
+used to fit the model. For the halving protocol, the
+<kbd>"Xie"</kbd> method is used. Not included for array testing.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>link</code></td>
+<td>
+<p>the link function used in the model.</p>
+</td>
+</tr>
+</table>
+<h3>Author(s)</h3>
+
+<p>The majority of this function was originally written as
+<kbd>gtreg.sp</kbd>, <kbd>gtreg.halving</kbd>, and <kbd>gtreg.mp</kbd> by Boan Zhang
+for the <code>binGroup</code> package. Minor modifications have been made for
+inclusion of the functions in the <code>binGroup2</code> package.
+</p>
+
+
+<h3>References</h3>
+
+<p>Vansteelandt, S., Goetghebeur, E., Verstraeten, T. (2000).
+“Regression models for disease prevalence with diagnostic tests on pools of serum samples.”
+<em>Biometrics</em>, <b>56</b>, 1126–1133.
+</p>
+<p>Xie, M. (2001).
+“Regression analysis of group testing samples.”
+<em>Statistics in Medicine</em>, <b>20</b>, 1957–1969.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>gtSim</code> for simulation of data in the
+group testing form to be used by <kbd>gtReg</kbd>,
+<code>summary.gtReg</code> and <code>predict.gtReg</code>
+for <kbd>gtreg</kbd> methods.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">data(hivsurv)
+fit1 &lt;- gtReg(type = "sp", formula  =  groupres ~ AGE + EDUC.,
+              data  =  hivsurv, groupn  =  gnum, sens  =  0.9,
+              spec  =  0.9, method  =  "Xie")
+fit1
+
+set.seed(46)
+gt.data &lt;- gtSim(type = "sp", par = c(-12, 0.2),
+                 size1 = 700, size2 = 5)
+fit2 &lt;- gtReg(type = "sp", formula = gres ~ x, data = gt.data,
+              groupn = groupn)
+fit2
+
+set.seed(21)
+gt.data &lt;- gtSim(type = "sp", par = c(-12, 0.2),
+                 size1 = 700, size2 = 6, sens = 0.95, spec = 0.95,
+                 sens.ind = 0.98, spec.ind = 0.98)
+fit3 &lt;- gtReg(type = "sp", formula = gres ~ x, data = gt.data,
+              groupn = groupn, retest = retest, method = "Xie",
+              sens = 0.95, spec = 0.95, sens.ind = 0.98,
+              spec.ind = 0.98, trace = TRUE)
+summary(fit3)
+
+set.seed(46)
+gt.data &lt;- gtSim(type = "halving", par = c(-6, 0.1), gshape = 17,
+                 gscale = 1.4, size1 = 5000, size2 = 5,
+                 sens = 0.95, spec = 0.95)
+fit4 &lt;- gtReg(type = "halving", formula = gres ~ x,
+              data = gt.data, groupn = groupn, subg = subgroup,
+              retest = retest, sens = 0.95, spec = 0.95,
+              start = c(-6, 0.1), trace = TRUE)
+summary(fit4)
+
+# 5x6 and 4x5 array
+set.seed(9128)
+sa1a &lt;- gtSim(type = "array", par = c(-7, 0.1), size1 = c(5, 4),
+              size2 = c(6, 5), sens = 0.95, spec = 0.95)
+sa1 &lt;- sa1a$dframe
+fit5 &lt;- gtReg(type = "array",
+              formula = cbind(col.resp, row.resp) ~ x,
+              data = sa1, coln = coln, rown = rown,
+              arrayn = arrayn, sens = 0.95, spec = 0.95,
+              tol = 0.005, n.gibbs = 2000, trace = TRUE)
+fit5
+summary(fit5)
+
+</code></pre>
+
+
+</div>

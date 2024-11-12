@@ -1,0 +1,375 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>braidrm</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>BRAID Response Surface Fitting</h2>
+
+<h3>Description</h3>
+
+<p>Fits a BRAID response surface model to data.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">braidrm(
+  formula,
+  data,
+  model = "kappa2",
+  links = NULL,
+  weights = NULL,
+  start = NULL,
+  direction = 0,
+  lower = NULL,
+  upper = NULL,
+  prior = "moderate",
+  getCIs = TRUE
+)
+
+## S3 method for class 'braidrm'
+summary(object, ...)
+
+## S3 method for class 'summary.braidrm'
+print(x, ...)
+
+## S3 method for class 'braidrm'
+print(x, ...)
+
+## S3 method for class 'formula'
+braidrm(
+  formula,
+  data,
+  model = "kappa2",
+  links = NULL,
+  weights = NULL,
+  start = NULL,
+  direction = 0,
+  lower = NULL,
+  upper = NULL,
+  prior = "moderate",
+  getCIs = TRUE
+)
+
+## Default S3 method:
+braidrm(
+  formula,
+  data,
+  model = "kappa2",
+  links = NULL,
+  weights = NULL,
+  start = NULL,
+  direction = 0,
+  lower = NULL,
+  upper = NULL,
+  prior = "moderate",
+  getCIs = TRUE
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>formula</code></td>
+<td>
+<p>Either an object of class <code>formula</code> such as would be provided
+to a modeling function like <code>stats::lm()</code>, or a width-2 numeric array vector
+of concentration pairs (including 0 or Inf).  A formula should specify a
+single output as a function of two inputs, eg. <code>activity ~ conc1 + conc2</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+<p>If <code>forumula</code> is a symbolic formula, a data frame containing the
+specified values. If <code>formula</code> is a numeric array of concentrations, a
+numeric vector of response values, the same length as the number of rows of
+<code>formula</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>model, links</code></td>
+<td>
+<p>Parameters <code>model</code> and <code>links</code> are used to specify which
+variant of the BRAID model is fit to data.  Model may be one of the
+following character strings: "kappa1", "kappa2", or "kappa3" (see Details),
+or a subset of the numbers 1 through 9 specifying which of the nine BRAID
+response surface parameters is allowed to vary when fitting.  <code>links</code> allows
+the user to further specify constraints on the three BRAID maximal effect
+parameters (see Details for more).  If <code>model</code> is one of the supported
+character strings, the parameter <code>links</code> will be ignored.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>weights</code></td>
+<td>
+<p>A vector of weights (between 0 and 1) the same length as
+the data which determines the weight with which each measurement
+will impact the the sum of squared errors.  Weights will be multiplied by
+errors <em>before</em> squaring.  If <code>NULL</code> (the default) all weights will be set
+to 1. Can be a numeric vector, or the name of a column in <code>data</code> if <code>formula</code>
+is a symbolic formula</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>start</code></td>
+<td>
+<p>A BRAID parameter vector specifying the first guess where the
+non-linear optimization should begin.  May be a length 7, 8, or 9 vector,
+though a full length vector is always preferable.  If <code>NULL</code> (the default),
+it will be estimated from the data.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>direction</code></td>
+<td>
+<p>Determines the possible directionality of the BRAID
+model.  If 0 (the default) no additional constraints are placed on the
+parameters.  If greater than 0, the fitting will require that the maximal
+effects are all <em>greater</em> than or equal to the minimal effect.  If less
+than 0, the fitting will require that all maximal effect is <em>less</em> than or
+equal to the minimal effect.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>lower</code></td>
+<td>
+<p>A numeric vector of lower bounds on the fitted parameter values.
+May be the same length as the number of fitted parameters, or a full,
+length-9 vector. Missing or unspecified lower bounds may be included as <code>NA</code>
+or <code>Inf</code>; if unspecified, lower bounds on the first five parameters (IDMA,
+IDMB, na, nb, and kappa) will be automatically estimated from the data.
+Bounds on the minimal and maximal effect parameters however (E0, EfA, EfB,
+and Ef) will be assumed to be infinite unless specified.  A value of <code>NULL</code>,
+the default, will be treated as all lower parameter bounds being
+unspecified.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>upper</code></td>
+<td>
+<p>A numeric vector of upper bounds on the fitted parameter values.
+Used in the same way as <code>lower</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>prior</code></td>
+<td>
+<p>A character string specifying the desired Bayesian prior term
+for kappa, or an object of class <code>kappaPrior</code> genererated by the function
+<code>kappaPrior()</code>.  Allowed strings are "mild", "moderate" (the default),
+"high", or "none".  If a string is given, the kappa prior object will be
+estimated from the data using an initial ten-parameter fit to approximate
+measurement noise.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>getCIs</code></td>
+<td>
+<p>Should bootstrapped confidence intervals be estimated and
+added to the BRAID fit object. Default value is <code>TRUE</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>object</code></td>
+<td>
+<p>An object of class <code>braidrm</code> to be summarized</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Further arguments passed to or from other methods.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>An object of class <code>braidrm</code> or <code>summary.braidrm</code> to be printed</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>One of the hairiest and most confusing aspects of fitting a combined
+response surface model is handling the relationships between maximal effects.
+Unlike a simple dose response model such as those fit in <code>basicdrm</code> in which
+all parameters can be treated as fairly independent, response surface models
+are often considered with constraints that cannot be expressed as simply one
+parameter being fixed a particular value.  Many response surface models
+assume that the two drugs in combination (and the overall combination) share
+a single common maximal effect; others might assume that the maximal effects
+of the two drugs should differ but that the overall maximal effect must be
+equal to one of these; still others may wish to fit with no constraints on
+maximal effect at all beyond guaranteeing that they lie above a fixed
+minimal effect.  All these approaches are valid, and creating a functional
+interface to support them all is a challenge. The parameters given here
+represent our best effort to balance ease-of-use with flexibility.
+</p>
+<p>The primary interface for model selection and customization is the paired
+paramters <code>model</code> and <code>links</code>.  For the first six parameters of the BRAID
+surface, <code>model</code> is the only relevant control, and operates much as it would
+in any fitting function.  If a given parameter (say IDMB) is included in
+<code>model</code> (as index 2) then it will vary freely within the provided bounds to
+best fit the data.  If it is not, the value will be fixed at the value given
+in <code>start</code> (or if <code>start</code> is <code>NULL</code>, estimated from the data), and will
+remain fixed at that value in the best fit surface.
+</p>
+<p>Parameters EfA, EfB, and Ef (the maximal effect parameters) require slightly
+more care. Relationships between these values is represented by the <code>links</code>
+parameter, which can take on one of the following five values:
+</p>
+
+<ul>
+<li>
+<p> "AB": Indicating that the overall Ef parameter is the driver, both EfA and
+EfB are constrained to be equal to Ef, whatever its value.  Can be used
+when indices 7 and 8 (EfA and EfB) are absent from <code>model</code>, but index 9 (Ef)
+is present
+</p>
+</li>
+<li>
+<p> "F": Indicating instead that the individual parameters EfA and EfB are
+the drivers, and EfA is constrained to be equal to larger magnitude of the
+two. Can be used when indices 7 and 8 are present <code>model</code>, but index 9 is
+absent
+</p>
+</li>
+<li>
+<p> "A": Specifies that the overall maximal effect is equal to that of the
+first trug (and consequentially that the effect of drug A must be of greater
+or equal magnitude to that of drug B).  Can be used when index 7 is
+absent in <code>model</code> and index 9 is present; index 8 may be present or absent
+</p>
+</li>
+<li>
+<p> "B": Specifies that the overall maximal effect is equal to that of the
+second drug.  Can be used when index 8 is  absent in <code>model</code> and index 9 is
+present; index 7 may be present or absent
+</p>
+</li>
+<li>
+<p> "" (the empty string): Indicates no equality between maximal effects.
+Parameters that are present in <code>model</code> vary freely in fitting, those that
+are absent are fixed at constant values.
+</p>
+</li>
+</ul>
+<p>For example, if the maximal effects <em>should</em> be fit, but should be
+constrained to be all equal, then it is the parameter Ef that varies freely
+in the fitting; the fact that EfA and EfB are always equal to this value is
+represented by setting the <code>links</code> parameter to "AB".  Contrast this with the
+(admittedly much less common) scenario in which the <code>links</code> parameter is set
+to the empty string "", representing no link between maximal effects. In this
+case the parameter Ef will indeed vary freely in the fitting, but EfA and
+EfB will instead always be held at the constant initial values in the
+starting parameter vector.  On the other hand, if we were to assume that the
+two individual maximum effect parameters can vary independently, but that
+the overall maximal effect should be equal to the larger of the two, then
+indices 7 and 8 (representing EfA and EfB) would be included in <code>model</code>;
+index 9 (representing Ef) would be excluded, and the <code>links</code> parameter would
+be set to "F" indicating that Ef is tied to the larger of the two.
+</p>
+<p>Note also that the default value for <code>links</code> is <em>not</em> the empty string, but
+instead <code>NULL</code>.  By default the value of <code>links</code> will be guessed from the
+model vector, based on the scenarios that we have encountered most often.
+If <code>model</code> inclues Ef (index 9) but not EfA or EfB (indices 7 and 8), <code>links</code>
+is assumed to be "F"; if EfA and EfB are present but not Ef, <code>links</code> is set
+to "AB". In the vast majority of cases, you will not need to specify this
+parameter yourself.  This is especially true when <code>model</code> is specified with
+one of the model strings, in which any provided value for <code>links</code> will be
+discarded and replaced witht the following preset models:
+</p>
+
+<ul>
+<li>
+<p> kappa1: Model vector includes (1, 2, 3, 4, 5, 6, 9) and <code>links</code> is set to
+"AB"
+</p>
+</li>
+<li>
+<p> kappa2: Model vector includes (1, 2, 3, 4, 5, 6, 7, 8) and <code>links</code> is set
+to "F"
+</p>
+</li>
+<li>
+<p> kappa3: Model vector includes (1, 2, 3, 4, 5, 6, 7, 8, 9) and <code>links</code> is
+set to the empty string
+</p>
+</li>
+</ul>
+<h3>Value</h3>
+
+<p>An object of class <code>braidrm</code> containing the following elements:
+</p>
+
+<ul>
+<li> <p><code>concs</code>: A width-two array of the concentration pairs fit by the model
+</p>
+</li>
+<li> <p><code>act</code>: A vector of responses fit by the model
+</p>
+</li>
+<li> <p><code>weights</code>: The vector of weights (the same length as <code>act</code>) specifying
+the relative weight of each measurement
+</p>
+</li>
+<li> <p><code>coefficients</code>: A full length-9 named BRAID parameter vector representing
+the best fit BRAID surface for the data
+</p>
+</li>
+<li> <p><code>fitted.values</code>: A vector of responses (the same length of <code>act</code>) given by
+the best fit response surface as a function of the concentrations in <code>concs</code>
+</p>
+</li>
+<li> <p><code>residuals</code>: The fitting errors of the best fit model, equal to the
+<code>fitted.values</code> subtracted from <code>act</code>
+<code>scenario</code>: A character string specifying one of 32 distinct fitting
+scenarios determined from the parameters <code>model</code>, <code>links</code>, and <code>start</code>. Used
+in bootstrapping confidence intervals
+</p>
+</li>
+<li> <p><code>model</code>: The model vector (a subset of values between 1 and 9) specifying
+which BRAID parameters were varying freely in the fit
+</p>
+</li>
+<li> <p><code>start</code>: The length-9 starting BRAID parameter vector used in non-linear
+optimization
+</p>
+</li>
+<li> <p><code>direction</code>: Like the input parameter, a value of -1, 0, or 1 specifying
+the constraint on the directionality of the fitted surface
+</p>
+</li>
+<li> <p><code>pbounds</code>: A 2-by-k array of values specifying the lower and upper bounds
+of all varying parameters (where k is the number of free parameters).
+</p>
+</li>
+<li> <p><code>kweight</code>: A numeric value summarizing the relative Bayesian influence of
+the BRAID parameter kappa on optimized objective function.
+</p>
+</li>
+</ul>
+<p>Fit objects with bootstrapped confidence intervals include several additional
+elements derived from that; see <code>calcBraidBootstrap()</code> for details.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">bfit1 &lt;- braidrm(measure ~ concA + concB, additiveExample)
+summary(bfit1)
+
+bfit2 &lt;- braidrm(measure ~ concA + concB, synergisticExample,
+                 model = c(1,2,3,4,5,6,9),
+                 lower = c(NA,NA,NA,NA,NA,0,0),
+                 prior = "none",
+                 getCIs = FALSE)
+summary(bfit2)
+</code></pre>
+
+
+</div>

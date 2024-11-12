@@ -1,0 +1,449 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>RENORM</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>
+Endogenous targeting of a BIMETS model.
+</h2>
+
+<h3>Description</h3>
+
+<p>The endogenous targeting of econometric models (a.k.a. "renormalization") consists of solving the model while interchanging the role of one or more endogenous variables with an equal number of exogenous variables.<br><br> This procedure determines the values for the <code>INSTRUMENT</code> exogenous variables that allow the objective <code>TARGET</code> endogenous values to be achieved, with respect to the constraints given by the model equations (see <code>MDL</code>).<br><br>
+This is an approach to economic and monetary policy analysis, and is based on two assumptions:<br><br>
+1. there exists a desired level for a set of the <code>n</code> endogenous variables defined as <code>TARGET</code>;<br>
+2. there exists a set of the <code>n</code> exogenous variables defined as <code>INSTRUMENT</code>;<br><br>
+Given these premises, the endogenous targeting process consists in determining the values of the exogenous variables chosen as <code>INSTRUMENT</code> allowing us to achieve the desired values for the endogenous variables designated as <code>TARGET</code>. In other words the procedure allows users to exchange the role of exogenous and endogenous among a set of variables pairs. <br><br>
+Given a list of exogenous <code>INSTRUMENT</code> variables and a list of <code>TARGET</code> endogenous time series, the iterative procedure can be split into the following steps:<br><br>
+1. Computation of the multipliers matrix <code>MULTMAT</code> of the <code>TARGET</code> endogenous variables with respect to the <code>INSTRUMENT</code> exogenous variables (this is a square matrix by construction);<br><br>
+2. Solution of the linear system (if any): <br><br><code class="reqn">V_{exog}(i+1) = V_{exog}(i) +</code> <code>MULTMAT</code> <code class="reqn">^{-1} * (V_{endog}(i) -</code> <code>TARGET</code> <code class="reqn">)</code>, where <code class="reqn">V_{exog}(i)</code> are the exogenous variables in the <code>INSTRUMENT</code> list and <code class="reqn">V_{endog}(i)</code> are the endogenous variables that have a related target in the <code>TARGET</code> list, given <code class="reqn">i</code> the current iteration;<br><br>
+3. Simulation of the model with the new set of exogenous variables computed in step 2, then a convergence check by comparing the subset of endogenous variables arising from this simulation and the related time series in <code>TARGET</code> list. If the convergence condition is satisfied, or the maximum number of iterations is reached, the algorithm will stop, otherwise it will go back to step 1;<br><br>
+Users can also declare an endogenous variable as an <code>INSTRUMENT</code> variable. In this case, the constant adjustment (see <code>SIMULATE</code>) related to the provided endogenous variable will be used as the instrument exogenous variable. This procedure is particularly suited for the automatic computation of the add-factors needed to fine tune the model into a baseline path and to improve the forecasting accuracy.<br><br>
+If the convergence condition is satisfied, the <code>RENORM</code> procedure will return the <code>INSTRUMENT</code> time series allowing us to achieve the desired values for the endogenous variables designated as <code>TARGET</code>.<br><br>
+For more realistic scenarios, several advanced econometric exercises on the US Federal Reserve FRB/US econometric model (e.g., dynamic simulation in a monetary policy shock, rational expectations, endogenous targeting, stochastic simulation, etc.) are available in the <a href="https://cran.r-project.org/package=bimets/vignettes/frb2bimets.pdf">"US Federal Reserve quarterly model (FRB/US) in R with bimets"</a> vignette. <br><br></p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">
+RENORM(model=NULL,
+       simAlgo='GAUSS-SEIDEL',
+       TSRANGE=NULL,
+       simType='DYNAMIC',
+       simConvergence=0.01,
+       simIterLimit=100,
+       ZeroErrorAC=FALSE,
+       BackFill=0,
+       Exogenize=NULL,
+       ConstantAdjustment=NULL,
+       verbose=FALSE,
+       verboseSincePeriod=0,
+       verboseVars=NULL,
+       renormIterLimit=10,
+       renormConvergence=1e-4,
+       TARGET=NULL,
+       INSTRUMENT=NULL,
+       MM_SHOCK=0.00001,
+       quietly=FALSE,
+       quietlyMULTMATRIX=FALSE,
+       tol=1e-28,
+       JACOBIAN_SHOCK=1e-4,
+       JacobianDrop=NULL,
+       forceForwardLooking=FALSE,
+       avoidCompliance=FALSE,
+       ...
+       )
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>model</code></td>
+<td>
+<p>see <code>SIMULATE</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>simAlgo</code></td>
+<td>
+<p>see <code>SIMULATE</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>TSRANGE</code></td>
+<td>
+<p>see <code>SIMULATE</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>simType</code></td>
+<td>
+<p>see <code>SIMULATE</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>simConvergence</code></td>
+<td>
+<p>see <code>SIMULATE</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>simIterLimit</code></td>
+<td>
+<p>see <code>SIMULATE</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ZeroErrorAC</code></td>
+<td>
+<p>see <code>SIMULATE</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>BackFill</code></td>
+<td>
+<p>see <code>SIMULATE</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Exogenize</code></td>
+<td>
+<p>see <code>SIMULATE</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ConstantAdjustment</code></td>
+<td>
+<p>see <code>SIMULATE</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>verbose</code></td>
+<td>
+<p>see <code>SIMULATE</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>verboseSincePeriod</code></td>
+<td>
+<p>see <code>SIMULATE</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>verboseVars</code></td>
+<td>
+<p>see <code>SIMULATE</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>renormIterLimit</code></td>
+<td>
+<p>The value representing the maximum number of iterations to be performed. The iterative renormalization procedure will stop when <code>renormIterLimit</code> is reached or the <code>TARGET</code> variables satisfy the <code>renormConvergence</code> criterion</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>renormConvergence</code></td>
+<td>
+<p>The convergence value requested for the iterative renormalization process, that stops when the Euclidean distance between each <code>TARGET</code> time series and the related simulated endogenous variable is less than the <code>renormConvergence</code> value
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>TARGET</code></td>
+<td>
+<p>A named list that specifies the target endogenous variables. List names must be equal to the names of the target endogenous variables involved in the renormalization; each list element must contain the time series of the desired target endogenous values; time series must be compliant with the compliance control check defined in <code>is.bimets</code> (see example)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>INSTRUMENT</code></td>
+<td>
+<p>A <code>character</code> array built with the names of the instrument exogenous variables involved in the renormalization. User can also declare an endogenous variable as <code>INSTRUMENT</code> variable: in this case the constant adjustment (see <code>SIMULATE</code>) related to the provided endogenous variable will be used as instrument exogenous variable (see example)
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>tol</code></td>
+<td>
+
+<p>the tolerance for detecting linear dependencies in the columns of a matrix while an inversion is requested. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>MM_SHOCK</code></td>
+<td>
+<p>see <code>MULTMATRIX</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>quietly</code></td>
+<td>
+<p>If <code>TRUE</code>, information messages related to the <code>RENORM</code> operation will be suppressed.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>quietlyMULTMATRIX</code></td>
+<td>
+<p>If <code>TRUE</code>, information messages related to the underlying <code>MULTMATRIX</code> operation will be suppressed. If <code>quietly</code> argument is set to <code>TRUE</code>, then <code>quietlyMULTMATRIX</code> will be set to <code>TRUE</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>JACOBIAN_SHOCK</code></td>
+<td>
+<p>see <code>SIMULATE</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>JacobianDrop</code></td>
+<td>
+<p>see <code>SIMULATE</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>forceForwardLooking</code></td>
+<td>
+<p>see <code>SIMULATE</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>avoidCompliance</code></td>
+<td>
+<p>see <code>SIMULATE</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>see <code>SIMULATE</code></p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>This function will add a new named element <code>renorm</code> into the output BIMETS model object.<br><br>
+This new <code>renorm</code> element is a named list that contains the following elements:<br><br> 
+- <code>INSTRUMENT</code>: a named list that contains the <code>INSTRUMENT</code> exogenous time series that allow the objective <code>TARGET</code> endogenous values to be achieved. This element is populated only if the convergence is reached. List names are equal to the names of the related exogenous variables. Users can also declare an endogenous variable as <code>INSTRUMENT</code> variable: in this case the constant adjustment (see <code>SIMULATE</code>) related to the provided endogenous variable will be used as instrument exogenous variable, and this <code>INSTRUMENT</code> output list will contains the constant adjustment time series that allow the objective <code>TARGET</code> endogenous values to be achieved (see example);<br><br>
+- <code>TARGET</code>: a named list built with the achieved <code>TARGET</code> endogenous time series. List names are equal to the target endogenous variable names; <br><br>
+- <code>unConvergedTARGET</code>: the names array of the endogenous <code>TARGET</code> variables that failed the convergence. This element is populated only if the convergence has not been reached;<br><br>
+- <code>modelData</code>: the whole model input dataset wherein the <code>INSTRUMENT</code> exogenous variables have been modified accordingly to the <code>RENORM</code> results. This data can be useful in order to refine results or to verify that the model, fed with the proper <code>INSTRUMENT</code> exogenous time series, produces the desired <code>TARGET</code> endogenous values. This element is populated only if the convergence is achieved (see example);<br><br>
+- <code>ConstantAdjustment</code>: a modified constant adjustment input list (see <code>SIMULATE</code>) wherein the constant adjustment time series related to a <code>INSTRUMENT</code> endogenous variables have been modified accordingly to the <code>RENORM</code> results. This data can be useful in order to refine results or to verify that the model, fed with the proper <code>INSTRUMENT</code> exogenous time series (therefore with the proper <code>ConstantAdjustment</code> time series, if any), produces the desired <code>TARGET</code> endogenous values (see example). This element is populated only if the convergence is achieved;<br><br>
+- <code>__RENORM_PARAMETERS__</code>: a named list that contains the arguments passed to the function call during the latest <code>RENORM</code> run, e.g. <code>TSRANGE</code>, <code>INSTRUMENT</code>, <code>TARGET</code>, <code>renormIterLimit</code>, <code>renormConvergence</code>, <code>ConstantAdjustment</code>, <code>Exogenize</code>, etc.: this data can be useful in order to replicate renorm results. <br><br></p>
+
+
+<h3>See Also</h3>
+
+<p><code>MDL</code><br><code>LOAD_MODEL</code><br><code>ESTIMATE</code><br><code>SIMULATE</code><br><code>STOCHSIMULATE</code><br><code>MULTMATRIX</code><br><code>OPTIMIZE</code><br><code>TIMESERIES</code><br><code>BIMETS indexing</code><br><code>BIMETS configuration</code><br></p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+#define model
+myModelDefinition&lt;-
+"MODEL 
+COMMENT&gt; Klein Model 1 of the U.S. Economy 
+
+COMMENT&gt; Consumption
+BEHAVIORAL&gt; cn
+TSRANGE 1921 1 1941 1
+EQ&gt; cn =  a1 + a2*p + a3*TSLAG(p,1) + a4*(w1+w2) 
+COEFF&gt; a1 a2 a3 a4
+
+COMMENT&gt; Investment
+BEHAVIORAL&gt; i
+TSRANGE 1921 1 1941 1
+EQ&gt; i = b1 + b2*p + b3*TSLAG(p,1) + b4*TSLAG(k,1)
+COEFF&gt; b1 b2 b3 b4
+
+COMMENT&gt; Demand for Labor
+BEHAVIORAL&gt; w1 
+TSRANGE 1921 1 1941 1
+EQ&gt; w1 = c1 + c2*(y+t-w2) + c3*TSLAG(y+t-w2,1) + c4*time
+COEFF&gt; c1 c2 c3 c4
+
+COMMENT&gt; Gross National Product
+IDENTITY&gt; y
+EQ&gt; y = cn + i + g - t
+
+COMMENT&gt; Profits
+IDENTITY&gt; p
+EQ&gt; p = y - (w1+w2)
+
+COMMENT&gt; Capital Stock
+IDENTITY&gt; k
+EQ&gt; k = TSLAG(k,1) + i
+
+END"
+
+#define model data
+myModelData&lt;-list(
+  cn
+  =TIMESERIES(39.8,41.9,45,49.2,50.6,52.6,55.1,56.2,57.3,57.8,55,50.9,
+              45.6,46.5,48.7,51.3,57.7,58.7,57.5,61.6,65,69.7,
+              START=c(1920,1),FREQ=1),
+  g
+  =TIMESERIES(4.6,6.6,6.1,5.7,6.6,6.5,6.6,7.6,7.9,8.1,9.4,10.7,10.2,9.3,10,
+              10.5,10.3,11,13,14.4,15.4,22.3,
+              START=c(1920,1),FREQ=1),
+  i
+  =TIMESERIES(2.7,-.2,1.9,5.2,3,5.1,5.6,4.2,3,5.1,1,-3.4,-6.2,-5.1,-3,-1.3,
+              2.1,2,-1.9,1.3,3.3,4.9,
+              START=c(1920,1),FREQ=1),
+  k
+  =TIMESERIES(182.8,182.6,184.5,189.7,192.7,197.8,203.4,207.6,210.6,215.7,
+              216.7,213.3,207.1,202,199,197.7,199.8,201.8,199.9,
+              201.2,204.5,209.4,
+              START=c(1920,1),FREQ=1),
+  p
+  =TIMESERIES(12.7,12.4,16.9,18.4,19.4,20.1,19.6,19.8,21.1,21.7,15.6,11.4,
+              7,11.2,12.3,14,17.6,17.3,15.3,19,21.1,23.5,
+              START=c(1920,1),FREQ=1),
+  w1
+  =TIMESERIES(28.8,25.5,29.3,34.1,33.9,35.4,37.4,37.9,39.2,41.3,37.9,34.5,
+              29,28.5,30.6,33.2,36.8,41,38.2,41.6,45,53.3,
+              START=c(1920,1),FREQ=1),
+  y
+  =TIMESERIES(43.7,40.6,49.1,55.4,56.4,58.7,60.3,61.3,64,67,57.7,50.7,41.3,
+              45.3,48.9,53.3,61.8,65,61.2,68.4,74.1,85.3,
+              START=c(1920,1),FREQ=1),
+  t
+  =TIMESERIES(3.4,7.7,3.9,4.7,3.8,5.5,7,6.7,4.2,4,7.7,7.5,8.3,5.4,6.8,7.2,
+              8.3,6.7,7.4,8.9,9.6,11.6,
+              START=c(1920,1),FREQ=1),
+  time
+  =TIMESERIES(NA,-10,-9,-8,-7,-6,-5,-4,-3,-2,-1,0,1,2,3,4,5,6,7,8,9,10,
+              START=c(1920,1),FREQ=1),
+  w2
+  =TIMESERIES(2.2,2.7,2.9,2.9,3.1,3.2,3.3,3.6,3.7,4,4.2,4.8,5.3,5.6,6,6.1,
+              7.4,6.7,7.7,7.8,8,8.5,
+              START=c(1920,1),FREQ=1)
+)
+
+#load model and model data
+myModel&lt;-LOAD_MODEL(modelText=myModelDefinition)
+myModel&lt;-LOAD_MODEL_DATA(myModel, myModelData)
+
+#estimate model
+myModel&lt;-ESTIMATE(myModel)
+
+#we want an arbitrary value of 66 on Consumption 'cn' in 1940 and 78 in 1941
+#we want an arbitrary value of 77 on GNP 'y' in 1940 and 98 in 1941
+kleinTargets&lt;-list(
+  cn = TSERIES(66,78,START=c(1940,1),FREQ=1),
+  y  = TSERIES(77,98,START=c(1940,1),FREQ=1)
+)
+
+#Then, we can perform the model endogenous targeting by using Government Wage Bill 'w2' 
+#and Government Expenditure 'g' as 
+#INSTRUMENT in the years 1940 and 1941:
+myModel&lt;-RENORM(myModel
+                    ,INSTRUMENT = c('w2','g')
+                    ,TARGET = kleinTargets
+                    ,TSRANGE = c(1940,1,1941,1)
+                    ,simIterLimit = 100
+)
+
+
+with(myModel,TABIT(modelData$w2,
+                   renorm$INSTRUMENT$w2,
+                   modelData$g,
+                   renorm$INSTRUMENT$g))
+
+#  Date, Prd., modelData$w2, renorm$INSTRUMENT$w2, modelData$g, renorm$INSTRUMENT$g
+# etc.
+#  1938, 1   ,          7.7,                     ,          13,           
+#  1939, 1   ,          7.8,                     ,        14.4,           
+#  1940, 1   ,            8,              7.41333,        15.4,             16.1069
+#  1941, 1   ,          8.5,               9.3436,        22.3,             22.6599
+#So, if we want to achieve on Consumption 'cn' 
+#an arbitrary simulated value of 66 
+#in 1940 and 78 in 1941, and if we want 
+#to achieve on GNP 'y' an arbitrary 
+#simulated value of 77 in 1940 and 98 in 1941, 
+#we need to change exogenous 'w2' from 8 to 7.41 
+#in 1940 and from 8.5 to 9.34 in 1941, 
+#and we need to change exogenous 'g' 
+#from 15.4 to 16.1 in 1940 and from 22.3 to 22.66 in 1941
+
+#Let's verify:
+#create a new model
+kleinRenorm&lt;-myModel
+
+#get instruments to be used
+newInstruments=myModel$renorm$INSTRUMENT
+
+#change exogenous by using new instruments
+kleinRenorm$modelData&lt;-within(kleinRenorm$modelData,
+                 {
+                   w2[[1940,1]]=newInstruments$w2[[1940,1]]
+                   w2[[1941,1]]=newInstruments$w2[[1941,1]]
+                   g[[1940,1]] =newInstruments$g[[1940,1]]
+                   g[[1941,1]] =newInstruments$g[[1941,1]]
+                 }
+                )
+#users can also replace last two commands with:
+#kleinRenorm$modelData&lt;-kleinRenorm$renorm$modelData
+
+#simulate the new model
+kleinRenorm&lt;-SIMULATE(kleinRenorm
+                      ,TSRANGE=c(1940,1,1941,1)
+                      ,simConvergence=0.00001
+                      ,simIterLimit=100
+                      )
+#Simulation: 100.00%
+#...SIMULATE OK
+
+#verify targets are achieved
+with(kleinRenorm$simulation,
+     TABIT(cn,y)
+     )
+     
+#Date, Prd., cn        , y
+#1940,  1  , 66.01116  , 77.01772
+#1941,  1  , 78.02538  , 98.04121
+
+
+
+######################################################################
+
+
+#now use 'i' endogenous variable as an instrument
+
+#first, define the related exogenous constant adjustment
+myCA&lt;-list(i = myModel$modelData$i*0+0.1)
+
+#run renorm with endogenous 'i' as instrument
+myModel&lt;-RENORM(myModel
+               ,INSTRUMENT = c('w2','i')
+               ,TARGET = kleinTargets
+               ,TSRANGE = c(1940,1,1941,1)
+               ,simIterLimit = 100
+               ,ConstantAdjustment = myCA
+)
+
+#get the values of the constant adjustment for the endogenous 'i' 
+#in 1940-1941 that allow achieving the target values for 'cn' and 'y'
+myModel$renorm$ConstantAdjustment
+#$i
+#Time Series:
+#Start = 1920 
+#End = 1941 
+#Frequency = 1 
+# [1] 0.1000000 0.1000000 0.1000000 ...
+#[20] 0.1000000 0.7069039 0.4388811
+
+#these values are also reported in the INSTRUMENT output list
+myModel$renorm$INSTRUMENT$i
+#Time Series:
+#Start = 1940 
+#End = 1941 
+#Frequency = 1 
+#[1] 0.7069039 0.4388811
+
+
+</code></pre>
+
+
+</div>

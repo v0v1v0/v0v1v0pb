@@ -1,0 +1,151 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>addExperiments</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Add Experiments to the Registry</h2>
+
+<h3>Description</h3>
+
+<p>Adds experiments (parametrized combinations of problems with algorithms) to the registry and thereby defines batch jobs.
+</p>
+<p>If multiple problem designs or algorithm designs are provided, they are combined via the Cartesian product.
+E.g., if you have two problems <code>p1</code> and <code>p2</code> and three algorithms <code>a1</code>, <code>a2</code> and <code>a3</code>,
+<code>addExperiments</code> creates experiments for all parameters for the combinations <code>(p1, a1)</code>, <code>(p1, a2)</code>,
+<code>(p1, a3)</code>, <code>(p2, a1)</code>, <code>(p2, a2)</code> and <code>(p2, a3)</code>.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">addExperiments(
+  prob.designs = NULL,
+  algo.designs = NULL,
+  repls = 1L,
+  combine = "crossprod",
+  reg = getDefaultRegistry()
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>prob.designs</code></td>
+<td>
+<p>[named list of <code>data.frame</code>]<br>
+Named list of data frames (or <code>data.table</code>).
+The name must match the problem name while the column names correspond to parameters of the problem.
+If <code>NULL</code>, experiments for all defined problems without any parameters are added.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>algo.designs</code></td>
+<td>
+<p>[named list of <code>data.table</code> or <code>data.frame</code>]<br>
+Named list of data frames (or <code>data.table</code>).
+The name must match the algorithm name while the column names correspond to parameters of the algorithm.
+If <code>NULL</code>, experiments for all defined algorithms without any parameters are added.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>repls</code></td>
+<td>
+<p>[<code>integer()</code>]<br>
+Number of replications for each problem design in 'prob.designs' (automatically replicated to
+the correct length).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>combine</code></td>
+<td>
+<p>[<code>character(1)</code>]<br>
+How to combine the rows of a single problem design with the rows of a single algorithm design?
+Default is “crossprod” which combines each row of the problem design which each row of the algorithm design
+in a cross-product fashion. Set to “bind” to just <code>cbind</code> the tables of
+problem and algorithm designs where the shorter table is repeated if necessary.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>reg</code></td>
+<td>
+<p>[<code>ExperimentRegistry</code>]<br>
+Registry. If not explicitly passed, uses the last created registry.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>[<code>data.table</code>] with ids of added jobs stored in column “job.id”.
+</p>
+
+
+<h3>Note</h3>
+
+<p>R's <code>data.frame</code> converts character vectors to factors by default in R versions prior to 4.0.0 which frequently resulted in problems using <code>addExperiments</code>.
+Therefore, this function will warn about factor variables if the following conditions hold:
+</p>
+
+<ol>
+<li>
+<p> R version is &lt; 4.0.0
+</p>
+</li>
+<li>
+<p> The design is passed as a <code>data.frame</code>, not a <code>data.table</code> or <code>tibble</code>.
+</p>
+</li>
+<li>
+<p> The option “stringsAsFactors” is not set or set to <code>TRUE</code>.
+</p>
+</li>
+</ol>
+<h3>See Also</h3>
+
+<p>Other Experiment: 
+<code>removeExperiments()</code>,
+<code>summarizeExperiments()</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+tmp = makeExperimentRegistry(file.dir = NA, make.default = FALSE)
+
+# add first problem
+fun = function(job, data, n, mean, sd, ...) rnorm(n, mean = mean, sd = sd)
+addProblem("rnorm", fun = fun, reg = tmp)
+
+# add second problem
+fun = function(job, data, n, lambda, ...) rexp(n, rate = lambda)
+addProblem("rexp", fun = fun, reg = tmp)
+
+# add first algorithm
+fun = function(instance, method, ...) if (method == "mean") mean(instance) else median(instance)
+addAlgorithm("average", fun = fun, reg = tmp)
+
+# add second algorithm
+fun = function(instance, ...) sd(instance)
+addAlgorithm("deviation", fun = fun, reg = tmp)
+
+# define problem and algorithm designs
+library(data.table)
+prob.designs = algo.designs = list()
+prob.designs$rnorm = CJ(n = 100, mean = -1:1, sd = 1:5)
+prob.designs$rexp = data.table(n = 100, lambda = 1:5)
+algo.designs$average = data.table(method = c("mean", "median"))
+algo.designs$deviation = data.table()
+
+# add experiments and submit
+addExperiments(prob.designs, algo.designs, reg = tmp)
+
+# check what has been created
+summarizeExperiments(reg = tmp)
+unwrap(getJobPars(reg = tmp))
+</code></pre>
+
+
+</div>

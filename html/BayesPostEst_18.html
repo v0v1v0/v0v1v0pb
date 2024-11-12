@@ -1,0 +1,234 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>mcmcObsProb</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Predicted Probabilities using Bayesian MCMC estimates for the Average of Observed Cases</h2>
+
+<h3>Description</h3>
+
+<p>Implements R function to calculate the predicted probabilities
+for "observed" cases after a Bayesian logit or probit model, following
+Hanmer &amp; Kalkan (2013) (2013, American Journal of Political Science 57(1): 263-277).
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">mcmcObsProb(
+  modelmatrix,
+  mcmcout,
+  xcol,
+  xrange,
+  xinterest,
+  link = "logit",
+  ci = c(0.025, 0.975),
+  fullsims = FALSE
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>modelmatrix</code></td>
+<td>
+<p>model matrix, including intercept (if the intercept is among the
+parameters estimated in the model). Create with model.matrix(formula, data).
+Note: the order of columns in the model matrix must correspond to the order of columns 
+in the matrix of posterior draws in the <code>mcmcout</code> argument. See the <code>mcmcout</code>
+argument for more.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>mcmcout</code></td>
+<td>
+<p>posterior distributions of all logit coefficients, 
+in matrix form. This can be created from rstan, MCMCpack, R2jags, etc. and transformed
+into a matrix using the function as.mcmc() from the coda package for <code>jags</code> class
+objects, as.matrix() from base R for <code>mcmc</code>, <code>mcmc.list</code>, <code>stanreg</code>, and 
+<code>stanfit</code> class objects, and <code>object$sims.matrix</code> for <code>bugs</code> class objects.
+Note: the order of columns in this matrix must correspond to the order of columns 
+in the model matrix. One can do this by examining the posterior distribution matrix and sorting the 
+variables in the order of this matrix when creating the model matrix. A useful function for sorting 
+column names containing both characters and numbers as 
+you create the matrix of posterior distributions is <code>mixedsort()</code> from the gtools package.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>xcol</code></td>
+<td>
+<p>column number of the posterior draws (<code>mcmcout</code>) and model matrices 
+that corresponds to the explanatory variable for which to calculate associated Pr(y = 1).
+Note that the columns in these matrices must match.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>xrange</code></td>
+<td>
+<p>name of the vector with the range of relevant values of the 
+explanatory variable for which to calculate associated Pr(y = 1).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>xinterest</code></td>
+<td>
+<p>semi-optional argument. Name of the explanatory variable for which 
+to calculate associated Pr(y = 1). If <code>xcol</code> is supplied, this is not needed. 
+If both are supplied, the function defaults to <code>xcol</code> and this argument is ignored.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>link</code></td>
+<td>
+<p>type of generalized linear model; a character vector set to <code>"logit"</code> (default) 
+or <code>"probit"</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ci</code></td>
+<td>
+<p>the bounds of the credible interval. Default is <code>c(0.025, 0.975)</code> for the 95% 
+credible interval.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>fullsims</code></td>
+<td>
+<p>logical indicator of whether full object (based on all MCMC draws 
+rather than their average) will be returned. Default is <code>FALSE</code>. Note: The longer 
+<code>xrange</code> is, the larger the full output will be if <code>TRUE</code> is selected.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>This function calculates predicted probabilities for 
+"observed" cases after a Bayesian logit or probit model
+following Hanmer and Kalkan (2013, American Journal of 
+Political Science 57(1): 263-277)
+</p>
+
+
+<h3>Value</h3>
+
+<p>if <code>fullsims = FALSE</code> (default), a tibble with 4 columns:
+</p>
+
+<ul>
+<li>
+<p> x: value of variable of interest, drawn from <code>xrange</code>
+</p>
+</li>
+<li>
+<p> median_pp: median predicted Pr(y = 1) when variable of interest is set to x
+</p>
+</li>
+<li>
+<p> lower_pp: lower bound of credible interval of predicted probability at given x
+</p>
+</li>
+<li>
+<p> upper_pp: upper bound of credible interval of predicted probability at given x
+</p>
+</li>
+</ul>
+<p>if <code>fullsims = TRUE</code>, a tibble with 3 columns:
+</p>
+
+<ul>
+<li>
+<p> Iteration: number of the posterior draw
+</p>
+</li>
+<li>
+<p> x: value of variable of interest, drawn from <code>xrange</code>
+</p>
+</li>
+<li>
+<p> pp: average predicted Pr(y = 1) of all observed cases when variable of interest is set to x
+</p>
+</li>
+</ul>
+<h3>References</h3>
+
+<p>Hanmer, Michael J., &amp; Ozan Kalkan, K. (2013). Behind the curve: Clarifying 
+the best approach to calculating predicted probabilities and marginal effects from 
+limited dependent variable models. American Journal of Political Science, 57(1), 
+263-277. https://doi.org/10.1111/j.1540-5907.2012.00602.x
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+
+if (interactive()) {
+  ## simulating data
+  set.seed(12345)
+  b0 &lt;- 0.2 # true value for the intercept
+  b1 &lt;- 0.5 # true value for first beta
+  b2 &lt;- 0.7 # true value for second beta
+  n &lt;- 500 # sample size
+  X1 &lt;- runif(n, -1, 1)
+  X2 &lt;- runif(n, -1, 1)
+  Z &lt;- b0 + b1 * X1 + b2 * X2
+  pr &lt;- 1 / (1 + exp(-Z)) # inv logit function
+  Y &lt;- rbinom(n, 1, pr) 
+  df &lt;- data.frame(cbind(X1, X2, Y))
+  
+  ## formatting the data for jags
+  datjags &lt;- as.list(df)
+  datjags$N &lt;- length(datjags$Y)
+  
+  ## creating jags model
+  model &lt;- function()  {
+  
+  for(i in 1:N){
+    Y[i] ~ dbern(p[i])  ## Bernoulli distribution of y_i
+    logit(p[i]) &lt;- mu[i]    ## Logit link function
+    mu[i] &lt;- b[1] + 
+      b[2] * X1[i] + 
+      b[3] * X2[i]
+  }
+  
+  for(j in 1:3){
+    b[j] ~ dnorm(0, 0.001) ## Use a coefficient vector for simplicity
+  }
+  
+}
+
+params &lt;- c("b")
+inits1 &lt;- list("b" = rep(0, 3))
+inits2 &lt;- list("b" = rep(0, 3))
+inits &lt;- list(inits1, inits2)
+
+## fitting the model with R2jags
+library(R2jags)
+set.seed(123)
+fit &lt;- jags(data = datjags, inits = inits, 
+          parameters.to.save = params, n.chains = 2, n.iter = 2000, 
+          n.burnin = 1000, model.file = model)
+
+### observed value approach
+library(coda)
+xmat &lt;- model.matrix(Y ~ X1 + X2, data = df)
+mcmc &lt;- as.mcmc(fit)
+mcmc_mat &lt;- as.matrix(mcmc)[, 1:ncol(xmat)]
+X1_sim &lt;- seq(from = min(datjags$X1),
+              to = max(datjags$X1), 
+              length.out = 10)
+obs_prob &lt;- mcmcObsProb(modelmatrix = xmat,
+                        mcmcout = mcmc_mat,
+                        xrange = X1_sim,
+                        xcol = 2)
+}
+
+
+
+</code></pre>
+
+
+</div>

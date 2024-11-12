@@ -1,0 +1,127 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>get.mig.parameter.traces</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Accessing MCMC Parameter Traces</h2>
+
+<h3>Description</h3>
+
+<p>Functions for accessing traces of the MCMC parameters, either country-independent 
+or country-specific.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">get.mig.parameter.traces(
+  mcmc.list,
+  par.names = NULL,
+  burnin = 0,
+  thinning.index = NULL,
+  thin = NULL
+)
+
+get.mig.parameter.traces.cs(
+  mcmc.list,
+  country.obj,
+  par.names = NULL,
+  burnin = 0,
+  thinning.index = NULL,
+  thin = NULL
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>mcmc.list</code></td>
+<td>
+<p>List of <code>bayesMig.mcmc</code> objects.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>par.names</code></td>
+<td>
+<p>Names of country-independent parameters (in case of 
+<code>get.mig.parameter.traces</code>) or country-specific parameters 
+(in case of <code>get.mig.parameter.traces.cs</code>) to be included. 
+By default all parameters are included, given either by <code>mig.parameter.names()</code> 
+(for global parameters) or <code>mig.parameter.names.cs()</code> (for location-specific parameters).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>burnin</code></td>
+<td>
+<p>Burn-in indicating how many iterations should be removed 
+from the beginning of each chain.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>thinning.index</code></td>
+<td>
+<p>Index of the traces for thinning. If it is <code>NULL</code>, 
+<code>thin</code> is used. <code>thinning.index</code> does not include <code>burnin</code> 
+and should be flattened over all chains. For example, if there are two MCMC 
+chains of length 1000, <code>burnin=200</code> and we want an equidistantly spaced 
+sample of length 400, then the value should be <br><code>thinning.index = seq(1, 1600, length = 400)</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>thin</code></td>
+<td>
+<p>An integer value for thinning. It is an alternative to 
+<code>thinning.index</code>. The above example is equivalent to <code>thin=4</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>country.obj</code></td>
+<td>
+<p>Country object (see <code>get.country.object</code>).</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>Both functions return a matrix with columns being the parameters and 
+rows being the MCMC values, attached to one another in case of multiple chains. 
+<code>get.mig.parameter.traces</code> returns country-independent parameters, 
+<code>get.mig.parameter.traces.cs</code> returns country-specific parameters.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>mig.coda.list.mcmc</code> for another way of retrieving parameter traces;
+<code>mig.parameter.names</code> and <code>mig.parameter.names.cs</code> for parameter names.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R"># Toy simulation for US states
+us.mig.file &lt;- file.path(find.package("bayesMig"), "extdata", "USmigrates.txt")
+sim.dir &lt;- tempfile()
+m &lt;- run.mig.mcmc(nr.chains = 2, iter = 30, thin = 1, my.mig.file = us.mig.file, 
+        output.dir = sim.dir, present.year = 2017, annual = TRUE)
+# obtain traces of hierarchical parameters     
+par.values &lt;- get.mig.parameter.traces(m$mcmc.list, burnin = 5)
+dim(par.values) # matrix 50 x 4
+hist(par.values[, "mu_global"], main = "mu")
+
+# obtain traces of location-specific traces for California
+mig.parameter.names.cs() # allowed parameter names 
+par.values.cs &lt;- get.mig.parameter.traces.cs(m$mcmc.list, 
+        country.obj = get.country.object("California", meta = m$meta),
+        burnin = 5, par.names = "phi_c")
+dim(par.values.cs) # matrix 50 x 1
+hist(par.values.cs, main = colnames(par.values.cs))
+unlink(sim.dir, recursive = TRUE)
+    
+</code></pre>
+
+
+</div>

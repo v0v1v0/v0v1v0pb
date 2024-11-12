@@ -1,0 +1,199 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>import</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Import data from a file (TXT, CSV, Excel, SPSS, Stata, ...) or clipboard.</h2>
+
+<h3>Description</h3>
+
+<p>Import data from a file, with format automatically judged from file extension.
+This function is inspired by <code>rio::import()</code>
+and has several modifications.
+Its purpose is to avoid using lots of <code>read_xxx()</code> functions in your code
+and to provide one tidy function for data import.
+</p>
+<p>It supports many file formats (local or URL) and
+uses the corresponding R functions:
+</p>
+
+<ul>
+<li>
+<p> Plain text (.txt, .csv, .csv2, .tsv, .psv), using <code>data.table::fread()</code>
+</p>
+</li>
+<li>
+<p> Excel (.xls, .xlsx), using <code>readxl::read_excel()</code>
+</p>
+</li>
+<li>
+<p> SPSS (.sav), using <code>haven::read_sav()</code>
+or <code>foreign::read.spss()</code>
+</p>
+</li>
+<li>
+<p> Stata (.dta), using <code>haven::read_dta()</code>
+or <code>foreign::read.dta()</code>
+</p>
+</li>
+<li>
+<p> R objects (.rda, .rdata, .RData), using <code>base::load()</code>
+</p>
+</li>
+<li>
+<p> R serialized objects (.rds), using <code>base::readRDS()</code>
+</p>
+</li>
+<li>
+<p> Clipboard (on Windows and Mac OS), using <code>clipr::read_clip_tbl()</code>
+</p>
+</li>
+<li>
+<p> Other formats, using <code>rio::import()</code>
+</p>
+</li>
+</ul>
+<h3>Usage</h3>
+
+<pre><code class="language-R">import(
+  file,
+  encoding = NULL,
+  header = "auto",
+  sheet = NULL,
+  range = NULL,
+  pkg = c("haven", "foreign"),
+  value.labels = FALSE,
+  as = "data.frame",
+  verbose = FALSE
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>file</code></td>
+<td>
+<p>File name (with extension).
+If unspecified, then data will be imported from clipboard.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>encoding</code></td>
+<td>
+<p>File encoding. Defaults to <code>NULL</code>.
+Options: <code>"UTF-8"</code>, <code>"GBK"</code>, <code>"CP936"</code>, etc.
+</p>
+<p>If you find messy code for Chinese text in the imported data,
+it is usually effective to set <code>encoding="UTF-8"</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>header</code></td>
+<td>
+<p>Does the first row contain column names (<code>TRUE</code> or <code>FALSE</code>)?
+Defaults to <code>"auto"</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>sheet</code></td>
+<td>
+<p>[Only for Excel] Excel sheet name (or sheet number).
+Defaults to the first sheet.
+Ignored if the sheet is specified via <code>range</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>range</code></td>
+<td>
+<p>[Only for Excel] Excel cell range.
+Defaults to all cells in a sheet.
+You may specify it as <code>range="A1:E100"</code> or <code>range="Sheet1!A1:E100"</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>pkg</code></td>
+<td>
+<p>[Only for SPSS &amp; Stata] Use which R package to read
+SPSS (.sav) or Stata (.dta) data file?
+Defaults to <code>"haven"</code>. You may also use <code>"foreign"</code>.
+</p>
+<p>Notably, <code>"haven"</code> may be preferred because it is more robust to
+non-English characters and can also keep variable labels (descriptions)
+from SPSS.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>value.labels</code></td>
+<td>
+<p>[Only for SPSS &amp; Stata] Convert variables with value labels
+into R factors with those levels? Defaults to <code>FALSE</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>as</code></td>
+<td>
+<p>Class of the imported data.
+Defaults to <code>"data.frame"</code>.
+Ignored if the file is an R data object (.rds, .rda, .rdata, .RData).
+</p>
+<p>Options:
+</p>
+
+<ul>
+<li>
+<p> data.frame: <code>"data.frame"</code>, <code>"df"</code>, <code>"DF"</code>
+</p>
+</li>
+<li>
+<p> data.table: <code>"data.table"</code>, <code>"dt"</code>, <code>"DT"</code>
+</p>
+</li>
+<li>
+<p> tbl_df: <code>"tibble"</code>, <code>"tbl_df"</code>, <code>"tbl"</code>
+</p>
+</li>
+</ul>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>verbose</code></td>
+<td>
+<p>Print data information? Defaults to <code>FALSE</code>.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>A data object (default class is <code>data.frame</code>).
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>export</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## Not run: 
+
+  # Import data from system clipboard
+  data = import()  # read from clipboard (on Windows and Mac OS)
+
+  # If you have an Excel file named "mydata.xlsx"
+  export(airquality, file="mydata.xlsx")
+
+  # Import data from a file
+  data = import("mydata.xlsx")  # default: data.frame
+  data = import("mydata.xlsx", as="data.table")
+
+## End(Not run)
+
+</code></pre>
+
+
+</div>

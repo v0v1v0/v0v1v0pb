@@ -1,0 +1,137 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>stanvar</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>User-defined variables passed to Stan</h2>
+
+<h3>Description</h3>
+
+<p>Prepare user-defined variables to be passed to one of Stan's
+program blocks. This is primarily useful for defining more complex
+priors, for refitting models without recompilation despite
+changing priors, or for defining custom Stan functions.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">stanvar(
+  x = NULL,
+  name = NULL,
+  scode = NULL,
+  block = "data",
+  position = "start",
+  pll_args = NULL
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>An <span style="font-family: Courier New, Courier; color: #666666;"><b>R</b></span> object containing data to be passed to Stan.
+Only required if <code>block = 'data'</code> and ignored otherwise.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>name</code></td>
+<td>
+<p>Optional character string providing the desired variable
+name of the object in <code>x</code>. If <code>NULL</code> (the default)
+the variable name is directly inferred from <code>x</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>scode</code></td>
+<td>
+<p>Line of Stan code to define the variable
+in Stan language. If <code>block = 'data'</code>, the
+Stan code is inferred based on the class of <code>x</code> by default.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>block</code></td>
+<td>
+<p>Name of one of Stan's program blocks in
+which the variable should be defined. Can be <code>'data'</code>,
+<code>'tdata'</code> (transformed data), <code>'parameters'</code>,
+<code>'tparameters'</code> (transformed parameters), <code>'model'</code>,
+<code>'likelihood'</code> (part of the model block where the likelihood is given),
+<code>'genquant'</code> (generated quantities) or <code>'functions'</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>position</code></td>
+<td>
+<p>Name of the position within the block where the
+Stan code should be placed. Currently allowed are <code>'start'</code>
+(the default) and <code>'end'</code> of the block.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>pll_args</code></td>
+<td>
+<p>Optional Stan code to be put into the header
+of <code>partial_log_lik</code> functions. This ensures that the variables
+specified in <code>scode</code> can be used in the likelihood even when
+within-chain parallelization is activated via <code>threading</code>.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The <code>stanvar</code> function is not vectorized. Instead, multiple
+<code>stanvars</code> objects can be added together via <code>+</code> (see Examples).
+</p>
+<p>Special attention is necessary when using <code>stanvars</code> to inject
+code into the <code>'likelihood'</code> block while having <code>threading</code>
+activated. In this case, your custom Stan code may need adjustments to ensure
+correct observation indexing. Please investigate the generated Stan code via
+<code>stancode</code> to see which adjustments are necessary in your case.
+</p>
+
+
+<h3>Value</h3>
+
+<p>An object of class <code>stanvars</code>.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">bprior &lt;- prior(normal(mean_intercept, 10), class = "Intercept")
+stanvars &lt;- stanvar(5, name = "mean_intercept")
+stancode(count ~ Trt, epilepsy, prior = bprior,
+         stanvars = stanvars)
+
+# define a multi-normal prior with known covariance matrix
+bprior &lt;- prior(multi_normal(M, V), class = "b")
+stanvars &lt;- stanvar(rep(0, 2), "M", scode = "  vector[K] M;") +
+  stanvar(diag(2), "V", scode = "  matrix[K, K] V;")
+stancode(count ~ Trt + zBase, epilepsy,
+         prior = bprior, stanvars = stanvars)
+
+# define a hierachical prior on the regression coefficients
+bprior &lt;- set_prior("normal(0, tau)", class = "b") +
+  set_prior("target += normal_lpdf(tau | 0, 10)", check = FALSE)
+stanvars &lt;- stanvar(scode = "real&lt;lower=0&gt; tau;",
+                    block = "parameters")
+stancode(count ~ Trt + zBase, epilepsy,
+         prior = bprior, stanvars = stanvars)
+
+# ensure that 'tau' is passed to the likelihood of a threaded model
+# not necessary for this example but may be necessary in other cases
+stanvars &lt;- stanvar(scode = "real&lt;lower=0&gt; tau;",
+                    block = "parameters", pll_args = "real tau")
+stancode(count ~ Trt + zBase, epilepsy,
+         stanvars = stanvars, threads = threading(2))
+
+</code></pre>
+
+
+</div>

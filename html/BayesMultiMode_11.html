@@ -1,0 +1,287 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>mix_mode</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Mode estimation</h2>
+
+<h3>Description</h3>
+
+<p>Mode estimation in univariate mixture distributions.
+The fixed-point algorithm of Carreira-Perpinan (2000) is used for Gaussian mixtures.
+The Modal EM algorithm of Li et al. (2007) is used for other continuous mixtures.
+A basic algorithm is used for discrete mixtures, see Cross et al. (2024).
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">mix_mode(
+  mixture,
+  tol_mixp = 0,
+  tol_x = 1e-06,
+  tol_conv = 1e-08,
+  type = "all",
+  inside_range = TRUE
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>mixture</code></td>
+<td>
+<p>An object of class <code>mixture</code> generated with <code>mixture()</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>tol_mixp</code></td>
+<td>
+<p>Components with a mixture proportion below <code>tol_mixp</code> are discarded when estimating modes;
+note that this does not apply to the biggest component so that it is not possible to discard all components;
+should be between <code>0</code> and <code>1</code>; default is <code>0</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>tol_x</code></td>
+<td>
+<p>(for continuous mixtures) Tolerance parameter for distance in-between modes; default is <code>1e-6</code>; if two modes are closer than <code>tol_x</code> the first estimated mode is kept.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>tol_conv</code></td>
+<td>
+<p>(for continuous mixtures) Tolerance parameter for convergence of the algorithm; default is <code>1e-8</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>type</code></td>
+<td>
+<p>(for discrete mixtures) Type of modes, either <code>"unique"</code> or <code>"all"</code> (the latter includes flat modes); default is <code>"all"</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>inside_range</code></td>
+<td>
+<p>Should modes outside of <code>mixture$range</code> be discarded? Default is <code>TRUE</code>.
+This sometimes occurs with very small components when K is large.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>This function finds modes in a univariate mixture defined as:
+</p>
+<p style="text-align: center;"><code class="reqn">p(.) = \sum_{k=1}^{K}\pi_k p_k(.),</code>
+</p>
+
+<p>where <code class="reqn">p_k</code> is a density or probability mass/density function.
+</p>
+<p><strong>Fixed-point algorithm</strong>
+Following Carreira-Perpinan (2000), a mode <code class="reqn">x</code> is found by iterating the two steps:
+</p>
+<p style="text-align: center;"><code class="reqn">(i) \quad p(k|x^{(n)}) = \frac{\pi_k p_k(x^{(n)})}{p(x^{(n)})},</code>
+</p>
+
+<p style="text-align: center;"><code class="reqn">(ii) \quad x^{(n+1)} = f(x^{(n)}),</code>
+</p>
+
+<p>with
+</p>
+<p style="text-align: center;"><code class="reqn">f(x) = (\sum_k p(k|x) \sigma_k)^{-1}\sum_k p(k|x) \sigma_k \mu_k,</code>
+</p>
+
+<p>until convergence, that is, until <code class="reqn">abs(x^{(n+1)}-x^{(n)})&lt; \text{tol}_\text{conv}</code>,
+where <code class="reqn">\text{tol}_\text{conv}</code> is an argument with default value <code class="reqn">1e-8</code>.
+Following Carreira-perpinan (2000), the algorithm is started at each component location.
+Separately, it is necessary to identify identical modes which diverge only up to
+a small value; this tolerance value can be controlled with the argument
+<code>tol_x</code>.
+</p>
+<p><strong>MEM algorithm</strong>
+Following Li et al. (2007), a mode <code class="reqn">x</code> is found by iterating the two steps:
+</p>
+<p style="text-align: center;"><code class="reqn">(i) \quad p(k|x^{(n)}) = \frac{\pi_k p_k(x^{(n)})}{p(x^{(n)})},</code>
+</p>
+
+<p style="text-align: center;"><code class="reqn">(ii) \quad x^{(n+1)} = \text{argmax}_x  \sum_k p(k|x) \text{log} p_k(x^{(n)}),</code>
+</p>
+
+<p>until convergence, that is, until <code class="reqn">abs(x^{(n+1)}-x^{(n)})&lt; \text{tol}_\text{conv}</code>,
+where <code class="reqn">\text{tol}_\text{conv}</code> is an argument with default value <code class="reqn">1e-8</code>.
+The algorithm is started at each component location.
+Separately, it is necessary to identify identical modes which diverge only up to
+a small value. Modes which are closer then <code>tol_x</code> are merged.
+</p>
+<p><strong>Discrete method</strong>
+By definition, modes must satisfy either:
+</p>
+<p style="text-align: center;"><code class="reqn">p(y_{m}-1) &lt; p(y_{m}) &gt; p(y_{m}+1);</code>
+</p>
+
+<p style="text-align: center;"><code class="reqn">p(y_{m}-1) &lt; p(y_{m}) = p(y_{m}+1) = \ldots = p(y_{m}+l-1) &gt; p(y_{m}+l).</code>
+</p>
+
+<p>The algorithm evaluate each location point with these two conditions.
+</p>
+
+
+<h3>Value</h3>
+
+<p>A list of class <code>mix_mode</code> containing:
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>mode_estimates</code></td>
+<td>
+<p>estimates of the mixture modes.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>algo</code></td>
+<td>
+<p>algorithm used for mode estimation.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>dist</code></td>
+<td>
+<p>from <code>mixture</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>dist_type</code></td>
+<td>
+<p>type of mixture distribution, i.e. continuous or discrete.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>pars</code></td>
+<td>
+<p>from <code>mixture</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>pdf_func</code></td>
+<td>
+<p>from <code>mixture</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>K</code></td>
+<td>
+<p>from <code>mixture</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nb_var</code></td>
+<td>
+<p>from <code>mixture</code>.</p>
+</td>
+</tr>
+</table>
+<h3>References</h3>
+
+<p>Cross JL, Hoogerheide L, Labonne P, van Dijk HK (2024).
+“Bayesian mode inference for discrete distributions in economics and finance.”
+<em>Economics Letters</em>, <b>235</b>, 111579.
+ISSN 0165-1765, <a href="https://doi.org/10.1016/j.econlet.2024.111579">doi:10.1016/j.econlet.2024.111579</a>.
+</p>
+<p>Carreira-Perpinan MA (2000).
+“Mode-finding for mixtures of Gaussian distributions.”
+<em>IEEE Transactions on Pattern Analysis and Machine Intelligence</em>, <b>22</b>(11), 1318–1323.
+ISSN 1939-3539, <a href="https://doi.org/10.1109/34.888716">doi:10.1109/34.888716</a>, Conference Name: IEEE Transactions on Pattern Analysis and Machine Intelligence.<br><br> Cross JL, Hoogerheide L, Labonne P, van Dijk HK (2024).
+“Bayesian mode inference for discrete distributions in economics and finance.”
+<em>Economics Letters</em>, <b>235</b>, 111579.
+ISSN 0165-1765, <a href="https://doi.org/10.1016/j.econlet.2024.111579">doi:10.1016/j.econlet.2024.111579</a>.<br><br> Li J, Ray S, Lindsay BG (2007).
+“A Nonparametric Statistical Approach to Clustering via Mode Identification.”
+<em>Journal of Machine Learning Research</em>, <b>8</b>, 1687-1723.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+# Example with a normal distribution ====================================
+mu = c(0,5)
+sigma = c(1,2)
+p = c(0.5,0.5)
+
+params = c(eta = p, mu = mu, sigma = sigma)
+mix = mixture(params, dist = "normal", range = c(-5,15))
+modes = mix_mode(mix)
+
+# summary(modes)
+# plot(modes)
+
+# Example with a skew normal =============================================
+xi = c(0,6)
+omega = c(1,2)
+alpha = c(0,0)
+p = c(0.8,0.2)
+params = c(eta = p, xi = xi, omega = omega, alpha = alpha)
+dist = "skew_normal"
+
+mix = mixture(params, dist = dist, range = c(-5,15))
+modes = mix_mode(mix)
+# summary(modes)
+# plot(modes)
+
+# Example with an arbitrary continuous distribution ======================
+xi = c(0,6)
+omega = c(1,2)
+alpha = c(0,0)
+nu = c(3,100)
+p = c(0.8,0.2)
+params = c(eta = p, mu = xi, sigma = omega, xi = alpha, nu = nu)
+
+pdf_func &lt;- function(x, pars) {
+  sn::dst(x, pars["mu"], pars["sigma"], pars["xi"], pars["nu"])
+}
+
+mix = mixture(params, pdf_func = pdf_func,
+dist_type = "continuous", loc = "mu", range = c(-5,15))
+modes = mix_mode(mix)
+
+# summary(modes)
+# plot(modes, from = -4, to = 4)
+
+# Example with a poisson distribution ====================================
+lambda = c(0.1,10)
+p = c(0.5,0.5)
+params = c(eta = p, lambda = lambda)
+dist = "poisson"
+
+
+mix = mixture(params, range = c(0,50), dist = dist)
+
+modes = mix_mode(mix)
+
+# summary(modes)
+# plot(modes)
+
+# Example with an arbitrary discrete distribution =======================
+mu = c(20,5)
+size = c(20,0.5)
+p = c(0.5,0.5)
+params = c(eta = p, mu = mu, size = size)
+
+
+pmf_func &lt;- function(x, pars) {
+  dnbinom(x, mu = pars["mu"], size = pars["size"])
+}
+
+mix = mixture(params, range = c(0, 50),
+pdf_func = pmf_func, dist_type = "discrete")
+modes = mix_mode(mix)
+
+# summary(modes)
+# plot(modes)
+
+</code></pre>
+
+
+</div>

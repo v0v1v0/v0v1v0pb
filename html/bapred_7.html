@@ -1,0 +1,145 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>baaddon</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>
+Addon batch effect adjustment
+</h2>
+
+<h3>Description</h3>
+
+<p>Performs addon batch effect adjustment for a method of choice: takes the output of <code>ba</code> or that of one of the functions performing a specific batch effect adjustment method (e.g. <code>fabatch</code> or <code>svaba</code>) and new batch data. Then performs the respective batch effect adjustment method on the new batch data.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">baaddon(params, x, batch)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>params</code></td>
+<td>
+
+<p>object of class <code>fabatch</code>, <code>combat</code>, <code>svatrain</code>, <code>meancenter</code>, <code>standardize</code>, <code>ratioa</code>, <code>ratiog</code> or <code>noba</code>. Contains parameters necessary for addon batch effect adjustment according to the respective method.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+
+<p>matrix. The covariate matrix of the new data. Observations in rows, variables in columns.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>batch</code></td>
+<td>
+
+<p>factor. Batch variable of the new data. Currently has to have levels: '1', '2', '3' and so on.
+</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>The adjusted covariate matrix of the test data.
+</p>
+
+
+<h3>Note</h3>
+
+<p><b>The following methods are NOT recommended in cross-study prediction settings</b>: FAbatch (<code>fabatch</code>), frozen SVA (<code>svaba</code>), standardization (<code>standardize</code>) as well as no addon batch effect adjustment (<code>noba</code>). 
+</p>
+<p>Given a not too small test set, <b>the following methods are recommended</b> (Hornung et al., 2016b): ComBat (<code>combatba</code>), mean-centering (<code>meancenter</code>), Ratio-A (<code>ratioa</code>), Ratio-G (<code>ratiog</code>).
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Roman Hornung
+</p>
+
+
+<h3>References</h3>
+
+<p>Hornung, R., Boulesteix, A.-L., Causeur, D. (2016). Combining location-and-scale batch effect adjustment with data cleaning by latent factor adjustment. BMC Bioinformatics 17:27, &lt;doi: <a href="https://doi.org/10.1186/s12859-015-0870-z">10.1186/s12859-015-0870-z</a>&gt;.
+</p>
+<p>Hornung, R., Causeur, D., Bernau, C., Boulesteix, A.-L. (2017). Improving cross-study prediction through addon batch effect adjustment and addon normalization. Bioinformatics 33(3):397–404, &lt;doi: <a href="https://doi.org/10.1093/bioinformatics/btw650">10.1093/bioinformatics/btw650</a>&gt;.
+</p>
+<p>Johnson, W. E., Rabinovic, A., Li, C. (2007). Adjusting batch effects in microarray expression data using empirical bayes methods. Biostatistics 8:118-127, &lt;doi: <a href="https://doi.org/10.1093/biostatistics/kxj037">10.1093/biostatistics/kxj037</a>&gt;.
+</p>
+<p>Leek, J. T., Storey, J. D. (2007). Capturing Heterogeneity in Gene Expression Studies by Surrogate Variable Analysis. PLoS Genetics 3:1724-1735, &lt;doi: <a href="https://doi.org/10.1371/journal.pgen.0030161">10.1371/journal.pgen.0030161</a>&gt;.
+</p>
+<p>Luo, J., Schumacher, M., Scherer, A., Sanoudou, D., Megherbi, D., Davison, T., Shi, T., Tong, W., Shi, L., Hong, H., Zhao, C., Elloumi, F., Shi, W., Thomas, R., Lin, S., Tillinghast, G., Liu, G., Zhou, Y., Herman, D., Li, Y., Deng, Y., Fang, H., Bushel, P., Woods, M., Zhang, J. (2010). A comparison of batch effect removal methods for enhancement of prediction performance using maqc-ii microarray gene expression data. The Pharmacogenomics Journal 10:278-291, &lt;doi: <a href="https://doi.org/10.1038/tpj.2010.57">10.1038/tpj.2010.57</a>&gt;.
+</p>
+<p>Parker, H. S., Bravo, H. C., Leek, J. T. (2014). Removing batch effects for prediction problems with frozen surrogate variable analysis. PeerJ 2:e561, &lt;doi: <a href="https://doi.org/10.7717/peerj.561">10.7717/peerj.561</a>&gt;.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">data(autism)
+
+# Random subset of 150 variables:
+set.seed(1234)
+Xsub &lt;- X[,sample(1:ncol(X), size=150)]
+
+# In cases of batches with more than 20 observations
+# select 20 observations at random:
+subinds &lt;- unlist(sapply(1:length(levels(batch)), function(x) {
+  indbatch &lt;- which(batch==x)
+  if(length(indbatch) &gt; 20)
+    indbatch &lt;- sort(sample(indbatch, size=20))
+  indbatch
+}))
+Xsub &lt;- Xsub[subinds,]
+batchsub &lt;- batch[subinds]
+ysub &lt;- y[subinds]
+
+
+
+trainind &lt;- which(batchsub %in% c(1,2))
+
+Xsubtrain &lt;- Xsub[trainind,]
+ysubtrain &lt;- ysub[trainind]
+batchsubtrain &lt;- factor(as.numeric(batchsub[trainind]), levels=c(1,2))
+
+
+testind &lt;- which(batchsub %in% c(3,4))
+
+Xsubtest &lt;- Xsub[testind,]
+ysubtest &lt;- ysub[testind]
+
+batchsubtest &lt;- as.numeric(batchsub[testind])
+batchsubtest[batchsubtest==3] &lt;- 1
+batchsubtest[batchsubtest==4] &lt;- 2
+batchsubtest &lt;- factor(batchsubtest, levels=c(1,2))
+
+
+
+somemethods &lt;- c("fabatch", "combat", "meancenter", "none")
+
+adjustedtestdata &lt;- list()
+
+for(i in seq(along=somemethods)) {
+  cat(paste("Adjusting training data using method = \"", somemethods[i], 
+    "\"", sep=""), "\n")
+  paramstemp &lt;- ba(x=Xsubtrain, y=ysubtrain, batch=batchsubtrain, 
+    method = somemethods[i])
+  cat(paste("Addon adjusting test data using method = \"", 
+    somemethods[i], "\"", sep=""), "\n")
+  adjustedtestdata[[i]] &lt;- baaddon(params=paramstemp, x=Xsubtest, 
+    batch=batchsubtest)
+}
+</code></pre>
+
+
+</div>

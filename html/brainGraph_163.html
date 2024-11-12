@@ -1,0 +1,419 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>Mediation</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Mediation analysis with brain graph measures as mediator variables</h2>
+
+<h3>Description</h3>
+
+<p><code>brainGraph_mediate</code> performs simple mediation analyses in which a given
+graph- or vertex-level measure (e.g., <em>weighted global efficiency</em>) is
+the mediator <em>M</em>. The outcome (or dependent/response) variable <em>Y</em>
+can be a neuropsychological measure (e.g., <em>IQ</em>) or can be a
+disease-specific metric (e.g., recovery time).
+</p>
+<p><code>bg_to_mediate</code> converts the results into an object of class
+<code>mediate</code>. In <code>brainGraph</code>, it is only used for
+the <code>summary.mediate</code> method, but you can similarly
+use its output for the <code>plot.mediate</code> method.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">brainGraph_mediate(g.list, covars, mediator, treat, outcome, covar.names,
+  level = c("graph", "vertex"), control.value = 0, treat.value = 1,
+  int = FALSE, boot = TRUE, boot.ci.type = c("perc", "bca"),
+  N = 1000, conf.level = 0.95, long = FALSE, ...)
+
+## S3 method for class 'bg_mediate'
+summary(object, mediate = FALSE, region = NULL,
+  digits = max(3L, getOption("digits") - 2L), ...)
+
+bg_to_mediate(x, region = NULL)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>g.list</code></td>
+<td>
+<p>A <code>brainGraphList</code> object</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>covars</code></td>
+<td>
+<p>A data table containing covariates of interest. It must include
+columns for <code>getOption('bg.subject_id')</code>, <code>treat</code>,
+<code>outcome</code>, and <code>covar.names</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>mediator</code></td>
+<td>
+<p>Character string; the name of the graph measure acting as
+the <em>mediating</em> variable</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>treat</code></td>
+<td>
+<p>Character string; the <em>treatment</em> variable (e.g.,
+<em>Group</em>)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>outcome</code></td>
+<td>
+<p>Character string; the name of the outcome variable of interest</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>covar.names</code></td>
+<td>
+<p>Character vector of the column name(s) in <code>covars</code> to
+include in the models as pre-treatment covariate(s).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>level</code></td>
+<td>
+<p>Character string; either <code>vertex</code> (default) or
+<code>graph</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>control.value</code></td>
+<td>
+<p>Value of <code>treat</code> to be used as the control
+condition. Default: <code>0</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>treat.value</code></td>
+<td>
+<p>Value of <code>treat</code> to be used as the treatment
+condition. Default: <code>1</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>int</code></td>
+<td>
+<p>Logical indicating whether or not to include an interaction of the
+mediator and treatment. Default: <code>FALSE</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>boot</code></td>
+<td>
+<p>Logical indicating whether or not to perform bootstrapping. This
+should always be done. Default: <code>TRUE</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>boot.ci.type</code></td>
+<td>
+<p>Character string; which type of CI's to calculate.
+Default: <code>perc</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>N</code></td>
+<td>
+<p>Integer; the number of bootstrap samples to run. Default:
+<code>1e3</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>conf.level</code></td>
+<td>
+<p>Numeric between 0 and 1; the level of the CI's to
+calculate. Default: <code>0.95</code> for the 2.5 and 97.5 percentiles)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>long</code></td>
+<td>
+<p>Logical indicating whether or not to return all bootstrap
+samples. Default: <code>FALSE</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Other arguments passed to <code>brainGraph_GLM_design</code>
+(e.g., <code>binarize</code>) (unused in the <code>summary</code> method)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>object</code></td>
+<td>
+<p>A <code>bg_mediate</code> object</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>mediate</code></td>
+<td>
+<p>Logical indicating whether or not to use the <code>summary</code>
+method from <code>mediate</code> (default: <code>FALSE</code>). If
+<code>TRUE</code>, only a single region can be printed.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>region</code></td>
+<td>
+<p>Character string specifying which region's results to
+summarize; only relevant if <code>level='vertex'</code> (default: <code>NULL</code>)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>digits</code></td>
+<td>
+<p>Integer specifying the number of digits to display for P-values</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>Object output from <code>brainGraph_mediate</code></p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>This code was adapted closely from <code>mediate</code> in the
+<code>mediation</code> package, and the procedure is exactly the same as theirs
+(see the references listed below). If you use this function, please cite
+their work.
+</p>
+
+
+<h3>Value</h3>
+
+<p>An object of class <code>bg_mediate</code> with elements:
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>level</code></td>
+<td>
+<p>Either <code>graph</code> or <code>vertex</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>removed.subs</code></td>
+<td>
+<p>A character vector of Study.ID's removed due to
+incomplete data</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>X.m, X.y</code></td>
+<td>
+<p>Design matrix and numeric array for the model with the
+mediator as the outcome variable (<code>X.m</code>) and for the model with the
+mediator as an additional predictor (<code>X.y</code>), respectively</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>y.m, y.y</code></td>
+<td>
+<p>Outcome variables for the associated design matrices above.
+<code>y.m</code> will be a matrix of size <em># subj. X # regions</em></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>res.obs</code></td>
+<td>
+<p>A <code>data.table</code> of the observed values of the point
+estimates.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>res.ci</code></td>
+<td>
+<p>A <code>data.table</code> of the confidence intervals for the
+effect estimates.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>res.p</code></td>
+<td>
+<p>A <code>data.table</code> of the two-sided p-values for the effect
+estimates</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>boot</code></td>
+<td>
+<p>Logical, the <code>boot</code> argument.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>boot.ci.type</code></td>
+<td>
+<p>Character string indicating which type of bootstrap
+confidence intervals were calculated.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>res.boot</code></td>
+<td>
+<p>A <code>data.table</code> with <code>N</code> rows of the bootstrap
+results for all effects.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>treat</code></td>
+<td>
+<p>Character string of the treatment variable.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>mediator</code></td>
+<td>
+<p>Character string of the mediator variable.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>outcome</code></td>
+<td>
+<p>Character string of the outcome variable.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>covariates</code></td>
+<td>
+<p>Returns <code>NULL</code>; not used in this package.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>INT</code></td>
+<td>
+<p>Logical indicating whether the models included an interaction
+between treatment and mediator.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>conf.level</code></td>
+<td>
+<p>The confidence level.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>control.value</code></td>
+<td>
+<p>The value of the treatment variable used as the
+control condition.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>treat.value</code></td>
+<td>
+<p>The value of the treatment variable used as the
+treatment condition.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nobs</code></td>
+<td>
+<p>Integer; the number of observations in the models.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>sims</code></td>
+<td>
+<p>Integer; the number of bootstrap replications.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>covar.names</code></td>
+<td>
+<p>The pre-treatment covariate names.</p>
+</td>
+</tr>
+</table>
+<p><code>bg_to_mediate</code> returns an object of class <code>mediate</code>
+</p>
+
+
+<h3>Note</h3>
+
+<p>As of <code>brainGraph v2.0.0</code>, this function has been tested only for
+a treatment (independent) variable <em>X</em> being a <em>factor</em> (e.g.,
+disease group, old vs. young, etc.). If your treatment variable has more
+than 2 levels, then you must explicitly specify the levels you would like to
+compare; otherwise, the baseline and first levels are taken to be the
+control and treatment values, respectively. Be aware that these are <em>0</em>
+indexed; that is, if you have 3 groups and you would like the treatment
+group to be the 3rd, you should specify as either the group's character
+string or as <code>treat.value=2</code>.
+</p>
+<p>Allowing for treatment-mediator interaction (setting <code>int=TRUE</code>)
+currently will only work properly if the mediator is a continuous variable;
+since the mediator is always a graph metric, this should always be the case.
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Christopher G. Watson, <a href="mailto:cgwatson@bu.edu">cgwatson@bu.edu</a>
+</p>
+
+
+<h3>References</h3>
+
+<p>Tingley, D. and Yamamoto, T. and Hirose, K. and Keele, L. and
+Imai, K. (2014) mediation: R package for causal mediation analysis.
+<em>Journal of Statistical Software</em>, <b>59(5)</b>, 1–38.
+doi: <a href="https://doi.org/10.18637/jss.v059.i05">10.18637/jss.v059.i05</a>
+</p>
+<p>Imai, K. and Keele, L. and Yamamoto, T. (2010) Identification
+inference, and sensitivity analysis for causal mediation effects.
+<em>Statistical Science</em>, <b>25(1)</b>, 51–71.
+doi: <a href="https://doi.org/10.1214/10-STS321">10.1214/10-STS321</a>
+</p>
+<p>Imai, K. and Keele, L. and Tingley, D. (2010) A general approach
+to causal mediation analysis. <em>Psychological Methods</em>, <b>15(4)</b>,
+309–334. doi: <a href="https://doi.org/10.1037/a0020761">10.1037/a0020761</a>
+</p>
+<p>Imai, K. and Keele, L. and Tingley, D. and Yamamoto, T. (2011)
+Unpacking the black box of causality: learning about causal mechanisms from
+experimental and observational studies. <em>American Political Science
+Review</em>, <b>105(4)</b>, 765–789.
+doi: <a href="https://doi.org/10.1017/S0003055411000414">10.1017/S0003055411000414</a>
+</p>
+<p>Imai, K. and Yamamoto, T. (2013) Identification and sensitivity
+analysis for multiple causal mechanisms: revisiting evidence from framing
+experiments. <em>Political Analysis</em>, <b>21(2)</b>, 141–171.
+doi: <a href="https://doi.org/10.1093/pan/mps040">10.1093/pan/mps040</a>
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>mediate</code>
+</p>
+<p>Other Group analysis functions: <code>Bootstrapping</code>,
+<code>GLM</code>, <code>NBS</code>,
+<code>brainGraph_permute</code>, <code>mtpc</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## Not run: 
+med.EglobWt.FSIQ &lt;- brainGraph_mediate(g[[5]], covars.med, 'E.global.wt',
+  'Group', 'FSIQ', covar.names=c('age', 'gender'), N=1e4)
+med.strength.FSIQ &lt;- brainGraph_mediate(g[[5]], covars.med, 'strength',
+  'Group', 'FSIQ', covar.names=c('age', 'gender'), level='vertex')
+
+## End(Not run)
+</code></pre>
+
+
+</div>

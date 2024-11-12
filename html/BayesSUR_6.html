@@ -1,0 +1,313 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>exampleEQTL</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Simulated data set to mimic a small expression quantitative trait loci (eQTL) example</h2>
+
+<h3>Description</h3>
+
+<p>Simulated data set to mimic a small expression quantitative trait loci 
+(eQTL) example, with p=150 single nucleotide polymorphisms (SNPs) as 
+explanatory variables, s=10 gene expression features as response variables 
+and data for n=100 observations. Loading the data will load the associated 
+blockList object needed to fit the model with BayesSUR(). The R code for 
+generating the simulated data is given in the Examples paragraph.
+</p>
+<p>#importFrom BDgraph rgwish
+#importFrom gRbase mcsMAT
+#importFrom scrime simulateSNPs
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">exampleEQTL
+</code></pre>
+
+
+<h3>Format</h3>
+
+<p>An object of class <code>list</code> of length 4.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R"># Load the eQTL sample dataset
+data("exampleEQTL", package = "BayesSUR")
+str(exampleEQTL)
+
+## Not run: 
+# ===============
+# The code below is to show how to generate the dataset "exampleEQTL.rda" above
+# ===============
+
+requireNamespace("BDgraph", quietly = TRUE)
+requireNamespace("gRbase", quietly = TRUE)
+requireNamespace("scrime", quietly = TRUE)
+
+########################### Problem Dimensions
+n &lt;- 100
+p &lt;- 150
+s &lt;- 10
+
+############################ Select a set of n x p (SNPs) covariates
+
+## The synthetic data in the paper use a subset of the real SNPs as covariates,
+# but as the NFBC66 dataset is confidential we'll use scrime to sample similar data
+
+x &lt;- scrime::simulateSNPs(c(n, 10), p, c(3, 2), prop.explain = c(0.9, 0.95))$data[1:n, ]
+x &lt;- cbind(rep(1, n), x)
+
+####################################################################
+
+graph_pattern &lt;- 2
+
+snr &lt;- 25
+
+corr_param &lt;- 0.9
+
+### Create the underlying graph
+if (graph_pattern == 1) {
+  ### 1) Random but full
+  G &lt;- matrix(1, s, s)
+  Prime &lt;- list(c(1:s))
+  Res &lt;- Prime
+  Sep &lt;- list()
+} else if (graph_pattern == 2) {
+  ### 2) Block Diagonal structure
+  Prime &lt;- list(
+    c(1:floor(s * 2 / 3)),
+    c((floor(s * 2 / 3) + 1):(ceiling(s * 4 / 5) - 1)),
+    c(ceiling(s * 4 / 5):s)
+  )
+
+  Res &lt;- Prime
+  Sep &lt;- lapply(Res, function(x) which(x == -99))
+
+  G &lt;- matrix(0, s, s)
+  for (i in Prime) {
+    G[i, i] &lt;- 1
+  }
+} else if (graph_pattern == 3) {
+  ### 3) Decomposable model
+  Prime &lt;- list(
+    c(1:floor(s * 5 / 12), ceiling(s * 9 / 10):s),
+    c(floor(s * 2 / 9):(ceiling(s * 2 / 3) - 1)),
+    c(ceiling(s * 2 / 3):(ceiling(s * 4 / 5) - 1)),
+    c(ceiling(s * 4 / 5):s)
+  )
+
+  Sep &lt;- list()
+  H &lt;- list()
+  for (i in 2:length(Prime)) {
+    H &lt;- union(H, Prime[[i - 1]])
+    Sep[[i - 1]] &lt;- intersect(H, Prime[[i]])
+  }
+
+  Res &lt;- list()
+  Res[[1]] &lt;- Prime[[1]]
+  for (i in 2:length(Prime)) {
+    Res[[i]] &lt;- setdiff(Prime[[i]], Sep[[i - 1]])
+  }
+
+  G &lt;- matrix(0, s, s)
+  for (i in Prime) {
+    G[i, i] &lt;- 1
+  }
+
+  ## decomp check
+  dimnames(G) &lt;- list(1:s, 1:s)
+  length(gRbase::mcsMAT(G - diag(s))) &gt; 0
+} else if (graph_pattern == 4) {
+  ### 4) Non-decomposable model
+  nblocks &lt;- 5
+  nElemPerBlock &lt;- c(
+    floor(s / 4), floor(s / 2) - 1 - floor(s / 4),
+    ceiling(s * 2 / 3) - 1 - floor(s / 2), 7
+  )
+  nElemPerBlock &lt;- c(nElemPerBlock, s - sum(nElemPerBlock))
+  res &lt;- 1:s
+  blockIdx &lt;- list()
+  for (i in 1:nblocks) {
+    # blockIdx[[i]] = sample(res,nElemPerBlock[i])
+    blockIdx[[i]] &lt;- res[1:nElemPerBlock[i]]
+    res &lt;- setdiff(res, blockIdx[[i]])
+  }
+
+  G &lt;- matrix(0, s, s)
+  ## add diagonal
+  for (i in 1:nblocks) {
+    G[blockIdx[[i]], blockIdx[[i]]] &lt;- 1
+  }
+  ## add cycle
+  G[blockIdx[[1]], blockIdx[[2]]] &lt;- 1
+  G[blockIdx[[2]], blockIdx[[1]]] &lt;- 1
+  G[blockIdx[[1]], blockIdx[[5]]] &lt;- 1
+  G[blockIdx[[5]], blockIdx[[1]]] &lt;- 1
+  G[blockIdx[[2]], blockIdx[[3]]] &lt;- 1
+  G[blockIdx[[3]], blockIdx[[2]]] &lt;- 1
+  G[blockIdx[[3]], blockIdx[[5]]] &lt;- 1
+  G[blockIdx[[5]], blockIdx[[3]]] &lt;- 1
+
+  ## decomp check
+  dimnames(G) &lt;- list(1:s, 1:s)
+  length(gRbase::mcsMAT(G - diag(s))) &gt; 0
+
+  # Prime = blockIdx
+  Res &lt;- blockIdx ## this is not correct but not used in the non-decomp case
+}
+
+### Gamma Pattern
+gamma &lt;- matrix(0, p + 1, s)
+gamma[1, ] &lt;- 1
+
+
+### 2) Extra Patterns
+
+## outcomes (correlated in the decomp model) have some predictors in common
+gamma[6:10, 6:9] &lt;- 1
+
+## outcomes (correlated in the decomp model) have some predictors in common
+# gamma[16:20,14:15] = 1
+
+## outcomes (sort-of correlated [pair-wise] in the decomp model)
+# have predictors in common 6:15
+gamma[26:30, 4:8] &lt;- 1
+
+## outcomes (NOT correlated in the decomp model) have predictors in common 16:17
+gamma[36:40, c(3:5, 9:10)] &lt;- 1
+
+## these predictors are associated with ALL the outcomes
+gamma[46:50, ] &lt;- 1
+
+combn11 &lt;- combn(rep((6:9 - 1) * p, each = length(6:10 - 1)) + rep(6:10 - 1, 
+                  times = length(6:9)), 2)
+combn31 &lt;- combn(rep((4:8 - 1) * p, each = length(26:30 - 1)) + rep(26:30 - 1, 
+                  times = length(4:8)), 2)
+combn32 &lt;- combn(rep((4:8 - 1) * p, each = length(46:50 - 1)) + rep(46:50 - 1, 
+                  times = length(4:8)), 2)
+combn41 &lt;- combn(rep((3:5 - 1) * p, each = length(36:40 - 1)) + rep(36:40 - 1, 
+                  times = length(3:5)), 2)
+combn42 &lt;- combn(rep((3:5 - 1) * p, each = length(46:50 - 1)) + rep(46:50 - 1, 
+                  times = length(3:5)), 2)
+combn51 &lt;- combn(rep((9:10 - 1) * p, each = length(36:40 - 1)) + rep(36:40 - 1, 
+                  times = length(9:10)), 2)
+combn52 &lt;- combn(rep((9:10 - 1) * p, each = length(46:50 - 1)) + rep(46:50 - 1, 
+                  times = length(9:10)), 2)
+
+Gmrf &lt;- rbind(t(combn11), t(combn31), t(combn32), t(combn41), t(combn42), t(combn51), t(combn52))
+
+## get for every correlated bunch in the decomposable model,
+
+if (graph_pattern &lt; 4) {
+  # a different set of predictors
+  for (i in 1:length(Prime)) {
+    gamma[6:10 + (i + 6) * 10, Prime[[i]]] &lt;- 1
+  } ## for each Prime component
+
+  ## for every Residual instead
+  for (i in 1:length(Res)) {
+    gamma[6:10 + (i + 10) * 10, Res[[i]]] &lt;- 1
+  }
+} else {
+  for (i in 1:length(Prime)) {
+    gamma[6:10 + (i + 4) * 10, Prime[[i]]] &lt;- 1
+  } ## for each Prime component
+
+  ## for every Residual instead
+  for (i in 1:length(Res)) {
+    gamma[6:10 + (i + 9) * 10, Res[[i]]] &lt;- 1
+  }
+}
+
+#### Sample the betas
+sd_b &lt;- 1
+b &lt;- matrix(rnorm((p + 1) * s, 0, sd_b), p + 1, s)
+
+xb &lt;- matrix(NA, n, s)
+
+for (i in 1:s) {
+  if (sum(gamma[, i]) &gt; 1) {
+    xb[, i] &lt;- x[, gamma[, i] == 1] %*% b[gamma[, i] == 1, i]
+  } else {
+    xb[, i] &lt;- rep(1, n) * b[1, i]
+  }
+}
+
+## Sample the variance
+v_r &lt;- mean(diag(var(xb))) / snr
+
+nu &lt;- s + 1
+
+M &lt;- matrix(corr_param, s, s)
+diag(M) &lt;- rep(1, s)
+
+P &lt;- BDgraph::rgwish(n = 1, adj = G, b = 3, D = v_r * M)
+
+var &lt;- solve(P)
+
+factor &lt;- 10
+factor_min &lt;- 0.01
+factor_max &lt;- 1000
+count &lt;- 0
+maxit &lt;- 10000
+
+factor_prev &lt;- 1
+
+repeat{
+  var &lt;- var / factor * factor_prev
+
+  ### Sample the errors and the Ys
+  cVar &lt;- chol(as.matrix(var))
+  # err = matrix(rnorm(n*s),n,s) %*% cVar
+  err &lt;- matrix(rnorm(n * s, sd = 0.5), n, s) %*% cVar
+  y &lt;- xb + err
+
+  ## Reparametrisation ( assuming PEO is 1:s )
+  cVar &lt;- t(cVar) # make it lower-tri
+  S &lt;- diag(diag(cVar))
+  sigma &lt;- S * S
+  L &lt;- cVar %*% solve(S)
+  rho &lt;- diag(s) - solve(L)
+
+  ### S/N Ratio
+  emp_snr &lt;- mean(diag(var(xb) %*% solve(sigma)))
+  emp_g_snr &lt;- mean(diag(var((err) %*% t(rho)) %*% solve(sigma)))
+
+  ##############
+
+  if (abs(emp_snr - snr) &lt; (snr / 10) | count &gt; maxit) {
+    break
+  } else {
+    if (emp_snr &lt; snr) { # increase factor
+      factor_min &lt;- factor
+    } else { # decrease factor
+      factor_max &lt;- factor
+    }
+    factor_prev &lt;- factor
+    factor &lt;- (factor_min + factor_max) / 2
+  }
+  count &lt;- count + 1
+}
+
+#################
+colnames(y) &lt;- paste("GEX", 1:ncol(y), sep = "")
+colnames(G) &lt;- colnames(y)
+Gy &lt;- G
+gamma &lt;- gamma[-1, ]
+mrfG &lt;- Gmrf[!duplicated(Gmrf), ]
+data &lt;- cbind(y, x[, -1]) # leave out the intercept because is coded inside already
+
+exampleEQTL &lt;- list(data = data, blockList = list(1:s, s + 1:p))
+
+## Write data file to the user's directory by save()
+
+## End(Not run)
+
+</code></pre>
+
+
+</div>

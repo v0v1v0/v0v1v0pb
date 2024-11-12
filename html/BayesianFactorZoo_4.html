@@ -1,0 +1,192 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>continuous_ss_sdf</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>SDF model selection with continuous spike-and-slab prior</h2>
+
+<h3>Description</h3>
+
+<p>This function provides the SDF model selection procedure using the continuous spike-and-slab prior.
+See Propositions 3 and 4 in Bryzgalova et al. (2023).
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">continuous_ss_sdf(
+  f,
+  R,
+  sim_length,
+  psi0 = 1,
+  r = 0.001,
+  aw = 1,
+  bw = 1,
+  type = "OLS",
+  intercept = TRUE
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>f</code></td>
+<td>
+<p>A matrix of factors with dimension <code class="reqn">t \times k</code>, where <code class="reqn">k</code> is the number of factors
+and <code class="reqn">t</code> is the number of periods;</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>R</code></td>
+<td>
+<p>A matrix of test assets with dimension <code class="reqn">t \times N</code>, where <code class="reqn">t</code> is the number of periods
+and <code class="reqn">N</code> is the number of test assets;</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>sim_length</code></td>
+<td>
+<p>The length of monte-carlo simulations;</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>psi0</code></td>
+<td>
+<p>The hyper-parameter in the prior distribution of risk prices (see <b>Details</b>);</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>r</code></td>
+<td>
+<p>The hyper-parameter related to the prior of risk prices (see <b>Details</b>);</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>aw</code></td>
+<td>
+<p>The hyper-parameter related to the prior of <code class="reqn">\gamma</code> (see <b>Details</b>);</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>bw</code></td>
+<td>
+<p>The hyper-parameter related to the prior of <code class="reqn">\gamma</code> (see <b>Details</b>);</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>type</code></td>
+<td>
+<p>If <code>type = 'OLS'</code> (<code>type = 'GLS'</code>), the function returns Bayesian OLS (GLS) estimates of risk prices. The default is 'OLS'.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>intercept</code></td>
+<td>
+<p>If <code>intercept = TRUE</code> (<code>intercept = FALSE</code>), we include (exclude) the common intercept in the cross-sectional regression. The default is <code>intercept = TRUE</code>.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>To model the variable selection procedure, we introduce a vector of binary latent variables <code class="reqn">\gamma^\top = (\gamma_0,\gamma_1,...,\gamma_K)</code>,
+where <code class="reqn">\gamma_j \in \{0,1\} </code>. When <code class="reqn">\gamma_j = 1</code>, factor <code class="reqn">j</code> (with associated loadings <code class="reqn">C_j</code>) should be included
+in the model and vice verse.
+</p>
+<p>The continuous spike-and-slab prior of risk prices <code class="reqn">\lambda</code> is
+</p>
+<p style="text-align: center;"><code class="reqn"> \lambda_j | \gamma_j, \sigma^2 \sim N (0, r(\gamma_j) \psi_j \sigma^2  ) .</code>
+</p>
+
+<p>When the factor <code class="reqn">j</code> is included, we have <code class="reqn"> r(\gamma_j = 1)=1 </code>.
+When the factor is excluded from the model, <code class="reqn"> r(\gamma_j = 0) =r \ll 1 </code>.
+Hence, the Dirac "spike" is replaced by a Gaussian spike, which is extremely concentrated at zero
+(the default value for <code class="reqn">r</code> is 0.001).
+If <code>intercept = TRUE</code>, we choose <code class="reqn"> \psi_j =  \psi \tilde{\rho}_j^\top \tilde{\rho}_j  </code>,
+where <code class="reqn"> \tilde{\rho}_j = \rho_j - (\frac{1}{N} \Sigma_{i=1}^{N} \rho_{j,i}  ) \times 1_N </code>
+is the cross-sectionally demeaned vector of factor <code class="reqn">j</code>'s correlations with asset returns.
+Instead, if <code>intercept = FALSE</code>, we choose <code class="reqn"> \psi_j =  \psi \rho_j^\top \rho_j  </code>.
+In the codes, <code class="reqn">\psi</code> is equal to the value of <code>psi0</code>.
+</p>
+<p>The prior <code class="reqn">\pi (\omega)</code> encoded the belief about the sparsity of the true model using the prior distribution
+<code class="reqn">\pi (\gamma_j = 1 | \omega_j) = \omega_j </code>. Following the literature on the variable selection, we set
+</p>
+<p style="text-align: center;"><code class="reqn"> \pi (\gamma_j = 1 | \omega_j) = \omega_j,  \ \ \omega_j \sim Beta(a_\omega, b_\omega) . </code>
+</p>
+
+<p>Different hyperparameters <code class="reqn">a_\omega</code> and <code class="reqn">b_\omega</code> determine whether one a priori favors more parsimonious models or not.
+We choose <code class="reqn">a_\omega = 1</code> (<code>aw</code>) and <code class="reqn">b_\omega=1</code> (<code>bw</code>) as the default values.
+</p>
+<p>For each posterior draw of factors' risk prices <code class="reqn">\lambda^{(j)}_f</code>, we can define the SDF as
+<code class="reqn">m^{(j)}_t = 1 - (f_t - \mu_f)^\top \lambda^{(j)}_f</code>.The Bayesian model averaging of the SDF (BMA-SDF)
+over <code class="reqn">J</code> draws is
+</p>
+<p style="text-align: center;"><code class="reqn">m^{bma}_t = \frac{1}{J}  \sum^J_{j=1} m^{(j)}_t.</code>
+</p>
+
+
+
+<h3>Value</h3>
+
+<p>The return of <code>continuous_ss_sdf</code> is a list of the following elements:
+</p>
+
+<ul>
+<li> <p><code>gamma_path</code>: A <code>sim_length</code><code class="reqn">\times k</code> matrix of the posterior draws of <code class="reqn">\gamma</code>. Each row represents
+a draw. If <code class="reqn">\gamma_j = 1</code> in one draw, factor <code class="reqn">j</code> is included in the model in this draw and vice verse.
+</p>
+</li>
+<li> <p><code>lambda_path</code>: A <code>sim_length</code><code class="reqn">\times (k+1)</code> matrix of the risk prices <code class="reqn">\lambda</code> if <code>intercept = TRUE</code>. Each row represents
+a draw. Note that the first column is <code class="reqn">\lambda_c</code> corresponding to the constant term. The next <code class="reqn">k</code> columns (i.e., the 2-th – <code class="reqn">(k+1)</code>-th columns)
+are the risk prices of the <code class="reqn">k</code> factors. If <code>intercept = FALSE</code>, <code>lambda_path</code> is a <code>sim_length</code><code class="reqn">\times k</code> matrix of the risk prices,
+without the estimates of <code class="reqn">\lambda_c</code>.
+</p>
+</li>
+<li> <p><code>sdf_path</code>: A <code>sim_length</code><code class="reqn">\times t</code> matrix of posterior draws of SDFs. Each row represents a draw.
+</p>
+</li>
+<li> <p><code>bma_sdf</code>: BMA-SDF.
+</p>
+</li>
+</ul>
+<h3>References</h3>
+
+<p>Bryzgalova S, Huang J, Julliard C (2023).
+“Bayesian solutions for the factor zoo: We just ran two quadrillion models &lt;https://doi.org/10.1111/jofi.13197&gt;.”
+<em>Journal of Finance</em>, <b>78</b>(1), 487–557.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+## Load the example data
+data("BFactor_zoo_example")
+HML &lt;- BFactor_zoo_example$HML
+lambda_ols &lt;- BFactor_zoo_example$lambda_ols
+R2.ols.true &lt;- BFactor_zoo_example$R2.ols.true
+sim_f &lt;- BFactor_zoo_example$sim_f
+sim_R &lt;- BFactor_zoo_example$sim_R
+uf &lt;- BFactor_zoo_example$uf
+
+## sim_f: simulated strong factor
+## uf: simulated useless factor
+
+psi_hat &lt;- psi_to_priorSR(sim_R, cbind(sim_f,uf), priorSR=0.1)
+shrinkage &lt;- continuous_ss_sdf(cbind(sim_f,uf), sim_R, 5000, psi0=psi_hat, r=0.001, aw=1, bw=1)
+cat("Null hypothesis: lambda =", 0, "for each factor", "\n")
+cat("Posterior probabilities of rejecting the above null hypotheses are:",
+    colMeans(shrinkage$gamma_path), "\n")
+
+## We also have the posterior draws of SDF: m(t) = 1 - lambda_g %*% (f(t) - mu_f)
+sdf_path &lt;- shrinkage$sdf_path
+
+## We also provide the Bayesian model averaging of the SDF (BMA-SDF)
+bma_sdf &lt;- shrinkage$bma_sdf
+
+</code></pre>
+
+
+</div>

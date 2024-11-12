@@ -1,0 +1,140 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>bI</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Bessel I() function Simple Series Representation</h2>
+
+<h3>Description</h3>
+
+<p>Computes the modified Bessel <code class="reqn">I</code> function, using one of its basic
+definitions as an infinite series.  The implementation is pure <span style="font-family: Courier New, Courier; color: #666666;"><b>R</b></span>,
+working for <code>numeric</code>, <code>complex</code>, but also
+e.g., for objects of class <code>"mpfr"</code>
+from package <span class="pkg">Rmpfr</span>.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">besselIs(x, nu, nterm = 800, expon.scaled = FALSE, log = FALSE,
+         Ceps = if (isNum) 8e-16 else 2^(-x@.Data[[1]]@prec))
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>numeric or complex vector, or of another <code>class</code>
+for which arithmetic methods are defined, notably
+objects of class <code>mpfr</code> (package <a href="https://CRAN.R-project.org/package=Rmpfr"><span class="pkg">Rmpfr</span></a>).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nu</code></td>
+<td>
+<p>non-negative numeric (scalar).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nterm</code></td>
+<td>
+<p>integer indicating the number of terms to be used.
+Should be in the order of <code>abs(x)</code>, but can be smaller for
+large x.  A warning is given, when <code>nterm</code> was chosen too
+small.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>expon.scaled</code></td>
+<td>
+<p>logical indicating if the result should be scaled
+by <code class="reqn">exp(-abs(x))</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>log</code></td>
+<td>
+<p>logical indicating if the logarithm <code class="reqn">log I.()</code> is
+required.  This allows even more precision than
+<code>expon.scaled=TRUE</code> in some cases.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Ceps</code></td>
+<td>
+<p>a relative error tolerance for checking if <code>nterm</code>
+has been sufficient.  The default is “correct” for double
+precision and also for
+multiprecision objects.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>a “numeric” (or complex or <code>"mpfr"</code>)
+vector of the same class and length as <code>x</code>.
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Martin Maechler</p>
+
+
+<h3>References</h3>
+
+<p>Abramowitz, M., and Stegun, I. A. (1964,.., 1972).
+<em>Handbook of mathematical functions</em>
+(NBS AMS series 55, U.S. Dept. of Commerce).
+</p>
+
+
+<h3>See Also</h3>
+
+<p>This package <code>BesselI</code>, <span class="pkg">base</span> <code>besselI</code>, etc
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">(nus &lt;- c(outer((0:3)/4, 1:5, `+`)))
+stopifnot(
+  all.equal(besselIs(1:10, 1), # our R code
+            besselI (1:10, 1)) # internal C code w/ different algorithm
+  ,
+  sapply(nus, function(nu)
+   all.equal(besselIs(1:10, nu, expon.scale=TRUE), # our R code
+             BesselI (1:10, nu, expon.scale=TRUE)) # TOMS644 code
+   )
+  ,
+  ## complex argument [gives warnings  'nterm=800' may be too small]
+  sapply(nus, function(nu)
+   all.equal(besselIs((1:10)*(1+1i), nu, expon.scale=TRUE), # our R code
+             BesselI ((1:10)*(1+1i), nu, expon.scale=TRUE)) # TOMS644 code
+   )
+)
+
+## Large 'nu' ...
+x &lt;- (0:20)/4
+(bx &lt;- besselI(x, nu=200))# base R's -- gives (mostly wrong) warnings
+if(require("Rmpfr")) { ## Use high precision (notably large exponent range) numbers:
+  Bx &lt;- besselIs(mpfr(x, 64), nu=200)
+  all.equal(Bx, bx, tol = 1e-15)# TRUE -- warning were mostly wrong; specifically:
+  cbind(bx, Bx)
+  signif(asNumeric(1 - (bx/Bx)[19:21]), 4) # only [19] had lost accuracy
+
+  ## With*out* mpfr numbers -- using log -- is accurate (here)
+  (lbx &lt;- besselIs(     x,      nu=200, log=TRUE))
+  lBx &lt;-  besselIs(mpfr(x, 64), nu=200, log=TRUE)
+  stopifnot(all.equal(asNumeric(log(Bx)), lbx, tol=1e-15),
+	    all.equal(lBx, lbx, tol=4e-16))
+} # Rmpfr
+</code></pre>
+
+
+</div>

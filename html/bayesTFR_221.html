@@ -1,0 +1,190 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>tfr.predict.subnat</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>
+Generating Posterior Trajectories of Subnational TFR
+</h2>
+
+<h3>Description</h3>
+
+<p>Generates posterior trajectories of the total fertility rate for subregions of given countries, using the Scale-AR(1) method.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">tfr.predict.subnat(countries, my.tfr.file, 
+                sim.dir = file.path(getwd(), "bayesTFR.output"), 
+                end.year = 2100, start.year = NULL, output.dir = NULL, 
+                annual = NULL, nr.traj = NULL, seed = NULL, min.tfr = 0.5, 
+                ar.pars = NULL, save.as.ascii = 0, verbose = TRUE)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>countries</code></td>
+<td>
+<p>Vector of numerical country codes or country names.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>my.tfr.file</code></td>
+<td>
+<p>Tab-separated ASCII file containing the subnational TFR data. See Details for more information on its format.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>sim.dir</code></td>
+<td>
+<p>Simulation directory with the national projections generated using <code>tfr.predict</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>end.year</code></td>
+<td>
+<p>End year of the projections.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>start.year</code></td>
+<td>
+<p>Start year of the projections. By default, projections start at the same time point as the national projections.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>output.dir</code></td>
+<td>
+<p>Directory into which the resulting prediction objects and the trajectories are stored. See below for details.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>annual</code></td>
+<td>
+<p>Logical indicating if the subnational projection should be on an annual scale or a 5-year scale. By default, 
+the scale is matched to the national simulation. If the subnational and national scales are not the same, the national trajectories are either interpolated (if <code>annual = TRUE</code> and the national simulation is not annual) or averaged to 5-year values (if <code>annual = FALSE</code> and the national simulation is annual).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nr.traj</code></td>
+<td>
+<p>Number of trajectories to be generated. If <code>NULL</code>, the number of trajectories in the national projections is used.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>seed</code></td>
+<td>
+<p>Seed of the random number generator. If NULL no seed is set. It can be used to generate reproducible projections.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>min.tfr</code></td>
+<td>
+<p>Lower bound on TFR.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ar.pars</code></td>
+<td>
+<p>Named vector containing the parameter estimates of the AR(1) process. If given, it must have elements called <code>mu</code>, <code>rho</code> and <code>sigma</code>. By default for a 5-year simulation, <code>c(mu = 1, rho = 0.92464, sigma = 0.04522)</code> is used. For an annual simulation these default parameters are scaled to <code>c(mu = 1, rho = 0.98445, sigma = 0.02086)</code>, see details below.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>save.as.ascii</code></td>
+<td>
+<p>Either a number determining how many trajectories should be converted into an ASCII file, or “all” in which case all trajectories are converted. By default no conversion is performed.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>verbose</code></td>
+<td>
+<p>Logical switching log messages on and off.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The function implements the methodology described in Sevcikova et al (2017). Given a set of national bayesTFR projections, it applies the Scale-AR(1) model to each national trajectory and each subregion of given countries which yield subnational TFR projections. 
+</p>
+<p>The file on subnational data passed in <code>my.tfr.file</code> has to have a column “country_code” with numerical values corresponding to countries given in the argument <code>countries</code>, and column “reg_code” giving the numerical identifier of each subregion. Column “name” should be used for subregion name, and column “country” for country name. An optional column  “include_code” can be used to eliminate entries from processing. Entries with values of 1 or 2 will be included, all others will be ignored. Column “last.observed” can be used to define which time period contains the last observed data point (given as integer, e.g. year in the middle of the time period). Remaining columns define the time periods, e.g. “2000-2005”, “2005-2010” for a 5-year simulation, or “2020”, “2021” for an annual simulation. The package contains an example of such dataset, see Example below.
+</p>
+<p>The default AR(1) parameters were designed for a 5-year simulation, see Sevcikova et al (2017) for more detail. These are <code class="reqn">\mu = 1, \rho = 0.92464, \sigma = 0.04522</code>. We use the following conversion for the autoregressive parameter <code class="reqn">\rho</code> and the standard deviation <code class="reqn">\sigma</code> if an annual AR(1) process is desired: <code class="reqn">\rho^* = \rho^{(1/5)}, \sigma^* = \sigma * \sqrt{((1 - \rho^{(2/5)})/(1 - \rho^2))}</code>. The long-term mean <code class="reqn">\mu</code> stays the same for both processes. Thus, the annual parameters are  <code>c(mu = 1, rho = 0.98445, sigma = 0.02086)</code>. Note that if the <code>ar.pars</code> argument is specified by the user, it is assumed that the parameters have been scaled appropriately and thus, no conversion takes place.
+</p>
+<p>Argument <code>output.dir</code> gives a location on disk where results of the function should be stored. If it is <code>NULL</code> (default),  results are stored in the same directory as the national projections. In both cases a subdirectory called “subnat” is created in which each country has its own subfolder with the country code in its name. Each such subfolder contains the same type of outputs as in the national case generated using <code>tfr.predict</code>, most importantly a directory “predictions” with trajectories for each region.
+</p>
+
+
+<h3>Value</h3>
+
+<p>A list of objects of class <code>bayesTFR.prediction</code>. The name of each element includes its country code. Not all elements of the class <code>bayesTFR.prediction</code> are available. For example, no <code>mcmc.set</code> is attached to these objects. Thus, not all functions that work with <code>bayesTFR.prediction</code> can be applied to these results.
+</p>
+
+
+<h3>Note</h3>
+
+<p>Even though the resulting object contains subnational results, the names  of its elements are the same as in the national case. This allows to apply the same functions on both objects (subnational and national). However, it means that sometimes the meaning of the elements or function arguments does not match the subnational context. For example, various functions expect the argument <code>country</code>. When a subnational object is passed to such function, <code>country</code> means a subregion. 
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Hana Sevcikova
+</p>
+
+
+<h3>References</h3>
+
+<p>Hana Sevcikova, Adrian E. Raftery, Patrick Gerland (2018). Probabilistic Projection of Subnational Total Fertility Rates. Demographic Research, Vol. 38(60), 1843-1884. <a href="https://doi.org/10.4054/DemRes.2018.38.60">doi:10.4054/DemRes.2018.38.60</a>.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>get.regtfr.prediction</code>, <code>tfr.predict</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R"># View the example data
+my.subtfr.file &lt;- file.path(find.package("bayesTFR"), 'extdata', 'subnational_tfr_template.txt')
+subtfr &lt;- read.delim(my.subtfr.file, check.names=FALSE)
+head(subtfr)
+
+# Directory with national projections (contains 30 trajectories for each country)
+nat.dir &lt;- file.path(find.package("bayesTFR"), "ex-data", "bayesTFR.output")
+
+# Subnational projections for Australia and Canada
+subnat.dir &lt;- tempfile()
+preds &lt;- tfr.predict.subnat(c(36, 124), my.tfr.file=my.subtfr.file,
+    sim.dir=nat.dir, output.dir=subnat.dir, start.year=2013)
+names(preds)
+get.countries.table(preds[["36"]])
+summary(preds[["36"]], "Queensland")
+tfr.trajectories.plot(preds[["36"]], "Queensland")
+
+# plot subnational and national TFR in one plot
+nat.pred &lt;- get.tfr.prediction(nat.dir)
+tfr.trajectories.plot(preds[["36"]], 186, pi=80, half.child.variant=FALSE)
+tfr.trajectories.plot(nat.pred, "Australia", half.child.variant=FALSE,
+      add=TRUE, col=rep("darkgreen", 5), nr.traj=0, show.legend=FALSE)
+legend("topright", c("regional TFR", "national TFR"), col=c("red", "darkgreen"), 
+  lty=1, bty='n')
+
+# Retrieve trajectories
+trajs.Alberta &lt;- get.tfr.trajectories(preds[["124"]], "Alberta")
+summary(t(trajs.Alberta))
+
+# cleanup
+unlink(subnat.dir)
+
+# See more examples in ?get.regtfr.prediction
+</code></pre>
+
+
+</div>

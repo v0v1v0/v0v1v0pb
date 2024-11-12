@@ -1,0 +1,153 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>combine.select</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2> Combine Atom Selections From PDB Structure </h2>
+
+<h3>Description</h3>
+
+<p>Do "and", "or", or "not" set operations between two or more atom
+selections made by <code>atom.select</code>
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">combine.select(sel1=NULL, sel2=NULL, ..., operator="AND", verbose=TRUE)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>sel1</code></td>
+<td>
+<p> an atom selection object of class <code>"select"</code>, obtained from
+<code>atom.select</code>. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>sel2</code></td>
+<td>
+<p> a second atom selection object of class <code>"select"</code>, obtained
+from <code>atom.select</code>. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p> more select objects for the set operation. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>operator</code></td>
+<td>
+<p> name of the set operation. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>verbose</code></td>
+<td>
+<p> logical, if TRUE details of the selection combination are
+printed. </p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The value of <code>operator</code> should be one of following:
+(1) "AND", "and", or "&amp;" for set intersect,
+(2) "OR", "or", "|", or "+" for set union,
+(3) "NOT", "not", "!", or "-" for set difference <code>sel1 - sel2 - sel3 ...</code>.
+</p>
+
+
+<h3>Value</h3>
+
+<p>Returns a list of class <code>"select"</code> with components:
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>atom </code></td>
+<td>
+<p>atom indices of selected atoms.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>xyz </code></td>
+<td>
+<p>xyz indices of selected atoms.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>call </code></td>
+<td>
+<p>the matched call.</p>
+</td>
+</tr>
+</table>
+<h3>Author(s)</h3>
+
+<p> Xin-Qiu Yao </p>
+
+
+<h3>References</h3>
+
+<p>Grant, B.J. et al. (2006) <em>Bioinformatics</em> <b>22</b>, 2695–2696.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>atom.select</code>, <code>as.select</code>
+<code>read.pdb</code>, <code>trim.pdb</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+# Read a PDB file
+pdb &lt;- read.pdb( system.file("examples/1hel.pdb", package="bio3d") )
+
+## - Build atom selections to be operated
+# Select C-alpha atoms of entire system
+ca.global.inds &lt;- atom.select(pdb, "calpha")
+
+# Select C-beta atoms of entire protein
+cb.global.inds &lt;- atom.select(pdb, "protein", elety="CB")
+
+# Select backbone atoms of entire system
+bb.global.inds &lt;- atom.select(pdb, "backbone")
+
+# Select all atoms with residue number from 46 to 50
+aa.local.inds &lt;- atom.select(pdb, resno=46:50)
+
+
+# Do set intersect:
+# - Return C-alpha atoms with residue number from 46 to 50
+ca.local.inds &lt;- combine.select(ca.global.inds, aa.local.inds)
+print( pdb$atom[ ca.local.inds$atom, ] )
+
+# Do set subtract:
+# - Return side-chain atoms with residue number from 46 to 50
+sc.local.inds &lt;- combine.select(aa.local.inds, bb.global.inds, operator="-")
+print( pdb$atom[ sc.local.inds$atom, ] )
+
+# Do set union:
+# - Return C-alpha and side-chain atoms with residue number from 46 to 50
+casc.local.inds &lt;- combine.select(ca.local.inds, sc.local.inds, operator="+")
+print( pdb$atom[ casc.local.inds$atom, ] )
+
+# More than two selections:
+# - Return side-chain atoms (but not C-beta) with residue number from 46 to 50
+sc2.local.inds &lt;- combine.select(aa.local.inds, bb.global.inds, cb.global.inds, operator="-")
+print( pdb$atom[ sc2.local.inds$atom, ] )
+
+</code></pre>
+
+
+</div>

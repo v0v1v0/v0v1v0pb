@@ -1,0 +1,125 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>GP.predict</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Gaussian process predictions</h2>
+
+<h3>Description</h3>
+
+<p>Gaussian process predictions
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">GP.predict(GP_fit, newx, CI = TRUE)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>GP_fit</code></td>
+<td>
+<p>An output object of function GP.Bayes.fit or GP.fast.Bayes.fit. Please refer to them for details.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>newx</code></td>
+<td>
+<p>A matrix of real numbers as new grid points for preditions.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>CI</code></td>
+<td>
+<p>A logical value indicating prediction.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>A list object
+When CI is FALSE, the object consists of three elements:
+</p>
+
+<dl>
+<dt>f</dt>
+<dd>
+<p>Posterior predictive mean values of the curves.</p>
+</dd>
+<dt>x</dt>
+<dd>
+<p>The grid points for prediction, i.e. "newx".</p>
+</dd>
+<dt>work_x</dt>
+<dd>
+<p>The standardized grid points for prediction.</p>
+</dd>
+</dl>
+<p>When CI is FALSE, the object consists of four elements:
+</p>
+
+<dl>
+<dt>mean</dt>
+<dd>
+<p>A list object for posterior predictive mean of the curve,consisting of two elements (f is a vector for the curve values; x is
+a vector or matrix for points evaluated).</p>
+</dd>
+<dt>work_x</dt>
+<dd>
+<p>A matrix of real numbers for the standardized grid points for the model fitting.
+It has the same dimension as "newx".</p>
+</dd>
+<dt>uci</dt>
+<dd>
+<p>A list object for 95% upper bound of the predictive creditible interval
+(uci) of the curve,
+consisting of two elements (f is a vector for curve values;
+x is a vector or matrix for points evaluated).</p>
+</dd>
+<dt>lci</dt>
+<dd>
+<p>A list object for 95% lower bound of the predictive creditibel interval (lci) of the curve,
+consisting of two elements (f is a vector for curve value; x is
+a vector or matrix for points evaluated).</p>
+</dd>
+</dl>
+<h3>Author(s)</h3>
+
+<p>Jian Kang &lt;jiankang@umich.edu&gt;
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+set.seed(1224)
+traindat = list()
+traindat$x = GP.generate.grids(d=2,num_grids=30,random=TRUE)
+testdat = list()
+testdat$x = GP.generate.grids(d=2,num_grids=30,random=FALSE)
+curve = GP.simulate.curve.fast(rbind(traindat$x,testdat$x),a=0.01,b=0.5,poly_degree=20L)
+train_curve = list(f=curve$f[1:nrow(traindat$x)],x=traindat$x)
+test_curve = list(f=curve$f[nrow(traindat$x)+1:nrow(testdat$x)],x=testdat$x)
+traindat$f = train_curve$f + rnorm(length(train_curve$f),sd=1)
+testdat$f = test_curve$f + rnorm(length(test_curve$f),sd=1)
+fast_fit = GP.fast.Bayes.fit(traindat$f,traindat$x,a=0.01,b=0.5,poly_degree=20L,progress_bar = TRUE)
+reg_fit = GP.Bayes.fit(traindat$f,traindat$x,a=0.01,b=0.5,poly_degree=20L,progress_bar = TRUE)
+fast_pred = GP.predict(fast_fit,testdat$x,CI=TRUE)
+reg_pred = GP.predict(reg_fit,testdat$x,CI=TRUE)
+pmse = c(fast = mean((fast_pred$mean$f-test_curve$f)^2),
+        reg = mean((reg_pred$mean$f-test_curve$f)^2))
+print(pmse)
+curves = list(true = test_curve,
+             Bayes = reg_pred$mean,
+             fast = fast_pred$mean)
+GP.plot.curves(curves,main="Posterior predictive mean")
+
+</code></pre>
+
+
+</div>

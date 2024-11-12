@@ -1,0 +1,279 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>brm</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Fitting Binary Regression Models</h2>
+
+<h3>Description</h3>
+
+<p><code>brm</code> is used to estimate the association between two binary variables, and how that varies as a function of other covariates.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">brm(
+  y,
+  x,
+  va,
+  vb = NULL,
+  param,
+  est.method = "MLE",
+  vc = NULL,
+  optimal = TRUE,
+  weights = NULL,
+  subset = NULL,
+  max.step = NULL,
+  thres = 1e-08,
+  alpha.start = NULL,
+  beta.start = NULL,
+  message = FALSE
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>y</code></td>
+<td>
+<p>The response vector. Should only take values 0 or 1.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>The exposure vector. Should only take values 0 or 1.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>va</code></td>
+<td>
+<p>The covariates matrix for the target model. It can be specified via an object of class "<code>formula</code>" or a matrix. In the latter case, no intercept terms will be added to the covariates matrix.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>vb</code></td>
+<td>
+<p>The covariates matrix for the nuisance model. It can be specified via an object of class "<code>formula</code>" or a matrix. In the latter case, no intercept terms will be added to the covariates matrix. (If not specified, defaults to va.)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>param</code></td>
+<td>
+<p>The measure of association. Can take value 'RD' (risk difference),
+'RR' (relative risk) or 'OR' (odds ratio)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>est.method</code></td>
+<td>
+<p>The method to be used in fitting the model. Can be 'MLE' (maximum likelihood estimation, the default) or 'DR' (doubly robust estimation).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>vc</code></td>
+<td>
+<p>The covariates matrix for the probability of exposure, often called the propensity score. It can be specified via an object of class "<code>formula</code>" or a matrix. In the latter case, no intercept terms will be added to the covariates matrix. By default we fit a logistic regression model for the propensity score. (If not specified, defaults to va.)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>optimal</code></td>
+<td>
+<p>Use the optimal weighting function for the doubly robust estimator? Ignored if the estimation method is 'MLE'. The default is TRUE.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>weights</code></td>
+<td>
+<p>An optional vector of 'prior weights' to be used in the fitting process. Should be NULL or a numeric vector.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>subset</code></td>
+<td>
+<p>An optional vector specifying a subset of observations to be used in the fitting process.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>max.step</code></td>
+<td>
+<p>The maximal number of iterations to be passed into the <code>optim</code> function. The default is 1000.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>thres</code></td>
+<td>
+<p>Threshold for judging convergence. The default is 1e-6.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>alpha.start</code></td>
+<td>
+<p>Starting values for the parameters in the target model.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>beta.start</code></td>
+<td>
+<p>Starting values for the parameters in the nuisance model.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>message</code></td>
+<td>
+<p>Show optimization details? Ignored if the estimation method is 'MLE'. The default is FALSE.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p><code>brm</code> contains two parts: the target model for the dependence measure (RR, RD or OR) and the nuisance model; the latter is required for maximum likelihood estimation. 
+If <code>param="RR"</code> then the target model is <code class="reqn">log RR(va) = \alpha*va</code>. 
+If <code>param="RD"</code> then the target model is <code class="reqn">atanh RD(va) = \alpha*va</code>. 
+If <code>param="OR"</code> then the target model is <code class="reqn">log OR(va) = \alpha*va</code>. 
+For RR and RD, the nuisance model is for the log Odds Product: <code class="reqn">log OP(vb) = \beta*vb</code>. 
+For OR, the nuisance model is for the baseline risk: <code class="reqn">logit(P(y=1|x=0,vb)) = \beta*vb.</code>
+In each case the nuisance model is variation independent of the target model, which  ensures that the predicted probabilities lie in <code class="reqn">[0,1]</code>. 
+See Richardson et al. (2016+) for more details.
+</p>
+<p>If <code>est.method="DR"</code> then given a correctly specified logistic regression model for the propensity score <code class="reqn">logit(P(x=1|vc)) = \gamma*vc</code>, estimation of the RR or RD is consistent, even if the log Odds Product model is misspecified. This estimation method is not available for the OR. See Tchetgen Tchetgen et al. (2014) for more details.
+</p>
+<p>When estimating RR and RD, <code>est.method="DR"</code> is recommended unless it is known that the log Odds Product model is correctly specified. Optimal weights (<code>optimal=TRUE</code>) are also recommended to increase efficiency.
+</p>
+<p>For the doubly robust estimation method, MLE is used to obtain preliminary estimates of <code class="reqn">\alpha</code>, <code class="reqn">\beta</code> and <code class="reqn">\gamma</code>. The estimate of <code class="reqn">\alpha</code> is then updated by solving a doubly-robust estimating equation. (The estimate for <code class="reqn">\beta</code> remains the MLE.)
+</p>
+
+
+<h3>Value</h3>
+
+<p>A list consisting of
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>param</code></td>
+<td>
+<p>the measure of association.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>point.est</code></td>
+<td>
+<p> the point estimates.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>se.est</code></td>
+<td>
+<p>the standard error estimates.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>cov</code></td>
+<td>
+<p>estimate of the covariance matrix for the estimates.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>conf.lower</code></td>
+<td>
+<p> the lower limit of the 95% (marginal) confidence interval.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>conf.upper</code></td>
+<td>
+<p> the upper limit of the 95% (marginal) confidence interval.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>p.value</code></td>
+<td>
+<p>the two sided p-value for testing zero coefficients.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>coefficients</code></td>
+<td>
+<p> the matrix summarizing key information: point estimate, 95% confidence interval and p-value.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>param.est</code></td>
+<td>
+<p>the fitted RR/RD/OR.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>va</code></td>
+<td>
+<p>   the matrix of covariates for the target model.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>vb</code></td>
+<td>
+<p>   the matrix of covariates for the nuisance model.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>converged</code></td>
+<td>
+<p>  Did the maximization process converge? </p>
+</td>
+</tr>
+</table>
+<h3>Author(s)</h3>
+
+<p>Linbo Wang &lt;linbo.wang@utoronto.ca&gt;, Mark Clements &lt;mark.clements@ki.se&gt;, Thomas Richardson &lt;thomasr@uw.edu&gt;
+</p>
+
+
+<h3>References</h3>
+
+<p>Thomas S. Richardson, James M. Robins and Linbo Wang. "On Modeling and Estimation for the Relative Risk and Risk Difference." Journal of the American Statistical Association: Theory and Methods (2017).
+</p>
+<p>Eric J. Tchetgen Tchetgen, James M. Robins and Andrea Rotnitzky. "On doubly robust estimation in a semiparametric odds ratio model." Biometrika 97.1 (2010): 171-180.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>getProbScalarRD</code>, <code>getProbRD</code> (vectorised), <code>getProbScalarRR</code> and <code>getProbRR</code> (vectorised) for functions calculating risks P(y=1|x=1) and P(y=1|x=0) from (atanh RD, log OP) or (log RR, log OP);
+</p>
+<p><code>predict.blm</code> for obtaining fitted probabilities from <code>brm</code> fits.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">set.seed(0)
+n           = 100
+alpha.true  = c(0,-1)
+beta.true   = c(-0.5,1)
+gamma.true  = c(0.1,-0.5)
+params.true = list(alpha.true=alpha.true, beta.true=beta.true, 
+     gamma.true=gamma.true)
+v.1         = rep(1,n)       # intercept term
+v.2         = runif(n,-2,2) 
+v           = cbind(v.1,v.2)
+pscore.true = exp(v %*% gamma.true) / (1+exp(v %*% gamma.true))
+p0p1.true   = getProbRR(v %*% alpha.true,v %*% beta.true)
+x           = rbinom(n, 1, pscore.true)  
+pA.true       = p0p1.true[,1]
+pA.true[x==1] = p0p1.true[x==1,2]
+y = rbinom(n, 1, pA.true)
+
+fit.mle = brm(y,x,v,v,'RR','MLE',v,TRUE)
+fit.drw = brm(y,x,v,v,'RR','DR',v,TRUE)
+fit.dru = brm(y,x,v,v,'RR','DR',v,FALSE)
+
+fit.mle2 = brm(y,x,~v.2, ~v.2, 'RR','MLE', ~v.2,TRUE) # same as fit.mle
+
+</code></pre>
+
+
+</div>

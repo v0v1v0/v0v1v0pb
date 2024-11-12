@@ -1,0 +1,123 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>BTdecay</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Bradley-Terry Model with Exponential Decayed weighted likelihood</h2>
+
+<h3>Description</h3>
+
+<p>Exponential decay rate is applied to the likelihood function to achieve a better track of current abilities. When "decay.rate" is setting as 0,
+this is a standard Bradley-Terry Model whose estimated parameters are equivalent to package "BradleyTerry2".
+Further detailed description is attached in <code>BTdecayLasso</code>.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">BTdecay(dataframe, ability, decay.rate = 0, fixed = 1, iter = 100)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>dataframe</code></td>
+<td>
+<p>Generated using <code>BTdataframe</code> given raw data.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ability</code></td>
+<td>
+<p>A column vector of teams ability, the last row is the home parameter.
+The row number is consistent with the team's index shown in dataframe. It can be generated using <code>BTdataframe</code> given raw data.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>decay.rate</code></td>
+<td>
+<p>The exponential decay rate. Usually ranging from (0, 0.01), A larger decay rate weights more
+importance to most recent matches and the estimated parameters reflect more on recent behaviour.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>fixed</code></td>
+<td>
+<p>A teams index whose ability will be fixed as 0. The worstTeam's index
+can be generated using <code>BTdataframe</code> given raw data.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>iter</code></td>
+<td>
+<p>Number of iterations used in L-BFGS-B algorithm.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The standard Bradley-Terry Model defines the winning probability of i against j,
+</p>
+<p style="text-align: center;"><code class="reqn">P(Y_{ij}=1)=\frac{\exp(\tau h_{ij}^{t_{k}}+\mu_{i}-\mu_{j})}{1+\exp(\tau h_{ij}^{t_{k}}+\mu_{i}-\mu_{j})}</code>
+</p>
+
+<p><code class="reqn">\tau</code> is the home parameter and <code class="reqn">\mu_{i}</code> is the team i's ability score. <code class="reqn">h_{ij}</code> takes 1 if team i is at home, -1 otherwise.
+Given, a complete tournament's result. The objective likelihood function with an exponential decay rate is,
+</p>
+<p style="text-align: center;"><code class="reqn">\sum_{k=1}^{n}\sum_{i&lt;j}\exp(-\alpha t_{k})\cdot(y_{ij}(\tau h_{ij}^{t_{k}}+\mu_{i}-\mu_{j})-\log(1+\exp(\tau h_{ij}^{t_{k}}+\mu_{i}-\mu_{j})))</code>
+</p>
+
+<p>where n is the number of matches, <code class="reqn">\alpha</code> is the exponential decay rate and <code class="reqn">y_{ij}</code> takes 0 if i is defeated by j, 1 otherwise. <code class="reqn">t_{k}</code> is
+the time lag (time until now). 
+This likelihood function is optimized using L-BFGS-B method with package <b>optimr</b> and summary() function with S3 method can be applied to view the outputs.
+</p>
+
+
+<h3>Value</h3>
+
+<p>List with class "BT" contains estimated abilities and convergent code, 0 stands for convergence reaches,
+1 stands for convergence not reaches. If 1 is returned, we suggest that decay rate should be set lower.
+Bradley-Terry model fails to model the situation when a team wins or loses in all matches.
+If a high decay rate is considered, a team who only loses or wins 1 matches long time ago will also causes the same problem.
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>ability</code></td>
+<td>
+<p>Estimated ability scores</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>convergence</code></td>
+<td>
+<p>0 stands for convergent, 1 stands for not convergent</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>decay.rate</code></td>
+<td>
+<p>Decay rate of this model</p>
+</td>
+</tr>
+</table>
+<h3>Examples</h3>
+
+<pre><code class="language-R">##Initializing Dataframe
+x &lt;- BTdataframe(NFL2010)
+
+##Standard Bradley-Terry Model optimization
+y &lt;- BTdecay(x$dataframe, x$ability, decay.rate = 0, fixed = x$worstTeam)
+summary(y)
+
+##Dynamic approximation of current ability scores using exponential decayed likelihood.
+##If we take decay.rate = 0.005
+##Match happens one month before will weight exp(-0.15)=0.86 on log-likelihood function
+z &lt;- BTdecay(x$dataframe, x$ability, decay.rate = 0.005, fixed = x$worstTeam)
+summary(z)
+</code></pre>
+
+
+</div>

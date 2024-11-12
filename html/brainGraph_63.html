@@ -1,0 +1,264 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>create_mats</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Create connection matrices for tractography or fMRI data</h2>
+
+<h3>Description</h3>
+
+<p><code>create_mats</code> creates arrays from connection matrices (e.g.,
+<em>fdt_network_matrix</em> from FSL or <em>ROICorrelation.txt</em> from DPABI).
+You may choose to normalize these matrices by the <em>waytotal</em> or
+<em>region size</em> (tractography), or not at all.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">create_mats(A.files, modality = c("dti", "fmri"), divisor = c("none",
+  "waytotal", "size", "rowSums"), div.files = NULL,
+  threshold.by = c("consensus", "density", "mean", "consistency", "raw"),
+  mat.thresh = 0, sub.thresh = 0.5, inds = list(seq_along(A.files)),
+  algo = c("probabilistic", "deterministic"), P = 5000, ...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>A.files</code></td>
+<td>
+<p>Character vector of the filenames with connection matrices</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>modality</code></td>
+<td>
+<p>Character string indicating data modality (default:
+<code>dti</code>)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>divisor</code></td>
+<td>
+<p>Character string indicating how to normalize the connection
+matrices; either 'none' (default), 'waytotal', 'size', or 'rowSums'
+(ignored if <code>modality</code> equals <code>fmri</code>)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>div.files</code></td>
+<td>
+<p>Character vector of the filenames with the data to
+normalize by (e.g. a list of <em>waytotal</em> files) (default: <code>NULL</code>)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>threshold.by</code></td>
+<td>
+<p>Character string indicating how to threshold the data;
+choose <code>density</code>, <code>mean</code>, or <code>consistency</code> if you want all
+resulting matrices to have the same densities (default: <code>consensus</code>)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>mat.thresh</code></td>
+<td>
+<p>Numeric (vector) for thresholding connection matrices
+(default: 0)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>sub.thresh</code></td>
+<td>
+<p>Numeric (between 0 and 1) for thresholding by subject
+numbers (default: 0.5)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>inds</code></td>
+<td>
+<p>List (length equal to number of groups) of integers; each list
+element should be a vector of length equal to the group sizes</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>algo</code></td>
+<td>
+<p>Character string of the tractography algorithm used (default:
+<code>'probabilistic'</code>). Ignored if <em>modality</em> is <code>fmri</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>P</code></td>
+<td>
+<p>Integer; number of samples per seed voxel (default: 5000)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Arguments passed to <code>symmetrize</code></p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>A list containing:
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>A</code></td>
+<td>
+<p>A 3-d array of the raw connection matrices</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>A.norm</code></td>
+<td>
+<p>A 3-d array of the normalized connection matrices</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>A.bin</code></td>
+<td>
+<p>A list of 3-d arrays of binarized connection matrices, one array
+for each threshold</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>A.bin.sums</code></td>
+<td>
+<p>A list of 3-d arrays of connection matrices, with each
+entry signifying the number of subjects with a connection present; the
+number of list elements equals the length of <code>mat.thresh</code>, and the
+extent of the arrays equals the number of groups</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>A.inds</code></td>
+<td>
+<p>A list of arrays of binarized connection matrices, containing 1
+if that entry is to be included</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>A.norm.sub</code></td>
+<td>
+<p>List of 3-d arrays of the normalized connection matrices
+for all given thresholds</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>A.norm.mean</code></td>
+<td>
+<p>List of 3-d arrays of connection matrices averaged for
+each group</p>
+</td>
+</tr>
+</table>
+<h3>Connection matrix files</h3>
+
+<p>The <code>A.files</code> argument is mandatory and may be specified in a few ways:
+</p>
+
+<ol>
+<li>
+<p> A character vector of the filenames (preferably with full path).
+</p>
+</li>
+<li>
+<p> A single character string specifying the <em>directory</em> in which
+all connectivity matrices are located. This will load <em>all</em> files in
+the directory.
+</p>
+</li>
+<li>
+<p> A <em>named list</em> in which the names match the arguments to
+<code>list.files</code>. This will load <em>all</em> files in <code>path</code>
+that match the <code>pattern</code> argument, if present, and will load
+<em>all</em> files in child directories if <code>recursive=TRUE</code>. See
+examples below.
+</p>
+</li>
+</ol>
+<p>The same options apply to <code>div.files</code> as well.
+</p>
+
+
+<h3>Thresholding methods</h3>
+
+<p>The argument <code>threshold.by</code> has 5 options:
+</p>
+
+<ol>
+<li> <p><code>consensus</code> Threshold based on the raw (normalized, if selected)
+values in the matrices. If this is selected, it uses the
+<code>sub.thresh</code> value to perform “consensus” thresholding.
+</p>
+</li>
+<li> <p><code>density</code> Threshold the matrices to yield a specific graph
+density (given by the <code>mat.thresh</code> argument).
+</p>
+</li>
+<li> <p><code>mean</code> Keep only connections for which the cross-subject mean is
+at least 2 standard deviations higher than the threshold (specified by
+<code>mat.thresh</code>)
+</p>
+</li>
+<li> <p><code>consistency</code> Threshold based on the coefficient of variation to
+yield a graph with a specific density (given by <code>mat.thresh</code>). The
+edge weights will still represent those of the input matrices. See
+Roberts et al. (2017) for more on “consistency-based”
+thresholding.
+</p>
+</li>
+<li> <p><code>raw</code> Threshold each subject's matrix <em>individually</em>,
+irrespective of group membership. Ignores <code>sub.thresh</code>.
+</p>
+</li>
+</ol>
+<p>The argument <code>mat.thresh</code> allows you to choose a numeric threshold,
+below which the connections will be replaced with 0; this argument will also
+accept a numeric vector. The argument <code>sub.thresh</code> will keep only those
+connections for which at least <em>X</em>% of subjects have a positive entry
+(the default is 0.5, or 50%).
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Christopher G. Watson, <a href="mailto:cgwatson@bu.edu">cgwatson@bu.edu</a>
+</p>
+
+
+<h3>References</h3>
+
+<p>Roberts, JA and Perry, A and Roberts, G and Mitchell, PB and
+Breakspear, M (2017) Consistency-based thresholding of the human
+connectome. <em>NeuroImage</em>. <b>145</b>, 118–129.
+doi: <a href="https://doi.org/10.1016/j.neuroimage.2016.09.053">10.1016/j.neuroimage.2016.09.053</a>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## Not run: 
+thresholds &lt;- seq(from=0.001, to=0.01, by=0.001)
+fmri.mats &lt;- create_mats(f.A, modality='fmri', threshold.by='consensus',
+  mat.thresh=thresholds, sub.thresh=0.5, inds=inds)
+dti.mats &lt;- create_mats(f.A, divisor='waytotal', div.files=f.way,
+  mat.thresh=thresholds, sub.thresh=0.5, inds=inds)
+
+# Specify a directory and filename pattern
+conn_files &lt;- list(path='~/data', pattern='.*fdt_network_matrix')
+dti.mats &lt;- create_mats(conn_files, ...)
+
+## End(Not run)
+</code></pre>
+
+
+</div>

@@ -1,0 +1,233 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>cv.svd.gabriel</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Cross-Validation for choosing the rank of an SVD approximation.</h2>
+
+<h3>Description</h3>
+
+<p>Perform Wold- or Gabriel-style cross-validation for determining the
+appropriate rank SVD approximation of a matrix.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">cv.svd.gabriel(
+  x,
+  krow = 2,
+  kcol = 2,
+  maxrank = floor(min(n - n/krow, p - p/kcol))
+)
+
+cv.svd.wold(x, k = 5, maxrank = 20, tol = 1e-04, maxiter = 20)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>the matrix to cross-validate.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>krow</code></td>
+<td>
+<p>the number of row folds (for Gabriel-style CV).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>kcol</code></td>
+<td>
+<p>the number of column folds (for Gabriel-style CV).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>maxrank</code></td>
+<td>
+<p>the maximum rank to cross-validate up to.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>k</code></td>
+<td>
+<p>the number of folds (for Wold-style CV).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>tol</code></td>
+<td>
+<p>the convergence tolerance for <code>impute.svd</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>maxiter</code></td>
+<td>
+<p>the maximum number of iterations for
+<code>impute.svd</code>.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>These functions are for cross-validating the SVD of a matrix.  They assume a
+model $X = U D V' + E$ with the terms being signal and noise, and try to
+find the best rank to truncate the SVD of <code>x</code> at for minimizing
+prediction error.  Here, prediction error is measured as sum of squares of
+residuals between the truncated SVD and the signal part.
+</p>
+<p>For both types of cross-validation, in each replicate we leave out part of
+the matrix, fit an SVD approximation to the left-in part, and measure
+prediction error on the left-out part.
+</p>
+<p>In Wold-style cross-validation, the holdout set is "speckled", a random set
+of elements in the matrix.  The missing elements are predicted using
+<code>impute.svd</code>.
+</p>
+<p>In Gabriel-style cross-validation, the holdout set is "blocked".  We permute
+the rows and columns of the matrix, and leave out the lower-right block.  We
+use a modified Schur-complement to predict the held-out block.  In
+Gabriel-style, there are <code>krow*kcol</code> total folds.
+</p>
+
+
+<h3>Value</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>call </code></td>
+<td>
+<p>the function call</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>msep </code></td>
+<td>
+<p>the mean square error
+of prediction (MSEP); this is a matrix whose columns contain the mean square
+errors in the predictions of the holdout sets for ranks 0, 1, ...,
+<code>maxrank</code> across the different replicates.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>maxrank </code></td>
+<td>
+<p>the maximum
+rank for which prediction error is estimated; this is equal to
+<code>nrow(msep)+1</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>krow </code></td>
+<td>
+<p>the number of row folds (for Gabriel-style only).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>kcol
+</code></td>
+<td>
+<p>the number of column folds (for Gabriel-style only).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>rowsets </code></td>
+<td>
+<p>the
+partition of rows into <code>krow</code> holdout sets (for Gabriel-style only).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>colsets </code></td>
+<td>
+<p>the partition of the columns into <code>kcol</code> holdout sets
+(for Gabriel-style only).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>k </code></td>
+<td>
+<p>the number of folds (for Wold-style only).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>sets </code></td>
+<td>
+<p>the
+partition of indices into <code>k</code> holdout sets (for Wold-style only).</p>
+</td>
+</tr>
+</table>
+<h3>Note</h3>
+
+<p>Gabriel's version of cross-validation was for leaving out a single
+element of the matrix, which corresponds to n-by-p-fold.  Owen and Perry
+generalized Gabriel's idea to larger holdouts, showing that 2-by-2-fold
+cross-validation often works better.
+</p>
+<p>Wold's original version of cross-validation did not use the EM algorithm to
+estimate the SVD.  He recommend using the NIPALS algorithm instead, which
+has since faded into obscurity.
+</p>
+<p>Wold-style cross-validation takes a lot more computation than Gabriel-style.
+The <code>maxrank</code>, <code>tol</code>, and <code>maxiter</code> have been chosen to give
+up some accuracy in the name of expediency.  They may need to be adjusted to
+get the best results.
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Patrick O. Perry
+</p>
+
+
+<h3>References</h3>
+
+<p>Gabriel, K.R. (2002). Le biplot - outil d'explaration de
+données multidimensionelles.  <em>Journal de la Société 
+française de statistique</em>, Volume 143 (2002) no. 3-4, pp. 5-55.
+B.
+</p>
+<p>Owen, A.B. and Perry, P.O. (2009). Bi-cross-validation of the SVD and the
+non-negative matrix factorization.  <em>Annals of Applied Statistics</em>
+<b>3</b>(2) 564–594.
+</p>
+<p>Wold, S. (1978).  Cross-validatory estimation of the number of components in
+factor and principal components models.  <em>Technometrics</em> <b>20</b>(4)
+397–405.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>impute.svd</code>, <code>plot.cvsvd</code>,
+<code>print.cvsvd</code> <code>summary.cvsvd</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+  # generate a rank-2 matrix plus noise
+  n &lt;- 50; p &lt;- 20; k &lt;- 2
+  u &lt;- matrix( rnorm( n*k ), n, k )
+  v &lt;- matrix( rnorm( p*k ), p, k )
+  e &lt;- matrix( rnorm( n*p ), n, p )
+  x &lt;- u %*% t(v) + e
+  
+  # perform 5-fold Wold-style cross-validtion
+  (cvw &lt;- cv.svd.wold( x, 5, maxrank=10 ))
+  
+  # perform (2,2)-fold Gabriel-style cross-validation
+  (cvg &lt;- cv.svd.gabriel( x, 2, 2, maxrank=10 ))
+
+</code></pre>
+
+
+</div>

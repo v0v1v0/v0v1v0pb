@@ -1,0 +1,571 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>binsreg</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Data-Driven Binscatter Least Squares Regression with Robust Inference Procedures and Plots</h2>
+
+<h3>Description</h3>
+
+<p><code>binsreg</code> implements binscatter least squares regression with robust inference procedures and plots, following the
+results in <a href="https://nppackages.github.io/references/Cattaneo-Crump-Farrell-Feng_2024_AER.pdf">Cattaneo, Crump, Farrell and Feng (2024a)</a> and
+<a href="https://nppackages.github.io/references/Cattaneo-Crump-Farrell-Feng_2024_NonlinearBinscatter.pdf">Cattaneo, Crump, Farrell and Feng (2024b)</a>.
+Binscatter provides a flexible way to describe the mean relationship between two variables, after
+possibly adjusting for other covariates, based on partitioning/binning of the independent variable of interest.
+The main purpose of this function is to generate binned scatter plots with curve estimation with robust pointwise confidence intervals and
+uniform confidence band.  If the binning scheme is not set by the user, the companion function
+<code>binsregselect</code> is used to implement binscatter in a data-driven (optimal)
+way. Hypothesis testing about the regression function can be conducted via the companion
+function <code>binstest</code>.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">binsreg(y, x, w = NULL, data = NULL, at = NULL, deriv = 0,
+  dots = NULL, dotsgrid = 0, dotsgridmean = T, line = NULL,
+  linegrid = 20, ci = NULL, cigrid = 0, cigridmean = T, cb = NULL,
+  cbgrid = 20, polyreg = NULL, polyreggrid = 20, polyregcigrid = 0,
+  by = NULL, bycolors = NULL, bysymbols = NULL, bylpatterns = NULL,
+  legendTitle = NULL, legendoff = F, nbins = NULL, binspos = "qs",
+  binsmethod = "dpi", nbinsrot = NULL, pselect = NULL, sselect = NULL,
+  samebinsby = F, randcut = NULL, nsims = 500, simsgrid = 20,
+  simsseed = NULL, vce = "HC1", cluster = NULL, asyvar = F,
+  level = 95, noplot = F, dfcheck = c(20, 30), masspoints = "on",
+  weights = NULL, subset = NULL, plotxrange = NULL, plotyrange = NULL)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>y</code></td>
+<td>
+<p>outcome variable. A vector.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>independent variable of interest. A vector.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>w</code></td>
+<td>
+<p>control variables. A matrix, a vector or a <code>formula</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+<p>an optional data frame containing variables used in the model.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>at</code></td>
+<td>
+<p>value of <code>w</code> at which the estimated function is evaluated.  The default is <code>at="mean"</code>, which corresponds to
+the mean of <code>w</code>. Other options are: <code>at="median"</code> for the median of <code>w</code>, <code>at="zero"</code> for a vector of zeros.
+<code>at</code> can also be a vector of the same length as the number of columns of <code>w</code> (if <code>w</code> is a matrix) or a data frame containing the same variables as specified in <code>w</code> (when
+<code>data</code> is specified). Note that when <code>at="mean"</code> or <code>at="median"</code>, all factor variables (if specified) are excluded from the evaluation (set as zero).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>deriv</code></td>
+<td>
+<p>derivative order of the regression function for estimation, testing and plotting.
+The default is <code>deriv=0</code>, which corresponds to the function itself.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>dots</code></td>
+<td>
+<p>a vector or a logical value. If <code>dots=c(p,s)</code>, a piecewise polynomial of degree <code>p</code> with
+<code>s</code> smoothness constraints is used for point estimation and plotting as "dots".
+The default is <code>dots=c(0,0)</code>, which corresponds to piecewise constant (canonical binscatter).
+If <code>dots=T</code>, the default <code>dots=c(0,0)</code> is used unless the degree <code>p</code> or smoothness <code>s</code> selection
+is requested via the option <code>pselect</code> or <code>sselect</code> (see more details in the explanation of <code>pselect</code> and <code>sselect</code>).
+If <code>dots=F</code> is specified, the dots are not included in the plot.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>dotsgrid</code></td>
+<td>
+<p>number of dots within each bin to be plotted. Given the choice, these dots are point estimates
+evaluated over an evenly-spaced grid within each bin. The default is <code>dotsgrid=0</code>, and only
+the point estimates at the mean of <code>x</code> within each bin are presented.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>dotsgridmean</code></td>
+<td>
+<p>If true, the dots corresponding to the point estimates evaluated at the mean of <code>x</code> within each bin
+are presented. By default, they are presented, i.e., <code>dotsgridmean=T</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>line</code></td>
+<td>
+<p>a vector or a logical value. If <code>line=c(p,s)</code>, a piecewise polynomial of degree <code>p</code> with <code>s</code> smoothness constraints
+is used for plotting as a "line". If <code>line=T</code> is specified, <code>line=c(0,0)</code> is used unless the degree <code>p</code> or smoothness <code>s</code>
+selection is requested via the option <code>pselect</code> or <code>sselect</code> (see more details in the explanation of <code>pselect</code> and <code>sselect</code>).
+If <code>line=F</code> or <code>line=NULL</code> is specified, the line is not included in the plot.  The default is <code>line=NULL</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>linegrid</code></td>
+<td>
+<p>number of evaluation points of an evenly-spaced grid within each bin used for evaluation of
+the point estimate set by the <code>line=c(p,s)</code> option. The default is <code>linegrid=20</code>,
+which corresponds to 20 evenly-spaced evaluation points within each bin for fitting/plotting the line.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ci</code></td>
+<td>
+<p>a vector or a logical value. If <code>ci=c(p,s)</code> a piecewise polynomial of degree <code>p</code> with <code>s</code> smoothness constraints is used for
+constructing confidence intervals. If <code>ci=T</code> is specified, <code>ci=c(1,1)</code> is used unless the degree <code>p</code> or smoothness <code>s</code>
+selection is requested via the option <code>pselect</code> or <code>sselect</code> (see more details in the explanation of <code>pselect</code> and <code>sselect</code>).
+If <code>ci=F</code> or <code>ci=NULL</code> is specified, the confidence intervals are not included in the plot.  The default is <code>ci=NULL</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>cigrid</code></td>
+<td>
+<p>number of evaluation points of an evenly-spaced grid within each bin used for evaluation of the point
+estimate set by the <code>ci=c(p,s)</code> option. The default is <code>cigrid=1</code>, which corresponds to 1
+evenly-spaced evaluation point within each bin for confidence interval construction.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>cigridmean</code></td>
+<td>
+<p>If true, the confidence intervals corresponding to the point estimates evaluated at the mean of <code>x</code> within each bin
+are presented. The default is <code>cigridmean=T</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>cb</code></td>
+<td>
+<p>a vector or a logical value. If <code>cb=c(p,s)</code>, a the piecewise polynomial of degree <code>p</code> with <code>s</code> smoothness constraints is used for
+constructing the confidence band. If the option <code>cb=T</code> is specified, <code>cb=c(1,1)</code> is used unless the degree <code>p</code> or smoothness <code>s</code>
+selection is requested via the option <code>pselect</code> or <code>sselect</code> (see more details in the explanation of <code>pselect</code> and <code>sselect</code>).
+If <code>cb=F</code> or <code>cb=NULL</code> is specified, the confidence band is not included in the plot. The default is <code>cb=NULL</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>cbgrid</code></td>
+<td>
+<p>number of evaluation points of an evenly-spaced grid within each bin used for evaluation of the point
+estimate set by the <code>cb=c(p,s)</code> option. The default is <code>cbgrid=20</code>, which corresponds
+to 20 evenly-spaced evaluation points within each bin for confidence interval construction.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>polyreg</code></td>
+<td>
+<p>degree of a global polynomial regression model for plotting. By default, this fit is not included
+in the plot unless explicitly specified. Recommended specification is <code>polyreg=3</code>, which
+adds a cubic (global) polynomial fit of the regression function of interest to the binned scatter plot.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>polyreggrid</code></td>
+<td>
+<p>number of evaluation points of an evenly-spaced grid within each bin used for evaluation of
+the point estimate set by the <code>polyreg=p</code> option. The default is <code>polyreggrid=20</code>,
+which corresponds to 20 evenly-spaced evaluation points within each bin for confidence
+interval construction.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>polyregcigrid</code></td>
+<td>
+<p>number of evaluation points of an evenly-spaced grid within each bin used for constructing
+confidence intervals based on polynomial regression set by the <code>polyreg=p</code> option.
+The default is <code>polyregcigrid=0</code>, which corresponds to not plotting confidence
+intervals for the global polynomial regression approximation.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>by</code></td>
+<td>
+<p>a vector containing the group indicator for subgroup analysis; both numeric and string variables
+are supported. When <code>by</code> is specified, <code>binsreg</code> implements estimation and inference for each subgroup
+separately, but produces a common binned scatter plot. By default, the binning structure is selected for each
+subgroup separately, but see the option <code>samebinsby</code> below for imposing a common binning structure across subgroups.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>bycolors</code></td>
+<td>
+<p>an ordered list of colors for plotting each subgroup series defined by the option <code>by</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>bysymbols</code></td>
+<td>
+<p>an ordered list of symbols for plotting each subgroup series defined by the option <code>by</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>bylpatterns</code></td>
+<td>
+<p>an ordered list of line patterns for plotting each subgroup series defined by the option <code>by</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>legendTitle</code></td>
+<td>
+<p>String, title of legend.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>legendoff</code></td>
+<td>
+<p>If true, no legend is added.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nbins</code></td>
+<td>
+<p>number of bins for partitioning/binning of <code>x</code>.  If <code>nbins=T</code> or <code>nbins=NULL</code> (default) is specified, the number
+of bins is selected via the companion command <code>binsregselect</code> in a data-driven, optimal way whenever possible.
+If a vector with more than one number is specified, the number of bins is selected within this vector via the companion command <code>binsregselect</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>binspos</code></td>
+<td>
+<p>position of binning knots. The default is <code>binspos="qs"</code>, which corresponds to quantile-spaced
+binning (canonical binscatter).  The other options are <code>"es"</code> for evenly-spaced binning, or
+a vector for manual specification of the positions of inner knots (which must be within the range of <code>x</code>).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>binsmethod</code></td>
+<td>
+<p>method for data-driven selection of the number of bins. The default is <code>binsmethod="dpi"</code>,
+which corresponds to the IMSE-optimal direct plug-in rule.  The other option is: <code>"rot"</code>
+for rule of thumb implementation.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nbinsrot</code></td>
+<td>
+<p>initial number of bins value used to construct the DPI number of bins selector.
+If not specified, the data-driven ROT selector is used instead.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>pselect</code></td>
+<td>
+<p>vector of numbers within which the degree of polynomial <code>p</code> for point estimation is selected.
+Piecewise polynomials of the selected optimal degree <code>p</code> are used to construct dots or line
+if <code>dots=T</code> or <code>line=T</code> is specified,
+whereas piecewise polynomials of degree <code>p+1</code> are used to construct confidence intervals
+or confidence band if <code>ci=T</code> or <code>cb=T</code> is specified.
+<em>Note:</em> To implement the degree or smoothness selection, in addition to <code>pselect</code> or <code>sselect</code>,
+<code>nbins=#</code> must be specified.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>sselect</code></td>
+<td>
+<p>vector of numbers within which the number of smoothness constraints <code>s</code> for point estimation is selected.
+Piecewise polynomials with the selected optimal <code>s</code> smoothness constraints are used to construct dots or line
+if <code>dots=T</code> or <code>line=T</code> is specified,
+whereas piecewise polynomials with <code>s+1</code> constraints are used to construct
+confidence intervals or confidence band if <code>ci=T</code> or <code>cb=T</code> is
+specified.  If not specified, for each value <code>p</code> supplied in the option <code>pselect</code>, only the piecewise polynomial
+with the maximum smoothness is considered, i.e., <code>s=p</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>samebinsby</code></td>
+<td>
+<p>if true, a common partitioning/binning structure across all subgroups specified by the option <code>by</code> is forced.
+The knots positions are selected according to the option <code>binspos</code> and using the full sample. If <code>nbins</code>
+is not specified, then the number of bins is selected via the companion command <code>binsregselect</code> and
+using the full sample.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>randcut</code></td>
+<td>
+<p>upper bound on a uniformly distributed variable used to draw a subsample for bins/degree/smoothness selection.
+Observations for which <code>runif()&lt;=#</code> are used. # must be between 0 and 1.  By default, <code>max(5000, 0.01n)</code> observations
+are used if the samples size <code>n&gt;5000</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nsims</code></td>
+<td>
+<p>number of random draws for constructing confidence bands. The default is
+<code>nsims=500</code>, which corresponds to 500 draws from a standard Gaussian random vector of size
+<code>[(p+1)*J - (J-1)*s]</code>. Setting at least <code>nsims=2000</code> is recommended to obtain the final results.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>simsgrid</code></td>
+<td>
+<p>number of evaluation points of an evenly-spaced grid within each bin used for evaluation of
+the supremum operation needed to construct confidence bands. The default is <code>simsgrid=20</code>, which corresponds to 20 evenly-spaced
+evaluation points within each bin for approximating the supremum operator.
+Setting at least <code>simsgrid=50</code> is recommended to obtain the final results.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>simsseed</code></td>
+<td>
+<p>seed for simulation.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>vce</code></td>
+<td>
+<p>Procedure to compute the variance-covariance matrix estimator. Options are
+</p>
+
+<ul>
+<li> <p><code>"const"</code> homoskedastic variance estimator.
+</p>
+</li>
+<li> <p><code>"HC0"</code> heteroskedasticity-robust plug-in residuals variance estimator
+without weights.
+</p>
+</li>
+<li> <p><code>"HC1"</code> heteroskedasticity-robust plug-in residuals variance estimator
+with hc1 weights. Default.
+</p>
+</li>
+<li> <p><code>"HC2"</code> heteroskedasticity-robust plug-in residuals variance estimator
+with hc2 weights.
+</p>
+</li>
+<li> <p><code>"HC3"</code> heteroskedasticity-robust plug-in residuals variance estimator
+with hc3 weights.
+</p>
+</li>
+</ul>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>cluster</code></td>
+<td>
+<p>cluster ID. Used for compute cluster-robust standard errors.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>asyvar</code></td>
+<td>
+<p>If true, the standard error of the nonparametric component is computed and the uncertainty related to control
+variables is omitted. Default is <code>asyvar=FALSE</code>, that is, the uncertainty related to control variables is taken into account.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>level</code></td>
+<td>
+<p>nominal confidence level for confidence interval and confidence band estimation. Default is <code>level=95</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>noplot</code></td>
+<td>
+<p>if true, no plot produced.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>dfcheck</code></td>
+<td>
+<p>adjustments for minimum effective sample size checks, which take into account number of unique
+values of <code>x</code> (i.e., number of mass points), number of clusters, and degrees of freedom of
+the different statistical models considered. The default is <code>dfcheck=c(20, 30)</code>.
+See <a href="https://nppackages.github.io/references/Cattaneo-Crump-Farrell-Feng_2024_Stata.pdf">Cattaneo, Crump, Farrell and Feng (2024c)</a> for more details.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>masspoints</code></td>
+<td>
+<p>how mass points in <code>x</code> are handled. Available options:
+</p>
+
+<ul>
+<li> <p><code>"on"</code> all mass point and degrees of freedom checks are implemented. Default.
+</p>
+</li>
+<li> <p><code>"noadjust"</code> mass point checks and the corresponding effective sample size adjustments are omitted.
+</p>
+</li>
+<li> <p><code>"nolocalcheck"</code> within-bin mass point and degrees of freedom checks are omitted.
+</p>
+</li>
+<li> <p><code>"off"</code> "noadjust" and "nolocalcheck" are set simultaneously.
+</p>
+</li>
+<li> <p><code>"veryfew"</code> forces the function to proceed as if <code>x</code> has only a few number of mass points (i.e., distinct values).
+In other words, forces the function to proceed as if the mass point and degrees of freedom checks were failed.
+</p>
+</li>
+</ul>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>weights</code></td>
+<td>
+<p>an optional vector of weights to be used in the fitting process. Should be <code>NULL</code> or
+a numeric vector. For more details, see <code>lm</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>subset</code></td>
+<td>
+<p>Optional rule specifying a subset of observations to be used.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>plotxrange</code></td>
+<td>
+<p>a vector. <code>plotxrange=c(min, max)</code> specifies a range of the x-axis for plotting. Observations outside the range are dropped in the plot.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>plotyrange</code></td>
+<td>
+<p>a vector. <code>plotyrange=c(min, max)</code> specifies a range of the y-axis for plotting. Observations outside the range are dropped in the plot.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>bins_plot</code></td>
+<td>
+<p>A <code>ggplot</code> object for binscatter plot.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>data.plot</code></td>
+<td>
+<p>A list containing data for plotting. Each item is a sublist of data frames for each group. Each sublist may contain the following data frames:
+</p>
+
+<ul>
+<li> <p><code>data.dots</code> Data for dots. It contains: <code>x</code>, evaluation points; <code>bin</code>, the indicator of bins;
+<code>isknot</code>, indicator of inner knots; <code>mid</code>, midpoint of each bin; and <code>fit</code>, fitted values.
+</p>
+</li>
+<li> <p><code>data.line</code> Data for line. It contains: <code>x</code>, evaluation points; <code>bin</code>, the indicator of bins;
+<code>isknot</code>, indicator of inner knots; <code>mid</code>, midpoint of each bin; and <code>fit</code>, fitted values.
+</p>
+</li>
+<li> <p><code>data.ci</code> Data for CI. It contains: <code>x</code>, evaluation points; <code>bin</code>, the indicator of bins;
+<code>isknot</code>, indicator of inner knots; <code>mid</code>, midpoint of each bin;
+<code>ci.l</code> and <code>ci.r</code>, left and right boundaries of each confidence intervals.
+</p>
+</li>
+<li> <p><code>data.cb</code> Data for CB. It contains: <code>x</code>, evaluation points; <code>bin</code>, the indicator of bins;
+<code>isknot</code>, indicator of inner knots; <code>mid</code>, midpoint of each bin;
+<code>cb.l</code> and <code>cb.r</code>, left and right boundaries of the confidence band.
+</p>
+</li>
+<li> <p><code>data.poly</code> Data for polynomial regression. It contains: <code>x</code>, evaluation points;
+<code>bin</code>, the indicator of bins;
+<code>isknot</code>, indicator of inner knots; <code>mid</code>, midpoint of each bin; and
+<code>fit</code>, fitted values.
+</p>
+</li>
+<li> <p><code>data.polyci</code> Data for confidence intervals based on polynomial regression. It contains: <code>x</code>, evaluation points;
+<code>bin</code>, the indicator of bins;
+<code>isknot</code>, indicator of inner knots; <code>mid</code>, midpoint of each bin;
+<code>polyci.l</code> and <code>polyci.r</code>, left and right boundaries of each confidence intervals.
+</p>
+</li>
+<li> <p><code>data.bin</code> Data for the binning structure. It contains: <code>bin.id</code>, ID for each bin;
+<code>left.endpoint</code> and <code>right.endpoint</code>, left and right endpoints of each bin.</p>
+</li>
+</ul>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>imse.var.rot</code></td>
+<td>
+<p>Variance constant in IMSE, ROT selection.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>imse.bsq.rot</code></td>
+<td>
+<p>Bias constant in IMSE, ROT selection.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>imse.var.dpi</code></td>
+<td>
+<p>Variance constant in IMSE, DPI selection.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>imse.bsq.dpi</code></td>
+<td>
+<p>Bias constant in IMSE, DPI selection.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>cval.by</code></td>
+<td>
+<p>A vector of critical values for constructing confidence band for each group.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>opt</code></td>
+<td>
+<p> A list containing options passed to the function, as well as <code>N.by</code> (total sample size for each group),
+<code>Ndist.by</code> (number of distinct values in <code>x</code> for each group), <code>Nclust.by</code> (number of clusters for each group),
+and <code>nbins.by</code> (number of bins for each group), and <code>byvals</code> (number of distinct values in <code>by</code>).
+The degree and smoothness of polynomials for dots, line, confidence intervals and confidence band for each group are saved
+in <code>dots</code>, <code>line</code>, <code>ci</code>, and <code>cb</code>.</p>
+</td>
+</tr>
+</table>
+<h3>Author(s)</h3>
+
+<p>Matias D. Cattaneo, Princeton University, Princeton, NJ. <a href="mailto:cattaneo@princeton.edu">cattaneo@princeton.edu</a>.
+</p>
+<p>Richard K. Crump, Federal Reserve Bank of New York, New York, NY. <a href="mailto:richard.crump@ny.frb.org">richard.crump@ny.frb.org</a>.
+</p>
+<p>Max H. Farrell, UC Santa Barbara, Santa Barbara, CA. <a href="mailto:mhfarrell@gmail.com">mhfarrell@gmail.com</a>.
+</p>
+<p>Yingjie Feng (maintainer), Tsinghua University, Beijing, China. <a href="mailto:fengyingjiepku@gmail.com">fengyingjiepku@gmail.com</a>.
+</p>
+
+
+<h3>References</h3>
+
+<p>Cattaneo, M. D., R. K. Crump, M. H. Farrell, and Y. Feng. 2024a: <a href="https://nppackages.github.io/references/Cattaneo-Crump-Farrell-Feng_2024_AER.pdf">On Binscatter</a>. American Economic Review 114(5): 1488-1514.
+</p>
+<p>Cattaneo, M. D., R. K. Crump, M. H. Farrell, and Y. Feng. 2024b: <a href="https://nppackages.github.io/references/Cattaneo-Crump-Farrell-Feng_2024_NonlinearBinscatter.pdf">Nonlinear Binscatter Methods</a>. Working Paper.
+</p>
+<p>Cattaneo, M. D., R. K. Crump, M. H. Farrell, and Y. Feng. 2024c: <a href="https://nppackages.github.io/references/Cattaneo-Crump-Farrell-Feng_2024_Stata.pdf">Binscatter Regressions</a>. Working Paper.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>binsregselect</code>, <code>binstest</code>.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R"> x &lt;- runif(500); y &lt;- sin(x)+rnorm(500)
+ ## Binned scatterplot
+ binsreg(y,x)
+</code></pre>
+
+
+</div>

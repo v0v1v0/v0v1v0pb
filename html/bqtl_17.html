@@ -1,0 +1,234 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>lapadj</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Approximate marginal posterior for chosen model</h2>
+
+<h3>Description</h3>
+
+<p>lapadj provides the Laplace approximation to the marginal posterior
+(over coefficients and dispersion parameter) for a given genetical
+model for a quantitative trait. A by-product is the parameter value
+corresponding to the maximum posterior or likelihood.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R"> lapadj(reg.formula, ana.obj,  
+         rparm = NULL,  tol = 1e-10,
+	return.hess = FALSE, mode.names = NULL, mode.mat = NULL,
+          maxit = 100, nem = 1,setup.only=FALSE,subset=NULL,casewt=NULL,
+         start.parm=NULL, ...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>reg.formula</code></td>
+<td>
+<p> A formula, like
+<code>y~add.X.3+dom.X.3+add.x.45*add.x.72</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ana.obj</code></td>
+<td>
+<p> See<code>make.analysis.obj</code>, which returns
+objects like this</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>rparm</code></td>
+<td>
+
+<p>One of the following:
+</p>
+<p>A scalar that will be used as the ridge parameter for all
+design terms except for the intercept ridge parameter which is set
+to zero 
+</p>
+<p>A vector who named elements  can be matched by the design term
+names returned in <code>$reg.vec</code>. If no term named
+"intercept" is provided,
+</p>
+<p><code>rparm["intercept"]</code> will be set to zero. 
+</p>
+<p>A vector with <code>(q-1)*k</code> elements (this works when there are
+no interactions specified). If names are provided, these will be
+used for matching.
+</p>
+<p>Positive entries are 'ridge' parameters or variance ratios in a
+Bayesian prior for the regression coefficients. Larger values imply
+more shrinkage or a more concentrated prior for the regresion
+coefficients.   
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>tol</code></td>
+<td>
+<p>Iteration control parameter  </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>return.hess</code></td>
+<td>
+<p>Logical, include the Hessian in the output? </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>mode.names</code></td>
+<td>
+<p>names to use as <code>dimnames(mode.mat)[[2]]</code>  </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>mode.mat</code></td>
+<td>
+<p>Not usually set by the user. A matrix which indicates the values of regressor
+variables corresponding to the allele states. If <code>mode.mat</code> is
+not given by the user,
+<code>ana.obj$mode.mat</code> is used.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>maxit</code></td>
+<td>
+<p> Maximum Number of iterations to perform</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nem</code></td>
+<td>
+<p> Number of EM iterations to use in reinitializing the
+pseudo-Hessian </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>setup.only</code></td>
+<td>
+<p> If TRUE, do not run. Return an object that can be use
+for a direct call to <code>.C</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>subset</code></td>
+<td>
+<p> expression to evaluate using <code>ana.obj$data</code> as the
+environment</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>  casewt </code></td>
+<td>
+<p> a vector of non-negative weights </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>start.parm</code></td>
+<td>
+<p>Vector of starting values for the maximization</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p> other objects needed in fitting </p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The core of this function is a quasi-Newton optimizer due to Minami
+(1993) that has a computational burden that is only a bit more than
+the EM algorithm, but features fast convergence.  This is used to find
+the mode of the posterior. Once this is in hand, one can find the
+Laplace approximation to the marginal likelihood. In addition, some
+useful quantities are provided that help in estimating the marginal
+posterior over groups of models. 
+</p>
+
+
+<h3>Value</h3>
+
+<p>A list with components to be used in constructing approximations to the
+marginal posterior or a list that can be used to call the underlying C
+code directly. In the former case, these are:
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>adj</code></td>
+<td>
+<p>The ratio of the laplace approximation to the posterior for
+the correct likelihood to the laplace approximation to the posterior
+for  the linearized likelihood</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>logpost</code></td>
+<td>
+<p>The logarithm of the posterior or likelihood at the mode</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>parm</code></td>
+<td>
+<p>the location of the mode</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>posterior</code></td>
+<td>
+<p>The laplace approximation of the marginal posterior
+for the exact likelihood</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>hk.approx</code></td>
+<td>
+<p> Laplace approximation to the linearized likelihood</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>hk.exact</code></td>
+<td>
+<p> Exact marginal posterior for the linearized likelihood</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>reg.vec</code></td>
+<td>
+<p>A vector of the variables used</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>rparm</code></td>
+<td>
+
+<p>Values of ridge parameters used in this problem.</p>
+</td>
+</tr>
+</table>
+<h3>Author(s)</h3>
+
+<p>Charles C. Berry <a href="mailto:cberry@ucsd.edu">cberry@ucsd.edu</a> </p>
+
+
+<h3>References</h3>
+
+<p> Berry C.C.(1998) Computationally Efficient Bayesian QTL Mapping
+in Experimental Crosses. <em>ASA Proceedings of the Biometrics
+Section</em>. 164–169.
+</p>
+<p>Minami M. (1993) Variance estimation for simultaneous response growth curve
+models.  Thesis (Ph. D.)–University of California, San Diego,
+Department of Mathematics.
+</p>
+
+
+</div>

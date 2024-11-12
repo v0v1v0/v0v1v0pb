@@ -1,0 +1,138 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>ovbias_lm</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Compute bias adjusted treatment effect taking three lm objects as input.</h2>
+
+<h3>Description</h3>
+
+<p>Compute bias adjusted treatment effect taking three lm objects as input.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">ovbias_lm(lm_shrt, lm_int, lm_aux, deltalow, deltahigh, Rhigh, e)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>lm_shrt</code></td>
+<td>
+<p>lm object corresponding to the short regression</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>lm_int</code></td>
+<td>
+<p>lm object corresponding to the intermediate regression</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>lm_aux</code></td>
+<td>
+<p>lm object corresponding to the auxiliary regression</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>deltalow</code></td>
+<td>
+<p>The lower limit of delta</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>deltahigh</code></td>
+<td>
+<p>The upper limit of delta</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Rhigh</code></td>
+<td>
+<p>The upper limit of Rmax</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>e</code></td>
+<td>
+<p>The step size</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>List with three elements:
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>Data</code></td>
+<td>
+<p>Data frame containing the bias and bias-adjusted treatment effect for each point on the grid</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>bias_Distribution</code></td>
+<td>
+<p>Quantiles (2.5,5.0,50,95,97.5) of the empirical distribution of bias</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>bstar_Distribution</code></td>
+<td>
+<p>Quantiles (2.5,5.0,50,95,97.5) of the empirical distribution of the bias-adjusted treatment effect</p>
+</td>
+</tr>
+</table>
+<h3>Examples</h3>
+
+<pre><code class="language-R">## Load data set
+data("NLSY_IQ")
+ 
+## Set age and race as factor variables
+NLSY_IQ$age &lt;- factor(NLSY_IQ$age)
+NLSY_IQ$race &lt;- factor(NLSY_IQ$race)
+
+## Short regression
+reg_s &lt;- lm(iq_std ~ BF_months + factor(age) + sex, data = NLSY_IQ)
+
+## Intermediate regression
+reg_i &lt;- lm(iq_std ~ BF_months + 
+factor(age) + sex + income + motherAge + 
+motherEDU + mom_married + factor(race),
+data = NLSY_IQ)
+
+## Auxiliary regression
+reg_a &lt;- lm(BF_months ~ factor(age) + 
+sex + income + motherAge + motherEDU + 
+mom_married + factor(race), data = NLSY_IQ)
+
+## Set limits for the bounded box
+Rlow &lt;- summary(reg_i)$r.squared
+Rhigh &lt;- 0.61
+deltalow &lt;- 0.01
+deltahigh &lt;- 0.99
+e &lt;- 0.01
+
+## Not run: 
+## Compute bias and bias-adjusted treatment effect
+ovb_lm &lt;- ovbias_lm(lm_shrt = reg_s,lm_int = reg_i, 
+lm_aux = reg_a, deltalow=deltalow, deltahigh=deltahigh, 
+Rhigh=Rhigh, e=e)
+
+## Default quantiles of bias
+ovb_lm$bias_Distribution
+
+# Default quantiles of bias-adjusted treatment effect
+ovb_lm$bstar_Distribution
+
+## End(Not run)
+
+</code></pre>
+
+
+</div>

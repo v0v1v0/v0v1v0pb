@@ -1,0 +1,618 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>basta</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>
+Parametric Bayesian estimation of age-specific survival for left-truncated and 
+right-censored capture-mark-recapture or census data.
+</h2>
+
+<h3>Description</h3>
+
+<p>This function performs multiple Markov Chain Monte Carlo (MCMC) simulations for the Bayesian estimation of age-specific mortality and survival when a large proportion of records have unknown times of birth and/or death. Survival parameters and unknown (i.e. latent) birth (and death, for CMR data) times are estimated, allowing the user to test a range of mortality patterns, and to test the effect of continuous and/or discrete covariates following Colchero and Clark's (2012) general approach.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">basta(object, ...)
+
+## Default S3 method:
+ basta(object, dataType = "CMR", model = "GO", 
+  shape = "simple",  studyStart = NULL, studyEnd = NULL, 
+  minAge = 0, covarsStruct = "fused",  formulaMort = NULL, 
+  formulaRecap = NULL, recaptTrans = studyStart,  niter = 22000, 
+  burnin = 2001, thinning = 40, nsim = 1, parallel = FALSE,  
+  ncpus = 2, updateJumps = TRUE, negSenescence = FALSE,  ...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code> object </code></td>
+<td>
+<p>A <code>data.frame</code> to be used as an input data file for BaSTA. Note: BaSTA can take two types of datasets, namely capture-mark-recapture (CMR) or census data. See <code>details</code> for a description of the data structures. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>dataType </code></td>
+<td>
+<p>A <code>character string</code> indicating if the data are for capture-mark-recapture (CMR) or census. Options are “<code>CMR</code>” (default) or “<code>census</code>”.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>model </code></td>
+<td>
+<p>The underlying mortality model to be used. <code>"EX"</code> = exponential,<code>"GO"</code> = Gompertz, <code>"WE"</code> = Weibull and <code>"LO"</code> = logistic (see <code>details</code>).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>shape </code></td>
+<td>
+<p>The overall shape of the model. Values are: <code>simple</code> = no extra parameters added; <code>Makeham</code> = a constant parameter is added to the mortality; and <code>bathtub</code> = a Gompertz declining mortality for early ages and a constant parameter are added to the mortality model (see <code>details</code>).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code> studyStart </code></td>
+<td>
+<p>Only required for <code>dataType =</code> “<code>CMR</code>”, an integer indicating the first year of the study.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>studyEnd </code></td>
+<td>
+<p>Only required for <code>dataType =</code> “<code>CMR</code>”, an integer indicating the last year of the study.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>minAge </code></td>
+<td>
+<p>Age at which the analysis should start (see <code>details</code>).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>covarsStruct </code></td>
+<td>
+<p>Character string that indicates how covariates should be evaluated. The options are: “<code>fused</code>”, which defines all categorical variables as covariates for each mortality parameter and all continuous covariates under a proportional hazards structure; “<code>prop.haz</code>”, which puts all covariates under a proportional hazards structure; and “<code>all.in.mort</code>” puts all covariates as a multilevel function of the mortality parameters (see <code>details</code>).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code> formulaMort </code></td>
+<td>
+<p>An object of class <code>formula</code> specifying the covariates to be included on the mortality part of the model. Note that the syntax should not include a dependent variable. If <code>formulaMort = NULL</code>, then no covariates are included in the analysis. See <code>details</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>formulaRecap </code></td>
+<td>
+<p><em>Not yet implemented</em>, an object of class <code>formula</code> specifying the covariates to be included on the recapture part of the model. Note that the syntax should not include a dependent variable. If <code>formulaMort = NULL</code>, then no covariates are included in the analysis.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>recaptTrans </code></td>
+<td>
+<p>A vector (of maximum length equal to the duration of the study) defining the recapture probability transition times (RPTP). These are points (years) where the recapture probability is thought to change.  The default setting is for the recapture probability to be constant throughout the study, so the <code>recaptTrans</code> is simply defined as a single element vector of the first year of the observation period (e.g. c(1985)). If recapture probabilities were known to change at year say, 1990, the RPTP should be defined as c(1985, 1990).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>niter </code></td>
+<td>
+<p>The total number of MCMC steps.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>burnin </code></td>
+<td>
+<p>The number of iterations for the burn in (see <code>details</code>).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>thinning </code></td>
+<td>
+<p>The number of skipped MCMC steps to minimize serial autocorrelation (see <code>details</code>).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nsim </code></td>
+<td>
+<p>A numerical value for the number of simulations to be run.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>parallel </code></td>
+<td>
+<p>A logical argument indicating whether the multiple simulations should be run in parallel or not. If <code>TRUE</code>, package <span class="pkg">snowfall</span> is called and multiple simulations are run in parallel. If <span class="pkg">snowfall</span> is not installed, the model is ran in series.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ncpus </code></td>
+<td>
+<p>a numerical value that indicates the number of cpus to be used if <code>parallel</code> is <code>TRUE</code> and package <span class="pkg">snowfall</span> is installed. The default is 2 cpus. If package <span class="pkg">snowfall</span> is not installed, the simulations are run in series.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>updateJumps </code></td>
+<td>
+<p>A logical argument indicating wheter to update jump standard deviations (adaptive independent Metropolis) until an update rate of 0.25 is achieved (see <code>details</code>). </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>negSenescence </code></td>
+<td>
+<p>Logical indicating if negative senescence should be allowed, only applicable for <code>model</code> = “<code>GO</code>” and <code>shape</code> = “<code>Makeham</code>”.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>... </code></td>
+<td>
+<p>Additional arguments to be passed to function <code>basta</code> (see <code>details</code>)</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p><b>1) DATA TYPES:</b>
+</p>
+<p>The input <code>object</code> required by BaSTA needs to be constructed differently whether the data are of capture-mark-recapture or census. 
+</p>
+<p><code>1.1) capture-mark-recapture (CMR):</code>
+</p>
+<p>If <code>dataType</code> = “<code>CMR</code>”, then the data frame requires the following structure. The first column is a vector of individual unique IDs, the second and third columns are birth and death years respectively. Columns <code class="reqn">4, \dots, T+3</code> represent the observation window (i.e., recapture matrix) of <code class="reqn">T</code> years. This is followed (optionally) by columns for categorical and continuous covariates (see <code>bastaCMRdat</code> for a CMR dataset example).
+</p>
+<p><code>1.2) Census:</code>
+</p>
+<p>If <code>dataType</code> = “<code>census</code>”, then the input data <code>object</code> requires at least five dates columns, namely “Birth.Date”, “Min.Birth.Date”, “Max.Birth.Date”, “Entry.Date”, and “Depart.Date”. All dates need to be format as “%Y-%m-%d”. In addition, a “Depart.Type” column is required with two types of departures “C” for Censored and “D” for dead (see <code>bastaCensDat</code> for a census dataset example).
+</p>
+<p><b>2) AGE-SPECIFIC MORTALITY MODELS:</b>
+</p>
+<p><code>basta</code> performs Bayesian inference on parametric age-specific mortality and survival when not all ages are known (Colchero and Clark 2012, Colchero <em>et al.</em> 2012, Colchero <em>et al.</em> 2021). The mortality function describes how the risk of mortality changes with age, and is defined as 
+</p>
+<p style="text-align: center;"><code class="reqn">
+\mu(x | \theta) = \lim_{\Delta x \rightarrow 0} \frac{\Pr[x &lt; X &lt; x + \Delta x | X &gt; x]}{\Delta x},
+</code>
+</p>
+
+<p>where <code class="reqn">X</code> is a random variable for ages at death, <code class="reqn">x \geq 0</code> are ages and <code class="reqn">\theta</code> is the vector of mortality parameters. From the mortality function, the survival function is then given by
+</p>
+<p style="text-align: center;"><code class="reqn">
+S(x | \bm{\theta}) = \exp[-\int_0^x \mu(t | \bm{\theta}) dt].
+</code>
+</p>
+
+<p><code>2.1)</code><code>Argument </code>“<code>model</code>”<code>:</code>
+</p>
+<p>The <code>model</code> argument allows the user to choose between four basic mortality functions, namely 
+</p>
+<p>(a) <code>model = </code>“<code>EX</code>”: The exponential model (Cox and Oakes 1974), with constant mortality with age, specified as
+</p>
+<p style="text-align: center;"><code class="reqn">\mu_b(x | \bm{\theta}) = b,</code>
+</p>
+
+<p>where <code class="reqn">b &gt; 0</code>, with survival 
+</p>
+<p style="text-align: center;"><code class="reqn">
+S_b(x | \bm{\theta}) = \exp[-b x].
+</code>
+</p>
+
+<p>(b) <code>model = </code>“<code>GO</code>”: The Gompertz mortality model (Gompertz 1925, Pletcher 1999), calculated as 
+</p>
+<p style="text-align: center;"><code class="reqn">\mu_b(x | \bm{\theta}) = \exp(b_0 + b_1 x),</code>
+</p>
+
+<p>where <code class="reqn">-\infty &lt; b_0, b_1 &lt; \infty</code>, with survival
+</p>
+<p style="text-align: center;"><code class="reqn">
+S_b(x | \bm{\theta}) = \exp\left[\frac{e^{b_0}}{b_1}\left(1 - e^{b_1 x}\right)\right].
+</code>
+</p>
+
+<p>(c) <code>model = </code>“<code>WE</code>”: The Weibull mortality model (Pinder III <em>et al.</em> 1978) calculated as
+</p>
+<p style="text-align: center;"><code class="reqn">\mu_b(x | \bm{\theta}) = b_0 b_1^{b_0} x^{b_0 -1},</code>
+</p>
+
+<p>where <code class="reqn">b_0, b_1 &gt; 0</code>, with survival
+</p>
+<p style="text-align: center;"><code class="reqn">
+S_b(x | \bm{\theta}) = \exp\left[-(b_1 x)^{b_0}\right].
+</code>
+</p>
+
+<p>(d) <code>model = </code>“<code>LO</code>”: The logistic mortality model (Pletcher 1999), calculated as 
+</p>
+<p style="text-align: center;"><code class="reqn">\mu_b(x | \bm{\theta}) = \frac{\exp(b_0 + b_1 x)}{1 + b_2 \frac{e^{b_0}}{b_1} \left(e^{b_1 x}-1\right)},</code>
+</p>
+
+<p>where <code class="reqn">b_0, b_1, b_2 &gt; 0</code>, with survival
+</p>
+<p style="text-align: center;"><code class="reqn">
+S_b(x | \bm{\theta}) = \left[1 + b_2 \frac{e^{b_0}}{b_1} \left(e^{b_1 x} - 1\right)\right]^{-1 / b_2}.
+</code>
+</p>
+
+<p><code>2.2)</code><code>Argument </code>“<code>shape</code>”<code>:</code>
+</p>
+<p>The <code>shape</code> argument allows the user to extend these models in order to explore more complex mortality shapes. 
+</p>
+<p>(a) <code>shape = </code>“<code>simple</code>”: (default) Leaves the model as defined above, with mortality given by
+</p>
+<p style="text-align: center;"><code class="reqn">
+\mu(x | \bm{\theta}) = \mu_b(x | \bm{\theta})
+</code>
+</p>
+
+<p>and survival
+</p>
+<p style="text-align: center;"><code class="reqn">
+S(x | \bm{\theta}) = S_b(x | \bm{\theta}.
+</code>
+</p>
+
+<p>(b) <code>shape = </code>“<code>Makeham</code>”: A constant is added to the mortality, such that the mortality is given by
+</p>
+<p style="text-align: center;"><code class="reqn">
+\mu(x | \bm{\theta}) = c + \mu_b(x | \bm{\theta}_1),
+</code>
+</p>
+
+<p>where <code class="reqn">\bm{\theta} = [c, \bm{\theta}_1]</code>, and with survival
+</p>
+<p style="text-align: center;"><code class="reqn">
+S(x | \bm{\theta}) = e^{-cx} S_b(x | \bm{\theta}_1)
+</code>
+</p>
+
+<p>The most common models with this shape is the Gompertz-Makeham model (Gompertz 1825, Makeham 1866).
+</p>
+<p>(c) <code>shape = </code>“<code>bathtub</code>”: produces a concave shapes in mortality by adding a declining Gompertz term and a constant parameter to the basic mortality model, where the mortality function is
+</p>
+<p style="text-align: center;"><code class="reqn">
+\mu(x | \bm{\theta}) = \exp(a_0 - a_1 x) + c + \mu_b(x | \bm{\theta}_1),
+</code>
+</p>
+
+<p>where <code class="reqn">a_0 \in \mathbb{R}</code>, <code class="reqn">a_1, c \geq 0</code> and <code class="reqn">\bm{\theta}_1 \subset \bm{\theta}</code> are specified based on argument <code>model</code>, and with survival
+</p>
+<p style="text-align: center;"><code class="reqn">
+S(x | \theta) = \exp\left[\frac{e^{a_0}}{a_1}\left(e^{a_1 x} - 1\right)-cx\right] S_b(x | \theta_1).
+</code>
+</p>
+
+<p>The most widely use “<code>bathtub</code>” shaped model is the <b>Siler mortality model</b> (Siler 1979), which provides considerably good fits to mammalian data. The arguments for the Siler model are:
+</p>
+<pre>basta(..., model = "GO", shape = "bathtub", ...)</pre>
+<p><b>3) COVARIATES:</b>
+</p>
+<p>Covariates are selected by means of the argument <code>formulaMort</code>, which requires an object of class formula, just as with other statistical inference functions such as <code>lm</code> or <code>glm</code>.
+</p>
+<p>When covariates are included in the dataset, the <code>basta</code> function provides three different ways in which these can be evaluated by using argument <code>covarsStruct</code>: 
+</p>
+<p><code>3.1)</code> “<code>fused</code>”: 
+</p>
+<p>This option will make the mortality parameters linear functions of all categorical covariates (analogous to a generalised linear model (GLM) structure) and will put all continuous covariates under a proportional hazards structure. Thus, for a simple exponential model with constant mortality of the form <code class="reqn">\mu_0(x | b) = b</code>, the parameter is equal to <code class="reqn">b = b_1 z_1 + \dots, b_k z_k</code>, where <code class="reqn">[b_1, \dots, b_k]</code> are paramters that link the mortality parameter <code class="reqn">b</code> with the categorical covariates <code class="reqn">[z_1,\dots,z_k]</code>.
+</p>
+<p><code>3.2</code> “<code>prop.haz</code>”: 
+</p>
+<p>This setting will put all covariates under a proportional hazards structure irrespective of the type of variable. In this case, the mortality model is be further extended by including a proportional hazards structure, of the form 
+</p>
+<p style="text-align: center;"><code class="reqn">\mu(x | \theta, \gamma, Z_a, Z_c) = \mu_0(x | \theta, Z_a) \exp(Z_c \gamma),</code>
+</p>
+
+<p>where <code class="reqn">\mu_0(x | \theta, Z_a)</code> represents the baseline mortality as defined above, while the second term <code class="reqn">\exp(Z_c \gamma)</code> corresponds to the proportional hazards function.  <code class="reqn">Z_a</code> and <code class="reqn">Z_c</code> are covariate (design) matrices for categorical and continuous covariates, respectively, while <code class="reqn">\gamma</code> is a vector of proportional hazards parameters.
+</p>
+<p><code>3.3</code> “<code>all.in.mort</code>”:
+</p>
+<p>This specification will put all covariates as linear functions of the survival parameters as explained above. Since most models require the lower bounds for the mortality parameters to be equal to 0, the only model that can be used for this test is Gompertz with <code>shape</code> set to “<code>simple</code>”. In case these arguments are specified differently, a warning message is printed noting that <code>model</code> will be forced to be “<code>GO</code>” and <code>shape</code> will be set to “<code>simple</code>”.
+</p>
+<p><code>4) MCMC SETTINGS:</code>
+</p>
+<p>The <code>burnin</code> argument represents the number of steps at the begining of the MCMC run that is be discarded. This sequence commonly corresponds to the non-converged section of the MCMC sequence. Convergence and model selection measures are calculated from the remaining thinned parameter chains if multiple simulations are run, and all if all of them run to completion.
+</p>
+<p>The <code>thinning</code> argument specifies the number of steps to be skipped in order to reduce serial autocorrelation. The thinned sequence, which only includes steps after burn in, is then used to calculate convergence statistics and model for selection.
+</p>
+<p>The <code>updateJumps</code> argument specifies wether to run a simulation to find appropriate jump standard deviations for theta and gamma parameters. If argument “<code>nsim</code>” is set to 1, then the simulation runs with the update jumps routine active. If “<code>nsim</code>” is larger than 1, then an initial simulation is ran to find apropriate jumps before the main analysis is ran. 
+</p>
+<p><code>5) ADDITIONAL ARGUMENTS:</code>
+</p>
+<p>Additional arguments for priors, jumps and start values can be passed on the ... section. For instance, argument <code>thetaStart</code> can be specified as a vector defining the initial values for each parameter in the survival model. If this argument is not specified, a set of random parameters is generated for each simulation. Similarly, argument <code>gammaStart</code> can be specified for all parameters in the proportional hazards section of the model. Jump standard deviations (i.e. the standard error in the Metropolis step) can be specified with arguments <code>thetaJumps</code> and <code>gammaJumps</code>. As with <code>thetaStart</code>, default values are assigned if these arguments are not specified. 
+</p>
+<p>To specify priors, arguments <code>thetaPriorMean</code>, <code>thetaPriorSd</code>, <code>gammaPriorMean</code> and <code>gammaPriorSd</code> can be used for prior means and standard errors for each survival and proportional hazards parameters. If not specified, default values are assigned.
+</p>
+<p>The number of parameters in <code>thetaStart</code>, <code>thetaJumps</code>, <code>thetaPriorMean</code> and <code>thetaPriorSd</code> should be a vector or matrix for the parameters in the mortality function. The number of parameters will depend on the model chosen with <code>model</code> (see above). If the number of parameters specified does not match the number of parameters inherent to the model and shape selected, the function returns an error. 
+</p>
+<p>As described above, the number of parameters for <code>gammaStart</code>, <code>gammaJumps</code>, <code>gammaPriorMean</code> and <code>gammaPriorSd</code> arguments (i.e. section b), namely the proportional hazards section, will be a function of the number of continuous covariates if argument <code>covarsStruct</code> is “<code>fused</code>”, or to the total number of covariates when <code>covarsStruct</code> is “<code>prop.haz</code>”.
+</p>
+
+<p><b>6) SUMMARY STATISTICS:</b>
+From the converged sequence of mortality parameters, BaSTA calculates a number of summary statistics, their standard errors and their lower and upper 95% credible intervals. 
+</p>
+<p><code>6.1) Remaining life expectancy:</code>
+</p>
+<p>The function calculates remaining life expectancy as
+</p>
+<p style="text-align: center;"><code class="reqn">
+e_{0} = \int_{0}^{\infty} S(t) dt.
+</code>
+</p>
+
+<p><code>6.2) Measures of inequality and equality:</code>
+</p>
+<p>The function calculates different measures of inequality and equality in the distribution of ages at death that results from the parametric model:
+</p>
+<p>- <code>Lifespan inequality:</code> (Demetrius 1974, Keyfitz and Caswell 2005) given by
+</p>
+<p style="text-align: center;"><code class="reqn">
+H = -\frac{\int_{0}^{\infty} S(x) \ln [S(x)] dx}{e_0}
+</code>
+</p>
+
+<p>- <code>Lifespan equality:</code> (Colchero <em>et al.</em> 2016, Colchero <em>et al.</em> 2021) given by
+</p>
+<p style="text-align: center;"><code class="reqn">
+\varepsilon = - \ln H.
+</code>
+</p>
+
+<p>- <code>Gini coefficient:</code> (Gini 1912, Shkolnikov <em>et al.</em> 2003) given by
+</p>
+<p style="text-align: center;"><code class="reqn">
+G = 1 - \frac{1}{e_0} \int_0^{\infty} [l(x)]^2 dx
+</code>
+</p>
+
+<p>- <code>Coefficient of variation:</code> given by
+</p>
+<p style="text-align: center;"><code class="reqn">
+CV = \frac{\sqrt{\sigma^2}}{e_0},
+</code>
+</p>
+
+<p>where <code class="reqn">\sigma^2</code> is the variance in ages at death.
+</p>
+
+
+<h3>Value</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>params </code></td>
+<td>
+<p>If requested, a matrix with the thinned, converged parameter traces of all runs. This matrix is used to calculate quantiles for parameters, survival probability and mortality (see below).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>theta </code></td>
+<td>
+<p>If requested, a matrix with only the parameters of the mortality function after convergence and thinning.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>coefficients </code></td>
+<td>
+<p>A matrix with estimated coefficients (i.e. mean values per parameter on the thinned sequences after burnin), which includes standard errors, upper and lower 95% credible intervals, update rates per parameter, serial autocorrelation on the thinned sequences and the potential scale reduction factor for convergence (see <code>Convergence</code> value below). </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>names </code></td>
+<td>
+<p>Names of all parameters</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>DIC </code></td>
+<td>
+<p>Basic deviance information criterion (DIC) calculations to be used for model selection (Spiegelhalter <em>et al.</em> 2002, Celeux <em>et al.</em> 2006). Small differences between values should only be used as a reference (see comments in Spiegelhalter <em>et al.</em> 2002). If any of the parameter chains did not converge, then the returned value is “<code>Not calculated</code>”.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>KullbackLeibler </code></td>
+<td>
+<p>If called by <code>summary</code>, list with Kullback-Leibler discrepancy matrices between pair of parameters for categorical covariates (McCulloch 1989, Burnham and Anderson 2001) and McCulloch's (1989) calibration measure. If only one simulation was run or if no convergence is reached, then the returned value is “<code>Not calculated</code>”.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>PS </code></td>
+<td>
+<p>If requested, a list with summary statistics of the PDF of ages at death, including the life expectancy, lifespan inequality, lifespan equality, and Gini index. These are separated by categorical covariate and, if continuous covariates are provided, they are evaluated at the average value of each continous covariate. The list object provides a table with the mean and lower and upper 95% credible intervals and vectors of the converged and thinned values for each variable.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>mort </code></td>
+<td>
+<p>If requested or called by functions <code>plot</code> or <code>plot.basta</code> median and 95% predictive intervals for the estimated mortality rates separated by categorical covariate and calculated at the mean for each continuous covariate, if provided.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>surv </code></td>
+<td>
+<p>If requested or called by functions <code>plot</code> or <code>plot.basta</code> median and 95% predictive intervals for the estimated survival probability, separated by categorical covariate and calculated at the mean for each continuous covariate, if provided.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>dens </code></td>
+<td>
+<p>If requested, median and 95% predictive intervals for the estimated probability density function of ages at death, separated by categorical covariate and calculated at the mean for each continuous covariate, if provided.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>x </code></td>
+<td>
+<p>If requested, a vector of the ages used to calculate <code>mort</code>, <code>surv</code>, and <code>dens</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>cuts </code></td>
+<td>
+<p>An index vector per categorical covariate of the ages where the survival is larger than 0.05, used for display purposes when producing the plots with function <code>plot</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>convergence </code></td>
+<td>
+<p>If requested, a matrix with convergence coefficients based on potential scale reduction as described by Gelman <em>et al.</em> (2004). If only one simulation was ran, then the returned value is “<code>Not calculated</code>”.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>convmessage </code></td>
+<td>
+<p>Only used with functions <code>summary</code> and <code>print</code> to indicate whether the parameter traces converged appropriately.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>runs </code></td>
+<td>
+<p>A list object with the outputs of each individual MCMC run. Used with function <code>plot</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>fullpar </code></td>
+<td>
+<p>A list object with the input parameter information for the model, including starting values, priors, initial jumps, lower bound, among other. Used with functions <code>summary</code> and <code>print</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>simthe </code></td>
+<td>
+<p>A list object with information on the basic mortality model. Used with function <code>plot</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>jumps </code></td>
+<td>
+<p>A list object with the final jump standard deviations for each parameter.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>covs </code></td>
+<td>
+<p>A list object with general information on the type of covariates, i.e., <code>cat</code> and <code>cont</code>, and the type of <code>covarStruct</code> used.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>settings </code></td>
+<td>
+<p>If called by <code>summary</code>, this is a vector indicating the number of iterations for each MCMC, the burn in sequence, the thinning interval, and the number of simulations that were run.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>modelSpecs </code></td>
+<td>
+<p>Model specifications inidicating the <code>model</code>, the <code>shape</code>, the covariate structure and the minimum age that were specified by the user.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>lifeTable </code></td>
+<td>
+<p>A period life table calculated from the estimated times of birth (and death for “<code>CMR</code>”) accounting for truncation and censoring.</p>
+</td>
+</tr>
+</table>
+<h3>Author(s)</h3>
+
+<p>Fernando Colchero <a href="mailto:fernando_colchero@eva.mpg.de">fernando_colchero@eva.mpg.de</a></p>
+
+
+<h3>References</h3>
+
+<p>Burnham, K.P. and Anderson, D.R. (2001) Kullback-Leibler information as a basis for strong inference in ecological studies. <em>Widlife Research</em>, 28, 111-119.
+</p>
+<p>Celeux, G., Forbes, F., Robert, C. P., and Titterington, D. M. (2006) Deviance information criteria for missing data models. <em>Bayesian Analysis</em>, 1(4), 651-673. 
+</p>
+<p>Colchero, F. and J.S. Clark (2012) Bayesian inference on age-specific survival from capture-recapture data for censored and truncated data. <em>Journal of Animal Ecology</em>. 81, 139-149.
+</p>
+<p>Colchero, F., O.R. Jones and M. Rebke. (2012) BaSTA: an R package for Bayesian estimation of age-specific survival from incomplete mark-recapture/recovery data with covariates. <em>Method in Ecology and Evolution</em>. 3, 466-470. 
+</p>
+<p>Colchero, F., <em>et al.</em>  (2021) The long lives of primates and the "invariant rate of aging" hypothesis. <em>Nature Communications</em> 12:3666
+</p>
+<p>Cox, D. R., and Oakes D. (1984) <em>Analysis of Survival Data</em>. Chapman and Hall, London.
+</p>
+<p>Demetrius, L. (1974) Demographic parameters and natural selection. <em>PNAS</em> 71, 4645-4647.
+</p>
+<p>Gelman, A., Carlin, J.B., Stern, H.S. and Rubin, D.B. (2004) <em>Bayesian data analysis</em>. 2nd edn. Chapman &amp; Hall/CRC, Boca Raton, Florida, USA.
+</p>
+<p>Gompertz, B. (1825) On the nature of the function expressive of the law of human mortality, and on a new mode of determining the value of life contingencies. <em>Philosophical Transactions of the Royal Society of London</em>, 115, 513-583.
+</p>
+<p>Keyfitz, N., Caswell, H. (2005) Applied Mathematical Demography. (Springer-Verlag).
+</p>
+<p>King, R. and Brooks, S.P. (2002) Bayesian model discrimination for multiple strata capture-recapture data. <em>Biometrika</em>, 89, 785-806. 
+</p>
+<p>Makeham, W. M. On the law of mortality (1866). <em>Journal of the Institute of Actuaries</em> 13, 1-34.
+</p>
+<p>McCulloch, R.E. (1989) Local model influence. <em>Journal of the American Statistical Association</em>, 84, 473-478.
+</p>
+<p>Pinder III, J.E., Wiener, J.G. and Smith, M.H. (1978) The Weibull distribution: a new method of summarizing survivorship data. <em>Ecology</em>, 59, 175-179.
+</p>
+<p>Shkolnikov, V., Andreev, E. &amp; Begun, A. Z. (2003) Gini coefficient as a life table function. <em>Demographic Research</em> 8, 305-358.
+</p>
+<p>Siler, W. A (1979) competing-risk model for animal mortality. <em>Ecology</em> 60, 750-757.
+</p>
+<p>Spiegelhalter, D.J., Best, N.G., Carlin, B.P. and van der Linde, A. (2002) Bayesian measures of model complexity and fit. <em>Journal of the Royal Statistical Society: Series B</em>, 64, 583-639.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>summary.basta</code>, <code>print.basta</code>, <code>plot.basta</code> to visualise summary outputs for objects of class “<code>basta</code>”. 
+</p>
+<p><code>bastaCMRdat</code> and <code>bastaCensDat</code> for examples of input CMR and census datasets, respectively.
+</p>
+
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## ---------- #
+## CMR data:
+## ---------- #
+
+## Load data:
+data("bastaCMRdat", package = "BaSTA")
+
+## Check data consistency:
+checkedData &lt;- DataCheck(bastaCMRdat, dataType = "CMR", 
+                              studyStart = 51, studyEnd = 70)
+
+## Run short version of BaSTA on the data:
+out &lt;- basta(bastaCMRdat, studyStart = 51, studyEnd = 70)
+
+
+## ------------- #
+## Census data:
+## ------------- #
+
+## Load data:
+data("bastaCensDat", package = "BaSTA")
+
+## Check data consistency:
+checkedData &lt;- DataCheck(bastaCensDat, dataType = "census")
+
+## Run short version of BaSTA on the data:
+out &lt;- basta(bastaCensDat, dataType = "census")
+
+
+
+
+## --------------------- #
+## Check BaSTA outputs:
+## --------------------- #
+## Print results:
+summary(out, digits = 3)
+
+## Plot traces for survival parameters:
+plot(out)
+
+## Plot posterior densities of survival parameters:
+plot(out, densities = TRUE)
+
+## Plot survival and mortality curves:
+plot(out, plot.type = "demorates")
+
+</code></pre>
+
+
+</div>

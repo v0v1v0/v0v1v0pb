@@ -1,0 +1,112 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>simulate.zicreg</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Simulating response values from fitted univariate zero-inflated count
+regression model</h2>
+
+<h3>Description</h3>
+
+<p>Simulates responses using the fitted parameters from a
+<code>zicreg-class</code> object, as returned by <code>zic.reg</code>.
+Primarily useful for methods found in <code>DHARMa</code> package. See 'Examples.'
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">## S3 method for class 'zicreg'
+simulate(object, nsim = 250, seed = 123, ...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>object</code></td>
+<td>
+<p>A <code>zicreg-class</code> model object, as returned by <code>zic.reg</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nsim</code></td>
+<td>
+<p>Number of simulated datasets to create.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>seed</code></td>
+<td>
+<p>Random seed for random number generation in simulations. If
+<code>NULL</code>, no seed is set.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Ignored.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>A numeric <code class="reqn">n x nsim</code> matrix, with rows indexing
+observations, and columns indexing the simulation number.
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>John Niehaus
+</p>
+
+
+<h3>References</h3>
+
+<p>Florian Hartig (2022). DHARMa: Residual Diagnostics for
+Hierarchical (Multi-Level / Mixed) Regression Models. R package version
+0.4.5. https://CRAN.R-project.org/package=DHARMa
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R"># Simulate some zip data
+n=300
+x = cbind(1, rnorm(n))
+z = cbind(1, rbeta(n, 4, 8))
+b = c(1, 2.2)
+g = c(-1, 1.7)
+lam = exp(x %*% b)
+psi = plogis(z %*% g)
+
+y = bizicount::rzip(n, lambda = lam, psi=psi)
+dat = cbind.data.frame(x = x[,-1], z = z[,-1], y = y)
+
+# estimate model
+
+mod = zic.reg(y ~ x | z, data = dat, keep = TRUE)
+
+# simulate from fit for use in dharma
+sims = simulate(mod)
+
+### Make dharma object
+
+dharm = DHARMa::createDHARMa(
+     simulatedResponse = sims,
+     observedResponse = y,
+     fittedPredictedResponse = fitted(mod),
+     integerResponse = TRUE,
+     method = "PIT"
+)
+
+### Plot the DHARMa object, do other diagnostics
+plot(dharm)
+DHARMa::testResiduals(dharm)
+</code></pre>
+
+
+</div>

@@ -1,0 +1,230 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>Bayes_CREM</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Bayesian Crossed Random Effects Model (CREM)</h2>
+
+<h3>Description</h3>
+
+<p>Estimates a Bayesian crossed random effects models (CREM) for longitudinal data with dynamic group membership. Four different choices for functional forms are provided: linear, quadratic, exponential, and piecewise. See Rohloff et al. (2024) for more details.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">Bayes_CREM(
+  data,
+  ind_id_var,
+  cross_id_var,
+  time_var,
+  y_var,
+  form = "linear",
+  fixed_effects = NULL,
+  iters_adapt = 5000,
+  iters_burn_in = 50000,
+  iters_sampling = 50000,
+  thin = 15,
+  save_full_chains = FALSE,
+  save_conv_chains = FALSE,
+  verbose = TRUE
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+<p>Data frame in long format, where each row describes a measurement occasion for a given individual. It is assumed that each individual has the same number of assigned timepoints (a.k.a., rows). There can be missingness in the outcome (<code>y_var</code>), but there cannot be missingness in time (<code>time_var</code>).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ind_id_var</code></td>
+<td>
+<p>Name of column that contains ids for individuals with repeated measures in a longitudinal dataset (e.g., students).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>cross_id_var</code></td>
+<td>
+<p>Name of column that contains ids for the crossed factor (e.g., teachers).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>time_var</code></td>
+<td>
+<p>Name of column that contains the time variable. This column cannot contain any missing values.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>y_var</code></td>
+<td>
+<p>Name of column that contains the outcome variable. Missing values should be denoted by NA.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>form</code></td>
+<td>
+<p>Name of the functional form. Options include: ‘linear’ (default), ‘quadratic’, ‘exponential’, ‘piecewise’.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>fixed_effects</code></td>
+<td>
+<p>(optional) Starting values for the fixed effects parameters.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>iters_adapt</code></td>
+<td>
+<p>(optional) Number of iterations for adaptation of jags model (default = 5000).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>iters_burn_in</code></td>
+<td>
+<p>(optional) Number of iterations for burn-in (default = 50000).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>iters_sampling</code></td>
+<td>
+<p>(optional) Number of iterations for posterior sampling (default = 50000).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>thin</code></td>
+<td>
+<p>(optional) Thinning interval for posterior sampling (default = 15).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>save_full_chains</code></td>
+<td>
+<p>Logical indicating whether the MCMC chains from rjags should be saved (default = FALSE). Note, this should not be used regularly as it will result in an object with a large file size.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>save_conv_chains</code></td>
+<td>
+<p>Logical indicating whether the MCMC chains from rjags should be saved but only for the parameters monitored for convergence (default = FALSE). This would be useful for plotting traceplots for relevant model parameters to evaluate convergence behavior. Note, this should not be used regularly as it will result in an object with a large file size.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>verbose</code></td>
+<td>
+<p>Logical controlling whether progress messages/bars are generated (default = TRUE).</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>For more information on the model equation and priors implemented in this function, see Rohloff et al. (2024).
+</p>
+<p>Note, this function differs from the above reference by estimating the covariances between the random effects parameters. The variance-covariance matrices of the individual and group random effects have a scaled inverse-Wishart prior (see Peralta et al., 2022).
+</p>
+
+
+<h3>Value</h3>
+
+<p>A list (an object of class <code>CREM</code>) with elements:
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>Convergence</code></td>
+<td>
+<p>Potential scale reduction factor (PSRF) for each parameter (<code>parameter_psrf</code>), Gelman multivariate scale reduction factor (<code>multivariate_psrf</code>), and mean PSRF (<code>mean_psrf</code>) to assess model convergence.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Model_Fit</code></td>
+<td>
+<p>Deviance (<code>deviance</code>), effective number of parameters (<code>pD</code>), and Deviance information criterion (<code>dic</code>) to assess model fit.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Fitted_Values</code></td>
+<td>
+<p>Vector giving the fitted value at each timepoint for each individual (same length as long data).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Functional_Form</code></td>
+<td>
+<p>Functional form fitted.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Parameter_Estimates</code></td>
+<td>
+<p>Data frame with posterior mean and 95% credible intervals for each model parameter.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Run_Time</code></td>
+<td>
+<p>Total run time for model fitting.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Full_MCMC_Chains</code></td>
+<td>
+<p>If save_full_chains=TRUE, raw MCMC chains from rjags.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Convergence_MCMC_Chains</code></td>
+<td>
+<p>If save_conv_chains=TRUE, raw MCMC chains from rjags but only for the parameters monitored for convergence.</p>
+</td>
+</tr>
+</table>
+<h3>Author(s)</h3>
+
+<p>Corissa T. Rohloff
+</p>
+
+
+<h3>References</h3>
+
+<p>Peralta, Y., Kohli, N., Lock, E. F., &amp; Davison, M. L. (2022). Bayesian modeling of associations in bivariate piecewise linear mixed-effects models. Psychological Methods, 27(1), 44–64. https://doi.org/10.1037/met0000358
+</p>
+<p>Rohloff, C. T., Kohli, N., &amp; Lock, E. F. (2024). Identifiability and estimability of Bayesian linear and nonlinear crossed random effects models. British Journal of Mathematical and Statistical Psychology. https://doi.org/10.1111/bmsp.12334
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+# load simulated data
+data(SimData_PCREM)
+# plot observed data
+plot_BEND(data = SimData_PCREM,
+          id_var = "id",
+          time_var = "time",
+          y_var = "y")
+# fit Bayes_CREM()
+results_pcrem &lt;- Bayes_CREM(data = SimData_PCREM,
+                            ind_id_var = "id",
+                            cross_id_var = "teacherid",
+                            time_var = "time",
+                            y_var = "y",
+                            form="piecewise")
+# result summary
+summary(results_pcrem)
+# plot fitted results
+plot_BEND(data = SimData_PCREM,
+          id_var = "id",
+          time_var = "time",
+          y_var = "y",
+          results = results_pcrem)
+
+
+</code></pre>
+
+
+</div>

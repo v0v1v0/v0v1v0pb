@@ -1,0 +1,164 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>B_PB.IDX</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>
+BCVI-Point biserial correlation (PB)</h2>
+
+<h3>Description</h3>
+
+<p>Compute Bayesian cluster validity index (BCVI) from two to <code>kmax</code> groups using Point biserial correlation (PB) as the underling cluster validity index (CVI) with the user's selected Dirichlet prior parameters. The full detail of BCVI can be found in the paper Wiroonsri and Preedasawakul (2024).</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">B_PB.IDX(x, kmax, method = "kmeans", corr = "pearson", nstart = 100,
+        alpha = "default", mult.alpha = 1/2)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>a numeric data frame or matrix where each column is a variable to be used for cluster analysis and each row is a data point.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>kmax</code></td>
+<td>
+<p>a maximum number of clusters to be considered.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>method</code></td>
+<td>
+<p>a character string indicating which clustering method to be used (<code>"kmeans"</code>, <code>"hclust_complete"</code>, <code>"hclust_average"</code>, <code>"hclust_single"</code>). The default is <code>"kmeans"</code>.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>corr</code></td>
+<td>
+<p>a character string indicating which correlation coefficient is to be computed (<code>"pearson"</code>, <code>"kendall"</code> or <code>"spearman"</code>). The default is <code>"pearson"</code>.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nstart</code></td>
+<td>
+<p>a maximum number of initial random sets for kmeans for <code>method = "kmeans"</code>. The default is <code>100</code>.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>alpha</code></td>
+<td>
+<p>Dirichlet prior parameters <code class="reqn">\alpha_2,...,\alpha_k</code> where <code class="reqn">\alpha_k</code> is the parameter corresponding to "the probability of having k groups" (selecting each <code class="reqn">\alpha_k</code> between 0 to 30 is recommended and using the other parameter <code>mult.alpha</code> to be its multiplier. The default is <code>"default"</code>.)
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>mult.alpha</code></td>
+<td>
+<p>the power <code class="reqn">s</code> from <code class="reqn">n^s</code> to be multiplied to the Dirichlet prior parameters <code>alpha</code> (selecting <code>mult.alpha</code> in <code>[0,1)</code> is recommended). The default is <code class="reqn">\frac{1}{2}</code>.
+</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>BCVI-PB is defined as follows.
+Let <br></p>
+<p style="text-align: center;"><code class="reqn">r_k(\bf x) = \dfrac{PB(k)-\min_j PB(j)}{\sum_{i=2}^K (PB(i)-\min_j PB(j))} </code>
+</p>
+
+<p>Assume that <br></p>
+<p style="text-align: center;"><code class="reqn">f({\bf x}|{\bf p}) = C({\bf p}) \prod_{k=2}^Kp_k^{nr_k(x)}</code>
+</p>
+
+<p>represents the conditional probability density function of the dataset given <code class="reqn">\bf p</code>, where <code class="reqn">C({\bf p})</code> is the normalizing constant. Assume further that  <code class="reqn">{\bf p}</code> follows a Dirichlet prior distribution with parameters <code class="reqn">{\bm \alpha} = (\alpha_2,\ldots,\alpha_K)</code>. The posterior distribution of <code class="reqn">\bf p</code> still remains a Dirichlet distribution with parameters <code class="reqn">(\alpha_2+nr_2({\bf x}),\ldots,\alpha_K+nr_K({\bf x}))</code>.
+</p>
+<p>The BCVI is then defined as  <br></p>
+<p style="text-align: center;"><code class="reqn">BCVI(k) = E[p_k|{\bf x}] = \frac{\alpha_k + nr_k({\bf x})}{\alpha_0+n}</code>
+</p>
+
+<p>where <code class="reqn">\alpha_0 = \sum_{k=2}^K \alpha_k.</code> <br></p>
+<p>The variance of <code class="reqn">p_k</code> can be computed as
+</p>
+<p style="text-align: center;"><code class="reqn">Var(p_k|{\bf x}) = \dfrac{(\alpha_k + nr_k(x))(\alpha_0 + n -\alpha_k-nr_k(x))}{(\alpha_0 + n)^2(\alpha_0 + n +1 )}.</code>
+</p>
+
+
+
+<h3>Value</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>BCVI</code></td>
+<td>
+<p>the dataframe where the first and the second columns are the number of groups <code>k</code> and BCVI<code class="reqn">(k)</code>, respectively, for <code>k</code> from <code>2</code> to <code>kmax</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>VAR</code></td>
+<td>
+<p>the data frame where the first and the second columns are the number of groups <code>k</code> and the variance of <code class="reqn">p_k</code>, respectively, for <code>k</code> from <code>2</code> to <code>kmax</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>CVI</code></td>
+<td>
+<p>the data frame where the first and the second columns are the number of groups <code>k</code> and the original PB<code class="reqn">(k)</code>, respectively, for <code>k</code> from <code>2</code> to <code>kmax</code>.</p>
+</td>
+</tr>
+</table>
+<h3>Author(s)</h3>
+
+<p>Nathakhun Wiroonsri and Onthada Preedasawakul
+</p>
+
+
+<h3>References</h3>
+
+<p>G. W. Miligan, "An examination of the effect of six types of error perturbation on fifteen clustering algorithms," <em>Psychometrika</em>, 45, 325-342 (1980).
+</p>
+<p>O. Preedasawakul, and N. Wiroonsri, A Bayesian Cluster Validity Index, Computational Statistics &amp; Data Analysis, 202, 108053, 2025. <a href="https://doi.org/10.1016/j.csda.2024.108053">doi:10.1016/j.csda.2024.108053</a>
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>B2_data, B_TANG.IDX, B_WP.IDX, B_Wvalid, B_DB.IDX</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">library(BayesCVI)
+
+# The data included in this package.
+data = B2_data[,1:2]
+
+# alpha
+aalpha = c(5,5,5,20,20,20,0.5,0.5,0.5)
+
+B.PB = B_PB.IDX(x = scale(data), kmax=10, method = "kmeans", corr = "pearson", nstart = 100,
+                alpha = aalpha, mult.alpha = 1/2)
+
+# plot the BCVI
+
+pplot = plot_BCVI(B.PB)
+pplot$plot_index
+pplot$plot_BCVI
+pplot$error_bar_plot
+</code></pre>
+
+
+</div>

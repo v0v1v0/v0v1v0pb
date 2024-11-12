@@ -1,0 +1,1534 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>bayessurvreg3</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>
+Cluster-specific accelerated failure time model for multivariate,
+possibly doubly-interval-censored data with flexibly specified random effects
+and/or error distribution.
+</h2>
+
+<h3>Description</h3>
+
+<p>A function to estimate a regression model with possibly clustered
+(possibly right, left, interval or doubly-interval censored) data.
+In the case of doubly-interval censoring, different regression models
+can be specified for the onset and event times.
+</p>
+<p>A univariate random effect (random intercept)
+with the distribution expressed as a penalized normal
+mixture can be included in the model to adjust for clusters.
+</p>
+<p>The error density of the regression model is specified as a mixture of
+Bayesian G-splines (normal densities with equidistant means and
+constant variances). This function performs an MCMC sampling from the
+posterior distribution of unknown quantities.
+</p>
+<p>For details, see Komárek (2006)
+and Komárek and Lesaffre (2008).
+</p>
+<p>SUPPLEMENTED IN 06/2013:  Interval-censored times might be subject to
+misclassification. In case of doubly-interval-censored data, the event
+time might be subject to misclassification. For details, see
+García-Zattera, Jara and Komárek (2016).  
+</p>
+<p>We explain first in more detail a model without doubly censoring.
+Let <code class="reqn">T_{i,l},\; i=1,\dots, N,\; l=1,\dots, n_i</code>
+be event times for <code class="reqn">i</code>th cluster and the units within that cluster
+The following regression model is assumed:
+</p>
+<p style="text-align: center;"><code class="reqn">\log(T_{i,l}) = \beta'x_{i,l} + b_i + \varepsilon_{i,l},\quad i=1,\dots, N,\;l=1,\dots, n_i</code>
+</p>
+
+<p>where <code class="reqn">\beta</code> is unknown regression parameter vector,
+<code class="reqn">x_{i,l}</code> is a vector of covariates.
+<code class="reqn">b_i</code> is a cluster-specific random effect (random intercept).
+</p>
+<p>The random effects <code class="reqn">b_i,\;i=1,\dots, N</code>
+are assumed to be i.i.d. with a univariate density <code class="reqn">g_{b}(b)</code>.
+The error terms
+<code class="reqn">\varepsilon_{i,l},\;i=1,\dots, N, l=1,\dots, n_i</code>
+are assumed to be i.i.d. with a univariate density
+<code class="reqn">g_{\varepsilon}(e)</code>.
+</p>
+<p>Densities <code class="reqn">g_{b}</code> and <code class="reqn">g_{\varepsilon}</code> are
+both expressed as
+a mixture of Bayesian G-splines (normal densities with equidistant
+means and constant variances). We distinguish two,
+theoretically equivalent, specifications.
+</p>
+<p>In the following, the density for <code class="reqn">\varepsilon</code>
+is explicitely described. The density for <code class="reqn">b</code> is obtained in
+an analogous manner.  
+</p>
+
+<dl>
+<dt>Specification 1</dt>
+<dd>
+<p style="text-align: center;"><code class="reqn">\varepsilon \sim
+	\sum_{j=-K}^{K} w_{j} N(\mu_{j},\,\sigma^2)</code>
+</p>
+
+<p>where <code class="reqn">\sigma^2</code> is the
+<b>unknown</b> basis variance and
+<code class="reqn">\mu_{j},\;j=-K,\dots, K</code>
+is an equidistant grid of knots symmetric around the
+<b>unknown</b> point <code class="reqn">\gamma</code> 
+and related to the unknown basis variance through the
+relationship
+</p>
+<p style="text-align: center;"><code class="reqn">\mu_{j} = \gamma + j\delta\sigma,\quad j=-K,\dots,K,</code>
+</p>
+
+<p>where <code class="reqn">\delta</code> is fixed
+constants, e.g. <code class="reqn">\delta=2/3</code>
+(which has a justification of being close to cubic B-splines).
+
+</p>
+</dd>
+<dt>Specification 2</dt>
+<dd>
+<p style="text-align: center;"><code class="reqn">\varepsilon \sim \alpha + \tau\,V</code>
+</p>
+
+<p>where <code class="reqn">\alpha</code> is an
+<b>unknown</b> intercept term and
+<code class="reqn">\tau</code> is an <b>unknown</b> scale parameter.
+<code class="reqn">V</code> is then
+standardized error term which is distributed according
+to the univariate normal mixture, i.e.
+</p>
+<p style="text-align: center;"><code class="reqn">V\sim \sum_{j=-K}^{K}
+	w_{j} N(\mu_{j},\,\sigma^2)</code>
+</p>
+
+<p>where <code class="reqn">\mu_{j},\;j=-K,\dots, K</code>
+is an equidistant grid of <b>fixed</b> knots (means), usually
+symmetric about the <b>fixed</b> point <code class="reqn">\gamma=0</code> and
+<code class="reqn">\sigma^2</code> is <b>fixed</b> basis variance.
+Reasonable values for the numbers of grid
+points <code class="reqn">K</code> is
+<code class="reqn">K=15</code> with the distance between the two
+knots equal to <code class="reqn">\delta=0.3</code> and for the basis
+variance
+<code class="reqn">\sigma^2=0.2^2.</code>
+</p>
+</dd>  
+</dl>
+<p>Personally, I found Specification 2 performing better. In the paper
+Komárek and Lesaffre (2008) only Specification 2 is described.
+</p>
+<p>The mixture weights
+<code class="reqn">w_{j},\;j=-K,\dots, K</code> are
+not estimated directly. To avoid the constraints
+<code class="reqn">0 &lt; w_{j} &lt; 1</code> and
+<code class="reqn">\sum_{j=-K}^{K}\,w_j = 1</code>
+transformed weights <code class="reqn">a_{j},\;j=-K,\dots, K</code>
+related to the original weights by the logistic transformation:
+</p>
+<p style="text-align: center;"><code class="reqn">a_{j} = \frac{\exp(w_{j})}{\sum_{m}\exp(w_{m})}</code>
+</p>
+
+<p>are estimated instead.
+</p>
+<p>A Bayesian model is set up for all unknown parameters. For more
+details I refer to Komárek and Lesaffre (2008).
+</p>
+<p>If there are doubly-censored data the model of the same type as above
+can be specified for both the onset time and the time-to-event.
+</p>
+<p>In the case one wishes to link the random intercept of the onset model
+and the random intercept of the time-to-event model, there are the
+following possibilities.
+</p>
+<p><b>Bivariate normal distribution</b> <br>
+It is assumed that the pair of random intercepts from the onset and
+time-to-event part of the model are normally distributed with zero
+mean and an unknown covariance matrix <code class="reqn">D</code>.
+</p>
+<p>A priori, the inverse covariance matrix <code class="reqn">D^{-1}</code> is
+addumed to follow a Wishart distribution.
+</p>
+<p><b>Unknown correlation between the basis G-splines</b> <br>
+Each pair of basis G-splines describing the distribution of the random
+intercept in the onset part and the time-to-event part of the model is
+assumed to be correlated with an unknown correlation coefficient
+<code class="reqn">\varrho</code>. Note that this is just an experiment and is no
+more further supported.
+</p>
+<p>Prior distribution on <code class="reqn">\varrho</code> is assumed to be
+uniform. In the MCMC, the Fisher Z transform of the <code class="reqn">\varrho</code>
+given by
+</p>
+<p style="text-align: center;"><code class="reqn">Z =
+    -\frac{1}{2}\log\Bigl(\frac{1-\varrho}{1+\varrho}\Bigr)=\mbox{atanh}(\varrho)</code>
+</p>
+
+<p>is sampled. Its prior is derived from the uniform prior
+<code class="reqn">\mbox{Unif}(-1,\;1)</code> put on <code class="reqn">\varrho.</code>
+</p>
+<p>The Fisher Z transform is updated using the Metropolis-Hastings
+alhorithm. The proposal distribution is given either by a normal
+approximation obtained using the Taylor expansion of the full
+conditional distribution or by a Langevin proposal (see Robert and
+Casella, 2004, p. 318).  
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">bayessurvreg3(formula, random, formula2, random2,
+   data = parent.frame(),
+   classification,
+   classParam = list(Model = c("Examiner", "Factor:Examiner"),
+                     a.sens = 1, b.sens = 1, a.spec = 1, b.spec = 1,
+                     init.sens = NULL, init.spec = NULL),
+   na.action = na.fail, onlyX = FALSE,
+   nsimul = list(niter = 10, nthin = 1, nburn = 0, nwrite = 10),   
+   prior, prior.beta, prior.b, init = list(iter = 0),
+   mcmc.par = list(type.update.a = "slice", k.overrelax.a = 1,
+                   k.overrelax.sigma = 1, k.overrelax.scale = 1,
+                   type.update.a.b = "slice", k.overrelax.a.b = 1,
+                   k.overrelax.sigma.b = 1, k.overrelax.scale.b = 1),
+   prior2, prior.beta2, prior.b2, init2,
+   mcmc.par2 = list(type.update.a = "slice", k.overrelax.a = 1,
+                    k.overrelax.sigma = 1, k.overrelax.scale = 1,
+                    type.update.a.b = "slice", k.overrelax.a.b = 1,
+                    k.overrelax.sigma.b = 1, k.overrelax.scale.b = 1),
+   priorinit.Nb,
+   rho = list(type.update = "fixed.zero", init=0, sigmaL=0.1),
+   store = list(a = FALSE, a2 = FALSE, y = FALSE, y2 = FALSE,
+                r = FALSE, r2 = FALSE, b = FALSE, b2 = FALSE,
+                a.b = FALSE, a.b2 = FALSE, r.b = FALSE, r.b2 = FALSE), 
+   dir)
+
+bayessurvreg3Para(formula, random, formula2, random2,
+   data = parent.frame(),
+   classification,
+   classParam = list(Model = c("Examiner", "Factor:Examiner"),
+                     a.sens = 1, b.sens = 1, a.spec = 1, b.spec = 1,
+                     init.sens = NULL, init.spec = NULL),
+   na.action = na.fail, onlyX = FALSE,
+   nsimul = list(niter = 10, nthin = 1, nburn = 0, nwrite = 10),   
+   prior, prior.beta, prior.b, init = list(iter = 0),
+   mcmc.par = list(type.update.a = "slice", k.overrelax.a = 1,
+                   k.overrelax.sigma = 1, k.overrelax.scale = 1,
+                   type.update.a.b = "slice", k.overrelax.a.b = 1,
+                   k.overrelax.sigma.b = 1, k.overrelax.scale.b = 1),
+   prior2, prior.beta2, prior.b2, init2,
+   mcmc.par2 = list(type.update.a = "slice", k.overrelax.a = 1,
+                    k.overrelax.sigma = 1, k.overrelax.scale = 1,
+                    type.update.a.b = "slice", k.overrelax.a.b = 1,
+                    k.overrelax.sigma.b = 1, k.overrelax.scale.b = 1),
+   priorinit.Nb,
+   rho = list(type.update = "fixed.zero", init=0, sigmaL=0.1),
+   store = list(a = FALSE, a2 = FALSE, y = FALSE, y2 = FALSE,
+                r = FALSE, r2 = FALSE, b = FALSE, b2 = FALSE,
+                a.b = FALSE, a.b2 = FALSE, r.b = FALSE, r.b2 = FALSE), 
+   dir)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table><tr style="vertical-align: top;">
+<td><code>formula</code></td>
+<td>
+<p>model formula for the regression. In the case of
+doubly-censored data, this is the model formula for the onset
+time.
+</p>
+<p>The left-hand side of the <code>formula</code> must be an object created
+using <code>Surv</code>.
+</p>
+<p>Intercept is implicitely included in the model by the
+estimation of the error distribution. As a consequence <code>-1</code> in
+the model formula does not have any effect on the model
+specification.
+</p>
+<p>If <code>random</code> is used then the formula must contain
+an identification of clusters in the form <code>cluster(id)</code>, where
+<code>id</code> is a name of the variable that determines clusters, e.g.
+</p>
+
+<table><tr>
+<td style="text-align: center;">
+      <code>Surv(time, event) gender + cluster(id)</code>.
+    </td>
+</tr></table>
+</td>
+</tr></table>
+<table><tr style="vertical-align: top;">
+<td><code>random</code></td>
+<td>
+<p>formula for the ‘random’ part of the model.
+In the case of doubly-censored data, this is the <code>random</code> formula for
+the onset time. With this version of the function only
+</p>
+
+<table><tr>
+<td style="text-align: center;">
+      <code>random =  1</code>
+    </td>
+</tr></table>
+<p>is allowed. If omitted, no random part is included in the model. 
+</p>
+</td>
+</tr></table>
+<table><tr style="vertical-align: top;">
+<td><code>formula2</code></td>
+<td>
+<p>model formula for the regression of the time-to-event in
+the case of doubly-censored data. Ignored otherwise. The same structure as
+for <code>formula</code> applies here.
+</p>
+</td>
+</tr></table>
+<table><tr style="vertical-align: top;">
+<td><code>random2</code></td>
+<td>
+<p>specification of the ‘random’ part of the model for
+time-to-event in the case of doubly-censored data. Ignored
+otherwise. The same structure as for <code>random</code> applies here.
+</p>
+</td>
+</tr></table>
+<table><tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+<p>optional data frame in which to interpret the variables
+occuring in the <code>formula</code>, <code>formula2</code>, <code>random</code>,
+<code>random2</code> statements.
+</p>
+</td>
+</tr></table>
+<table>
+<tr style="vertical-align: top;">
+<td><code>classification</code></td>
+<td>
+<p><code>data.frame</code> with the
+information for a model which considers misclassification of the
+event times. It is assumed to have the following columns where the
+position of columns is important, not their names:
+</p>
+
+<ol>
+<li>
+<p><b>idUnit</b>: variable which determines the rows of
+<code>classification</code> matrix pertaining to one unit in
+<code>formula/formula2</code> <code>data</code>. Number of unique <code>idUnit</code> values must be the
+same as in <code>formula/formula2</code> <code>data</code>,
+<code>classification</code> matrix must be sorted in the same order as
+<code>formula/formula2</code> <code>data</code> and having all rows
+pertaining to one unit in its consecutive rows.
+</p>
+</li>
+<li>
+<p><b>Time</b>: variable with the examination times. It is
+assumed that the <code>Time</code>s are sorted in an increasing order
+for each <code>idUnit</code>.      
+</p>
+</li>
+<li>
+<p><b>Examiner</b>: variable which determines the examiner who
+performed evaluation at a specific visit. Number of unique
+<code>Examiner</code> values determines the number of examiners.
+</p>
+</li>
+<li>
+<p><b>Status</b>: 0/1 variable giving the event status
+according to examiner, 0 = no event, 1 = event.
+</p>
+</li>
+<li>
+<p><b>Factor</b>: possible factor (e.g., tooth in our dental
+application which may influence the misclassification). Numeric
+or character variables are converted to a <code>factor</code>. This
+column is obligatory only if <code>classModel</code> is “Factor:Examiner”.
+</p>
+</li>
+</ol>
+<p>Possible additional columns are ignored.
+</p>
+<p>If missing, no misclassification is considered.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>classParam</code></td>
+<td>
+<p>a <code>list</code> with additional parameters for the
+misclassification model. It is ignored if there is no
+<code>classification</code> argument specified.
+</p>
+<p>The following components of the <code>list</code> <code>classParam</code> are expected.
+</p>
+
+<dl>
+<dt>Model</dt>
+<dd>
+<p>a character string which specifies the model
+considered. It can be 1. “Examiner”:
+sensitivity and specificity depend only on <code>Examiner</code>,
+2. “Factor:Examiner”: sensitivity and specificity is for each
+examiner generally different for different levels of a factor <code>Factor</code>.
+</p>
+</dd>
+<dt>a.sens</dt>
+<dd>
+<p>parameter ‘a’ (<code>shape1</code>) of the beta prior distributions
+for sensitivities.</p>
+</dd>
+<dt>b.sens</dt>
+<dd>
+<p>parameter ‘b’ (<code>shape2</code>) of the beta prior distributions
+for sensitivities.</p>
+</dd>
+<dt>a.spec</dt>
+<dd>
+<p>parameter ‘a’ (<code>shape1</code>) of the beta prior distributions
+for specificities.</p>
+</dd>
+<dt>b.spec</dt>
+<dd>
+<p>parameter ‘b’ (<code>shape2</code>) of the beta prior distributions
+for specificities.</p>
+</dd>
+<dt>init.sens</dt>
+<dd>
+<p>a vector or matrix with initial values of
+sensitivities. A vector is expected if <code>Model</code> is
+“Examiner” in which case each component of the vector
+corresponds to each examiner. A matrix is expected if
+<code>Model</code> is “Factor:Examiner” in which case rows of
+the matrix correspond to the values of <code>Factor</code> and columns
+to examiners.
+</p>
+<p>If not given then the initial sensitivities are sampled from a
+uniform distribution on (0.8, 0.9).
+</p>
+</dd>
+<dt>init.spec</dt>
+<dd>
+<p>a vector or matrix with initial values of
+specificities. The structure is the same as for <code>init.sens</code>.</p>
+</dd>      
+</dl>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>na.action</code></td>
+<td>
+<p>the user is discouraged from changing the default
+value <code>na.fail</code>.
+</p>
+</td>
+</tr>
+</table>
+<table><tr style="vertical-align: top;">
+<td><code>onlyX</code></td>
+<td>
+<p>if <code>TRUE</code> no MCMC sampling is performed and only the
+design matrix (matrices) are returned. This can be useful to set up
+correctly priors for regression parameters in the presence of
+<code>factor</code> covariates.
+</p>
+</td>
+</tr></table>
+<table><tr style="vertical-align: top;">
+<td><code>nsimul</code></td>
+<td>
+<p>a list giving the number of iterations of the MCMC and
+other parameters of the simulation.
+</p>
+
+<dl>
+<dt>niter</dt>
+<dd>
+<p>total number of sampled values after discarding
+thinned ones, burn-up included;</p>
+</dd>
+<dt>nthin</dt>
+<dd>
+<p>thinning interval;</p>
+</dd>
+<dt>nburn</dt>
+<dd>
+<p>number of sampled values in a burn-up period after
+discarding thinned values. This value should be smaller than
+<code>niter</code>. If not, <code>nburn</code> is set to <code>niter - 1</code>. It can be set to zero;</p>
+</dd>
+<dt>nwrite</dt>
+<dd>
+<p>an interval at which information about the number of
+performed iterations is print on the screen and during the
+burn-up period an interval with which the sampled values are
+writen to files;</p>
+</dd>
+</dl>
+</td>
+</tr></table>
+<table><tr style="vertical-align: top;">
+<td><code>prior</code></td>
+<td>
+<p>a list specifying the prior distribution of the G-spline
+defining the distribution of the error term in the regression model
+given by <code>formula</code> and <code>random</code>. See <code>prior</code> argument of
+<code>bayesHistogram</code> function for more detail. In this list
+also ‘Specification’ as described above is specified.
+</p>
+<p>The item <code>prior$neighbor.system</code> can only be equal to
+<code>uniCAR</code> here.
+</p>
+</td>
+</tr></table>
+<table><tr style="vertical-align: top;">
+<td><code>prior.b</code></td>
+<td>
+<p>a list specifying the prior distribution of the
+G-spline defining the distribution of the random intercept in the
+regression model given by <code>formula</code> and <code>random</code>. See
+<code>prior</code> argument of <code>bayesHistogram</code> function for
+more detail. In this list
+also ‘Specification’ as described above is specified.
+</p>
+<p>It is ignored if the argument <code>priorinit.Nb</code> is given.
+</p>
+<p>The item <code>prior.b$neighbor.system</code> can only be equal to
+<code>uniCAR</code> here.
+</p>
+</td>
+</tr></table>
+<table><tr style="vertical-align: top;">
+<td><code>prior.beta</code></td>
+<td>
+<p>prior specification for the regression parameters,
+in the case of doubly-censored data for the regression parameters of
+the onset time, i.e. it is related to <code>formula</code> and
+<code>random</code>.
+</p>
+<p>This should be a list with the following components:
+</p>
+
+<dl>
+<dt>mean.prior</dt>
+<dd>
+<p>a vector specifying a prior mean for each
+<code>beta</code> parameter in the model.</p>
+</dd>
+<dt>var.prior</dt>
+<dd>
+<p>a vector specifying a prior variance for each
+<code>beta</code> parameter.</p>
+</dd>
+</dl>
+<p>It is recommended to run the function
+bayessurvreg3 first with its argument <code>onlyX</code> set to <code>TRUE</code>
+to find out how the betas are sorted. They must correspond to a
+design matrix X taken from <code>formula</code>.
+</p>
+</td>
+</tr></table>
+<table><tr style="vertical-align: top;">
+<td><code>init</code></td>
+<td>
+<p>an optional list with initial values for the MCMC related
+to the model given by <code>formula</code> and <code>random</code>. The list can have the following components:
+</p>
+
+<dl>
+<dt>iter</dt>
+<dd>
+<p>the number of the iteration to which the initial values
+correspond, usually zero.</p>
+</dd>
+<dt>beta</dt>
+<dd>
+<p>a vector of initial values for the regression
+parameters.
+It must be sorted in the same way as are the columns
+in the design matrix. Use <code>onlyX=TRUE</code> if you do not know how
+the columns in the design matrix are created.</p>
+</dd>
+<dt>a</dt>
+<dd>
+<p>a vector of length <code class="reqn">2K+1</code> with the initial
+values of transformed mixture weights for the G-spline defining
+the distribution of the error term <code class="reqn">\varepsilon</code>.</p>
+</dd>
+<dt>lambda</dt>
+<dd>
+<p>initial values for the Markov random fields precision
+parameter for the G-spline defining
+the distribution of the error term <code class="reqn">\varepsilon</code>. 
+</p>
+</dd>
+<dt>gamma</dt>
+<dd>
+<p>an initial values for the middle
+knot <code class="reqn">\gamma</code> for the G-spline defining
+the distribution of the error term <code class="reqn">\varepsilon</code>.
+</p>
+<p>If ‘Specification’ is 2, this value will not be changed
+by the MCMC and it is recommended (for easier
+interpretation of the results) to set <code>init$gamma</code> to zero
+(default behavior).
+</p>
+<p>If ‘Specification’ is 1 <code>init$gamma</code> should be
+approximately equal to the mean value of the residuals.
+</p>
+</dd>
+<dt>sigma</dt>
+<dd>
+<p>an initial values of the basis
+standard deviation <code class="reqn">\sigma</code> for the G-spline defining
+the distribution of the error term <code class="reqn">\varepsilon</code>.
+</p>
+<p>If ‘Specification’ is 2, this value will not be changed
+by the MCMC and it is recommended to set it
+approximately equal to the range of standardized data
+(let say 4 + 4)
+divided by the number of knots and
+multiplied by something like 2/3.
+</p>
+<p>If ‘Specification’ is 1
+this should be approximately equal to the range of the residuals
+divided by the number of knots <code class="reqn">(2K+1)</code> and
+multiplied again by something like 2/3.
+</p>
+</dd>  
+<dt>intercept</dt>
+<dd>
+<p>an initial values of the
+intercept term <code class="reqn">\alpha</code> for the G-spline defining
+the distribution of the error term <code class="reqn">\varepsilon</code>.
+</p>
+<p>If ‘Specification’ is 1 this value is not changed by the
+MCMC and the initial value is always changed to zero.</p>
+</dd>
+<dt>scale</dt>
+<dd>
+<p>an initial value of the scale
+parameter <code class="reqn">\tau</code> for the G-spline defining
+the distribution of the error term <code class="reqn">\varepsilon</code>.
+</p>
+<p>If ‘Specification’ is 1 this value is not changed by the MCMC
+and the initial value is always changed to one.</p>
+</dd>
+<dt>a.b</dt>
+<dd>
+<p>a vector of length <code class="reqn">2K+1</code> with the initial
+values of transformed mixture weights for the G-spline defining
+the distribution of the random intercept <code class="reqn">b</code>.</p>
+</dd>
+<dt>lambda.b</dt>
+<dd>
+<p>initial values for the Markov random fields precision
+parameter for the G-spline defining
+the distribution of the random intercept <code class="reqn">b</code>. 
+</p>
+</dd>
+<dt>gamma.b</dt>
+<dd>
+<p>an initial values for the middle
+knot <code class="reqn">\gamma</code> for the G-spline defining
+the distribution of the random intercept <code class="reqn">b</code>.
+</p>
+<p>Due to identifiability reasons, this value is always changed to
+zero and is for neither ‘Specification’ updated by the
+MCMC.
+</p>
+</dd>
+<dt>sigma.b</dt>
+<dd>
+<p>an initial values of the basis
+standard deviation <code class="reqn">\sigma</code> for the G-spline defining
+the distribution of the random intercept <code class="reqn">b</code>.
+</p>
+<p>If ‘Specification’ is 2, this value will not be changed
+by the MCMC and it is recommended to set it
+approximately equal to the range of standardized data
+(let say 4 + 4)
+divided by the number of knots and
+multiplied by something like 2/3.
+</p>
+<p>If ‘Specification’ is 1
+this should be approximately equal to the range of the residuals
+divided by the number of knots <code class="reqn">(2K+1)</code> and
+multiplied again by something like 2/3.
+</p>
+</dd>  
+<dt>intercept.b</dt>
+<dd>
+<p>an initial values of the
+intercept term <code class="reqn">\alpha</code> for the G-spline defining
+the distribution of the random intercept <code class="reqn">b</code>.
+</p>
+<p>Due to identifiability reasons, this value is always changed to
+zero and is for neither ‘Specification’ updated by the
+MCMC.
+</p>
+</dd>
+<dt>scale.b</dt>
+<dd>
+<p>an initial value of the scale
+parameter <code class="reqn">\tau</code> for the G-spline defining
+the distribution of the random intercept <code class="reqn">b</code>.
+</p>
+<p>If ‘Specification’ is 1 this value is not changed by the MCMC
+and the initial value is always changed to one.</p>
+</dd>
+<dt>b</dt>
+<dd>
+<p>a vector of length <code class="reqn">N</code> of the initial values of random effects
+<code class="reqn">b_i,\;i=1,\dots,N</code>
+for each cluster.</p>
+</dd>
+<dt>y</dt>
+<dd>
+<p>a vector of length <code class="reqn">\sum_{i=1}^N\,n_i</code>
+with initial values of log-event-times.</p>
+</dd>
+<dt>r</dt>
+<dd>
+<p>a vector of length <code class="reqn">\sum_{i=1}^N\,n_i</code>
+with initial
+component labels for each residual. All values must be between
+<code class="reqn">-K</code> and <code class="reqn">K.</code> See argument <code>init</code> of
+the function <code>bayesHistogram</code> for more details.</p>
+</dd>
+<dt>r.b</dt>
+<dd>
+<p>a vector of length <code class="reqn">N</code>
+with initial
+component labels for each random intercept. All values must be between
+<code class="reqn">-K</code> and <code class="reqn">K.</code> See argument <code>init</code> of
+the function <code>bayesHistogram</code> for more details.</p>
+</dd>    
+</dl>
+</td>
+</tr></table>
+<table><tr style="vertical-align: top;">
+<td><code>mcmc.par</code></td>
+<td>
+<p>a list specifying how some of the G-spline parameters
+related to the distribution of the error term and of the random
+intercept from <code>formula</code> and <code>random</code>
+are to be updated. See <code>bayesBisurvreg</code> for more
+details.
+</p>
+<p>Compared to the mcmc.par argument of the function
+<code>bayesBisurvreg</code> additional components related to the
+G-spline for the random intercept can be present, namely
+</p>
+
+<table>
+<tr>
+<td style="text-align: left;">
+      <code>type.update.a.b</code> </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+      <code>k.overrelax.a.b</code> </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+      <code>k.overrelax.sigma.b</code> </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+      <code>k.overrelax.scale.b</code>
+    </td>
+</tr>
+</table>
+<p>In contrast to <code>bayesBisurvreg</code> function arguments
+<code>mcmc.par$type.update.a</code> and <code>mcmc.par$type.update.a.b</code> can also be equal to
+<code>"block"</code> in which case all <code class="reqn">a</code> coefficients are updated
+in 1 block using the Metropolis-Hastings algorithm. 
+</p>
+</td>
+</tr></table>
+<table><tr style="vertical-align: top;">
+<td><code>prior2</code></td>
+<td>
+<p>a list specifying the prior distribution of the G-spline
+defining the distribution of the error term in the regression model
+given by <code>formula2</code> and <code>random2</code>. See <code>prior</code> argument of
+<code>bayesHistogram</code> function for more detail.
+</p>
+</td>
+</tr></table>
+<table><tr style="vertical-align: top;">
+<td><code>prior.b2</code></td>
+<td>
+<p>prior specification for the parameters related to the
+random effects from <code>formula2</code> and <code>random2</code>. This should
+be a list with the same structure as <code>prior.b</code>.
+</p>
+<p>It is ignored if the argument <code>priorinit.Nb</code> is given.    
+</p>
+</td>
+</tr></table>
+<table><tr style="vertical-align: top;">
+<td><code>prior.beta2</code></td>
+<td>
+<p>prior specification for the regression parameters
+of time-to-event in the case of doubly censored data (related to
+<code>formula2</code> and <code>random2</code>).
+This should be a list with the same structure as <code>prior.beta</code>.
+</p>
+</td>
+</tr></table>
+<table><tr style="vertical-align: top;">
+<td><code>init2</code></td>
+<td>
+<p>an optional list with initial values for the MCMC related
+to the model given by <code>formula2</code> and <code>random2</code>.
+The list has the same structure as <code>init</code>.
+</p>
+</td>
+</tr></table>
+<table><tr style="vertical-align: top;">
+<td><code>mcmc.par2</code></td>
+<td>
+<p>a list specifying how some of the G-spline parameters
+related to <code>formula2</code> and <code>random2</code> are to be updated.
+The list has the same structure as <code>mcmc.par</code>.
+</p>
+</td>
+</tr></table>
+<table>
+<tr style="vertical-align: top;">
+<td><code>priorinit.Nb</code></td>
+<td>
+<p>a list specifying the prior of the random intercepts
+in the case of the AFT model with doubly-interval-censored data and
+onset, time-to-event random intercepts following bivariate normal
+distribution.
+</p>
+<p>The list should have the following components.
+</p>
+
+<dl>
+<dt>init.D</dt>
+<dd>
+<p>initial value for the covariance matrix of the onset
+random intercept and time-to-event random intercept.
+</p>
+<p>It can be specified either as a vector of length 3 giving the
+lower triangle of the matrix or as a matrix 2 x 2.
+</p>
+</dd>	
+<dt>df.Di</dt>
+<dd>
+<p>degrees of freedom <code class="reqn">\nu</code> for the Wishart prior of the
+matrix <code class="reqn">D^{-1}</code>.
+</p>
+<p>Note that it must be higher than 1.
+</p>
+</dd>
+<dt>scale.Di</dt>
+<dd>
+<p>scale matrix <code class="reqn">S</code> for the Wishart prior of the
+matrix <code class="reqn">D^{-1}</code>.
+</p>
+<p>It can be specified either as a vector of length 3 giving the
+lower triangle of the matrix or as a matrix 2 x 2.
+</p>
+<p>Note that a priori
+</p>
+<p style="text-align: center;"><code class="reqn">\mbox{E}(D^{-1}.) = \nu S</code>
+</p>
+
+</dd>      
+</dl>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>rho</code></td>
+<td>
+<p>a list specifying possible correlation between the onset
+random intercept and the time-to-event random intercept in the
+experimental version of the model. If not given correlation is fixed
+to <code class="reqn">0</code>.
+</p>
+<p>It is ignored if the argument <code>priorinit.Nb</code> is given.
+Ordinary users should not care about this argument.
+</p>
+<p>The list can have the following components.
+</p>
+
+<dl>
+<dt>type.update</dt>
+<dd>
+<p>character specifying how the Fisher Z transform
+of the correlation coefficient is updated. Possible values are:
+</p>
+<p><code>"fixed.zero"</code>:
+correlation coefficient is fixed to <code class="reqn">0</code> and it is not updated.
+</p>
+<p><code>"normal.around.mode"</code>:
+at each iteration of MCMC, 1 Newton-Raphson step from the
+current point <code class="reqn">Z</code> of the full conditional distribution is
+performed, normal approximation is formed by Taylor expansion
+and new point <code class="reqn">Z</code> is sampled from that normal
+approximation.
+</p>
+<p>Note that this proposal does not work too well if the current
+point <code class="reqn">Z</code> lies in the area of low posterior mass. The
+reason is that even 1 Newton-Raphson step usually leads to the
+area of high posterior probability mass and the proposal is
+“too ambisious”.
+</p>
+<p><code>"langevin"</code>.
+at each iteration of MCMC, new point <code class="reqn">Z</code> is sampled
+using the Langevin algorithm. A scale parameter (see below)
+must cerefully be chosen for this algorithm to ensure that the
+acceptance rate is about 50–60% (Robert, Casella, 2004, p. 319).
+</p>
+</dd>		
+</dl>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>store</code></td>
+<td>
+<p>a list of logical values specifying which chains that are
+not stored by default are to be stored. The list can have the
+following components.
+</p>
+
+<dl>
+<dt>a</dt>
+<dd>
+<p>if <code>TRUE</code> then all the transformed mixture weights
+<code class="reqn">a_{k},</code>
+<code class="reqn">k=-K,\dots,K,</code>
+related to the G-spline defining the error distribution of <code>formula</code>
+are stored.</p>
+</dd>
+<dt>a.b</dt>
+<dd>
+<p>if <code>TRUE</code> then all the transformed mixture weights
+<code class="reqn">a_{k},</code>
+<code class="reqn">k=-K,\dots,K,</code>
+related to the G-spline defining the distribution of the random
+intercept from <code>formula</code> and <code>random</code> are stored.</p>
+</dd>
+<dt>a2</dt>
+<dd>
+<p>if <code>TRUE</code> and there are doubly-censored data then
+all the transformed mixture weights
+<code class="reqn">a_{k},</code>
+<code class="reqn">k=-K,\dots,K,</code>
+related to the G-spline defining the error distribution of
+<code>formula2</code> are stored.</p>
+</dd>
+<dt>a.b2</dt>
+<dd>
+<p>if <code>TRUE</code> then all the transformed mixture weights
+<code class="reqn">a_{k},</code>
+<code class="reqn">k=-K,\dots,K,</code>
+related to the G-spline defining the distribution of the random
+intercept from <code>formula2</code> and <code>random2</code> are stored.</p>
+</dd>      
+<dt>y</dt>
+<dd>
+<p>if <code>TRUE</code> then augmented log-event times for all
+observations related to the <code>formula</code> are stored.</p>
+</dd>
+<dt>y2</dt>
+<dd>
+<p>if <code>TRUE</code> then augmented log-event times for all
+observations related to <code>formula2</code> are stored.</p>
+</dd>
+<dt>r</dt>
+<dd>
+<p>if <code>TRUE</code> then labels of mixture components for
+residuals related to <code>formula</code> are stored.</p>
+</dd>      
+<dt>r.b</dt>
+<dd>
+<p>if <code>TRUE</code> then labels of mixture components for
+random intercepts related to <code>formula</code> and <code>random</code>
+are stored.</p>
+</dd>      
+<dt>r2</dt>
+<dd>
+<p>if <code>TRUE</code> then labels of mixture components for
+residuals related to <code>formula2</code> are stored.</p>
+</dd>
+<dt>r.b2</dt>
+<dd>
+<p>if <code>TRUE</code> then labels of mixture components for
+random intercepts related to <code>formula2</code> and <code>random2</code>
+are stored.</p>
+</dd>            
+<dt>b</dt>
+<dd>
+<p>if <code>TRUE</code> then the sampled values of the random
+interceptss related to <code>formula</code> and <code>random</code> are stored.</p>
+</dd>
+<dt>b2</dt>
+<dd>
+<p>if <code>TRUE</code> then the sampled values of the random
+interceptss related to <code>formula2</code> and <code>random2</code> are stored.</p>
+</dd>
+</dl>
+</td>
+</tr>
+</table>
+<table><tr style="vertical-align: top;">
+<td><code>dir</code></td>
+<td>
+<p>a string that specifies a directory where all sampled
+values are to be stored.
+</p>
+</td>
+</tr></table>
+<h3>Value</h3>
+
+<p>A list of class <code>bayessurvreg3</code> containing an information
+concerning the initial values and prior choices.
+</p>
+
+
+<h3>Files created</h3>
+
+
+<p>Additionally, the following files with sampled values
+are stored in a directory specified by <code>dir</code> argument of this
+function (some of them are created only on request, see <code>store</code>
+parameter of this function).
+</p>
+<p>Headers are written to all files created by default and to files asked
+by the user via the argument <code>store</code>. During the burn-in, only
+every <code>nsimul$nwrite</code> value is written. After the burn-in, all
+sampled values are written in files created by default and to files
+asked by the user via the argument <code>store</code>. In the files for
+which the corresponding <code>store</code> component is <code>FALSE</code>, every
+<code>nsimul$nwrite</code> value is written during the whole MCMC (this
+might be useful to restart the MCMC from some specific point).
+</p>
+<p>The following files are created:
+</p>
+
+<dl>
+<dt>iteration.sim</dt>
+<dd>
+<p>one column labeled <code>iteration</code> with
+indeces of MCMC iterations to which the stored sampled values
+correspond.
+</p>
+</dd>
+<dt>mixmoment.sim</dt>
+<dd>
+<p>this file is related to the density of the
+error term from the model given by <code>formula</code>.
+</p>
+<p>Columns labeled <code>k</code>, <code>Mean.1</code>, 
+<code>D.1.1</code>, where
+</p>
+<p><b>k</b> = number of mixture components that had probability
+numerically higher than zero;
+</p>
+<p><b>Mean.1</b> =
+<code class="reqn">\mbox{E}(\varepsilon_{i,l})</code>;
+</p>
+<p><b>D.1.1</b> =
+<code class="reqn">\mbox{var}(\varepsilon_{i,l})</code>.
+</p>
+</dd>
+<dt>mixmoment_b.sim</dt>
+<dd>
+<p>this file is related to the density of the
+random intercept from the model given by <code>formula</code> and
+<code>random</code>.
+</p>
+<p>The same structure as <code>mixmoment.sim</code>.
+</p>
+</dd>
+<dt>mixmoment_2.sim</dt>
+<dd>
+<p>in the case of doubly-censored data. This
+file is related to the density of the error term from the model
+given by <code>formula2</code>.
+</p>
+<p>The same structure as <code>mixmoment.sim</code>.
+</p>
+</dd>
+<dt>mixmoment_b2.sim</dt>
+<dd>
+<p>in the case of doubly-censored data. This
+file is related to the density of the random intercept from the model
+given by <code>formula2</code> and <code>random2</code>.
+</p>
+<p>The same structure as <code>mixmoment.sim</code>.
+</p>
+</dd>    
+<dt>mweight.sim</dt>
+<dd>
+<p>this file is related to the density of the
+error term from the model given by <code>formula</code>.
+</p>
+<p>Sampled mixture weights <code class="reqn">w_{k}</code> of mixture components that had
+probabilities numerically higher than zero. 
+</p>
+</dd>
+<dt>mweight_b.sim</dt>
+<dd>
+<p>this file is related to the density of the
+random intercept from the model given by <code>formula</code> and
+<code>random</code>.
+</p>
+<p>The same structure as <code>mweight.sim</code>.
+</p>
+</dd>
+<dt>mweight_2.sim</dt>
+<dd>
+<p>in the case of doubly-censored data. This
+file is related to the density of the error term from the model
+given by <code>formula2</code>.
+</p>
+<p>The same structure as <code>mweight.sim</code>.
+</p>
+</dd>
+<dt>mweight_b2.sim</dt>
+<dd>
+<p>in the case of doubly-censored data. This
+file is related to the density of the random intercept from the model
+given by <code>formula2</code> and <code>random2</code>.
+</p>
+<p>The same structure as <code>mweight.sim</code>.
+</p>
+</dd>    
+<dt>mmean.sim</dt>
+<dd>
+<p>this file is related to the density of the
+error term from the model given by <code>formula</code>.
+</p>
+<p>Indeces <code class="reqn">k,</code>
+<code class="reqn">k \in\{-K, \dots, K\}</code>
+of mixture components that had probabilities numerically higher
+than zero. It corresponds to the weights in
+<code>mweight.sim</code>. 
+</p>
+</dd>
+<dt>mmean_b.sim</dt>
+<dd>
+<p>this file is related to the density of the
+random intercept from the model given by <code>formula</code> and
+<code>random</code>.
+</p>
+<p>The same structure as <code>mmean.sim</code>.
+</p>
+</dd>
+<dt>mmean_2.sim</dt>
+<dd>
+<p>in the case of doubly-censored data. This
+file is related to the density of the error term from the model
+given by <code>formula2</code>.
+</p>
+<p>The same structure as <code>mmean.sim</code>.
+</p>
+</dd>
+<dt>mmean_b2.sim</dt>
+<dd>
+<p>in the case of doubly-censored data. This
+file is related to the density of the random intercept from the model
+given by <code>formula2</code> and <code>random2</code>.
+</p>
+<p>The same structure as <code>mmean.sim</code>.
+</p>
+</dd>    
+<dt>gspline.sim</dt>
+<dd>
+<p>this file is related to the density of the
+error term from the model given by <code>formula</code>.
+</p>
+<p>Characteristics of the sampled G-spline.
+This file together with <code>mixmoment.sim</code>,
+<code>mweight.sim</code> and <code>mmean.sim</code> can be used to reconstruct
+the G-spline in each MCMC iteration.
+</p>
+<p>The file has columns labeled
+<code>gamma1</code>,
+<code>sigma1</code>,
+<code>delta1</code>,
+<code>intercept1</code>, 
+<code>scale1</code>,
+The meaning of the values in these columns is the following:
+</p>
+<p><b>gamma1</b> = the middle knot <code class="reqn">\gamma</code> 
+If ‘Specification’ is 2, this column usually contains zeros;
+</p>
+<p><b>sigma1</b> = basis standard deviation <code class="reqn">\sigma</code>
+of the G-spline. This column contains a fixed value
+if ‘Specification’ is 2;
+</p>
+<p><b>delta1</b> = distance <code class="reqn">delta</code> between the two knots of the G-spline.
+This column contains a fixed value if ‘Specification’ is 2;
+</p>
+<p><b>intercept1</b> = the intercept term <code class="reqn">\alpha</code> of the G-spline.
+If ‘Specification’ is 1, this column usually contains zeros;
+</p>
+<p><b>scale1</b> = the scale parameter <code class="reqn">\tau</code> of the G-spline.
+If ‘Specification’ is 1, this column usually contains ones;
+</p>
+</dd>
+<dt>gspline_b.sim</dt>
+<dd>
+<p>this file is related to the density of the
+random intercept from the model given by <code>formula</code> and
+<code>random</code>.
+</p>
+<p>The same structure as <code>gspline.sim</code>.
+</p>
+</dd>
+<dt>gspline_2.sim</dt>
+<dd>
+<p>in the case of doubly-censored data. This
+file is related to the density of the error term from the model
+given by <code>formula2</code>.
+</p>
+<p>The same structure as <code>gspline.sim</code>.
+</p>
+</dd>
+<dt>gspline_b2.sim</dt>
+<dd>
+<p>in the case of doubly-censored data. This
+file is related to the density of the random intercept from the model
+given by <code>formula2</code> and <code>random2</code>.
+</p>
+<p>The same structure as <code>gspline.sim</code>.
+</p>
+</dd>    
+<dt>mlogweight.sim</dt>
+<dd>
+<p>this file is related to the density of the
+error term from the model given by <code>formula</code>.
+</p>
+<p>Fully created only if <code>store$a = TRUE</code>. The
+file contains the transformed weights
+<code class="reqn">a_{k},</code>
+<code class="reqn">k=-K,\dots,K</code>
+of all mixture components, i.e. also of components that had numerically zero
+probabilities. 
+</p>
+</dd>
+<dt>mlogweight_b.sim</dt>
+<dd>
+<p>this file is related to the density of the
+random intercept from the model given by <code>formula</code> and
+<code>random</code>.
+</p>
+<p>Fully created only if <code>store$a.b = TRUE</code>.
+</p>
+<p>The same structure as <code>mlogweight.sim</code>.
+</p>
+</dd>
+<dt>mlogweight_2.sim</dt>
+<dd>
+<p>in the case of doubly-censored data. This
+file is related to the density of the error term from the model
+given by <code>formula2</code>.
+</p>
+<p>Fully created only if <code>store$a2 = TRUE</code>.
+</p>
+<p>The same structure as <code>mlogweight.sim</code>.
+</p>
+</dd>
+<dt>mlogweight_b2.sim</dt>
+<dd>
+<p>in the case of doubly-censored data. This
+file is related to the density of the random intercept from the model
+given by <code>formula2</code> and <code>random2</code>.
+</p>
+<p>Fully created only if <code>store$a.b2 = TRUE</code>.
+</p>
+<p>The same structure as <code>mlogweight.sim</code>.
+</p>
+</dd>    
+<dt>r.sim</dt>
+<dd>
+<p>this file is related to the density of the
+error term from the model given by <code>formula</code>.
+</p>
+<p>Fully created only if <code>store$r = TRUE</code>. The file
+contains the labels of the mixture components into which the
+residuals are intrinsically assigned. Instead of indeces on the
+scale <code class="reqn">\{-K,\dots, K\}</code>
+values from 1 to <code class="reqn">(2\,K+1)</code> are stored here. Function
+<code>vecr2matr</code> can be used to transform it back to
+indices from <code class="reqn">-K</code> to <code class="reqn">K</code>.
+</p>
+</dd>
+<dt>r_b.sim</dt>
+<dd>
+<p>this file is related to the density of the
+random intercept from the model given by <code>formula</code> and
+<code>random</code>.
+</p>
+<p>Fully created only if <code>store$r.b = TRUE</code>.
+</p>
+<p>The same structure as <code>r.sim</code>.
+</p>
+</dd>
+<dt>r_2.sim</dt>
+<dd>
+<p>in the case of doubly-censored data. This
+file is related to the density of the error term from the model
+given by <code>formula2</code>.
+</p>
+<p>Fully created only if <code>store$r2 = TRUE</code>.
+</p>
+<p>The same structure as <code>r.sim</code>.
+</p>
+</dd>
+<dt>r_b2.sim</dt>
+<dd>
+<p>in the case of doubly-censored data. This
+file is related to the density of the random intercept from the model
+given by <code>formula2</code> and <code>random2</code>.
+</p>
+<p>Fully created only if <code>store$r.b2 = TRUE</code>.
+</p>
+<p>The same structure as <code>r.sim</code>.
+</p>
+</dd>    
+<dt>lambda.sim</dt>
+<dd>
+<p>this file is related to the density of the
+error term from the model given by <code>formula</code>.
+</p>
+<p>One column labeled <code>lambda</code>. These are the
+values of the smoothing parameter<code class="reqn">\lambda</code>
+(hyperparameters of the prior distribution of the transformed
+mixture weights <code class="reqn">a_{k}</code>). 
+</p>
+</dd>
+<dt>lambda_b.sim</dt>
+<dd>
+<p>this file is related to the density of the
+random intercept from the model given by <code>formula</code> and
+<code>random</code>.
+</p>
+<p>The same structure as <code>lambda.sim</code>.
+</p>
+</dd>
+<dt>lambda_2.sim</dt>
+<dd>
+<p>in the case of doubly-censored data. This
+file is related to the density of the error term from the model
+given by <code>formula2</code>.
+</p>
+<p>The same structure as <code>lambda.sim</code>.
+</p>
+</dd>
+<dt>lambda_b2.sim</dt>
+<dd>
+<p>in the case of doubly-censored data. This
+file is related to the density of the random intercept from the model
+given by <code>formula2</code> and <code>random2</code>.
+</p>
+<p>The same structure as <code>lambda.sim</code>.
+</p>
+</dd>    
+<dt>beta.sim</dt>
+<dd>
+<p>this file is related to the model given by
+<code>formula</code>.
+</p>
+<p>Sampled values of the regression parameters
+<code class="reqn">\beta</code>.
+</p>
+<p>The columns are labeled according to the
+<code>colnames</code> of the design matrix.
+</p>
+</dd>
+<dt>beta_2.sim</dt>
+<dd>
+<p>in the case of doubly-censored data, the same
+structure as <code>beta.sim</code>, however related to the model
+given by <code>formula2</code>. 
+</p>
+</dd>
+<dt>b.sim</dt>
+<dd>
+<p>this file is related to the model given by
+<code>formula</code> and <code>random</code>.
+</p>
+<p>Fully created only if <code>store$b = TRUE</code>. It
+contains sampled values of random intercepts for all clusters in
+the data set. The file has <code class="reqn">N</code> columns.
+</p>
+</dd>
+<dt>b_2.sim</dt>
+<dd>
+<p>fully created only if <code>store$b2 =
+      TRUE</code> and in the case of doubly-censored data, the same
+structure as <code>b.sim</code>, however related to the model
+given by <code>formula2</code> and <code>random2</code>. 
+</p>
+</dd>  
+<dt>Y.sim</dt>
+<dd>
+<p>this file is related to the model given by <code>formula</code>.
+</p>
+<p>Fully created only if <code>store$y = TRUE</code>. It
+contains sampled (augmented) log-event times for all observations
+in the data set.
+</p>
+</dd>
+<dt>Y_2.sim</dt>
+<dd>
+<p>fully created only if <code>store$y2 =
+      TRUE</code> and in the case of doubly-censored data, the same
+structure as <code>Y.sim</code>, however related to the model
+given by <code>formula2</code>. 
+</p>
+</dd>
+<dt>logposter.sim</dt>
+<dd>
+<p>This file is related to the residuals of the model
+given by <code>formula</code>. 
+</p>
+<p>Columns labeled <code>loglik</code>, <code>penalty</code>, and <code>logprw</code>. 
+The columns have the following meaning.
+</p>
+<p><b>loglik</b>
+<code class="reqn">=</code> <code class="reqn">%
+	- (\sum_{i=1}^N\,n_i)\,\Bigl\{\log(\sqrt{2\pi}) + \log(\sigma) \Bigr\}-
+          0.5\sum_{i=1}^N\sum_{l=1}^{n_i}
+	  \Bigl\{
+	  (\sigma^2\,\tau^2)^{-1}\; (y_{i,l} - x_{i,l}'\beta - b_i -
+	  \alpha - \tau\mu_{r_{i,l}})^2
+          \Bigr\}
+      </code>
+</p>
+<p>where <code class="reqn">y_{i,l}</code> denotes (augmented) <em>(i,l)</em>th
+true log-event time.
+</p>
+<p>In other words, <code>loglik</code> is equal to the
+conditional log-density
+</p>
+<p style="text-align: center;"><code class="reqn">\sum_{i=1}^N \sum_{l=1}^{n_i}\,\log\Bigl\{p\bigl(y_{i,l}\;\big|\;r_{i,l},\,\beta,\,b_i,\,\mbox{error-G-spline}\bigr)\Bigr\};</code>
+</p>
+
+<p><b>penalty:</b>
+the penalty term
+</p>
+<p style="text-align: center;"><code class="reqn">-\frac{1}{2}\sum_{k}\Bigl(\Delta\, a_k\Bigr)^2</code>
+</p>
+
+<p>(not multiplied by <code class="reqn">\lambda</code>);
+</p>
+<p><b>logprw</b> <code class="reqn">=</code>
+<code class="reqn">-2\,(\sum_i n_i)\,\log\bigl\{\sum_{k}a_{k}\bigr\} +
+	\sum_{k}N_{k}\,a_{k},</code>
+where <code class="reqn">N_{k}</code> is the number of residuals
+assigned intrinsincally to the <code class="reqn">k</code>th
+mixture component.
+</p>
+<p>In other words, <code>logprw</code> is equal to the conditional
+log-density
+</p>
+<p style="text-align: center;"><code class="reqn">\sum_{i=1}^N\sum_{l=1}^{n_i} \log\bigl\{p(r_{i,l}\;|\;\mbox{error-G-spline
+	  weights})\bigr\}.</code>
+</p>
+
+</dd>
+<dt>logposter_b.sim</dt>
+<dd>
+<p>This file is related to the random
+intercepts from the model given by <code>formula</code> and
+<code>random</code>. 
+</p>
+<p>Columns labeled <code>loglik</code>, <code>penalty</code>, and <code>logprw</code>. 
+The columns have the following meaning.
+</p>
+<p><b>loglik</b>
+<code class="reqn">=</code> <code class="reqn">%
+	- N\,\Bigl\{\log(\sqrt{2\pi}) + \log(\sigma) \Bigr\}-
+          0.5\sum_{i=1}^N
+	  \Bigl\{
+	  (\sigma^2\,\tau^2)^{-1}\; (b_i - \alpha - \tau\mu_{r_{i}})^2
+          \Bigr\}
+      </code>
+</p>
+<p>where <code class="reqn">b_{i}</code> denotes (augmented) <em>i</em>th
+random intercept.
+</p>
+<p>In other words, <code>loglik</code> is equal to the
+conditional log-density
+</p>
+<p style="text-align: center;"><code class="reqn">\sum_{i=1}^N \,\log\Bigl\{p\bigl(b_{i}\;\big|\;r_{i},\,\mbox{b-G-spline}\bigr)\Bigr\};</code>
+</p>
+
+<p>The columns <code>penalty</code> and <code>logprw</code> have the analogous
+meaning as in the case of logposter.sim file.
+</p>
+</dd>
+<dt>logposter_2.sim</dt>
+<dd>
+<p>in the case of doubly-censored data, the same
+structure as <code>logposter.sim</code>, however related to the model
+given by <code>formula2</code>. 
+</p>
+</dd>
+<dt>logposter_b2.sim</dt>
+<dd>
+<p>in the case of doubly-censored data, the same
+structure as <code>logposter_b.sim</code>, however related to the model
+given by <code>formula2</code> and <code>random2</code>.
+</p>
+</dd>
+</dl>
+<h3>Author(s)</h3>
+
+<p>Arnošt Komárek <a href="mailto:arnost.komarek@mff.cuni.cz">arnost.komarek@mff.cuni.cz</a>
+</p>
+
+
+<h3>References</h3>
+
+<p>García-Zattera, M. J., Jara, A., and Komárek, A. (2016).
+A flexible AFT model for misclassified clustered interval-censored
+data.
+<em>Biometrics</em>, <b>72</b>, 473 - 483.
+</p>
+<p>Komárek, A. (2006).
+<em>Accelerated Failure Time Models for Multivariate
+Interval-Censored Data with Flexible Distributional Assumptions</em>.
+PhD. Thesis, Katholieke Universiteit Leuven, Faculteit Wetenschappen.
+</p>
+<p>Komárek, A. and Lesaffre, E. (2008).
+Bayesian accelerated failure time model with multivariate doubly-interval-censored data
+and flexible distributional assumptions.
+<em>Journal of the American Statistical Association</em>, <b>103</b>,
+523 - 533.
+</p>
+<p>Robert C. P. and Casella, G. (2004).
+<em>Monte Carlo Statistical Methods, Second Edition.</em>
+New York: Springer Science+Business Media.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## See the description of R commands for
+## the cluster specific AFT model
+## with the Signal Tandmobiel data,
+## analysis described in Komarek and Lesaffre (2007).
+##
+## R commands available in the documentation
+## directory of this package
+## - see ex-tandmobCS.R and
+##   https://www2.karlin.mff.cuni.cz/ komarek/software/bayesSurv/ex-tandmobCS.pdf
+##
+</code></pre>
+
+
+</div>

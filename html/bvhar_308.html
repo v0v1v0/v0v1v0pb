@@ -1,0 +1,305 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>var_bayes</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Fitting Bayesian VAR with Coefficient and Covariance Prior</h2>
+
+<h3>Description</h3>
+
+<p><a href="https://lifecycle.r-lib.org/articles/stages.html#maturing"><img src="../help/figures/lifecycle-maturing.svg" alt="[Maturing]"></a>
+This function fits BVAR.
+Covariance term can be homoskedastic or heteroskedastic (stochastic volatility).
+It can have Minnesota, SSVS, and Horseshoe prior.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">var_bayes(
+  y,
+  p,
+  num_chains = 1,
+  num_iter = 1000,
+  num_burn = floor(num_iter/2),
+  thinning = 1,
+  bayes_spec = set_bvar(),
+  cov_spec = set_ldlt(),
+  intercept = set_intercept(),
+  include_mean = TRUE,
+  minnesota = TRUE,
+  save_init = FALSE,
+  convergence = NULL,
+  verbose = FALSE,
+  num_thread = 1
+)
+
+## S3 method for class 'bvarldlt'
+print(x, digits = max(3L, getOption("digits") - 3L), ...)
+
+## S3 method for class 'bvarldlt'
+knit_print(x, ...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>y</code></td>
+<td>
+<p>Time series data of which columns indicate the variables</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>p</code></td>
+<td>
+<p>VAR lag</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>num_chains</code></td>
+<td>
+<p>Number of MCMC chains</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>num_iter</code></td>
+<td>
+<p>MCMC iteration number</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>num_burn</code></td>
+<td>
+<p>Number of burn-in (warm-up). Half of the iteration is the default choice.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>thinning</code></td>
+<td>
+<p>Thinning every thinning-th iteration</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>bayes_spec</code></td>
+<td>
+<p>A BVAR model specification by <code>set_bvar()</code>, <code>set_ssvs()</code>, or <code>set_horseshoe()</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>cov_spec</code></td>
+<td>
+<p><a href="https://lifecycle.r-lib.org/articles/stages.html#experimental"><img src="../help/figures/lifecycle-experimental.svg" alt="[Experimental]"></a> SV specification by <code>set_sv()</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>intercept</code></td>
+<td>
+<p><a href="https://lifecycle.r-lib.org/articles/stages.html#experimental"><img src="../help/figures/lifecycle-experimental.svg" alt="[Experimental]"></a> Prior for the constant term by <code>set_intercept()</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>include_mean</code></td>
+<td>
+<p>Add constant term (Default: <code>TRUE</code>) or not (<code>FALSE</code>)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>minnesota</code></td>
+<td>
+<p>Apply cross-variable shrinkage structure (Minnesota-way). By default, <code>TRUE</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>save_init</code></td>
+<td>
+<p>Save every record starting from the initial values (<code>TRUE</code>).
+By default, exclude the initial values in the record (<code>FALSE</code>), even when <code>num_burn = 0</code> and <code>thinning = 1</code>.
+If <code>num_burn &gt; 0</code> or <code>thinning != 1</code>, this option is ignored.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>convergence</code></td>
+<td>
+<p>Convergence threshold for rhat &lt; convergence. By default, <code>NULL</code> which means no warning.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>verbose</code></td>
+<td>
+<p>Print the progress bar in the console. By default, <code>FALSE</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>num_thread</code></td>
+<td>
+<p>Number of threads</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p><code>bvarldlt</code> object</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>digits</code></td>
+<td>
+<p>digit option to print</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>not used</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>Cholesky stochastic volatility modeling for VAR based on
+</p>
+<p style="text-align: center;"><code class="reqn">\Sigma_t^{-1} = L^T D_t^{-1} L</code>
+</p>
+<p>,
+and implements corrected triangular algorithm for Gibbs sampler.
+</p>
+
+
+<h3>Value</h3>
+
+<p><code>var_bayes()</code> returns an object named <code>bvarsv</code> class.
+</p>
+
+<dl>
+<dt>coefficients</dt>
+<dd>
+<p>Posterior mean of coefficients.</p>
+</dd>
+<dt>chol_posterior</dt>
+<dd>
+<p>Posterior mean of contemporaneous effects.</p>
+</dd>
+<dt>param</dt>
+<dd>
+<p>Every set of MCMC trace.</p>
+</dd>
+<dt>param_names</dt>
+<dd>
+<p>Name of every parameter.</p>
+</dd>
+<dt>group</dt>
+<dd>
+<p>Indicators for group.</p>
+</dd>
+<dt>num_group</dt>
+<dd>
+<p>Number of groups.</p>
+</dd>
+<dt>df</dt>
+<dd>
+<p>Numer of Coefficients: <code style="white-space: pre;">⁠3m + 1⁠</code> or <code style="white-space: pre;">⁠3m⁠</code></p>
+</dd>
+<dt>p</dt>
+<dd>
+<p>VAR lag</p>
+</dd>
+<dt>m</dt>
+<dd>
+<p>Dimension of the data</p>
+</dd>
+<dt>obs</dt>
+<dd>
+<p>Sample size used when training = <code>totobs</code> - <code>p</code></p>
+</dd>
+<dt>totobs</dt>
+<dd>
+<p>Total number of the observation</p>
+</dd>
+<dt>call</dt>
+<dd>
+<p>Matched call</p>
+</dd>
+<dt>process</dt>
+<dd>
+<p>Description of the model, e.g. <code>VHAR_SSVS_SV</code>, <code>VHAR_Horseshoe_SV</code>, or <code>VHAR_minnesota-part_SV</code></p>
+</dd>
+<dt>type</dt>
+<dd>
+<p>include constant term (<code>const</code>) or not (<code>none</code>)</p>
+</dd>
+<dt>spec</dt>
+<dd>
+<p>Coefficients prior specification</p>
+</dd>
+<dt>sv</dt>
+<dd>
+<p>log volatility prior specification</p>
+</dd>
+<dt>intercept</dt>
+<dd>
+<p>Intercept prior specification</p>
+</dd>
+<dt>init</dt>
+<dd>
+<p>Initial values</p>
+</dd>
+<dt>chain</dt>
+<dd>
+<p>The numer of chains</p>
+</dd>
+<dt>iter</dt>
+<dd>
+<p>Total iterations</p>
+</dd>
+<dt>burn</dt>
+<dd>
+<p>Burn-in</p>
+</dd>
+<dt>thin</dt>
+<dd>
+<p>Thinning</p>
+</dd>
+<dt>y0</dt>
+<dd>
+<p><code class="reqn">Y_0</code></p>
+</dd>
+<dt>design</dt>
+<dd>
+<p><code class="reqn">X_0</code></p>
+</dd>
+<dt>y</dt>
+<dd>
+<p>Raw input</p>
+</dd>
+</dl>
+<p>If it is SSVS or Horseshoe:
+</p>
+
+<dl>
+<dt>pip</dt>
+<dd>
+<p>Posterior inclusion probabilities.</p>
+</dd>
+</dl>
+<h3>References</h3>
+
+<p>Carriero, A., Chan, J., Clark, T. E., &amp; Marcellino, M. (2022). <em>Corrigendum to “Large Bayesian vector autoregressions with stochastic volatility and non-conjugate priors” [J. Econometrics 212 (1)(2019) 137-154]</em>. Journal of Econometrics, 227(2), 506-512.
+</p>
+<p>Chan, J., Koop, G., Poirier, D., &amp; Tobias, J. (2019). <em>Bayesian Econometric Methods (2nd ed., Econometric Exercises)</em>. Cambridge: Cambridge University Press.
+</p>
+<p>Cogley, T., &amp; Sargent, T. J. (2005). <em>Drifts and volatilities: monetary policies and outcomes in the post WWII US</em>. Review of Economic Dynamics, 8(2), 262-302.
+</p>
+<p>Gruber, L., &amp; Kastner, G. (2022). <em>Forecasting macroeconomic data with Bayesian VARs: Sparse or dense? It depends!</em> arXiv.
+</p>
+<p>Huber, F., Koop, G., &amp; Onorante, L. (2021). <em>Inducing Sparsity and Shrinkage in Time-Varying Parameter Models</em>. Journal of Business &amp; Economic Statistics, 39(3), 669-683.
+</p>
+<p>Korobilis, D., &amp; Shimizu, K. (2022). <em>Bayesian Approaches to Shrinkage and Sparse Estimation</em>. Foundations and Trends® in Econometrics, 11(4), 230-354.
+</p>
+<p>Ray, P., &amp; Bhattacharya, A. (2018). <em>Signal Adaptive Variable Selector for the Horseshoe Prior</em>. arXiv.
+</p>
+
+
+</div>

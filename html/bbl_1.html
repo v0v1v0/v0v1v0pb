@@ -1,0 +1,230 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>bbl</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Boltzmann Bayes Learning Inference</h2>
+
+<h3>Description</h3>
+
+<p>Main driver for bbl inference
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">bbl(
+  formula,
+  data,
+  weights,
+  xlevels = NULL,
+  verbose = 1,
+  method = "pseudo",
+  novarOk = FALSE,
+  testNull = TRUE,
+  prior.count = 1,
+  ...
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>formula</code></td>
+<td>
+<p>Formula for modeling</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+<p>Data for fitting</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>weights</code></td>
+<td>
+<p>Vector of weights for each instance in data. Restricted to 
+non-negative integer frequencies, recoding the number of times 
+each row of data must be repeated. If <code>NULL</code>,
+assumed to be all 1. Fractional weights are not supported. Can be
+a named column in <code>data</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>xlevels</code></td>
+<td>
+<p>List of factor levels for predictors. If <code>NULL</code>,
+will be inferred from data with factor levels ordered alphanumerically.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>verbose</code></td>
+<td>
+<p>Output verbosity level. Will be send to down-stream function
+calls with one level lower</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>method</code></td>
+<td>
+<p>BB inference algorithm; pseudo-likelihood inference (<code>'pseudo'</code>)
+or mean field (<code>'mf'</code>)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>novarOk</code></td>
+<td>
+<p>If <code>TRUE</code>, will proceed with predictors having only one
+level</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>testNull</code></td>
+<td>
+<p>Repeat the inference for the ‘pooled’ sample; i.e., under the
+null hypothesis of all rows in data belonging to a single group</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>prior.count</code></td>
+<td>
+<p>Prior count for computing single predictor and pairwise
+frequencies</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Other parameters to <code>mlestimate</code>.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>Formula argument and data are used to tabulate xlevels unless explicitly
+given as list. Data are expected to be factors or integers. This function
+is a driver interepreting formula and calls <code>bbi.fit</code>. Will stop with
+error if any predictor has only one level unless <code>novarOk='TRUE'</code>.
+Use <code>removeConst</code> to remove the non-varying predictors before 
+calling if this happens.
+</p>
+
+
+<h3>Value</h3>
+
+<p>A list of class <code>bbl</code> with the following elements:
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>coefficients</code></td>
+<td>
+<p>List of inferred coefficients with elements
+<code>h</code>, <code>J</code>, <code>h0</code>, and <code>J0</code>. The bias  
+parameter <code>h</code> is a list of length equal to no. of 
+response groups, each of which is a list of the same struture as 
+<code>xlevels</code>: length equal to no. of predictors, containing vectors of 
+length equal to each predictor factor levels:
+<code class="reqn">h_i^{(y)}(x)</code> represented by <code>h[[y]][[i]][x]</code>.
+The interaction parameter <code>J</code> is a list of lists of dimension
+<code class="reqn">m \times m</code>, where <code class="reqn">m</code> is the number of predictors. Each
+element is a matrix of dimension <code class="reqn">L_i \times L_j</code>, where <code class="reqn">L_i</code>
+and <code class="reqn">L_j</code> are numbers of factor levels in predictor <code>i</code> and
+<code>j</code>: <code class="reqn">J_{ij}^{(y)}(x_1,x_2)</code> represented by 
+<code>J[[y]][[i]][[j]][x1,x2]</code>. All elements of lists are named.
+The pooled parameters <code>h0</code> and <code>J0</code>, if computed,
+are of one less dimension, omitting response group argument.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>xlevels</code></td>
+<td>
+<p>List of vectors containing predictor levels.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>terms</code></td>
+<td>
+<p>The <code>terms</code> of <code>formula</code> input.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>groups</code></td>
+<td>
+<p>Vector of response groups.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>groupname</code></td>
+<td>
+<p>Name of the response variable.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>qJ</code></td>
+<td>
+<p>Matrix of logicals whose elements record whether
+<code>formula</code> includes interaction between the two predictors.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>model</code></td>
+<td>
+<p>Model data frame derived from <code>formula</code> and <code>data</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>lkh</code></td>
+<td>
+<p>Log likelihood.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>lz</code></td>
+<td>
+<p>Vector log partition function. Used in <code>predict</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>weights</code></td>
+<td>
+<p>Vector of integral weights (frequencies).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>call</code></td>
+<td>
+<p>Function call.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>df</code></td>
+<td>
+<p>Degrees of freedom.</p>
+</td>
+</tr>
+</table>
+<h3>Author(s)</h3>
+
+<p>Jun Woo, <a href="mailto:junwoo035@gmail.com">junwoo035@gmail.com</a>
+</p>
+
+
+<h3>References</h3>
+
+<p>doi: <a href="https://doi.org/10.18637/jss.v101.i05">10.18637/jss.v101.i05</a>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">titanic &lt;- as.data.frame(Titanic)
+b &lt;- bbl(Survived ~ (Class + Sex + Age)^2, data = titanic, weights = Freq)
+b
+</code></pre>
+
+
+</div>

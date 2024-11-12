@@ -1,0 +1,283 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>kfold.brmsfit</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>K-Fold Cross-Validation</h2>
+
+<h3>Description</h3>
+
+<p>Perform exact K-fold cross-validation by refitting the model <code class="reqn">K</code>
+times each leaving out one-<code class="reqn">K</code>th of the original data.
+Folds can be run in parallel using the <span class="pkg">future</span> package.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">## S3 method for class 'brmsfit'
+kfold(
+  x,
+  ...,
+  K = 10,
+  Ksub = NULL,
+  folds = NULL,
+  group = NULL,
+  joint = FALSE,
+  compare = TRUE,
+  resp = NULL,
+  model_names = NULL,
+  save_fits = FALSE,
+  recompile = NULL,
+  future_args = list()
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>A <code>brmsfit</code> object.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Further arguments passed to <code>brm</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>K</code></td>
+<td>
+<p>The number of subsets of equal (if possible) size
+into which the data will be partitioned for performing
+<code class="reqn">K</code>-fold cross-validation. The model is refit <code>K</code> times, each time
+leaving out one of the <code>K</code> subsets. If <code>K</code> is equal to the total
+number of observations in the data then <code class="reqn">K</code>-fold cross-validation is
+equivalent to exact leave-one-out cross-validation.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Ksub</code></td>
+<td>
+<p>Optional number of subsets (of those subsets defined by <code>K</code>)
+to be evaluated. If <code>NULL</code> (the default), <code class="reqn">K</code>-fold cross-validation
+will be performed on all subsets. If <code>Ksub</code> is a single integer,
+<code>Ksub</code> subsets (out of all <code>K</code>) subsets will be randomly chosen.
+If <code>Ksub</code> consists of multiple integers or a one-dimensional array
+(created via <code>as.array</code>) potentially of length one, the corresponding
+subsets will be used. This argument is primarily useful, if evaluation of
+all subsets is infeasible for some reason.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>folds</code></td>
+<td>
+<p>Determines how the subsets are being constructed.
+Possible values are <code>NULL</code> (the default), <code>"stratified"</code>,
+<code>"grouped"</code>, or <code>"loo"</code>. May also be a vector of length
+equal to the number of observations in the data. Alters the way
+<code>group</code> is handled. More information is provided in the 'Details'
+section.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>group</code></td>
+<td>
+<p>Optional name of a grouping variable or factor in the model.
+What exactly is done with this variable depends on argument <code>folds</code>.
+More information is provided in the 'Details' section.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>joint</code></td>
+<td>
+<p>Indicates which observations' log likelihoods shall be
+considered jointly in the ELPD computation. If <code>"obs"</code> or <code>FALSE</code>
+(the default), each observation is considered separately. This enables
+comparability of <code>kfold</code> with <code>loo</code>. If <code>"fold"</code>, the joint
+log likelihoods per fold are used. If <code>"group"</code>, the joint log
+likelihoods per group within folds are used (only available if argument
+<code>group</code> is specified).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>compare</code></td>
+<td>
+<p>A flag indicating if the information criteria
+of the models should be compared to each other
+via <code>loo_compare</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>resp</code></td>
+<td>
+<p>Optional names of response variables. If specified, predictions
+are performed only for the specified response variables.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>model_names</code></td>
+<td>
+<p>If <code>NULL</code> (the default) will use model names
+derived from deparsing the call. Otherwise will use the passed
+values as model names.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>save_fits</code></td>
+<td>
+<p>If <code>TRUE</code>, a component <code>fits</code> is added to
+the returned object to store the cross-validated <code>brmsfit</code>
+objects and the indices of the omitted observations for each fold.
+Defaults to <code>FALSE</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>recompile</code></td>
+<td>
+<p>Logical, indicating whether the Stan model should be
+recompiled. This may be necessary if you are running <code>reloo</code> on
+another machine than the one used to fit the model.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>future_args</code></td>
+<td>
+<p>A list of further arguments passed to
+<code>future</code> for additional control over parallel
+execution if activated.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The <code>kfold</code> function performs exact <code class="reqn">K</code>-fold
+cross-validation. First the data are partitioned into <code class="reqn">K</code> folds
+(i.e. subsets) of equal (or as close to equal as possible) size by default.
+Then the model is refit <code class="reqn">K</code> times, each time leaving out one of the
+<code>K</code> subsets. If <code class="reqn">K</code> is equal to the total number of observations
+in the data then <code class="reqn">K</code>-fold cross-validation is equivalent to exact
+leave-one-out cross-validation (to which <code>loo</code> is an efficient
+approximation). The <code>compare_ic</code> function is also compatible with
+the objects returned by <code>kfold</code>.
+</p>
+<p>The subsets can be constructed in multiple different ways:
+</p>
+
+<ul>
+<li>
+<p> If both <code>folds</code> and <code>group</code> are <code>NULL</code>, the subsets
+are randomly chosen so that they have equal (or as close to equal as
+possible) size.
+</p>
+</li>
+<li>
+<p> If <code>folds</code> is <code>NULL</code> but <code>group</code> is specified, the
+data is split up into subsets, each time omitting all observations of one
+of the factor levels, while ignoring argument <code>K</code>.
+</p>
+</li>
+<li>
+<p> If <code>folds = "stratified"</code> the subsets are stratified after
+<code>group</code> using <code>loo::kfold_split_stratified</code>.
+</p>
+</li>
+<li>
+<p> If <code>folds = "grouped"</code> the subsets are split by
+<code>group</code> using <code>loo::kfold_split_grouped</code>.
+</p>
+</li>
+<li>
+<p> If <code>folds = "loo"</code> exact leave-one-out cross-validation
+will be performed and <code>K</code> will be ignored. Further, if <code>group</code>
+is specified, all observations corresponding to the factor level of the
+currently predicted single value are omitted. Thus, in this case, the
+predicted values are only a subset of the omitted ones.
+</p>
+</li>
+<li>
+<p> If <code>folds</code> is a numeric vector, it must contain one element per
+observation in the data. Each element of the vector is an integer in
+<code>1:K</code> indicating to which of the <code>K</code> folds the corresponding
+observation belongs. There are some convenience functions available in
+the <span class="pkg">loo</span> package that create integer vectors to use for this purpose
+(see the Examples section below and also the
+kfold-helpers page).
+</p>
+</li>
+</ul>
+<p>When running <code>kfold</code> on a <code>brmsfit</code> created with the
+<span class="pkg">cmdstanr</span> backend in a different <span style="font-family: Courier New, Courier; color: #666666;"><b>R</b></span> session, several recompilations
+will be triggered because by default, <span class="pkg">cmdstanr</span> writes the model
+executable to a temporary directory. To avoid that, set option
+<code>"cmdstanr_write_stan_file_dir"</code> to a nontemporary path of your choice
+before creating the original <code>brmsfit</code> (see section 'Examples' below).
+</p>
+
+
+<h3>Value</h3>
+
+<p><code>kfold</code> returns an object that has a similar structure as the
+objects returned by the <code>loo</code> and <code>waic</code> methods and
+can be used with the same post-processing functions.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>loo</code>, <code>reloo</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## Not run: 
+fit1 &lt;- brm(count ~ zAge + zBase * Trt + (1|patient) + (1|obs),
+           data = epilepsy, family = poisson())
+# throws warning about some pareto k estimates being too high
+(loo1 &lt;- loo(fit1))
+# perform 10-fold cross validation
+(kfold1 &lt;- kfold(fit1, chains = 1))
+
+# use joint likelihoods per fold for ELPD evaluation
+kfold(fit1, chains = 1, joint = "fold")
+
+# use the future package for parallelization of models
+# that is to fit models belonging to different folds in parallel
+library(future)
+plan(multisession, workers = 4)
+kfold(fit1, chains = 1)
+plan(sequential)
+
+## to avoid recompilations when running kfold() on a 'cmdstanr'-backend fit
+## in a fresh R session, set option 'cmdstanr_write_stan_file_dir' before
+## creating the initial 'brmsfit'
+## CAUTION: the following code creates some files in the current working
+## directory: two 'model_&lt;hash&gt;.stan' files, one 'model_&lt;hash&gt;(.exe)'
+## executable, and one 'fit_cmdstanr_&lt;some_number&gt;.rds' file
+set.seed(7)
+fname &lt;- paste0("fit_cmdstanr_", sample.int(.Machine$integer.max, 1))
+options(cmdstanr_write_stan_file_dir = getwd())
+fit_cmdstanr &lt;- brm(rate ~ conc + state, data = Puromycin,
+                    backend = "cmdstanr", file = fname)
+
+# now restart the R session and run the following (after attaching 'brms')
+set.seed(7)
+fname &lt;- paste0("fit_cmdstanr_", sample.int(.Machine$integer.max, 1))
+fit_cmdstanr &lt;- brm(rate ~ conc + state,
+                    data = Puromycin,
+                    backend = "cmdstanr",
+                    file = fname)
+kfold_cmdstanr &lt;- kfold(fit_cmdstanr, K = 2)
+
+## End(Not run)
+
+</code></pre>
+
+
+</div>

@@ -1,0 +1,142 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>diagnose_models</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Model diagnostics after batch adjustment</h2>
+
+<h3>Description</h3>
+
+<p>After <code>adjust_batch</code> has performed
+adjustment for batch effects, <code>diagnose_models</code>
+provides an overview of parameters and adjustment models.
+Information is only available about the most recent
+run of <code>adjust_batch</code> on a dataset.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">diagnose_models(data)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table><tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+<p>Batch-adjusted dataset (in which
+<code>adjust_batch</code> has stored information on batch
+adjustment in the attribute <code>.batchtma</code>)</p>
+</td>
+</tr></table>
+<h3>Value</h3>
+
+<p>List:
+</p>
+
+<ul>
+<li> <p><code>adjust_method</code> Method used for batch adjustment
+(see <code>adjust_batch</code>).
+</p>
+</li>
+<li> <p><code>markers</code> Variables of biomarkers for adjustment
+</p>
+</li>
+<li> <p><code>suffix</code> Suffix appended to variable names
+</p>
+</li>
+<li> <p><code>batchvar</code> Variable indicating batch
+</p>
+</li>
+<li> <p><code>confounders</code> Confounders, i.e. determinants of
+biomarker levels that differ between batches.
+Returned only if used by the model.
+</p>
+</li>
+<li> <p><code>adjust_parameters</code> Tibble of parameters used to
+obtain adjust biomarker levels. Parameters differ between
+methods:
+</p>
+
+<ul>
+<li> <p><code>simple</code>, <code>standardize</code>, and <code>ipw</code>: Estimated adjustment
+parameters are a tibble with one <code>batchmean</code> per <code>marker</code>
+and <code>.batchvar</code>.
+</p>
+</li>
+<li> <p><code>quantreg</code> returns a tibble with numerous values per
+<code>marker</code> and <code>.batchvar</code>: unadjusted (<code>un_...</code>) and
+adjusted (<code>ad_...</code>) estimates of the lower (<code>..._lo</code>) and
+upper quantile (<code>..._hi</code>) and interquantile range (<code>..._iq</code>),
+plus the lower (<code>all_lo</code>) and upper quantiles (<code>all_hi</code>)
+across all batches.
+</p>
+</li>
+<li> <p><code>quantnorm</code> does not explicitly estimate parameters.
+</p>
+</li>
+</ul>
+</li>
+<li> <p><code>model_fits</code> List of model fit objects, one
+per biomarker. Models differ between methods:
+</p>
+
+<ul>
+<li> <p><code>standardize</code>: Linear regression model for the biomarker with
+<code>.batchvar</code> and <code>confounders</code> as predictors, from which
+marginal predictions of batch means for each batch are obtained.
+</p>
+</li>
+<li> <p><code>ipw</code>: Logistic (2 batches) or multinomial models for assignment
+to a specific batch with <code>.batchvar</code> as the response and
+<code>confounders</code> as the predictors, used to generate stabilized
+inverse-probability weights that are then used in a linear regression
+model to estimate marginally standardized batch means.
+</p>
+</li>
+<li> <p><code>quantreg</code>: Quantile regression with the marker as the response
+variable and <code>.batchvar</code> and <code>confounders</code> as predictors.
+</p>
+</li>
+<li> <p><code>simple</code> and <code>quantnorm</code> do not fit any regression models.
+</p>
+</li>
+</ul>
+</li>
+</ul>
+<h3>Examples</h3>
+
+<pre><code class="language-R"># Data frame with two batches
+# Batch 2 has higher values of biomarker and confounder
+df &lt;- data.frame(
+  tma = rep(1:2, times = 10),
+  biomarker = rep(1:2, times = 10) +
+    runif(max = 5, n = 20),
+  confounder = rep(0:1, times = 10) +
+    runif(max = 10, n = 20)
+)
+
+# Adjust for batch effects
+df2 &lt;- adjust_batch(
+  data = df,
+  markers = biomarker,
+  batch = tma,
+  method = quantreg,
+  confounders = confounder
+)
+
+# Show overview of model diagnostics:
+diagnose_models(data = df2)
+
+# Obtain first fitted regression model:
+fit &lt;- diagnose_models(data = df2)$model_fits[[1]][[1]]
+
+# Obtain residuals for this model:
+residuals(fit)
+</code></pre>
+
+
+</div>

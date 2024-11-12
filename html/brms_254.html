@@ -1,0 +1,108 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>mi</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Predictors with Missing Values in <span class="pkg">brms</span> Models</h2>
+
+<h3>Description</h3>
+
+<p>Specify predictor term with missing values in <span class="pkg">brms</span>. The function does
+not evaluate its arguments – it exists purely to help set up a model.
+For documentation on how to specify missing values in response variables,
+see <code>resp_mi</code>.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">mi(x, idx = NA)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>The variable containing missing values.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>idx</code></td>
+<td>
+<p>An optional variable containing indices of observations in 'x'
+that are to be used in the model. This is mostly relevant in partially
+subsetted models (via <code>resp_subset</code>) but may also have other
+applications that I haven't thought of.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>For detailed documentation see <code>help(brmsformula)</code>.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>brmsformula</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## Not run: 
+data("nhanes", package = "mice")
+N &lt;- nrow(nhanes)
+
+# simple model with missing data
+bform1 &lt;- bf(bmi | mi() ~ age * mi(chl)) +
+  bf(chl | mi() ~ age) +
+  set_rescor(FALSE)
+
+fit1 &lt;- brm(bform1, data = nhanes)
+
+summary(fit1)
+plot(conditional_effects(fit1, resp = "bmi"), ask = FALSE)
+loo(fit1, newdata = na.omit(fit1$data))
+
+# simulate some measurement noise
+nhanes$se &lt;- rexp(N, 2)
+
+# measurement noise can be handled within 'mi' terms
+# with or without the presence of missing values
+bform2 &lt;- bf(bmi | mi() ~ age * mi(chl)) +
+  bf(chl | mi(se) ~ age) +
+  set_rescor(FALSE)
+
+fit2 &lt;- brm(bform2, data = nhanes)
+
+summary(fit2)
+plot(conditional_effects(fit2, resp = "bmi"), ask = FALSE)
+
+# 'mi' terms can also be used when some responses are subsetted
+nhanes$sub &lt;- TRUE
+nhanes$sub[1:2] &lt;- FALSE
+nhanes$id &lt;- 1:N
+nhanes$idx &lt;- sample(3:N, N, TRUE)
+
+# this requires the addition term 'index' being specified
+# in the subsetted part of the model
+bform3 &lt;- bf(bmi | mi() ~ age * mi(chl, idx)) +
+  bf(chl | mi(se) + subset(sub) + index(id) ~ age) +
+  set_rescor(FALSE)
+
+fit3 &lt;- brm(bform3, data = nhanes)
+
+summary(fit3)
+plot(conditional_effects(fit3, resp = "bmi"), ask = FALSE)
+
+## End(Not run)
+
+</code></pre>
+
+
+</div>

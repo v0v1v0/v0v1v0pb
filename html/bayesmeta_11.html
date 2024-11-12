@@ -1,0 +1,209 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>convolve</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Convolution of two probability distributions</h2>
+
+<h3>Description</h3>
+
+<p>Compute the convolution of two probability distributions, specified
+through their densities or cumulative distribution functions (CDFs).
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">  convolve(dens1, dens2,
+           cdf1=Vectorize(function(x){integrate(dens1,-Inf,x)$value}),
+           cdf2=Vectorize(function(x){integrate(dens2,-Inf,x)$value}),
+           delta=0.01, epsilon=0.0001)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>dens1, dens2</code></td>
+<td>
+<p>the two distributions' probability density functions.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>cdf1, cdf2</code></td>
+<td>
+<p>the two distributions' cumulative distribution functions.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>delta, epsilon</code></td>
+<td>
+<p>the parameters specifying the desired accuracy
+for approximation of the convolution, and with that determining the
+number of support points being used internally. Smaller values
+imply greater accuracy and greater computational burden (Roever and
+Friede, 2017).
+</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The distribution of the <em>sum</em> of two (independent) random
+variables technically results as a <em>convolution</em> of their
+probability distributions. In some cases, the calculation of
+convolutions may be done analytically; e.g., the sum of two normally
+distributed random variables again turns out as normally distributed
+(with mean and variance resulting as the sums of the original ones).
+In other cases, convolutions may need to be determined
+numerically. One way to achieve this is via the <em>DIRECT</em>
+algorithm; the present implementation is the one discussed by Roever
+and Friede (2017). Accuracy of the computations is determined by the
+<code>delta</code> (maximum divergence <code class="reqn">\delta</code>) and <code>epsilon</code>
+(tail probability <code class="reqn">\epsilon</code>) parameters.
+</p>
+<p>Convolutions here are used within the <code>funnel()</code> function (to
+generate funnel plots), but are often useful more generally. The
+original probability distributions may be specified via their
+probability density functions or their cumulative distribution
+functions (CDFs). The <code>convolve()</code> function returns the
+convolution's density, CDF and quantile function (inverse CDF).
+</p>
+
+
+<h3>Value</h3>
+
+<p>A <code>list</code> with elements
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>delta</code></td>
+<td>
+<p>the <code class="reqn">\delta</code> parameter.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>epsilon</code></td>
+<td>
+<p>the <code class="reqn">\epsilon</code> parameter.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>binwidth</code></td>
+<td>
+<p>the bin width.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>bins</code></td>
+<td>
+<p>the total number of bins.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>support</code></td>
+<td>
+<p>a <code>matrix</code> containing the support points used
+internally for the convolution approximation.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>density</code></td>
+<td>
+<p>the probability density function.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>cdf</code></td>
+<td>
+<p>the cumulative distribution function (CDF).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>quantile</code></td>
+<td>
+<p>the quantile function (inverse CDF).</p>
+</td>
+</tr>
+</table>
+<h3>Author(s)</h3>
+
+<p>Christian Roever <a href="mailto:christian.roever@med.uni-goettingen.de">christian.roever@med.uni-goettingen.de</a>
+</p>
+
+
+<h3>References</h3>
+
+<p>C. Roever, T. Friede.
+Discrete approximation of a mixture distribution via restricted divergence.
+<em>Journal of Computational and Graphical Statistics</em>,
+<b>26</b>(1):217-222, 2017.
+<a href="https://doi.org/10.1080/10618600.2016.1276840">doi:10.1080/10618600.2016.1276840</a>.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>bayesmeta</code>, <code>funnel</code>.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## Not run: 
+#  Skew-normal / logistic example:
+
+dens1 &lt;- function(x, shape=4)
+# skew-normal distribution's density
+# see also: http://azzalini.stat.unipd.it/SN/Intro
+{
+  return(2 * dnorm(x) * pnorm(shape * x))
+}
+
+dens2 &lt;- function(x)
+# logistic distribution's density
+{
+  return(dlogis(x, location=0, scale=1))
+}
+
+rskewnorm &lt;- function(n, shape=4)
+# skew-normal random number generation
+# (according to http://azzalini.stat.unipd.it/SN/faq-r.html)
+{
+  delta &lt;- shape / sqrt(shape^2+1)
+  u1 &lt;- rnorm(n); v &lt;- rnorm(n)
+  u2 &lt;- delta * u1 + sqrt(1-delta^2) * v
+  return(apply(cbind(u1,u2), 1, function(x){ifelse(x[1]&gt;=0, x[2], -x[2])}))
+}
+
+# compute convolution:
+conv &lt;- convolve(dens1, dens2)
+
+# illustrate convolution:
+n &lt;- 100000
+x &lt;- rskewnorm(n)
+y &lt;- rlogis(n)
+z &lt;- x + y
+
+# determine empirical and theoretical quantiles:
+p      &lt;- c(0.001,0.01, 0.1, 0.5, 0.9, 0.99, 0.999)
+equant &lt;- quantile(z, prob=p)
+tquant &lt;- conv$quantile(p)
+
+# show numbers:
+print(cbind("p"=p, "empirical"=equant, "theoretical"=tquant))
+
+# draw Q-Q plot:
+rg &lt;- range(c(equant, tquant))
+plot(rg, rg, type="n", asp=1, main="Q-Q-plot",
+     xlab="theoretical quantile", ylab="empirical quantile")
+abline(0, 1, col="grey")
+points(tquant, equant)
+
+## End(Not run)
+</code></pre>
+
+
+</div>

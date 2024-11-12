@@ -1,0 +1,170 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>MCpriorIntFun</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Generic Monte-Carlo integration of a function under the prior distribution</h2>
+
+<h3>Description</h3>
+
+<p>Simple Monte-Carlo sampler approximating the integral of <code>FUN</code> with respect to the prior distribution.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">MCpriorIntFun(
+  Nsim = 200,
+  prior,
+  Hpar,
+  dimData,
+  FUN = function(par, ...) {
+     as.vector(par)
+ },
+  store = TRUE,
+  show.progress = floor(seq(1, Nsim, length.out = 20)),
+  Nsim.min = Nsim,
+  precision = 0,
+  ...
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>Nsim</code></td>
+<td>
+<p>Maximum number of iterations</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>prior</code></td>
+<td>
+<p>The prior distribution: of type <br><code>function(type=c("r","d"), 
+n ,par, Hpar, log, dimData
+)</code>,
+where <code>dimData</code> is the dimension of the sample
+space (<em>e.g.</em>, for
+the two-dimensional simplex (triangle), <code>dimData=3</code>.
+Should return either a matrix with <code>n</code> rows containing a
+random parameter sample generated under the prior
+(if <code>type == "d"</code>), or the density of the
+parameter <code>par</code> (the logarithm of the density if
+<code>log==TRUE</code>.
+See <code>prior.pb</code> and <code>prior.nl</code> for templates.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Hpar</code></td>
+<td>
+<p>A list containing  Hyper-parameters to be passed to
+<code>prior</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>dimData</code></td>
+<td>
+<p>The dimension of the model's <em>sample</em> space,
+on which the parameter's dimension may depend.
+Passed to <code>prior</code> inside <code>MCintegrateFun</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>FUN</code></td>
+<td>
+<p>A function to be integrated. It may return a vector or an array.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>store</code></td>
+<td>
+<p>Should the successive evaluations of <code>FUN</code> be stored ?</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>show.progress</code></td>
+<td>
+<p>same as in <code>posteriorMCMC</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Nsim.min</code></td>
+<td>
+<p>The minimum number of iterations to be performed.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>precision</code></td>
+<td>
+<p>The desired relative precision <code class="reqn">\epsilon</code>.
+See <b>Details</b> below.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Additional arguments to be passed to <code>FUN</code>.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The algorithm exits after <code class="reqn">n</code> iterations,
+based on the following stopping rule :
+<code class="reqn">n</code> is the minimum number of iteration, greater than
+<code>Nsim.min</code>,  such that the relative
+error is less than the specified <code>precision</code>. 
+</p>
+<p style="text-align: center;"><code class="reqn"> max (est.esterr(n)/ |est.mean(n)| ) \le \epsilon ,</code>
+</p>
+<p> where
+<code class="reqn">est.mean(n)</code> is the estimated mean of <code>FUN</code> at time 
+<code class="reqn">n</code>, <code class="reqn">est.err(n)</code> is the estimated  standard
+deviation of the estimate:
+<code class="reqn">est.err(n) = \sqrt{est.var(n)/(nsim-1)} </code>.
+The empirical variance is computed component-wise and the maximum
+over the parameters' components is considered.
+</p>
+<p>The algorithm exits in any case after <code>Nsim</code> iterations, if the above condition is not fulfilled before this time.
+</p>
+
+
+<h3>Value</h3>
+
+<p>A list made of
+</p>
+
+<ul>
+<li> <p><code>stored.vals</code> : A matrix with <code>nsim</code> rows and
+<code>length(FUN(par))</code> columns.
+</p>
+</li>
+<li> <p><code>elapsed</code> : The time elapsed during the computation.
+</p>
+</li>
+<li> <p><code>nsim</code> : The number of iterations performed
+</p>
+</li>
+<li> <p><code>emp.mean</code> : The desired integral estimate: the empirical mean.
+</p>
+</li>
+<li> <p><code>emp.stdev</code> : The empirical standard deviation of the sample.
+</p>
+</li>
+<li> <p><code>est.error</code> : The estimated standard deviation of the estimate (<em>i.e.</em> <code class="reqn">emp.stdev/\sqrt(nsim)</code>).
+</p>
+</li>
+<li> <p><code>not.finite</code> : The number of non-finite values obtained (and discarded) when evaluating <code>FUN(par,...)</code>
+</p>
+</li>
+</ul>
+<h3>Author(s)</h3>
+
+<p>Anne Sabourin
+</p>
+
+
+</div>

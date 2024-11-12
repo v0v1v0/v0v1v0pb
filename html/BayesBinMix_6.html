@@ -1,0 +1,360 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>coupledMetropolis</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>
+Metropolis-coupled Markov chain Monte Carlo sampler
+</h2>
+
+<h3>Description</h3>
+
+<p>Main function of the package. The algorithm consists of the allocation sampler combined with a MC3 scheme.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">coupledMetropolis(Kmax, nChains, heats, binaryData, outPrefix, 
+	ClusterPrior, m, alpha, beta, gamma, z.true, ejectionAlpha, burn)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>Kmax</code></td>
+<td>
+
+<p>Maximum number of clusters (integer, at least equal to two).
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nChains</code></td>
+<td>
+
+<p>Number of parallel (heated) chains. Ideally, it should be equal to the number of available threads. 
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>heats</code></td>
+<td>
+
+<p><code>nChains</code>-dimensional vector specifying the temperature of each chain: the 1st entry should always be equal to 1 and the rest of them lie on the set: <code class="reqn">(0,1]</code>.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>binaryData</code></td>
+<td>
+
+<p>The observed binary data (array). Missing values are allowed as long as the corresponding entries are denoted as <code>NA</code>.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>outPrefix</code></td>
+<td>
+
+<p>The name of the produced output folder. An error is thrown if the directory exists.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ClusterPrior</code></td>
+<td>
+
+<p>Character string specifying the prior distribution of the number of clusters on the set <code class="reqn">\{1,\ldots,K_{max}\}</code>. Available options: <code>poisson</code> or <code>uniform</code>. It defaults to the truncated Poisson distribution.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>m</code></td>
+<td>
+
+<p>The number of MCMC cycles. At the end of each cycle a swap between a pair of heated chains is attempted. Each cycle consists of 10 iterations.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>alpha</code></td>
+<td>
+
+<p>First shape parameter of the Beta prior distribution (strictly positive). Defaults to 1.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>beta</code></td>
+<td>
+
+<p>Second shape parameter of the Beta prior distribution (strictly positive).  Defaults to 1.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>gamma</code></td>
+<td>
+
+<p><code>Kmax</code>-dimensional vector (positive) corresponding to the parameters of the Dirichlet prior of the mixture weights. Default value: <code>rep(1,Kmax)</code>.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>z.true</code></td>
+<td>
+
+<p>An optional vector of cluster assignments considered as the ground-truth clustering of the observations. Useful for simulations.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ejectionAlpha</code></td>
+<td>
+
+<p>Probability of ejecting an empty component. Defaults to 0.2.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>burn</code></td>
+<td>
+
+<p>Optional integer denoting the number of MCMC cycles that will be discarded as burn-in period.
+</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>In the case that the most probable number of clusters is larger than 1, the output is post-processed using the label.switching package. In addition to the objects returned to the user (see <code>value</code> below), the complete output of the sampler is written to the directory <code>outPrefix</code>. It consists of the following files:
+</p>
+
+<ul>
+<li>
+<p>K.allChains.txt
+<code>m</code><code class="reqn">\times</code><code>nChains</code> matrix containing the simulated values of the number of clusters (<code class="reqn">K</code>) per chain.
+
+</p>
+</li>
+<li>
+<p>K.txt
+the <code>m</code> simulated values of the number of clusters (<code class="reqn">K</code>) of the cold chain (posterior distribution).
+
+</p>
+</li>
+<li>
+<p>p.varK.txt
+the simulated values of the mixture weights (not identifiable).
+
+</p>
+</li>
+<li>
+<p>rawMCMC.mapK.KVALUE.txt
+the raw MCMC output which corresponds to the most probable model (not identifiable).
+
+</p>
+</li>
+<li>
+<p>reorderedMCMC-ECR-ITERATIVE1.mapK.KVALUE.txt
+the reordered MCMC output which corresponds to the most probable model, reordered according to the <code>ECR-ITERATIVE-1</code> algorithm.
+
+</p>
+</li>
+<li>
+<p>reorderedMCMC-ECR.mapK.KVALUE.txt
+the reordered MCMC output which corresponds to the most probable model, reordered according to the <code>ECR</code> algorithm.
+
+</p>
+</li>
+<li>
+<p>reorderedMCMC-STEPHENS.mapK.KVALUE.txt
+the reordered MCMC output which corresponds to the most probable model, reordered according to the <code>STEPHENS</code> algorithm.
+
+</p>
+</li>
+<li>
+<p>reorderedSingleBestClusterings.mapK.KVALUE.txt
+the most probable allocation of each observation after reordering the MCMC sample which corresponds to the most probable number of clusters.
+
+</p>
+</li>
+<li>
+<p>theta.varK.txt
+the simulated values of Bernoulli parameters (not identifiable).
+
+</p>
+</li>
+<li>
+<p>z-ECR-ITERATIVE1.mapK.KVALUE.txt
+the reordered simulated latent allocations which corresponds to the most probable model, reordered according to the <code>ECR-ITERATIVE-1</code> algorithm.
+
+</p>
+</li>
+<li>
+<p>z-ECR.mapK.KVALUE.txt
+the reordered simulated latent allocations which corresponds to the most probable model, reordered according to the <code>ECR</code> algorithm.
+
+</p>
+</li>
+<li>
+<p>z-KL.mapK.KVALUE.txt
+the reordered simulated latent allocations which corresponds to the most probable model, reordered according to the <code>STEPHENS</code> algorithm.
+
+</p>
+</li>
+<li>
+<p>z.varK.txt
+the simulated latent allocations (not identifiable).
+
+</p>
+</li>
+<li>
+<p>classificationProbabilities.mapK.KVALUE.csv
+the reordered classification probabilities per observation after reordering the most probable number of clusters with the <code>ECR</code> algorithm.
+
+</p>
+</li>
+<li>
+<p>xEstimated.txt
+Observed data with missing values estimated by their posterior mean estimate. This file is produced only in the case that the observed data contains missing values.
+
+</p>
+</li>
+</ul>
+<p><code>KVALUE</code> will be equal to the inferred number of clusters. Note that the label switching part is omitted in case that the most probable number of clusters is equal to 1.
+</p>
+
+
+<h3>Value</h3>
+
+<p>The basic output of the sampler is returned to the following <code>R</code> objects:
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>K.mcmc</code></td>
+<td>
+
+<p>object of class <code>mcmc</code> (see <code>coda</code> package) containing the simulated values (after burn-in) of the number of clusters for the cold chain.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>parameters.ecr.mcmc</code></td>
+<td>
+
+<p>object of class <code>mcmc</code> (see <code>coda</code> package) containing the simulated values (after burn-in) of <code class="reqn">\theta_{kj}</code> (probability of success per cluster <code class="reqn">k</code> and feature <code class="reqn">j</code>) and <code class="reqn">\pi_k</code> (weight of cluster <code class="reqn">k</code>) for <code class="reqn">k = 1,\ldots,K_{\mbox{map}}</code>; <code class="reqn">j = 1,\ldots,d</code>, where <code class="reqn">K_{\mbox{map}}</code> denotes the most probable number of clusters. The output is reordered according to <code>ECR</code> algorithm.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>allocations.ecr.mcmc</code></td>
+<td>
+
+<p>object of class <code>mcmc</code> (see <code>coda</code> package) containing the simulated values (after burn-in) of <code class="reqn">z_{kj}</code> (allocation variables) for <code class="reqn">k = 1,\ldots,K_{\mbox{map}}</code>, <code class="reqn">j = 1,\ldots,d</code>. The output is reordered according to <code>ECR</code> algorithm.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>classificationProbabilities.ecr</code></td>
+<td>
+
+<p>data frame of the reordered classification probabilities per observation after reordering the most probable number of clusters with the <code>ECR</code> algorithm.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>clusterMembershipPerMethod</code></td>
+<td>
+
+<p>data frame of the most probable allocation of each observation after reordering the MCMC sample which corresponds to the most probable number of clusters according to <code>ECR</code>, <code>STEPHENS</code> and <code>ECR-ITERATIVE-1</code> methods.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>K.allChains</code></td>
+<td>
+
+<p><code>m</code><code class="reqn">\times</code><code>nChains</code> matrix containing the simulated values of the number of clusters (<code class="reqn">K</code>) per chain.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>chainInfo</code></td>
+<td>
+
+<p>Number of cycles, burn-in period and acceptance rate of swap moves.
+</p>
+</td>
+</tr>
+</table>
+<h3>Author(s)</h3>
+
+<p>Panagiotis Papastamoulis
+</p>
+
+
+<h3>References</h3>
+
+<p>Altekar G, Dwarkadas S, Huelsenbeck JP, Ronquist F. (2004): Parallel Metropolis coupled Markov chain Monte Carlo for Bayesian phylogenetic inference. Bioinformatics 20(3): 407-415.
+</p>
+<p>Nobile A and Fearnside A (2007): Bayesian finite mixtures with an unknown number of components: The allocation sampler. Statistics and Computing, 17(2): 147-162.
+</p>
+<p>Papastamoulis P. and Iliopoulos G. (2010). An artificial allocations based solution to the label switching problem in Bayesian analysis of mixtures of distributions. Journal of Computational and Graphical Statistics, 19: 313-331.
+</p>
+<p>Papastamoulis P. and Iliopoulos G. (2013). On the convergence rate of Random Permutation Sampler and ECR algorithm in missing data models. Methodology and Computing in Applied Probability, 15(2): 293-304.
+</p>
+<p>Papastamoulis P. (2014). Handling the label switching problem in latent class models via the ECR algorithm. Communications in Statistics, Simulation and Computation, 43(4): 913-927.
+</p>
+<p>Papastamoulis P (2016): label.switching: An R package for dealing with the label switching problem in MCMC outputs. Journal of Statistical Software, 69(1): 1-24.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">#generate dataset from a mixture of 2 ten-dimensional Bernoulli distributions.
+set.seed(1)
+d &lt;- 10 # number of columns
+n &lt;- 50 # number of rows (sample size)
+K &lt;- 2 	 # true number of clusters
+p.true &lt;- myDirichlet(rep(10,K)) # true weight of each cluster
+z.true &lt;- numeric(n) # true cluster membership
+z.true &lt;- sample(K,n,replace=TRUE,prob = p.true)
+#true probability of positive responses per cluster:
+theta.true &lt;- array(data = NA, dim = c(K,d)) 
+for(j in 1:d){
+    theta.true[,j] &lt;- rbeta(K, shape1 = 1, shape2 = 1)
+}
+x &lt;- array(data=NA,dim = c(n,d)) # data: n X d array
+for(k in 1:K){
+        myIndex &lt;- which(z.true == k)
+        for (j in 1:d){
+                x[myIndex,j] &lt;- rbinom(n = length(myIndex), 
+			size = 1, prob = theta.true[k,j])   
+        }
+}
+#	number of heated paralled chains
+nChains &lt;- 2
+heats &lt;- seq(1,0.8,length = nChains)
+## Not run: 
+cm &lt;- coupledMetropolis(Kmax = 10,nChains = nChains,heats =  heats,
+	binaryData = x, outPrefix = 'BayesBinMixExample',
+	ClusterPrior = 'poisson', m = 1100, burn = 100)
+#	print summary using:
+print(cm)
+
+## End(Not run)
+# it is also advised to use z.true = z.true in order to directly compare with 
+# the true values. In general it is advised to use at least 4 chains with 
+#	heats &lt;- seq(1,0.3,length = nChains)
+
+
+
+</code></pre>
+
+
+</div>

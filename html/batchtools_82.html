@@ -1,0 +1,141 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>makeJob</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Jobs and Experiments</h2>
+
+<h3>Description</h3>
+
+<p>Jobs and Experiments are abstract objects which hold all information necessary to execute a single computational
+job for a <code>Registry</code> or <code>ExperimentRegistry</code>, respectively.
+</p>
+<p>They can be created using the constructor <code>makeJob</code> which takes a single job id.
+Jobs and Experiments are passed to reduce functions like <code>reduceResults</code>.
+Furthermore, Experiments can be used in the functions of the <code>Problem</code> and <code>Algorithm</code>.
+Jobs and Experiments hold these information:
+</p>
+
+<dl>
+<dt><code>job.id</code></dt>
+<dd>
+<p>Job ID as integer.</p>
+</dd>
+<dt><code>pars</code></dt>
+<dd>
+<p>Job parameters as named list.
+For <code>ExperimentRegistry</code>, the parameters are divided into the sublists “prob.pars” and “algo.pars”.
+</p>
+</dd>
+<dt><code>seed</code></dt>
+<dd>
+<p>Seed which is set via <code>doJobCollection</code> as scalar integer.</p>
+</dd>
+<dt><code>resources</code></dt>
+<dd>
+<p>Computational resources which were set for this job as named list.</p>
+</dd>
+<dt><code>external.dir</code></dt>
+<dd>
+<p>Path to a directory which is created exclusively for this job. You can store external files here.
+Directory is persistent between multiple restarts of the job and can be cleaned by calling <code>resetJobs</code>.
+</p>
+</dd>
+<dt><code>fun</code></dt>
+<dd>
+<p>Job only: User function passed to <code>batchMap</code>.</p>
+</dd>
+<dt><code>prob.name</code></dt>
+<dd>
+<p>Experiments only: Problem id.</p>
+</dd>
+<dt><code>algo.name</code></dt>
+<dd>
+<p>Experiments only: Algorithm id.</p>
+</dd>
+<dt><code>problem</code></dt>
+<dd>
+<p>Experiments only: <code>Problem</code>.</p>
+</dd>
+<dt><code>instance</code></dt>
+<dd>
+<p>Experiments only: Problem instance.</p>
+</dd>
+<dt><code>algorithm</code></dt>
+<dd>
+<p>Experiments only: <code>Algorithm</code>.</p>
+</dd>
+<dt><code>repl</code></dt>
+<dd>
+<p>Experiments only: Replication number.</p>
+</dd>
+</dl>
+<p>Note that the slots “pars”, “fun”, “algorithm” and “problem”
+lazy-load required files from the file system and construct the object on the first access.
+The realizations are cached for all slots except “instance” (which might be stochastic).
+</p>
+<p>Jobs and Experiments can be executed manually with <code>execJob</code>.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">makeJob(id, reader = NULL, reg = getDefaultRegistry())
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>id</code></td>
+<td>
+<p>[<code>integer(1)</code> or <code>data.table</code>]<br>
+Single integer to specify the job or a <code>data.table</code> with column <code>job.id</code>
+and exactly one row.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>reader</code></td>
+<td>
+<p>[<code>RDSReader</code> | <code>NULL</code>]<br>
+Reader object to retrieve files. Used internally to cache reading from the file system.
+The default (<code>NULL</code>) does not make use of caching.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>reg</code></td>
+<td>
+<p>[<code>Registry</code>]<br>
+Registry. If not explicitly passed, uses the default registry (see <code>setDefaultRegistry</code>).</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>[<code>Job</code> | <code>Experiment</code>].
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+tmp = makeRegistry(file.dir = NA, make.default = FALSE)
+batchMap(function(x, y) x + y, x = 1:2, more.args = list(y = 99), reg = tmp)
+submitJobs(resources = list(foo = "bar"), reg = tmp)
+job = makeJob(1, reg = tmp)
+print(job)
+
+# Get the parameters:
+job$pars
+
+# Get the job resources:
+job$resources
+
+# Execute the job locally:
+execJob(job)
+</code></pre>
+
+
+</div>

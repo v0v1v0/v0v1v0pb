@@ -1,0 +1,235 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>compute_mallows_mixtures</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Compute Mixtures of Mallows Models</h2>
+
+<h3>Description</h3>
+
+<p>Convenience function for computing Mallows models with varying numbers of
+mixtures. This is useful for deciding the number of mixtures to use in the
+final model.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">compute_mallows_mixtures(
+  n_clusters,
+  data,
+  model_options = set_model_options(),
+  compute_options = set_compute_options(),
+  priors = set_priors(),
+  initial_values = set_initial_values(),
+  pfun_estimate = NULL,
+  progress_report = set_progress_report(),
+  cl = NULL
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>n_clusters</code></td>
+<td>
+<p>Integer vector specifying the number of clusters to use.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+<p>An object of class "BayesMallowsData" returned from
+<code>setup_rank_data()</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>model_options</code></td>
+<td>
+<p>An object of class "BayesMallowsModelOptions" returned
+from <code>set_model_options()</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>compute_options</code></td>
+<td>
+<p>An object of class "BayesMallowsComputeOptions"
+returned from <code>set_compute_options()</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>priors</code></td>
+<td>
+<p>An object of class "BayesMallowsPriors" returned from
+<code>set_priors()</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>initial_values</code></td>
+<td>
+<p>An object of class "BayesMallowsInitialValues" returned
+from <code>set_initial_values()</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>pfun_estimate</code></td>
+<td>
+<p>Object returned from <code>estimate_partition_function()</code>.
+Defaults to <code>NULL</code>, and will only be used for footrule, Spearman, or
+Ulam distances when the cardinalities are not available, cf.
+<code>get_cardinalities()</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>progress_report</code></td>
+<td>
+<p>An object of class "BayesMallowsProgressReported"
+returned from <code>set_progress_report()</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>cl</code></td>
+<td>
+<p>Optional cluster returned from <code>parallel::makeCluster()</code>. If
+provided, chains will be run in parallel, one on each node of <code>cl</code>.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The <code>n_clusters</code> argument to <code>set_model_options()</code> is ignored
+when calling <code>compute_mallows_mixtures</code>.
+</p>
+
+
+<h3>Value</h3>
+
+<p>A list of Mallows models of class <code>BayesMallowsMixtures</code>, with
+one element for each number of mixtures that was computed. This object can
+be studied with <code>plot_elbow()</code>.
+</p>
+
+
+<h3>See Also</h3>
+
+<p>Other modeling: 
+<code>burnin()</code>,
+<code>burnin&lt;-()</code>,
+<code>compute_mallows()</code>,
+<code>compute_mallows_sequentially()</code>,
+<code>sample_prior()</code>,
+<code>update_mallows()</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R"># SIMULATED CLUSTER DATA
+set.seed(1)
+n_clusters &lt;- seq(from = 1, to = 5)
+models &lt;- compute_mallows_mixtures(
+  n_clusters = n_clusters, data = setup_rank_data(cluster_data),
+  compute_options = set_compute_options(nmc = 2000, include_wcd = TRUE))
+
+# There is good convergence for 1, 2, and 3 cluster, but not for 5.
+# Also note that there seems to be label switching around the 7000th iteration
+# for the 2-cluster solution.
+assess_convergence(models)
+# We can create an elbow plot, suggesting that there are three clusters, exactly
+# as simulated.
+burnin(models) &lt;- 1000
+plot_elbow(models)
+
+# We now fit a model with three clusters
+mixture_model &lt;- compute_mallows(
+  data = setup_rank_data(cluster_data),
+  model_options = set_model_options(n_clusters = 3),
+  compute_options = set_compute_options(nmc = 2000))
+
+# The trace plot for this model looks good. It seems to converge quickly.
+assess_convergence(mixture_model)
+# We set the burnin to 500
+burnin(mixture_model) &lt;- 500
+
+# We can now look at posterior quantities
+# Posterior of scale parameter alpha
+plot(mixture_model)
+plot(mixture_model, parameter = "rho", items = 4:5)
+# There is around 33 % probability of being in each cluster, in agreemeent
+# with the data simulating mechanism
+plot(mixture_model, parameter = "cluster_probs")
+# We can also look at a cluster assignment plot
+plot(mixture_model, parameter = "cluster_assignment")
+
+# DETERMINING THE NUMBER OF CLUSTERS IN THE SUSHI EXAMPLE DATA
+## Not run: 
+  # Let us look at any number of clusters from 1 to 10
+  # We use the convenience function compute_mallows_mixtures
+  n_clusters &lt;- seq(from = 1, to = 10)
+  models &lt;- compute_mallows_mixtures(
+    n_clusters = n_clusters, data = setup_rank_data(sushi_rankings),
+    compute_options = set_compute_options(include_wcd = TRUE))
+  # models is a list in which each element is an object of class BayesMallows,
+  # returned from compute_mallows
+  # We can create an elbow plot
+  burnin(models) &lt;- 1000
+  plot_elbow(models)
+  # We then select the number of cluster at a point where this plot has
+  # an "elbow", e.g., n_clusters = 5.
+
+  # Having chosen the number of clusters, we can now study the final model
+  # Rerun with 5 clusters
+  mixture_model &lt;- compute_mallows(
+    rankings = sushi_rankings,
+    model_options = set_model_options(n_clusters = 5),
+    compute_options = set_compute_options(include_wcd = TRUE))
+  # Delete the models object to free some memory
+  rm(models)
+  # Set the burnin
+  burnin(mixture_model) &lt;- 1000
+  # Plot the posterior distributions of alpha per cluster
+  plot(mixture_model)
+  # Compute the posterior interval of alpha per cluster
+  compute_posterior_intervals(mixture_model, parameter = "alpha")
+  # Plot the posterior distributions of cluster probabilities
+  plot(mixture_model, parameter = "cluster_probs")
+  # Plot the posterior probability of cluster assignment
+  plot(mixture_model, parameter = "cluster_assignment")
+  # Plot the posterior distribution of "tuna roll" in each cluster
+  plot(mixture_model, parameter = "rho", items = "tuna roll")
+  # Compute the cluster-wise CP consensus, and show one column per cluster
+  cp &lt;- compute_consensus(mixture_model, type = "CP")
+  cp$cumprob &lt;- NULL
+  stats::reshape(cp, direction = "wide", idvar = "ranking",
+                 timevar = "cluster", varying = list(as.character(unique(cp$cluster))))
+
+  # Compute the MAP consensus, and show one column per cluster
+  map &lt;- compute_consensus(mixture_model, type = "MAP")
+  map$probability &lt;- NULL
+  stats::reshape(map, direction = "wide", idvar = "map_ranking",
+                 timevar = "cluster", varying = list(as.character(unique(map$cluster))))
+
+  # RUNNING IN PARALLEL
+  # Computing Mallows models with different number of mixtures in parallel leads to
+  # considerably speedup
+  library(parallel)
+  cl &lt;- makeCluster(detectCores() - 1)
+  n_clusters &lt;- seq(from = 1, to = 10)
+  models &lt;- compute_mallows_mixtures(
+    n_clusters = n_clusters,
+    rankings = sushi_rankings,
+    compute_options = set_compute_options(include_wcd = TRUE),
+    cl = cl)
+  stopCluster(cl)
+
+## End(Not run)
+
+
+
+</code></pre>
+
+
+</div>

@@ -1,0 +1,150 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>simSurv</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>
+Simulate Survival Times
+</h2>
+
+<h3>Description</h3>
+
+<p>Function <code>simSurv()</code> and <code>rSurvtime2()</code> simulate arbitrary (Cox-type) survival times
+using the inversion method. Function <code>simSurv()</code> is a simple wrapper that calls
+<code>rSurvtime2()</code>. The functions are based on the <span style="font-family: Courier New, Courier; color: #666666;"><b>R</b></span> package <span class="pkg">CoxFlexBoost</span> implementation
+<code>rSurvtime()</code> and only slightly modify the code.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">## Simulate a pre-specified survival times data set.
+simSurv(n = 300)
+
+## Simulate arbitrary survival times.
+rSurvTime2(lambda, x, cens_fct, upper = 1000, ...,
+  file = NULL, subdivisions = 1000)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>n</code></td>
+<td>
+<p>The number of individuals for which survival times should be simulated.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>lambda</code></td>
+<td>
+<p>function. Baseline hazard <code class="reqn">\lambda(t, x)</code>
+where time must be first argument. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>matrix. (Sampled) values for covariates (without time). </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>cens_fct</code></td>
+<td>
+<p> function. Function to compute (random) censoring. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>upper</code></td>
+<td>
+<p> upper boundary of the interval the random survival times fall into. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>further arguments to be passed to <code>lambda</code> or <code>cens_fct</code>. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>file</code></td>
+<td>
+<p>character. name of the data file the generated data set should be stored into
+(e.g., "survtimes.RData") or NULL if the dataset should directly be returned in <span style="font-family: Courier New, Courier; color: #666666;"><b>R</b></span>. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>subdivisions</code></td>
+<td>
+<p>The maximum number of subintervals for the integration.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>This is basically a slight modification according the computation of the integral,
+see the manual page of function <code>rSurvtime()</code> of package <code>CoxFlexBoost</code> for
+details.
+</p>
+
+
+<h3>Value</h3>
+
+<p>A <code>data.frame</code> consisting of the observed survival time
+(<code>time</code>), the non-censoring indicator (<code>event</code>) and further
+covariates <code>x</code> is returned. If <code>file</code> is specified, the
+data.frame is additionally stored on the disc.
+</p>
+
+
+<h3>References</h3>
+
+<p>Benjamin Hofner (2016). <span class="pkg">CoxFlexBoost</span>: Boosting Flexible Cox Models
+(with Time-Varying Effects). R package version 0.7-0.
+</p>
+<p>Ralph Bender and Thomas Augustin and Maria Blettner (2005),
+Generating Survival Times to Simulate Cox Proportional Hazards Models.
+<em>Statistics in Medicine</em>, <b>24</b>, 1713-1723.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>cox_bamlss</code>, <code>opt_Cox</code>, <code>sam_Cox</code>, <code>bamlss</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## The following shows the code of the
+## wrapper function simSurv().
+set.seed(111)
+n &lt;- 100
+X &lt;- matrix(NA, nrow = n, ncol = 3)
+X[, 1] &lt;- runif(n, -1, 1)
+X[, 2] &lt;- runif(n, -3, 3)
+X[, 3] &lt;- runif(n, -1, 1)
+
+## Specify censoring function.
+cens_fct &lt;- function(time, mean_cens) {
+  ## Censoring times are independent exponentially distributed.
+  censor_time &lt;- rexp(n = length(time), rate = 1 / mean_cens)
+  event &lt;- (time &lt;= censor_time)
+  t_obs &lt;- apply(cbind(time, censor_time), 1, min)
+  ## Return matrix of observed survival times and event indicator.
+  return(cbind(t_obs, event))
+}
+
+## log(time) is the baseline hazard.
+lambda &lt;-  function(time, x) {
+  exp(log(time) + 0.7 * x[1] + sin(x[2]) + sin(time * 2) * x[3])
+}
+
+## Simulate data with lambda() and cens_fct().
+d &lt;- rSurvTime2(lambda, X, cens_fct, mean_cens = 5)
+</code></pre>
+
+
+</div>

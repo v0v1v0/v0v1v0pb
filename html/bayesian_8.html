@@ -1,0 +1,534 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>bayesian</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>General Interface for Bayesian TidyModels</h2>
+
+<h3>Description</h3>
+
+<p><code>bayesian()</code> is a way to generate a <em>specification</em> of a model
+before fitting and allows the model to be created using
+<span class="pkg">Stan</span> via <span class="pkg">brms</span> package in <span class="pkg">R</span>.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">bayesian(
+  mode = "regression",
+  engine = "brms",
+  formula.override = NULL,
+  family = NULL,
+  prior = NULL,
+  sample_prior = NULL,
+  knots = NULL,
+  stanvars = NULL,
+  fit = NULL,
+  init = NULL,
+  chains = NULL,
+  iter = NULL,
+  warmup = NULL,
+  thin = NULL,
+  cores = NULL,
+  threads = NULL,
+  algorithm = NULL,
+  backend = NULL,
+  stan_args = NULL,
+  control = NULL,
+  save_pars = NULL,
+  save_model = NULL,
+  file = NULL,
+  file_refit = NULL,
+  normalize = NULL,
+  future = NULL,
+  seed = NULL,
+  silent = NULL
+)
+
+## S3 method for class 'bayesian'
+update(
+  object,
+  parameters = NULL,
+  formula.override = NULL,
+  family = NULL,
+  prior = NULL,
+  sample_prior = NULL,
+  knots = NULL,
+  stanvars = NULL,
+  fit = NULL,
+  init = NULL,
+  chains = NULL,
+  iter = NULL,
+  warmup = NULL,
+  thin = NULL,
+  cores = NULL,
+  threads = NULL,
+  algorithm = NULL,
+  backend = NULL,
+  stan_args = NULL,
+  control = NULL,
+  save_pars = NULL,
+  save_model = NULL,
+  file = NULL,
+  file_refit = NULL,
+  normalize = NULL,
+  future = NULL,
+  seed = NULL,
+  silent = NULL,
+  fresh = FALSE,
+  ...
+)
+
+bayesian_fit(formula, data, ...)
+
+bayesian_formula(formula, ...)
+
+bayesian_terms(formula, ...)
+
+bayesian_family(family, ...)
+
+bayesian_predict(object, ...)
+
+bayesian_write(object, file)
+
+bayesian_read(file)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>mode</code></td>
+<td>
+<p>A single character string for the prediction outcome mode.
+Possible values for this model are "unknown", "regression", or
+"classification".</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>engine</code></td>
+<td>
+<p>A single character string specifying what computational
+engine to use for fitting. Possible engines are listed below.
+The default for this model is <code>"brms"</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>formula.override</code></td>
+<td>
+<p>Overrides the formula; for details see
+<code>brmsformula</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>family</code></td>
+<td>
+<p>A description of the response distribution and link function to
+be used in the model. This can be a family function, a call to a family
+function or a character string naming the family. Every family function has
+a <code>link</code> argument allowing to specify the link function to be applied
+on the response variable. If not specified, default links are used. For
+details of supported families see <code>brmsfamily</code>. By default, a
+linear <code>gaussian</code> model is applied. In multivariate models,
+<code>family</code> might also be a list of families.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>prior</code></td>
+<td>
+<p>One or more <code>brmsprior</code> objects created by
+<code>set_prior</code> or related functions and combined using the
+<code>c</code> method or the <code>+</code> operator. See also <code>default_prior</code>
+for more help.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>sample_prior</code></td>
+<td>
+<p>Indicate if draws from priors should be drawn
+additionally to the posterior draws. Options are <code>"no"</code> (the
+default), <code>"yes"</code>, and <code>"only"</code>. Among others, these draws can
+be used to calculate Bayes factors for point hypotheses via
+<code>hypothesis</code>. Please note that improper priors are not sampled,
+including the default improper priors used by <code>brm</code>. See
+<code>set_prior</code> on how to set (proper) priors. Please also note
+that prior draws for the overall intercept are not obtained by default
+for technical reasons. See <code>brmsformula</code> how to obtain prior
+draws for the intercept. If <code>sample_prior</code> is set to <code>"only"</code>,
+draws are drawn solely from the priors ignoring the likelihood, which
+allows among others to generate draws from the prior predictive
+distribution. In this case, all parameters must have proper priors.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>knots</code></td>
+<td>
+<p>Optional list containing user specified knot values to be used
+for basis construction of smoothing terms. See
+<code>gamm</code> for more details.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>stanvars</code></td>
+<td>
+<p>An optional <code>stanvars</code> object generated by function
+<code>stanvar</code> to define additional variables for use in
+<span class="pkg">Stan</span>'s program blocks.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>fit</code></td>
+<td>
+<p>An instance of S3 class <code>brmsfit</code> derived from a previous
+fit; defaults to <code>NA</code>. If <code>fit</code> is of class <code>brmsfit</code>, the
+compiled model associated with the fitted result is re-used and all
+arguments modifying the model code or data are ignored. It is not
+recommended to use this argument directly, but to call the
+<code>update</code> method, instead.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>init</code></td>
+<td>
+<p>Initial values for the sampler. If <code>NULL</code> (the default) or
+<code>"random"</code>, Stan will randomly generate initial values for parameters
+in a reasonable range. If <code>0</code>, all parameters are initialized to zero
+on the unconstrained space. This option is sometimes useful for certain
+families, as it happens that default random initial values cause draws to
+be essentially constant. Generally, setting <code>init = 0</code> is worth a try,
+if chains do not initialize or behave well. Alternatively, <code>init</code> can
+be a list of lists containing the initial values, or a function (or
+function name) generating initial values. The latter options are mainly
+implemented for internal testing but are available to users if necessary.
+If specifying initial values using a list or a function then currently the
+parameter names must correspond to the names used in the generated Stan
+code (not the names used in <span style="font-family: Courier New, Courier; color: #666666;"><b>R</b></span>). For more details on specifying initial
+values you can consult the documentation of the selected <code>backend</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>chains</code></td>
+<td>
+<p>Number of Markov chains (defaults to 4).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>iter</code></td>
+<td>
+<p>Number of total iterations per chain (including warmup; defaults
+to 2000).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>warmup</code></td>
+<td>
+<p>A positive integer specifying number of warmup (aka burnin)
+iterations. This also specifies the number of iterations used for stepsize
+adaptation, so warmup draws should not be used for inference. The number
+of warmup should not be larger than <code>iter</code> and the default is
+<code>iter/2</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>thin</code></td>
+<td>
+<p>Thinning rate. Must be a positive integer. Set <code>thin &gt; 1</code> to
+save memory and computation time if <code>iter</code> is large.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>cores</code></td>
+<td>
+<p>Number of cores to use when executing the chains in parallel,
+which defaults to 1 but we recommend setting the <code>mc.cores</code> option to
+be as many processors as the hardware and RAM allow (up to the number of
+chains). For non-Windows OS in non-interactive <span style="font-family: Courier New, Courier; color: #666666;"><b>R</b></span> sessions, forking is used
+instead of PSOCK clusters.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>threads</code></td>
+<td>
+<p>Number of threads to use in within-chain parallelization. For
+more control over the threading process, <code>threads</code> may also be a
+<code>brmsthreads</code> object created by <code>threading</code>. Within-chain
+parallelization is experimental! We recommend its use only if you are
+experienced with Stan's <code>reduce_sum</code> function and have a slow running
+model that cannot be sped up by any other means. Can be set globally for
+the current <span style="font-family: Courier New, Courier; color: #666666;"><b>R</b></span> session via the <code>"brms.threads"</code> option (see
+<code>options</code>).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>algorithm</code></td>
+<td>
+<p>Character string naming the estimation approach to use.
+Options are <code>"sampling"</code> for MCMC (the default), <code>"meanfield"</code> for
+variational inference with independent normal distributions,
+<code>"fullrank"</code> for variational inference with a multivariate normal
+distribution, or <code>"fixed_param"</code> for sampling from fixed parameter
+values. Can be set globally for the current <span style="font-family: Courier New, Courier; color: #666666;"><b>R</b></span> session via the
+<code>"brms.algorithm"</code> option (see <code>options</code>).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>backend</code></td>
+<td>
+<p>Character string naming the package to use as the backend for
+fitting the Stan model. Options are <code>"rstan"</code> (the default) or
+<code>"cmdstanr"</code>. Can be set globally for the current <span style="font-family: Courier New, Courier; color: #666666;"><b>R</b></span> session via the
+<code>"brms.backend"</code> option (see <code>options</code>). Details on the
+<span class="pkg">rstan</span> and <span class="pkg">cmdstanr</span> packages are available at
+<a href="https://mc-stan.org/rstan/">https://mc-stan.org/rstan/</a> and <a href="https://mc-stan.org/cmdstanr/">https://mc-stan.org/cmdstanr/</a>,
+respectively. Additionally a <code>"mock"</code> backend is available to make
+testing <span class="pkg">brms</span> and packages that depend on it easier.
+The <code>"mock"</code> backend does not actually do any fitting, it only checks
+the generated Stan code for correctness and then returns whatever is passed
+in an additional <code>mock_fit</code> argument as the result of the fit.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>stan_args</code></td>
+<td>
+<p>A list of extra arguments to <span class="pkg">Stan</span>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>control</code></td>
+<td>
+<p>A named <code>list</code> of parameters to control the sampler's
+behavior. It defaults to <code>NULL</code> so all the default values are used.
+The most important control parameters are discussed in the 'Details'
+section below. For a comprehensive overview see
+<code>stan</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>save_pars</code></td>
+<td>
+<p>An object generated by <code>save_pars</code> controlling
+which parameters should be saved in the model. The argument has no
+impact on the model fitting itself.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>save_model</code></td>
+<td>
+<p>Either <code>NULL</code> or a character string. In the latter
+case, the model's Stan code is saved via <code>cat</code> in a text file
+named after the string supplied in <code>save_model</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>file</code></td>
+<td>
+<p>A character string of the file path to <code>brmsfit</code> object
+saved via <code>saveRDS</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>file_refit</code></td>
+<td>
+<p>Modifies when the fit stored via the <code>file</code> argument
+is re-used. Can be set globally for the current <span style="font-family: Courier New, Courier; color: #666666;"><b>R</b></span> session via the
+<code>"brms.file_refit"</code> option (see <code>options</code>).
+For <code>"never"</code> (default) the fit is always loaded if it
+exists and fitting is skipped. For <code>"always"</code> the model is always
+refitted. If set to <code>"on_change"</code>, brms will
+refit the model if model, data or algorithm as passed to Stan differ from
+what is stored in the file. This also covers changes in priors,
+<code>sample_prior</code>, <code>stanvars</code>, covariance structure, etc. If you
+believe there was a false positive, you can use
+<code>brmsfit_needs_refit</code> to see why refit is deemed necessary.
+Refit will not be triggered for changes in additional parameters of the fit
+(e.g., initial values, number of iterations, control arguments, ...). A
+known limitation is that a refit will be triggered if within-chain
+parallelization is switched on/off.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>normalize</code></td>
+<td>
+<p>Logical. Indicates whether normalization constants should
+be included in the Stan code (defaults to <code>TRUE</code>). Setting it
+to <code>FALSE</code> requires Stan version &gt;= 2.25 to work. If <code>FALSE</code>,
+sampling efficiency may be increased but some post processing functions
+such as <code>bridge_sampler</code> will not be available. Can be
+controlled globally for the current <span style="font-family: Courier New, Courier; color: #666666;"><b>R</b></span> session via the 'brms.normalize'
+option.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>future</code></td>
+<td>
+<p>Logical; If <code>TRUE</code>, the <span class="pkg">future</span>
+package is used for parallel execution of the chains and argument
+<code>cores</code> will be ignored. Can be set globally for the current <span style="font-family: Courier New, Courier; color: #666666;"><b>R</b></span>
+session via the <code>"future"</code> option. The execution type is controlled via
+<code>plan</code> (see the examples section below).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>seed</code></td>
+<td>
+<p>The seed for random number generation to make results
+reproducible. If <code>NA</code> (the default), <span class="pkg">Stan</span> will set the seed
+randomly.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>silent</code></td>
+<td>
+<p>Verbosity level between <code>0</code> and <code>2</code>.
+If <code>1</code> (the default), most of the
+informational messages of compiler and sampler are suppressed.
+If <code>2</code>, even more messages are suppressed. The actual
+sampling progress is still printed. Set <code>refresh = 0</code> to turn this off
+as well. If using <code>backend = "rstan"</code> you can also set
+<code>open_progress = FALSE</code> to prevent opening additional progress bars.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>object</code></td>
+<td>
+<p>A Bayesian model specification.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>parameters</code></td>
+<td>
+<p>A 1-row tibble or named list with <em>main</em>
+parameters to update. If the individual arguments are used,
+these will supersede the values in <code>parameters</code>. Also, using
+engine arguments in this object will result in an error.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>fresh</code></td>
+<td>
+<p>A logical for whether the arguments should be
+modified in-place of or replaced wholesale.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Other arguments passed to internal functions.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>formula</code></td>
+<td>
+<p>An object of class <code>formula</code>,
+<code>brmsformula</code>, or <code>mvbrmsformula</code> (or one that can
+be coerced to that classes): A symbolic description of the model to be
+fitted. The details of model specification are explained in
+<code>brmsformula</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+<p>An object of class <code>data.frame</code> (or one that can be coerced
+to that class) containing data of all variables used in the model.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The arguments are converted to their specific names at the
+time that the model is fit. Other options and argument can be
+set using <code>set_engine()</code>. If left to their defaults
+here (<code>NULL</code>), the values are taken from the underlying model
+functions. If parameters need to be modified, <code>update()</code> can be
+used in lieu of recreating the object from scratch.
+</p>
+<p>The data given to the function are not saved and are only used
+to determine the <em>mode</em> of the model. For <code>bayesian()</code>, the
+possible modes are "regression" and "classification".
+</p>
+<p>The model can be created by the <code>fit()</code> function using the
+following <em>engines</em>:
+</p>
+
+<ul><li> <p><span class="pkg">brms</span>:  <code>"brms"</code>
+</p>
+</li></ul>
+<h3>Value</h3>
+
+<p>An updated model specification.
+</p>
+
+
+<h3>Engine Details</h3>
+
+<p>Engines may have pre-set default arguments when executing the model fit
+call. For this type of model, the template of the fit calls are:
+</p>
+<div class="sourceCode r"><pre>bayesian() |&gt;
+  set_engine("brms") |&gt;
+  translate()
+</pre></div>
+<div class="sourceCode"><pre>## Bayesian Model Specification (regression)
+## 
+## Computational engine: brms 
+## 
+## Model fit template:
+## bayesian::bayesian_fit(formula = missing_arg(), data = missing_arg(), 
+##     weights = missing_arg())
+</pre></div>
+
+
+<h3>See Also</h3>
+
+<p><code>brm</code>,
+<code>brmsfit</code>,
+<code>update.brmsfit</code>,
+<code>predict.brmsfit</code>,
+<code>posterior_epred.brmsfit</code>,
+<code>posterior_predict.brmsfit</code>,
+<code>brmsformula</code>,
+<code>brmsformula-helpers</code>,
+<code>brmsterms</code>,
+<code>brmsfamily</code>,
+<code>customfamily</code>,
+<code>family</code>,
+<code>formula</code>,
+<code>update.formula</code>.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+bayesian()
+
+show_model_info("bayesian")
+
+bayesian(mode = "classification")
+bayesian(mode = "regression")
+## Not run: 
+bayesian_mod &lt;-
+  bayesian() |&gt;
+  set_engine("brms") |&gt;
+  fit(
+    rating ~ treat + period + carry + (1 | subject),
+    data = inhaler
+  )
+
+summary(bayesian_mod$fit)
+
+## End(Not run)
+
+
+model &lt;- bayesian(init = "random")
+model
+update(model, init = "0")
+update(model, init = "0", fresh = TRUE)
+</code></pre>
+
+
+</div>

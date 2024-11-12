@@ -1,0 +1,111 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>bridge_sampler.brmsfit</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Log Marginal Likelihood via Bridge Sampling</h2>
+
+<h3>Description</h3>
+
+<p>Computes log marginal likelihood via bridge sampling,
+which can be used in the computation of bayes factors
+and posterior model probabilities.
+The <code>brmsfit</code> method is just a thin wrapper around
+the corresponding method for <code>stanfit</code> objects.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">## S3 method for class 'brmsfit'
+bridge_sampler(samples, recompile = FALSE, ...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>samples</code></td>
+<td>
+<p>A <code>brmsfit</code> object.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>recompile</code></td>
+<td>
+<p>Logical, indicating whether the Stan model should be
+recompiled. This may be necessary if you are running bridge sampling on
+another machine than the one used to fit the model. No recompilation
+is done by default.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Additional arguments passed to
+<code>bridge_sampler.stanfit</code>.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>Computing the marginal likelihood requires samples of all variables
+defined in Stan's <code>parameters</code> block to be saved. Otherwise
+<code>bridge_sampler</code> cannot be computed. Thus, please set <code>save_pars
+  = save_pars(all = TRUE)</code> in the call to <code>brm</code>, if you are planning to
+apply <code>bridge_sampler</code> to your models.
+</p>
+<p>The computation of marginal likelihoods based on bridge sampling requires
+a lot more posterior draws than usual. A good conservative
+rule of thump is perhaps 10-fold more draws (read: the default of 4000
+draws may not be enough in many cases). If not enough posterior
+draws are provided, the bridge sampling algorithm tends to be
+unstable leading to considerably different results each time it is run.
+We thus recommend running <code>bridge_sampler</code>
+multiple times to check the stability of the results.
+</p>
+<p>More details are provided under
+<code>bridgesampling::bridge_sampler</code>.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>
+  bayes_factor,
+  post_prob
+</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## Not run: 
+# model with the treatment effect
+fit1 &lt;- brm(
+  count ~ zAge + zBase + Trt,
+  data = epilepsy, family = negbinomial(),
+  prior = prior(normal(0, 1), class = b),
+  save_pars = save_pars(all = TRUE)
+)
+summary(fit1)
+bridge_sampler(fit1)
+
+# model without the treatment effect
+fit2 &lt;- brm(
+  count ~ zAge + zBase,
+  data = epilepsy, family = negbinomial(),
+  prior = prior(normal(0, 1), class = b),
+  save_pars = save_pars(all = TRUE)
+)
+summary(fit2)
+bridge_sampler(fit2)
+
+## End(Not run)
+
+</code></pre>
+
+
+</div>

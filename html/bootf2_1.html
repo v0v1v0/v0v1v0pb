@@ -1,0 +1,568 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>bootf2</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Estimate 90% Confidence Intervals of <code class="reqn">f_2</code> with Bootstrap Methodology</h2>
+
+<h3>Description</h3>
+
+<p>Main function to estimate 90% confidence intervals of <code class="reqn">f_2</code> using
+bootstrap methodology.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">bootf2(test, ref, path.in, file.in, path.out, file.out,
+       n.boots = 10000L, seed = 306L, digits = 2L, alpha = 0.05,
+       regulation = c("EMA", "FDA", "WHO","Canada", "ANVISA"),
+       min.points = 1L, both.TR.85 = FALSE, print.report = TRUE,
+       report.style = c("concise", "intermediate", "detailed"),
+       f2.type = c("all", "est.f2", "exp.f2", "bc.f2",
+                   "vc.exp.f2", "vc.bc.f2"),
+       ci.type = c("all", "normal", "basic", "percentile",
+                   "bca.jackknife", "bca.boot"),
+       quantile.type = c("all", as.character(1:9), "boot"),
+       jackknife.type = c("all", "nt+nr", "nt*nr", "nt=nr"),
+       time.unit = c("min", "h"), output.to.screen = FALSE,
+       sim.data.out = FALSE)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>test, ref</code></td>
+<td>
+<p><em>Data frames</em> of dissolution profiles of test and reference
+product if <code>path.in</code> and <code>file.in</code> are not specified; otherwise, they
+should be <em>character</em> strings indicating the worksheet names of the Excel
+file where the dissolution data is saved. See Input/Output in Details.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>path.in, file.in, path.out, file.out</code></td>
+<td>
+<p><em>Character</em> strings of input and
+output directories and file names. See Input/Output in Details.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>n.boots</code></td>
+<td>
+<p>An <em>integer</em> indicating the number of bootstrap samples.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>seed</code></td>
+<td>
+<p><em>Integer</em> seed value for reproducibility. If missing, a random
+seed will be generated for reproducibility purpose.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>digits</code></td>
+<td>
+<p>An <em>integer</em> indicating the decimal points for the output.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>alpha</code></td>
+<td>
+<p>A <em>numeric</em> value between 0 and 1 to estimate
+<code class="reqn">(1-2\times \alpha)\times 100</code> confidence interval.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>regulation</code></td>
+<td>
+<p><em>Character</em> strings indicating regulatory guidelines.
+@seealso <code>calcf2()</code> for details on regulation rules.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>min.points</code></td>
+<td>
+<p>An <em>integer</em> indicating the minimum time points to be used
+to calculate <code class="reqn">f_2</code>. For conventional <code class="reqn">f_2</code> calculation, the
+default is 3, however, for bootstrap <code class="reqn">f_2</code>, the value should be
+lower as there might be less time points available in certain bootstrap
+samples. The default is 1. @seealso <code>calcf2()</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>both.TR.85</code></td>
+<td>
+<p><em>Logical</em>. If <code>TRUE</code>, and if <code>regulation = "FDA"</code>, all
+measurements up to the time points at which both test and reference
+products dissolve more than 85% will be used to calculate <code class="reqn">f_2</code>.
+This is the conventional, but incorrect, interpretation of the US FDA rule.
+Therefore, the argument should only be set to <code>TRUE</code> for validation purpose
+such as comparing the results from old literature that use the wrong
+interpretation to calculate <code class="reqn">f_2</code>. @seealso <code>calcf2()</code> for details
+on regulation rules.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>print.report</code></td>
+<td>
+<p><em>Logical</em>. If <code>TRUE</code>, a plain text report will be
+produced. See Input/Output in Details.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>report.style</code></td>
+<td>
+<p><code>"concise"</code> style produces the estimators and their
+confidence intervals; <code>"intermediate"</code> style adds a list of individual
+<code class="reqn">f_2</code>s for all bootstrap samples in the end of <code>"concise"</code> report;
+<code>"detailed"</code> style further adds individual bootstrap samples along with
+their <code class="reqn">f_2</code>s in the end of <code>"intermediate"</code> report. See
+Input/Output in Details.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>f2.type</code></td>
+<td>
+<p><em>Character</em> strings indicating which type of <code class="reqn">f_2</code>
+estimator should be calculated. See Types of estimators in Details.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ci.type</code></td>
+<td>
+<p><em>Character</em> strings indicating which type of confidence
+interval should be estimated. See Types of confidence intervals in
+Details.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>quantile.type</code></td>
+<td>
+<p><em>Character</em> strings indicating the type of percentile.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>jackknife.type</code></td>
+<td>
+<p><em>Character</em> strings indicating the type of jackknife
+method. See Details.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>time.unit</code></td>
+<td>
+<p><em>Character</em> strings indicating the unit of time. It should
+be either <code>"min"</code> for minute or <code>"h"</code> for hour. It is mainly used for
+checking CV rules and making plot. @seealso <code>calcf2()</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>output.to.screen</code></td>
+<td>
+<p><em>Logical</em>. If <code>TRUE</code>, a <code>"concise"</code> style summary
+report will be printed on screen. See Input/Output in Details.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>sim.data.out</code></td>
+<td>
+<p><em>Logical</em>. If <code>TRUE</code>, all individual bootstrap data
+sets will be included in the output.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+
+
+<h4>Minimum required arguments that must be provided by the user</h4>
+
+<p>Arguments <code>test</code> and <code>ref</code> must be provided by the user. They should be <code>R</code>
+<code style="white-space: pre;">⁠data frames⁠</code>, with <em>time as the first column</em>, and all individual profiles
+profiles as the rest columns. The actual names of the columns do not matter
+since they will be renamed internally.
+</p>
+
+
+
+<h4>Input/Output</h4>
+
+<p>The dissolution data of test and reference product can either be provided as
+<em>data frames</em> for <code>test</code> and <code>ref</code>, as explained above, or be read from an
+<em>Excel file</em> with data of test and reference stored in <em>separate worksheets</em>.
+In the latter case, the argument <code>path.in</code>, the directory where the Excel
+file is, and <code>file.in</code>, the name of the Excel file <em>including the file
+extension <code>.xls</code> or <code>.xlsx</code></em>, must be provided. In such case, the argument
+<code>test</code> and <code>ref</code> must be <em>the names of the worksheets in quotation marks</em>.
+The first column of each Excel worksheet must be time, and the rest columns
+are individual dissolution profiles. The first row should be column names,
+such as time, unit01, unit02, ... The actual names of the columns do not
+matter as they will be renamed internally.
+</p>
+<p>Arguments <code>path.out</code> and <code>file.out</code> are the names of the output directory
+and file. If they are not provided, but argument <code>print.report</code> is <code>TRUE</code>,
+then a plain text report will be generated automatically in the current
+working directory with file name <code>test_vs_ref_TZ_YYYY-MM-DD_HHMMSS.txt</code>,
+where <code>test</code> and <code>ref</code> are data set names of test and reference, <code>TZ</code> is the
+time zone such as <code>CEST</code>, <code>YYYY-MM-DD</code> is the numeric date format and
+<code>HHMMSS</code> is the numeric time format for hour, minute, and second.
+</p>
+<p>For a quick check, set argument <code>output.to.screen = TRUE</code>, a summary report
+very similar to <code>concise</code> style report will be printed on screen.
+</p>
+
+
+
+<h4>Types of Estimators</h4>
+
+<p>According to Shah et al, the population <code class="reqn">f_2</code> for the inference is
+</p>
+<p style="text-align: center;"><code class="reqn">f_2 = 100-25\log\left(1 + \frac{1}{P}\sum_{i=1}^P%
+  \left(\mu_{\mathrm{T},i} - \mu_{\mathrm{R},i}\right)^2 \right)\,,</code>
+</p>
+
+<p>where <code class="reqn">P</code> is the number of time points; <code class="reqn">\mu_{\mathrm{T},i}</code>
+and <code class="reqn">\mu_{\mathrm{R},i}</code> are <em>population mean</em> of test and
+reference product at time point <code class="reqn">i</code>, respectively; <code class="reqn">\sum_{i=1}^P</code> is the summation from <code class="reqn">i = 1</code> to <code class="reqn">P</code>.
+</p>
+<p>Five estimators for <code class="reqn">f_2</code> are included in the function:
+</p>
+
+<ol>
+<li>
+<p> The estimated <code class="reqn">f_2</code>, denoted by <code class="reqn">\hat{f}_2</code>, is the
+one written in various regulatory guidelines. It is expressed differently,
+but mathematically equivalently, as
+</p>
+<p style="text-align: center;"><code class="reqn">\hat{f}_2 = 100-25\log\left(1 + \frac{1}{P}\sum_{i=1}^P\left(%
+     \bar{X}_{\mathrm{T},i} - \bar{X}_{\mathrm{R},i}\right)^2 \right)\:,</code>
+</p>
+
+<p>where <code class="reqn">P</code> is the number of time points;
+<code class="reqn">\bar{X}_{\mathrm{T},i}</code> and
+<code class="reqn">\bar{X}_{\mathrm{R},i}</code> are mean dissolution data at the
+<code class="reqn">i</code>th time point of <em>random samples</em> chosen from the test and the
+reference population, respectively. Compared to the equation of population
+<code class="reqn">f_2</code> above, the only difference is that in the equation of
+<code class="reqn">\hat{f}_2</code> the <em>sample means</em> of dissolution profiles replace
+the <em>population means</em> for the approximation. <em>In other words, a point
+estimate is used for the statistical inference in practice</em>.
+</p>
+</li>
+<li>
+<p> The Bias-corrected <code class="reqn">f_2</code>, denoted by
+<code class="reqn">\hat{f}_{2,\mathrm{bc}}</code>, was described in the article of
+Shah et al, as
+</p>
+<p style="text-align: center;"><code class="reqn">\hat{f}_{2,\mathrm{bc}} = 100-25\log\left(1 + \frac{1}{P}%
+     \left(\sum_{i=1}^P\left(\bar{X}_{\mathrm{T},i} - %
+     \bar{X}_{\mathrm{R},i}\right)^2 - \frac{1}{n}\sum_{i=1}^P%
+     \left(S_{\mathrm{T},i}^2 + S_{\mathrm{R},i}^2\right)\right)\right)\,,</code>
+</p>
+
+<p>where <code class="reqn">S_{\mathrm{T},i}^2</code> and
+<code class="reqn">S_{\mathrm{R},i}^2</code> are unbiased estimates of variance at
+the <code class="reqn">i</code>th time points of random samples chosen from test and reference
+population, respectively; and <code class="reqn">n</code> is the sample size.
+</p>
+</li>
+<li>
+<p> The variance- and bias-corrected <code class="reqn">f_2</code>, denoted by
+<code class="reqn">\hat{f}_{2,\mathrm{vcbc}}</code>, does not assume equal weight of
+variance as <code class="reqn">\hat{f}_{2,\mathrm{bc}}</code> does.
+</p>
+<p style="text-align: center;"><code class="reqn">\hat{f}_{2, \mathrm{vcbc}} = 100-25\log\left(1 +%
+     \frac{1}{P}\left(\sum_{i=1}^P \left(\bar{X}_{\mathrm{T},i} -%
+       \bar{X}_{\mathrm{R},i}\right)^2 - \frac{1}{n}\sum_{i=1}^P%
+       \left(w_{\mathrm{T},i}\cdot S_{\mathrm{T},i}^2 +%
+       w_{\mathrm{R},i}\cdot S_{\mathrm{R},i}^2\right)\right)\right)\,,</code>
+</p>
+
+<p>where <code class="reqn">w_{\mathrm{T},i}</code> and <code class="reqn">w_{\mathrm{R},i}</code> are
+weighting factors for variance of test and reference products,
+respectively, which can be calculated as follows:
+</p>
+<p style="text-align: center;"><code class="reqn">w_{\mathrm{T},i} = 0.5 + \frac{S_{\mathrm{T},i}^2}%
+     {S_{\mathrm{T},i}^2 + S_{\mathrm{R},i}^2}\,,</code>
+</p>
+<p> and
+</p>
+<p style="text-align: center;"><code class="reqn">w_{\mathrm{R},i} = 0.5 + \frac{S_{\mathrm{R},i}^2}%
+     {S_{\mathrm{T},i}^2 + S_{\mathrm{R},i}^2}\,.</code>
+</p>
+
+</li>
+<li>
+<p> The expected <code class="reqn">f_2</code>, denoted by <code class="reqn">\hat{f}_{2, \mathrm{exp}}</code>, is calculated based on the mathematical expectation of estimated
+<code class="reqn">f_2</code>,
+</p>
+<p style="text-align: center;"><code class="reqn">\hat{f}_{2, \mathrm{exp}} = 100-25\log\left(1 + \frac{1}{P}%
+     \left(\sum_{i=1}^P\left(\bar{X}_{\mathrm{T},i} - %
+     \bar{X}_{\mathrm{R},i}\right)^2 + \frac{1}{n}\sum_{i=1}^P%
+     \left(S_{\mathrm{T},i}^2 + S_{\mathrm{R},i}^2\right)\right)\right)\,,</code>
+</p>
+
+<p>using mean dissolution profiles and variance from samples for the
+approximation of population values.
+</p>
+</li>
+<li>
+<p> The variance-corrected expected <code class="reqn">f_2</code>, denoted by
+<code class="reqn">\hat{f}_{2, \mathrm{vcexp}}</code>, is calculated as
+</p>
+<p style="text-align: center;"><code class="reqn">\hat{f}_{2, \mathrm{vcexp}} = 100-25\log\left(1 +%
+     \frac{1}{P}\left(\sum_{i=1}^P \left(\bar{X}_{\mathrm{T},i} -%
+       \bar{X}_{\mathrm{R},i}\right)^2 + \frac{1}{n}\sum_{i=1}^P%
+       \left(w_{\mathrm{T},i}\cdot S_{\mathrm{T},i}^2 +%
+       w_{\mathrm{R},i}\cdot S_{\mathrm{R},i}^2\right)\right)\right)\,.</code>
+</p>
+
+</li>
+</ol>
+<h4>Types of Confidence Interval</h4>
+
+<p>The following confidence intervals are included:
+</p>
+
+<ol>
+<li>
+<p> The Normal interval with bias correction, denoted by <code>normal</code> in the
+function, is estimated according to Davison and Hinkley,
+</p>
+<p style="text-align: center;"><code class="reqn">\hat{f}_{2, \mathrm{L,U}} = \hat{f}_{2, \mathrm{S}} - E_B \mp %
+     \sqrt{V_B}\cdot Z_{1-\alpha}\,,</code>
+</p>
+
+<p>where <code class="reqn">\hat{f}_{2, \mathrm{L,U}}</code> are the lower and upper
+limit of the confidence interval estimated from bootstrap samples;
+<code class="reqn">\hat{f}_{2, \mathrm{S}}</code> denotes the estimators described
+above; <code class="reqn">Z_{1-\alpha}</code> represents the inverse of standard
+normal cumulative distribution function with type I error <code class="reqn">\alpha</code>;
+<code class="reqn">E_B</code> and <code class="reqn">V_B</code> are the <em>resampling estimates</em> of bias
+and variance calculated as
+</p>
+<p style="text-align: center;"><code class="reqn">E_B = \frac{1}{B}\sum_{b=1}^{B}\hat{f}_{2,b}^\star - %
+     \hat{f}_{2, \mathrm{S}} = \bar{f}_2^\star - \hat{f}_{2,\mathrm{S}}\,,</code>
+</p>
+
+<p>and
+</p>
+<p style="text-align: center;"><code class="reqn">V_B = \frac{1}{B-1}\sum_{b=1}^{B} \left(\hat{f}_{2,b}^\star
+     -\bar{f}_2^\star\right)^2\,,</code>
+</p>
+
+<p>where <code class="reqn">B</code> is the number of bootstrap samples;
+<code class="reqn">\hat{f}_{2,b}^\star</code> is the <code class="reqn">f_2</code> estimate with
+<code class="reqn">b</code>th bootstrap sample, and <code class="reqn">\bar{f}_2^\star</code> is the
+mean value.
+</p>
+</li>
+<li>
+<p> The basic interval, denoted by <code>basic</code> in the function, is estimated
+according to Davison and Hinkley,
+</p>
+<p style="text-align: center;"><code class="reqn">\hat{f}_{2, \mathrm{L}} = 2\hat{f}_{2, \mathrm{S}} -%
+     \hat{f}_{2,(B+1)(1-\alpha)}^\star\,,</code>
+</p>
+
+<p>and
+</p>
+<p style="text-align: center;"><code class="reqn">\hat{f}_{2, \mathrm{U}} = 2\hat{f}_{2, \mathrm{S}} -%
+     \hat{f}_{2,(B+1)\alpha}^\star\,,</code>
+</p>
+
+<p>where <code class="reqn">\hat{f}_{2,(B+1)\alpha}^\star</code> and
+<code class="reqn">\hat{f}_{2,(B+1)(1-\alpha)}^\star</code> are the
+<code class="reqn">(B+1)\alpha</code>th and <code class="reqn">(B+1)(1-\alpha)</code>th <em>ordered resampling
+estimates</em> of <code class="reqn">f_2</code>, respectively. When <code class="reqn">(B+1)\alpha</code> is not
+an integer, the following equation is used for interpolation,
+</p>
+<p style="text-align: center;"><code class="reqn">\hat{f}_{2,(B+1)\alpha}^\star = \hat{f}_{2,k}^\star + %
+     \frac{\Phi^{-1}\left(\alpha\right)-\Phi^{-1}\left(\frac{k}{B+1}\right)}%
+     {\Phi^{-1}\left(\frac{k+1}{B+1}\right)-\Phi^{-1}%
+     \left(\frac{k}{B+1}\right)}\left(\hat{f}_{2,k+1}^\star-%
+     \hat{f}_{2,k}^\star\right),</code>
+</p>
+
+<p>where <code class="reqn">k</code> is the <em>integer part</em> of <code class="reqn">(B+1)\alpha</code>,
+<code class="reqn">\hat{f}_{2,k+1}^\star</code> and <code class="reqn">\hat{f}_{2,k}^\star</code> are the <code class="reqn">(k+1)</code>th and the <code class="reqn">k</code>th ordered resampling
+estimates of <code class="reqn">f_2</code>, respectively.
+</p>
+</li>
+<li>
+<p> The percentile intervals, denoted by <code>percentile</code> in the function, are
+estimated using nine different types of quantiles, Type 1 to Type 9, as
+summarized in Hyndman and Fan's article and implemented in <code>R</code>'s
+<code>quantile</code> function. Using <code>R</code>'s <code>boot</code> package, program <code>bootf2BCA</code>
+outputs a percentile interval using the equation above for interpolation.
+To be able to compare the results among different programs, the same
+interval, denoted by <code>Percentile (boot)</code> in the function, is also
+included in the function.
+</p>
+</li>
+<li>
+<p> The bias-corrected and accelerated (BCa) intervals are estimated according
+to Efron and Tibshirani,
+</p>
+<p style="text-align: center;"><code class="reqn">\hat{f}_{2, \mathrm{L}} = \hat{f}_{2, \alpha_1}^\star\,,</code>
+</p>
+
+<p style="text-align: center;"><code class="reqn">\hat{f}_{2, \mathrm{U}} = \hat{f}_{2, \alpha_2}^\star\,,</code>
+</p>
+
+<p>where <code class="reqn">\hat{f}_{2, \alpha_1}^\star</code> and
+<code class="reqn">\hat{f}_{2, \alpha_2}^\star</code> are the <code class="reqn">100\alpha_1</code>th and the <code class="reqn">100\alpha_2</code>th percentile of the
+resampling estimates of <code class="reqn">f_2</code>, respectively. Type I errors
+<code class="reqn">\alpha_1</code> and <code class="reqn">\alpha_2</code> are obtained as
+</p>
+<p style="text-align: center;"><code class="reqn">\alpha_1 = \Phi\left(\hat{z}_0 + \frac{\hat{z}_0 + \hat{z}_\alpha}%
+     {1-\hat{a}\left(\hat{z}_0 + \hat{z}_\alpha\right)}\right),</code>
+</p>
+
+<p>and
+</p>
+<p style="text-align: center;"><code class="reqn">\alpha_2 = \Phi\left(\hat{z}_0 + \frac{\hat{z}_0 + %
+     \hat{z}_{1-\alpha}}{1-\hat{a}\left(\hat{z}_0 + %
+     \hat{z}_{1-\alpha}\right)}\right),</code>
+</p>
+
+<p>where <code class="reqn">\hat{z}_0</code> and <code class="reqn">\hat{a}</code> are called
+<em>bias-correction</em> and <em>acceleration</em>, respectively.
+</p>
+<p>There are different methods to estimate <code class="reqn">\hat{z}_0</code> and
+<code class="reqn">\hat{a}</code>. Shah et al. used jackknife technique, denoted by
+<code>bca.jackknife</code> in the function,
+</p>
+<p style="text-align: center;"><code class="reqn">\hat{z}_0 = \Phi^{-1}\left(\frac{N\left\{\hat{f}_{2,b}^\star &lt;%
+     \hat{f}_{2,\mathrm{S}} \right\}}{B}\right),</code>
+</p>
+
+<p>and
+</p>
+<p style="text-align: center;"><code class="reqn">\hat{a} = \frac{\sum_{i=1}^{n}\left(\hat{f}_{2,\mathrm{m}} -%
+     \hat{f}_{2, i}\right)^3}{6\left(\sum_{i=1}^{n}\left(%
+     \hat{f}_{2,\mathrm{m}} - \hat{f}_{2, i}\right)^2\right)^{3/2}}\,,</code>
+</p>
+
+<p>where <code class="reqn">N\left\{\cdot\right\}</code> denotes the number of
+element in the set, <code class="reqn">\hat{f}_{2, i}</code> is the <code class="reqn">i</code>th
+jackknife statistic, <code class="reqn">\hat{f}_{2,\mathrm{m}}</code> is the mean of
+the jackknife statistics, and <code class="reqn">\sum</code> is the summation from 1 to
+sample size <code class="reqn">n</code>.
+</p>
+<p>Program <code>bootf2BCA</code> gives a slightly different BCa interval with <code>R</code>'s
+<code>boot</code> package. This approach, denoted by <code>bca.boot</code> in the function, is
+also implemented in the function for estimating the interval.
+</p>
+</li>
+</ol>
+<h4>Notes on the argument <code>jackknife.type</code>
+</h4>
+
+<p>For any sample with size <code class="reqn">n</code>, the jackknife estimator is obtained by
+estimating the parameter for each subsample omitting the <code class="reqn">i</code>th
+observation. However, when two samples (e.g., test and reference) are
+involved, there are several possible ways to do it. Assuming sample size
+of test and reference are <code class="reqn">n_\mathrm{T}</code> and <code class="reqn">n_\mathrm{R}</code>,
+the following three possibility are considered:
+</p>
+
+<ul>
+<li>
+<p> Estimated by removing one observation from both test and reference samples.
+In this case, the prerequisite is <code class="reqn">n_\mathrm{T} = n_\mathrm{R}</code>,
+denoted by <code>nt=nr</code> in the function. So if there are 12 units in test and
+reference data sets, there will be 12 jackknife estimators.
+</p>
+</li>
+<li>
+<p> Estimate the jackknife for test sample while keeping the reference data
+unchanged; and then estimate jackknife for reference sample while keeping
+the test sample unchanged. This is denoted by <code>nt+nr</code> in the function.
+This is the default method. So if there are 12 units in test and reference
+data sets, there will be <code class="reqn">12 + 12 = 24</code> jackknife estimators.
+</p>
+</li>
+<li>
+<p> For each observation deleted from test sample, estimate jackknife for
+reference sample. This is denoted by <code>nt*nr</code> in the function. So if there
+are 12 units in test and reference data sets, there will be <code class="reqn">12 \times
+  12 = 144</code> jackknife estimators.
+</p>
+</li>
+</ul>
+<h3>Value</h3>
+
+<p>A list of 3 or 5 components.
+</p>
+
+<ul>
+<li> <p><code>boot.ci</code>: A <em>data frame</em> of bootstrap <code class="reqn">f_2</code> confidence intervals.
+</p>
+</li>
+<li> <p><code>boot.f2</code>: A <em>data frame</em> of all individual <code class="reqn">f_2</code> values for all
+bootstrap data set.
+</p>
+</li>
+<li> <p><code>boot.info</code>: A <em>data frame</em> with detailed information of bootstrap for
+reproducibility purpose, such as all arguments used in the function, time
+points used for calculation of <code class="reqn">f_2</code>, and the number of <code>NA</code>s.
+</p>
+</li>
+<li> <p><code>boot.summary</code>: A <em>data frame</em> with descriptive statistics of the
+bootstrap <code class="reqn">f_2</code>.
+</p>
+</li>
+<li> <p><code>boot.t</code> and <code>boot.r</code>: <em>Lists</em> of individual bootstrap samples for test
+and reference product if <code>sim.data.out = TRUE</code>.
+</p>
+</li>
+</ul>
+<h3>References</h3>
+
+<p>Shah, V. P.; Tsong, Y.; Sathe, P.; Liu, J.-P. In Vitro
+Dissolution Profile Comparison—Statistics and Analysis of the
+Similarity Factor, <code class="reqn">f_2</code>. <em>Pharmaceutical Research</em> 1998,
+<strong>15</strong> (6), 889–896. DOI: 10.1023/A:1011976615750.
+</p>
+<p>Davison, A. C.; Hinkley, D. V. Bootstrap Methods and Their
+Application. Cambridge University Press, 1997.
+</p>
+<p>Hyndman, R. J.; Fan, Y. Sample Quantiles in Statistical Packages.
+<em>The American Statistician</em> 1996, <strong>50</strong> (4), 361–365. DOI:
+/10.1080/00031305.1996.10473566.
+</p>
+<p>Efron, B.; Tibshirani, R. An Introduction to the Bootstrap.
+Chapman &amp; Hall, 1993.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R"># time points
+tp &lt;- c(5, 10, 15, 20, 30, 45, 60)
+# model.par for reference with low variability
+par.r &lt;- list(fmax = 100, fmax.cv = 3, mdt = 15, mdt.cv = 14,
+              tlag = 0, tlag.cv = 0, beta = 1.5, beta.cv = 8)
+# simulate reference data
+dr &lt;- sim.dp(tp, model.par = par.r, seed = 100, plot = FALSE)
+# model.par for test
+par.t &lt;- list(fmax = 100, fmax.cv = 3, mdt = 12.29, mdt.cv = 12,
+              tlag = 0, tlag.cv = 0, beta = 1.727, beta.cv = 9)
+# simulate test data with low variability
+dt &lt;- sim.dp(tp, model.par = par.t, seed = 100, plot = FALSE)
+
+# bootstrap. to reduce test run time, n.boots of 100 was used in the example.
+# In practice, it is recommended to use n.boots of 5000--10000.
+# Set `output.to.screen = TRUE` to view the result on screen
+d &lt;- bootf2(dt$sim.disso, dr$sim.disso, n.boots = 100, print.report = FALSE)
+
+
+</code></pre>
+
+
+</div>

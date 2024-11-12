@@ -1,0 +1,305 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>orderMCMC</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Structure learning with the order MCMC algorithm</h2>
+
+<h3>Description</h3>
+
+<p>This function implements the order MCMC algorithm for the structure learning of Bayesian networks. This function can be used
+for MAP discovery and for sampling from the posterior distribution of DAGs given the data.
+Due to the superexponential size of the search space as the number of nodes increases, the 
+MCMC search is performed on a reduced search space.
+By default the search space is limited to the skeleton found through the PC algorithm by means of conditional independence tests 
+(using the functions <code>skeleton</code> and <code>pc</code> from the ‘pcalg’ package [Kalisch et al, 2012]).
+It is also possible to define an arbitrary search space by inputting an adjacency matrix, for example estimated by partial correlations or other network algorithms.
+Also implemented is the possibility to expand the default or input search space, by allowing each node in the network to have one additional parent.  This offers improvements in the learning and sampling of Bayesian networks.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">orderMCMC(
+  scorepar,
+  MAP = TRUE,
+  plus1 = TRUE,
+  chainout = FALSE,
+  scoreout = FALSE,
+  moveprobs = NULL,
+  iterations = NULL,
+  stepsave = NULL,
+  alpha = 0.05,
+  cpdag = FALSE,
+  gamma = 1,
+  hardlimit = ifelse(plus1, 14, 20),
+  verbose = FALSE,
+  compress = TRUE,
+  startspace = NULL,
+  blacklist = NULL,
+  startorder = NULL,
+  scoretable = NULL
+)
+
+## S3 method for class 'orderMCMC'
+plot(
+  x,
+  ...,
+  burnin = 0.2,
+  main = "DAG logscores",
+  xlab = "iteration",
+  ylab = "logscore",
+  type = "l",
+  col = "#0c2c84"
+)
+
+## S3 method for class 'orderMCMC'
+print(x, ...)
+
+## S3 method for class 'orderMCMC'
+summary(object, ...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>scorepar</code></td>
+<td>
+<p>an object of class <code>scoreparameters</code>, containing the data and score parameters, see constructor function <code>scoreparameters</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>MAP</code></td>
+<td>
+<p>logical, if TRUE (default) the search targets the MAP DAG (a DAG with maximum score),
+if FALSE at each MCMC step a DAG is sampled from the order proportionally to its score</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>plus1</code></td>
+<td>
+<p>logical, if TRUE (default) the search is performed on the extended search space</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>chainout</code></td>
+<td>
+<p>logical, if TRUE the saved MCMC steps are returned, TRUE by default</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>scoreout</code></td>
+<td>
+<p>logical, if TRUE the search space and score tables are returned, FALSE by default</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>moveprobs</code></td>
+<td>
+<p>a numerical vector of 4 values in <code>{0,1}</code> corresponding to the probabilities of the following MCMC moves in the order space
+</p>
+
+<ul>
+<li>
+<p> exchanging 2 random nodes in the order
+</p>
+</li>
+<li>
+<p> exchanging 2 adjacent nodes in the order
+</p>
+</li>
+<li>
+<p> placing a single node elsewhere in the order
+</p>
+</li>
+<li>
+<p> staying still
+</p>
+</li>
+</ul>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>iterations</code></td>
+<td>
+<p>integer, the number of MCMC steps, the default value is <code class="reqn">6n^{2}\log{n}</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>stepsave</code></td>
+<td>
+<p>integer, thinning interval for the MCMC chain, indicating the number of steps between two output iterations, the default is <code>iterations/1000</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>alpha</code></td>
+<td>
+<p>numerical significance value in <code>{0,1}</code> for the conditional independence tests at the PC algorithm stage</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>cpdag</code></td>
+<td>
+<p>logical, if TRUE the CPDAG returned by the PC algorithm will be used as the search
+space, if FALSE (default) the full undirected skeleton will be used as the search space</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>gamma</code></td>
+<td>
+<p>tuning parameter which transforms the score by raising it to this power, 1 by default</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>hardlimit</code></td>
+<td>
+<p>integer, limit on the size of parent sets in the search space; by default 14 when MAP=TRUE and 20 when MAP=FALSE</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>verbose</code></td>
+<td>
+<p>logical, if TRUE messages about the algorithm's progress will be printed, FALSE by default</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>compress</code></td>
+<td>
+<p>logical, if TRUE adjacency matrices representing sampled graphs will be stored as a sparse Matrix (recommended); TRUE by default</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>startspace</code></td>
+<td>
+<p>(optional) a square matrix, of dimensions equal to the number of nodes, which defines the search space for the order MCMC in the form of an adjacency matrix. If NULL, the skeleton obtained from the PC-algorithm will be used. If <code>startspace[i,j]</code> equals to 1 (0) it means that the edge from node <code>i</code> to node <code>j</code> is included (excluded) from the search space. To include an edge in both directions, both <code>startspace[i,j]</code> and <code>startspace[j,i]</code> should be 1.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>blacklist</code></td>
+<td>
+<p>(optional) a square matrix, of dimensions equal to the number of nodes, which defines edges to exclude from the search space. If <code>blacklist[i,j]</code> equals to 1 it means that the edge from node <code>i</code> to node <code>j</code> is excluded from the search space.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>startorder</code></td>
+<td>
+<p>(optional) integer vector of length n, which will be used as the starting order in the MCMC algorithm, the default order is random</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>scoretable</code></td>
+<td>
+<p>(optional) object of class <code>scorespace</code> containing list of score tables calculated for example by the last iteration of the function <code>iterativeMCMC</code>. When not NULL, parameter <code>startspace</code> is ignored.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>object of class 'orderMCMC'</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>ignored</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>burnin</code></td>
+<td>
+<p>number between <code>0</code> and <code>1</code>, indicates the percentage of the samples which will be discarded as ‘burn-in’ of the MCMC chain; the rest  of the samples will be used to calculate the posterior probabilities; 0.2 by default</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>main</code></td>
+<td>
+<p>name of the graph; "DAG logscores" by default</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>xlab</code></td>
+<td>
+<p>name of x-axis; "iteration"</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ylab</code></td>
+<td>
+<p>name of y-axis; "logscore"</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>type</code></td>
+<td>
+<p>type of line in the plot; "l" by default</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>col</code></td>
+<td>
+<p>colour of line in the plot; "#0c2c84" by default</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>object</code></td>
+<td>
+<p>object of class 'orderMCMC'</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>Object of class <code>orderMCMC</code>, which contains log-score trace of sampled DAGs as well 
+as adjacency matrix of the maximum scoring DAG, its score and the order score. The output can optionally include DAGs sampled in MCMC iterations and the score tables. 
+Optional output is regulated by the parameters <code>chainout</code> and <code>scoreout</code>. See <code>orderMCMC class</code> for a detailed class structure.
+</p>
+
+
+<h3>Note</h3>
+
+<p>see also extractor functions <code>getDAG</code>, <code>getTrace</code>, <code>getSpace</code>, <code>getMCMCscore</code>.
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Polina Suter, Jack Kuipers, the code partly derived from the order MCMC implementation from Kuipers J, Moffa G (2017) &lt;doi:10.1080/01621459.2015.1133426&gt;
+</p>
+
+
+<h3>References</h3>
+
+<p>P. Suter, J. Kuipers, G. Moffa, N.Beerenwinkel (2023) &lt;doi:10.18637/jss.v105.i09&gt;
+</p>
+<p>Friedman N and Koller D (2003). A Bayesian approach to structure discovery in bayesian networks. Machine Learning 50, 95-125.
+</p>
+<p>Kalisch M, Maechler M, Colombo D, Maathuis M and Buehlmann P (2012). Causal inference using graphical models with the R package pcalg. Journal of Statistical Software 47, 1-26.
+</p>
+<p>Geiger D and Heckerman D (2002). Parameter priors for directed acyclic graphical models and the characterization of several probability distributions. The Annals of Statistics 30, 1412-1440.
+</p>
+<p>Kuipers J, Moffa G and Heckerman D (2014). Addendum on the scoring of Gaussian acyclic graphical models. The Annals of Statistics 42, 1689-1691.
+</p>
+<p>Spirtes P, Glymour C and Scheines R (2000). Causation, Prediction, and Search, 2nd edition. The MIT Press.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## Not run: 
+#find a MAP DAG with search space defined by PC and plus1 neighbourhood
+Bostonscore&lt;-scoreparameters("bge",Boston)
+#estimate MAP DAG
+orderMAPfit&lt;-orderMCMC(Bostonscore)
+summary(orderMAPfit)
+#sample DAGs from the posterior distribution
+ordersamplefit&lt;-orderMCMC(Bostonscore,MAP=FALSE,chainout=TRUE)
+plot(ordersamplefit)
+
+## End(Not run)
+</code></pre>
+
+
+</div>

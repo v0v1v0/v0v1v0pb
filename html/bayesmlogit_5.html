@@ -1,0 +1,221 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>mlifeTable</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Multistate Life Table Method</h2>
+
+<h3>Description</h3>
+
+<p>A Bayesian Multistate Life Table Method for survey data, developed by Lynch and Zang (2022), allowing for large state spaces with quasi-absorbing states (i.e., structural zeros in a transition matrix).
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">mlifeTable(
+  y,
+  X,
+  trans,
+  states,
+  file_path,
+  groupby = NA,
+  no_control = NA,
+  values = NA,
+  status = 0,
+  startages = 0,
+  endages = 110,
+  age.gap = 1,
+  nums = dim(trans)[1],
+  mlifeTable_plot = FALSE,
+  state.names = NA,
+  ...
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>y</code></td>
+<td>
+<p>A vector of transitions.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>X</code></td>
+<td>
+<p>A matrix of covariates. Note that <code>X</code> must include age as a convariate.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>trans</code></td>
+<td>
+<p>The posterior samples generated using <code>?bayesmlogit()</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>states</code></td>
+<td>
+<p>The total number of states in data.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>file_path</code></td>
+<td>
+<p>The file path for outputs.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>groupby</code></td>
+<td>
+<p>A vector that contains the covariates for subgroup comparisons. Default is NA, which means that we won't make subgroups.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>no_control</code></td>
+<td>
+<p>The covariates that we don't want to control in subgroup analysis. Default is NA, which means we will control all covariates in X. As an example, in Lynch and Zang's study (2022), they incorporated education into the multinomial logit model. However, in the life table calculation, if one does not want to control for education, one could opt to use its region-specific mean rather than the sample mean using no_control.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>values</code></td>
+<td>
+<p>A list that specifies values for covariates. Default is NA. If both no_control and values are specified, the option values takes precedence.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>status</code></td>
+<td>
+<p>A numeric value. The option allows producing status-based life tables. Default is 0, produces population-based life tables.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>startages</code></td>
+<td>
+<p>Start age of the life table. Default is 0.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>endages</code></td>
+<td>
+<p>End age of the life table. Default is 110.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>age.gap</code></td>
+<td>
+<p>This option allows users to specify the age interval of the life table. Default is 1. For example, if the survey data were sampled every 2 years, users can specify the age interval to be 2 in the life table.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nums</code></td>
+<td>
+<p>Number of life tables generated for each subgroup. Default is the size of posterior samples we used.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>mlifeTable_plot</code></td>
+<td>
+<p>If TRUE, this option will create a new directory <code>mplotResults</code> under given <code>file_path</code> and output corresponding plots and tables for posterior means and credible intervals. Default is FALSE.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>state.names</code></td>
+<td>
+<p>A vector used to specify names of each state except death. You can also specify them in the output files.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Extra parameters for <code>mlifeTable_plot()</code>. See more details using <code>?mlifeTable_plot()</code>.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>This function generates life tables based on the estimates from the Bayesian multinomial logit regressions, which can be obtained using the <code>bayesmlogit()</code> function. The values in the generated life table represent the expected remaining years to be spent in each state conditional on a give age. Current version was designed to only generate life tables based on data with a death state.
+</p>
+
+
+<h3>Value</h3>
+
+<p>Life tables for each subgroup.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>bayesmlogit</code>, <code>mlifeTable_plot</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## Not run: 
+#The life tables generated in the example have 3 columns, which correspond to 3 states: 
+#1: health; 2: unhealthiness; 3: death;
+
+data &lt;- lifedata
+y &lt;- data[,1]
+X &lt;- data[,-1]
+
+# This example will take about 30 mins.
+
+out &lt;- bayesmlogit(y, X ,samp=1000, burn=500,verbose=10) 
+
+trans &lt;- out$outwstepwidth
+mlifeTable(y,X,trans =trans,
+           groupby = c("male","black","hispanic"),
+           no_control = "mar",
+           startages=50,
+           age.gap=1,
+           states=3,
+           file_path=".")
+
+# To name each subgroup, try the subgroup.names option.
+mlifeTable(y,X,trans =trans,
+           groupby = c("male","black","hispanic"),
+           no_control = "mar",
+           states=3,
+           startages=50,
+           age.gap=1,
+           file_path=".",
+           subgroup.names= c("F-W","M-W","M-B","F-B","F-H","M-H"))
+           
+# To generate plots, try the mlifeTable_plot option
+mlifeTable(y,X,trans =trans,
+           groupby = c("male","black","hispanic"),
+           no_control = "mar",
+           states=3,
+           startages=50,
+           age.gap=1,
+           nums = 400,
+           file_path=".",
+           subgroup.names= c("F-W","M-W","M-B","F-B","F-H","M-H"),
+           mlifeTable_plot = T,
+           cred = 0.84)
+           
+# To specify a variable at a fixed value other than the mean value. Try option "values".
+mlifeTable(y,X,trans =trans,
+           groupby = c("male","black","hispanic"),
+           no_control = "mar",
+           values = list("cohort" = 36),
+           states=3,
+           startages=50,
+           age.gap=1,
+           nums = 400,
+           file_path=".",
+           subgroup.names= c("F-W","M-W","M-B","F-B","F-H","M-H"),
+           mlifeTable_plot = T,
+           cred = 0.84)       
+                           
+
+## End(Not run)
+</code></pre>
+
+
+</div>

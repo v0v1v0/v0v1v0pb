@@ -1,0 +1,207 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>HLM_ICC_rWG</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Tidy report of HLM indices: ICC(1), ICC(2), and rWG/rWG(J).</h2>
+
+<h3>Description</h3>
+
+<p>Compute ICC(1) (non-independence of data),
+ICC(2) (reliability of group means),
+and <code class="reqn">r_{WG}</code>/<code class="reqn">r_{WG(J)}</code> (within-group agreement for single-item/multi-item measures)
+in multilevel analysis (HLM).
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">HLM_ICC_rWG(
+  data,
+  group,
+  icc.var,
+  rwg.vars = icc.var,
+  rwg.levels = 0,
+  digits = 3
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+<p>Data frame.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>group</code></td>
+<td>
+<p>Grouping variable.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>icc.var</code></td>
+<td>
+<p>Key variable for analysis (usually the dependent variable).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>rwg.vars</code></td>
+<td>
+<p>Defaults to <code>icc.var</code>. It can be:
+</p>
+
+<ul>
+<li>
+<p> A single variable (<em>single-item</em> measure), then computing rWG.
+</p>
+</li>
+<li>
+<p> Multiple variables (<em>multi-item</em> measure), then computing rWG(J), where J = the number of items.
+</p>
+</li>
+</ul>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>rwg.levels</code></td>
+<td>
+<p>As <code class="reqn">r_{WG}</code>/<code class="reqn">r_{WG(J)}</code> compares the actual group variance to the expected random variance (i.e., the variance of uniform distribution, <code class="reqn">\sigma_{EU}^2</code>),
+it is required to specify which type of uniform distribution is.
+</p>
+
+<ul>
+<li>
+<p> For <em>continuous</em> uniform distribution, <code class="reqn">\sigma_{EU}^2 = (max - min)^2 / 12</code>.
+Then <code>rwg.levels</code> is not useful and will be set to <code>0</code> (the default).
+</p>
+</li>
+<li>
+<p> For <em>discrete</em> uniform distribution, <code class="reqn">\sigma_{EU}^2 = (A^2 - 1) / 12</code>,
+where A is the number of response options (levels).
+Then <code>rwg.levels</code> should be provided (= A in the above formula).
+For example, if the measure is a 5-point Likert scale, you should set <code>rwg.levels=5</code>.
+</p>
+</li>
+</ul>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>digits</code></td>
+<td>
+<p>Number of decimal places of output. Defaults to <code>3</code>.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+
+<dl>
+<dt><strong>ICC(1) (intra-class correlation, or non-independence of data)</strong></dt>
+<dd>
+<p>ICC(1) = var.u0 / (var.u0 + var.e) = <code class="reqn">\sigma_{u0}^2 / (\sigma_{u0}^2 + \sigma_{e}^2)</code>
+</p>
+<p>ICC(1) is the ICC we often compute and report in multilevel analysis
+(usually in the Null Model, where only the random intercept of group is included).
+It can be interpreted as either <strong>"the proportion of variance explained by groups"</strong> (i.e., <em>heterogeneity</em> between groups)
+or <strong>"the expectation of correlation coefficient between any two observations within any group"</strong> (i.e., <em>homogeneity</em> within groups).
+</p>
+</dd>
+<dt><strong>ICC(2) (reliability of group means)</strong></dt>
+<dd>
+<p>ICC(2) = mean(var.u0 / (var.u0 + var.e / n.k)) = <code class="reqn">\Sigma[\sigma_{u0}^2 / (\sigma_{u0}^2 + \sigma_{e}^2 / n_k)] / K</code>
+</p>
+<p>ICC(2) is a measure of <strong>"the representativeness of group-level aggregated means for within-group individual values"</strong>
+or <strong>"the degree to which an individual score can be considered a reliable assessment of a group-level construct"</strong>.
+</p>
+</dd>
+<dt><strong><code class="reqn">r_{WG}</code>/<code class="reqn">r_{WG(J)}</code> (within-group agreement for single-item/multi-item measures)</strong></dt>
+<dd>
+<p><code class="reqn">r_{WG} = 1 - \sigma^2 / \sigma_{EU}^2</code>
+</p>
+<p><code class="reqn">r_{WG(J)} = 1 - (\sigma_{MJ}^2 / \sigma_{EU}^2) / [J * (1 - \sigma_{MJ}^2 / \sigma_{EU}^2) + \sigma_{MJ}^2 / \sigma_{EU}^2]</code>
+</p>
+<p><code class="reqn">r_{WG}</code>/<code class="reqn">r_{WG(J)}</code> is a measure of within-group agreement or consensus. Each group has an <code class="reqn">r_{WG}</code>/<code class="reqn">r_{WG(J)}</code>.
+</p>
+</dd>
+<dt>* Note for the above formulas</dt>
+<dd>
+
+<ul>
+<li> <p><code class="reqn">\sigma_{u0}^2</code>: between-group variance (i.e., tau00)
+</p>
+</li>
+<li> <p><code class="reqn">\sigma_{e}^2</code>: within-group variance (i.e., residual variance)
+</p>
+</li>
+<li> <p><code class="reqn">n_k</code>: group size of the k-th group
+</p>
+</li>
+<li> <p><code class="reqn">K</code>: number of groups
+</p>
+</li>
+<li> <p><code class="reqn">\sigma^2</code>: actual group variance of the k-th group
+</p>
+</li>
+<li> <p><code class="reqn">\sigma_{MJ}^2</code>: mean value of actual group variance of the k-th group across all J items
+</p>
+</li>
+<li> <p><code class="reqn">\sigma_{EU}^2</code>: expected random variance (i.e., the variance of uniform distribution)
+</p>
+</li>
+<li> <p><code class="reqn">J</code>: number of items
+</p>
+</li>
+</ul>
+</dd>
+</dl>
+<h3>Value</h3>
+
+<p>Invisibly return a list of results.
+</p>
+
+
+<h3>References</h3>
+
+<p>Bliese, P. D. (2000).
+Within-group agreement, non-independence, and reliability:
+Implications for data aggregation and Analysis.
+In K. J. Klein &amp; S. W. Kozlowski (Eds.),
+<em>Multilevel theory, research, and methods in organizations</em> (pp. 349–381).
+San Francisco, CA: Jossey-Bass, Inc.
+</p>
+<p>James, L.R., Demaree, R.G., &amp; Wolf, G. (1984).
+Estimating within-group interrater reliability with and without response bias.
+<em>Journal of Applied Psychology, 69</em>, 85–98.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>cor_multilevel</code>
+</p>
+<p><a href="https://CRAN.R-project.org/package=multilevel">R package "multilevel"</a>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">data = lme4::sleepstudy  # continuous variable
+HLM_ICC_rWG(data, group="Subject", icc.var="Reaction")
+
+data = lmerTest::carrots  # 7-point scale
+HLM_ICC_rWG(data, group="Consumer", icc.var="Preference",
+            rwg.vars="Preference",
+            rwg.levels=7)
+HLM_ICC_rWG(data, group="Consumer", icc.var="Preference",
+            rwg.vars=c("Sweetness", "Bitter", "Crisp"),
+            rwg.levels=7)
+
+</code></pre>
+
+
+</div>

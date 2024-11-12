@@ -1,0 +1,235 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>FBM-class</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Class FBM</h2>
+
+<h3>Description</h3>
+
+<p>A reference class for storing and accessing matrix-like data stored in files
+on disk. This is very similar to Filebacked Big Matrices provided by the
+<strong>bigmemory</strong> package (see <a href="https://privefl.github.io/bigstatsr/articles/bigstatsr-and-bigmemory.html">the corresponding vignette</a>).
+</p>
+<p>Convert a matrix (or a data frame) to an FBM.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">FBM(
+  nrow,
+  ncol,
+  type = c("double", "float", "integer", "unsigned short", "unsigned char", "raw"),
+  init = NULL,
+  backingfile = tempfile(tmpdir = getOption("FBM.dir")),
+  create_bk = TRUE,
+  is_read_only = FALSE
+)
+
+as_FBM(
+  x,
+  type = c("double", "float", "integer", "unsigned short", "unsigned char", "raw"),
+  backingfile = tempfile(tmpdir = getOption("FBM.dir")),
+  is_read_only = FALSE
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>nrow</code></td>
+<td>
+<p>Number of rows.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ncol</code></td>
+<td>
+<p>Number of columns.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>type</code></td>
+<td>
+<p>Type of the Filebacked Big Matrix (default is <code>double</code>). Either
+</p>
+
+<ul>
+<li> <p><code>"double"</code> (double precision – 64 bits)
+</p>
+</li>
+<li> <p><code>"float"</code> (single precision – 32 bits)
+</p>
+</li>
+<li> <p><code>"integer"</code>
+</p>
+</li>
+<li> <p><code>"unsigned short"</code>: can store integer values from 0 to 65535.
+It has vocation to become the basis for a <code>FBM.code65536</code>.
+</p>
+</li>
+<li> <p><code>"raw"</code> or <code>"unsigned char"</code>: can store integer values from 0 to 255.
+It is the basis for class FBM.code256 in order to
+access 256 arbitrary different numeric values.
+It is used in <a href="https://goo.gl/pHCCmo">package <strong>bigsnpr</strong></a>.
+</p>
+</li>
+</ul>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>init</code></td>
+<td>
+<p>Either a single value (e.g. <code>0</code>) or as many value as the number
+of elements of the FBM. <strong>Default doesn't initialize the matrix.</strong></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>backingfile</code></td>
+<td>
+<p>Path to the file storing the FBM data on disk.
+<strong>An extension ".bk" will be automatically added.</strong> Default stores in the
+temporary directory, which you can change using global option "FBM.dir".</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>create_bk</code></td>
+<td>
+<p>Whether to create a backingfile (the default) or use an
+existing one (which should be named by the <code>backingfile</code> parameter and have
+an extension ".bk"). For example, this could be used to convert a
+filebacked <code>big.matrix</code> from package <strong>bigmemory</strong> to a FBM
+(see <a href="https://privefl.github.io/bigstatsr/articles/bigstatsr-and-bigmemory.html">the corresponding vignette</a>).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>is_read_only</code></td>
+<td>
+<p>Whether the FBM is read-only? Default is <code>FALSE</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>A matrix or an data frame (2-dimensional data).</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>An object of class FBM has many fields:
+</p>
+
+<ul>
+<li> <p><code style="white-space: pre;">⁠$address⁠</code>: address of the external pointer containing the underlying
+C++ object for read-only mapping, to be used as a <code style="white-space: pre;">⁠XPtr&lt;FBM&gt;⁠</code> in C++ code
+</p>
+</li>
+<li> <p><code style="white-space: pre;">⁠$extptr⁠</code>: (internal) use <code style="white-space: pre;">⁠$address⁠</code> instead
+</p>
+</li>
+<li> <p><code style="white-space: pre;">⁠$address_rw⁠</code>: address of the external pointer containing the underlying
+C++ object for read/write mapping, to be used as a <code style="white-space: pre;">⁠XPtr&lt;FBM_RW&gt;⁠</code> in C++ code
+</p>
+</li>
+<li> <p><code style="white-space: pre;">⁠$extptr_rw⁠</code>: (internal) use <code style="white-space: pre;">⁠$address_rw⁠</code> instead
+</p>
+</li>
+<li> <p><code style="white-space: pre;">⁠$nrow⁠</code>: number of rows
+</p>
+</li>
+<li> <p><code style="white-space: pre;">⁠$ncol⁠</code>: number of columns
+</p>
+</li>
+<li> <p><code style="white-space: pre;">⁠$type⁠</code>: (internal) use <code>type_size</code> or <code>type_chr</code> instead
+</p>
+</li>
+<li> <p><code style="white-space: pre;">⁠$type_chr⁠</code>: FBM type as character, e.g. "double"
+</p>
+</li>
+<li> <p><code style="white-space: pre;">⁠$type_size⁠</code>: size of FBM type in bytes (e.g. "double" is 8 and "float" is 4)
+</p>
+</li>
+<li> <p><code style="white-space: pre;">⁠$backingfile⁠</code> or <code style="white-space: pre;">⁠$bk⁠</code>: File with extension 'bk' that stores the numeric
+data of the FBM
+</p>
+</li>
+<li> <p><code style="white-space: pre;">⁠$rds⁠</code>: 'rds' file (that may not exist) corresponding to the 'bk' file
+</p>
+</li>
+<li> <p><code style="white-space: pre;">⁠$is_saved⁠</code>: whether this object is stored in <code style="white-space: pre;">⁠$rds⁠</code>?
+</p>
+</li>
+<li> <p><code style="white-space: pre;">⁠$is_read_only⁠</code>: whether it is (not) allowed to modify data?
+</p>
+</li>
+</ul>
+<p>And some methods:
+</p>
+
+<ul>
+<li> <p><code style="white-space: pre;">⁠$save()⁠</code>: Save the FBM object in <code style="white-space: pre;">⁠$rds⁠</code>. Returns the FBM.
+</p>
+</li>
+<li> <p><code style="white-space: pre;">⁠add_columns(&lt;ncol_add&gt;)⁠</code>: Add some columns to the FBM by appending the
+backingfile with some data. Returns the FBM invisibly.
+</p>
+</li>
+<li> <p><code style="white-space: pre;">⁠$bm()⁠</code>: Get this object as a <code>filebacked.big.matrix</code>
+to be used by package {bigmemory}.
+</p>
+</li>
+<li> <p><code style="white-space: pre;">⁠$bm.desc()⁠</code>: Get this object as a <code>filebacked.big.matrix</code> descriptor
+to be used by package {bigmemory}.
+</p>
+</li>
+<li> <p><code style="white-space: pre;">⁠$check_write_permissions()⁠</code>: Error if the FBM is read-only.
+</p>
+</li>
+</ul>
+<h3>See Also</h3>
+
+<p>big_attach big_copy
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">mat &lt;- matrix(1:4, 2)
+X_from_mat &lt;- as_FBM(mat)
+
+## You can save this object in an .rds file to use it in another session
+X_from_mat$is_saved
+X_from_mat$save()
+X_from_mat$is_saved
+(rds &lt;- X_from_mat$rds)
+## Use big_attach() to load the FBM object in another session
+X_from_mat &lt;- big_attach(rds)
+
+## Standard accessors
+X &lt;- FBM(10, 10)
+typeof(X)
+X[] &lt;- rnorm(length(X))
+X[, 1:6]
+X[] &lt;- 1:100
+X[, 1]
+X[1, ]  # not recommended for large matrices
+X[, -1]
+X[, c(TRUE, FALSE)]
+X[cbind(1:10, 1:10)] &lt;- NA_real_
+
+X[]  # access as standard R matrix
+
+X &lt;- FBM(150, 5)
+X[] &lt;- iris   ## you can replace with a df (but factors -&gt; integers)
+X2 &lt;- as_FBM(iris)
+identical(X[], X2[])
+
+</code></pre>
+
+
+</div>

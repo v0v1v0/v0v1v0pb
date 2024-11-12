@@ -1,0 +1,182 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>bibliometrix-package</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>
+Comprehensive Science Mapping Analysis
+</h2>
+
+<h3>Description</h3>
+
+<p>Tool for quantitative research in scientometrics and bibliometrics.
+    It implements the comprehensive workflow for science mapping analysis proposed in Aria M. and 
+    Cuccurullo C. (2017) &lt;doi:10.1016/j.joi.2017.08.007&gt;.
+    'bibliometrix' provides various routines for importing bibliographic data from 'SCOPUS',
+    'Clarivate Analytics Web of Science' (&lt;https://www.webofknowledge.com/&gt;), 'Digital Science Dimensions' 
+	(&lt;https://www.dimensions.ai/&gt;), 'OpenAlex' (&lt;https://openalex.org/&gt;), 'Cochrane Library' (&lt;https://www.cochranelibrary.com/&gt;),  'Lens' (&lt;https://lens.org&gt;), 
+	and 'PubMed' (&lt;https://pubmed.ncbi.nlm.nih.gov/&gt;) databases, performing bibliometric analysis 
+    and building networks for co-citation, coupling, scientific collaboration and co-word analysis.
+</p>
+
+
+<h3>Details</h3>
+
+<p>INSTALLATION
+</p>
+<p>- Stable version from CRAN:
+</p>
+<p>install.packages("bibliometrix")
+</p>
+<p>- Or development version from GitHub:
+</p>
+<p>install.packages("devtools")
+devtools::install_github("massimoaria/bibliometrix")
+</p>
+<p>- Load "bibliometrix"
+</p>
+<p>library('bibliometrix')
+</p>
+<p>DATA LOADING AND CONVERTING
+</p>
+<p>The export file can be imported and converted by R using the function *convert2df*:
+</p>
+<p>file &lt;- ("https://www.bibliometrix.org/datasets/savedrecs.txt")
+</p>
+<p>M &lt;- convert2df(file, dbsource = "wos", format = "bibtex")
+</p>
+<p>*convert2df* creates a bibliographic data frame with cases corresponding to manuscripts and variables to Field Tag in the original export file.
+Each manuscript contains several elements, such as authors' names, title, keywords and other information. All these elements constitute the bibliographic attributes of a document, also called metadata.
+Data frame columns are named using the standard Clarivate Analytics WoS Field Tag codify. 
+</p>
+<p>BIBLIOMETRIC ANALYSIS
+</p>
+<p>The first step is to perform a descriptive analysis of the bibliographic data frame.
+The function *biblioAnalysis* calculates main bibliometric measures using this syntax:
+</p>
+<p>results &lt;- biblioAnalysis(M, sep = ";")
+</p>
+<p>The function *biblioAnalysis* returns an object of class "bibliometrix".
+</p>
+<p>To summarize main results of the bibliometric analysis, use the generic function *summary*.
+It displays main information about the bibliographic data frame and several tables, such as annual scientific production, top manuscripts per number of citations, most productive authors, most productive countries, total citation per country, most relevant sources (journals) and most relevant keywords.
+*summary* accepts two additional arguments. *k* is a formatting value that indicates the number of rows of each table. *pause* is a logical value (TRUE or FALSE) used to allow (or not) pause in screen scrolling.
+Choosing k=10 you decide to see the first 10 Authors, the first 10 sources, etc.
+</p>
+<p>S &lt;- summary(object = results, k = 10, pause = FALSE)
+</p>
+<p>Some basic plots can be drawn using the generic function plot:
+</p>
+<p>plot(x = results, k = 10, pause = FALSE)
+</p>
+<p>BIBLIOGRAPHIC NETWORK MATRICES
+</p>
+<p>Manuscript's attributes are connected to each other through the manuscript itself: author(s) to journal, keywords to publication date, etc.
+These connections of different attributes generate bipartite networks that can be represented as rectangular matrices (Manuscripts x Attributes).
+Furthermore, scientific publications regularly contain references to
+other scientific works. This generates a further network, namely, co-citation or coupling network.
+These networks are analyzed in order to capture meaningful properties of the underlying research system, and in particular to determine the influence of bibliometric units such as scholars and journals.
+</p>
+<p>*biblioNetwork* function
+</p>
+<p>The function *biblioNetwork* calculates, starting from a bibliographic data frame, the most frequently used networks: Coupling, Co-citation, Co-occurrences, and Collaboration.
+*biblioNetwork* uses two arguments to define the network to compute:
+- *analysis* argument can be "co-citation", "coupling", "collaboration",  or "co-occurrences".
+- *network* argument can be "authors", "references", "sources", "countries", "universities", "keywords", "author_keywords", "titles" and "abstracts".
+</p>
+<p>i.e. the following code calculates a classical co-citation network:
+</p>
+<p>NetMatrix &lt;- biblioNetwork(M, analysis = "co-citation", network = "references", sep = ";")
+</p>
+<p>VISUALIZING BIBLIOGRAPHIC NETWORKS 
+</p>
+<p>All bibliographic networks can be graphically visualized or modeled.
+Using the function *networkPlot*, you can plot a network created by *biblioNetwork* using R routines.
+</p>
+<p>The main argument of *networkPlot* is type. It indicates the network map layout: circle, kamada-kawai, mds, etc.
+</p>
+<p>In the following, we propose some examples.
+</p>
+<p>### Country Scientific Collaboration
+</p>
+<p># Create a country collaboration network
+</p>
+<p>M &lt;- metaTagExtraction(M, Field = "AU_CO", sep = ";")
+</p>
+<p>NetMatrix &lt;- biblioNetwork(M, analysis = "collaboration", network = "countries", sep = ";")
+</p>
+<p># Plot the network
+</p>
+<p>net=networkPlot(NetMatrix, n = dim(NetMatrix)[1], Title = "Country Collaboration", type = "circle", size=TRUE, remove.multiple=FALSE,labelsize=0.8)
+</p>
+<p>### Co-Citation Network
+</p>
+<p># Create a co-citation network
+</p>
+<p>NetMatrix &lt;- biblioNetwork(M, analysis = "co-citation", network = "references", sep = ";")
+</p>
+<p># Plot the network
+</p>
+<p>net=networkPlot(NetMatrix, n = 30, Title = "Co-Citation Network", type = "fruchterman", size=T, remove.multiple=FALSE, labelsize=0.7,edgesize = 5)
+</p>
+<p>### Keyword co-occurrences
+</p>
+<p># Create keyword co-occurrences network
+</p>
+<p>NetMatrix &lt;- biblioNetwork(M, analysis = "co-occurrences", network = "keywords", sep = ";")
+</p>
+<p># Plot the network
+</p>
+<p>net=networkPlot(NetMatrix, normalize="association", weighted=T, n = 30, Title = "Keyword Co-occurrences", type = "fruchterman", size=T,edgesize = 5,labelsize=0.7)
+</p>
+<p>CO-WORD ANALYSIS: THE CONCEPTUAL STRUCTURE OF A FIELD 
+</p>
+<p>The aim of the co-word analysis is to map the conceptual structure of a framework using the word co-occurrences in a bibliographic collection.
+The analysis can be performed through dimensionality reduction techniques such as Multidimensional Scaling (MDS), Correspondence Analysis (CA) or Multiple Correspondence Analysis (MCA). 
+Here, we show an example using the function *conceptualStructure* that performs a CA or MCA to draw a conceptual structure of the field and K-means clustering to identify clusters of documents which express common concepts. Results are plotted on a two-dimensional map.
+*conceptualStructure* includes natural language processing (NLP) routines (see the function *termExtraction*) to extract terms from titles and abstracts.  In addition, it implements the Porter's stemming algorithm to reduce inflected (or sometimes derived) words to their word stem, base or root form.
+</p>
+<p># Conceptual Structure using keywords (method="MCA")
+</p>
+<p>CS &lt;- conceptualStructure(M,field="ID", method="MCA", minDegree=4, clust=4 ,k.max=8, stemming=FALSE, labelsize=10, documents=10)
+</p>
+<p>HISTORICAL DIRECT CITATION NETWORK
+</p>
+<p>The historiographic map is a graph proposed by E. Garfield to represent a chronological network map of most relevant direct citations resulting from a bibliographic collection.
+The function histNetwork generates a chronological direct citation network matrix which can be plotted using *histPlot*:
+</p>
+<p># Create a historical citation network
+</p>
+<p>histResults &lt;- histNetwork(M, sep = ";")
+</p>
+<p># Plot a historical co-citation network
+</p>
+<p>net &lt;- histPlot(histResults, size = 10)
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Massimo Aria [cre, aut, cph] (&lt;https://orcid.org/0000-0002-8517-9411&gt;),
+  Corrado Cuccurullo [aut] (&lt;https://orcid.org/0000-0002-7401-8575&gt;)
+</p>
+<p>Maintainer: Massimo Aria &lt;aria@unina.it&gt;
+</p>
+
+
+<h3>References</h3>
+
+<p>Aria, M. &amp; Cuccurullo, C. (2017).  *bibliometrix*: An R-tool for comprehensive science mapping analysis, *Journal of Informetrics*, 11(4), pp 959-975, Elsevier, DOI: 10.1016/j.joi.2017.08.007 (https://doi.org/10.1016/j.joi.2017.08.007).
+</p>
+<p>Cuccurullo, C., Aria, M., &amp; Sarto, F. (2016). Foundations and trends in performance management. A twenty-five years bibliometric analysis in business and public administration domains, *Scientometrics*, DOI: 10.1007/s11192-016-1948-8 (https://doi.org/10.1007/s11192-016-1948-8).
+</p>
+<p>Cuccurullo, C., Aria, M., &amp; Sarto, F.  (2015). Twenty years of research on performance management in business and public administration domains. Presentation at the *Correspondence Analysis and Related Methods conference (CARME 2015)* in September 2015 (https://www.bibliometrix.org/documents/2015Carme_cuccurulloetal.pdf).
+</p>
+<p>Sarto, F., Cuccurullo, C., &amp; Aria, M. (2014). Exploring healthcare governance literature: systematic review and paths for future research. *Mecosan* (https://www.francoangeli.it/Riviste/Scheda_Rivista.aspx?IDarticolo=52780&amp;lingua=en).
+</p>
+<p>Cuccurullo, C., Aria, M., &amp; Sarto, F. (2013). Twenty years of research on performance management in business and public administration domains. In *Academy of Management Proceedings* (Vol. 2013, No. 1, p. 14270). Academy of Management (https://doi.org/10.5465/AMBPP.2013.14270abstract).
+</p>
+
+
+</div>

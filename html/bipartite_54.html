@@ -1,0 +1,100 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>mgen</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Generate simulated network according to a given probability matrix</h2>
+
+<h3>Description</h3>
+
+<p>Generic network simulating algorithm based on a probability matrix and a desired number of interactions.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">mgen(web, n=sum(web), keep.species=TRUE, rep.cell=TRUE, autotransform="sum_warn")
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>web</code></td>
+<td>
+<p>a matrix with observation (interaction) probabilities, emerging from some considerations (model) external to this function; if an original network is used, it will be converted to a probability matrix by dividing it by its sum.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>n</code></td>
+<td>
+<p>number of interactions to allocate into the new matrix. Note that in rare cases, the number of interactions assigned may be larger than n due to <span class="option">keep.species=TRUE</span>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>keep.species</code></td>
+<td>
+<p>Ensure each species has at least one interaction? Random assignment of interactions may lead to empty columns or rows and hence reduce the dimensions of the simulated web. By default, this is prevented from happening, i.e. each row/column will receive at least one interaction. Setting <span class="option">keep.species</span> to FALSE may (but need not) cause a loss of species.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>rep.cell</code></td>
+<td>
+<p>Whether cells can be assigned interactions repeatedly; defaults to TRUE (quantitative webs); use FALSE for binary webs</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>autotransform</code></td>
+<td>
+<p>determines how a non-probability web is converted into probabilities; option <span class="option">"sum"</span> simply divides each entry by the sum of interactions in the web (i.e. probabilities will be proportional to web entries); option <span class="option">"sum_warn"</span> (the default) does the same, but with a warning;  option <span class="option">"equiprobable"</span> is an odd name for making probabilities proportional to the product of marginal totals</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>This is a generic function to simulate mutualistic networks, based on the original function with the same name used by Vázquez et al. (2009). This function can be used for different purposes, as it allows any type of probability matrix to be used for constructing the simulated matrices. However, this probability matrix must be derived from some other model, either fully synthetic or based on empirical data (if an observed network is given, it will sample from observed interactions, but this is not the typical use case). This function can thus be used for implementing various types of null models, but also highly structured or specialised webs.
+</p>
+<p>The use of an externally generated probability matrix is a key difference to <code>genweb</code> and functions (methods) in <code>nullmodel</code>. Nevertheless, <span class="option">autotransfrom="equiprobable"</span> turns <code>mgen</code> into a null model function, with interaction probabilities according to marginal totals (row and column sums). This null model does not fix row and column totals (otherwise it is similar to the <code>r2dtable</code> null model) nor connectance (in difference to <code>vaznull</code>); also, if <span class="option">keep.species=FALSE</span>, species may be lost (i.e. have no interactions) by chance.
+</p>
+<p>If <span class="option">rep.cell=TRUE</span>, repeated interactions are added, thus generating a quantitative matrix with cell values as positive integers. In this case, connectance is not fixed or constrained.
+If <span class="option">rep.cell=FALSE</span>, no repeated assignment of interactions is allowed, thus generating a binary matrix of zeros and ones. Note that when <span class="option">rep.cell=FALSE</span> the number of interactions to be assigned must be equal or lower than the number of (nonzero) cells in the matrix. If also <span class="option">keep.species=TRUE</span>, connectance is fixed (<code>n / prod(dim(web))</code>).
+</p>
+
+
+<h3>References</h3>
+
+<p>Vázquez, D. P.; Chacoff, N. P. &amp; Cagnolo, L. 2009. Evaluating multiple determinants of the structure of mutualistic networks. <em>Ecology</em> <b>90</b> 2039–2046
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## Generate simulated matrix from homogeneous probability matrix
+probmat &lt;- matrix(1/100, 10, 10)
+mgen(web=probmat, n=100)
+
+## Generate binary matrix with probability proportional to degree
+## of an observed binary matrix m
+obs.mat &lt;- matrix(c(1,1,1,1,1,1,1,1,1,0,1,1,1,0,0,1,1,0,0,0,1,0,0,0,0), 5, 5)
+rs &lt;- rowSums(obs.mat)
+cs &lt;- colSums(obs.mat)
+web &lt;- rs %*% t(cs)
+web &lt;- web/sum(web)
+n = sum(obs.mat)
+# Allowing zero marginal sums (but there will be none here):
+mgen(web, n, keep.species=FALSE, rep.cell=FALSE) 
+# Not allowing zero marginal sums:
+mgen(web, n, keep.species=TRUE, rep.cell=FALSE) 
+
+## Generate quantitative matrix with probability proportional
+## to interaction frequency in an observed matrix m:
+# Allowing zero marginal sums:
+mgen(mosquin1967, keep.species=FALSE, rep.cell=TRUE) 
+# Not allowing zero marginal sums: 
+mgen(mosquin1967, keep.species=TRUE, rep.cell=TRUE) 
+</code></pre>
+
+
+</div>

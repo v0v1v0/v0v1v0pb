@@ -1,0 +1,264 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>sam_GMCMC</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>
+General Markov Chain Monte Carlo for BAMLSS
+</h2>
+
+<h3>Description</h3>
+
+<p>These functions provide a quite general infrastructure for sampling BAMLSS. The default
+proposal function is based on iteratively weighted least squares (IWLS), however,
+each model term may have a different updating function, see the details.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">## Sampler functions:
+sam_GMCMC(x, y, family, start = NULL, weights = NULL, offset = NULL,
+  n.iter = 1200, burnin = 200, thin = 1, verbose = TRUE,
+  step = 20, propose = "iwlsC_gp", chains = NULL, ...)
+
+GMCMC(x, y, family, start = NULL, weights = NULL, offset = NULL,
+  n.iter = 1200, burnin = 200, thin = 1, verbose = TRUE,
+  step = 20, propose = "iwlsC_gp", chains = NULL, ...)
+
+## Propose functions:
+GMCMC_iwls(family, theta, id, eta, y, data,
+  weights = NULL, offset = NULL, ...)
+GMCMC_iwlsC(family, theta, id, eta, y, data,
+  weights = NULL, offset = NULL, zworking, resids, rho, ...)
+GMCMC_iwlsC_gp(family, theta, id, eta, y, data,
+  weights = NULL, offset = NULL, zworking, resids, rho, ...)
+GMCMC_slice(family, theta, id, eta, y, data, ...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>For function <code>bfit()</code> the <code>x</code> list, as returned from function
+<code>bamlss.frame</code>, holding all model matrices and other information that is used for
+fitting the model. For the updating functions an object as returned from function
+<code>smooth.construct</code> or <code>smoothCon</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>y</code></td>
+<td>
+<p>The model response, as returned from function <code>bamlss.frame</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>family</code></td>
+<td>
+<p>A <span class="pkg">bamlss</span> family object, see <code>family.bamlss</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>start</code></td>
+<td>
+<p>A named numeric vector containing possible starting values, the names are based on
+function <code>parameters</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>weights</code></td>
+<td>
+<p>Prior weights on the data, as returned from function <code>bamlss.frame</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>offset</code></td>
+<td>
+<p>Can be used to supply model offsets for use in fitting,
+returned from function <code>bamlss.frame</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>n.iter</code></td>
+<td>
+<p>Sets the number of MCMC iterations.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>burnin</code></td>
+<td>
+<p>Sets the burn-in phase of the sampler, i.e., the number of starting samples that
+should be removed.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>thin</code></td>
+<td>
+<p>Defines the thinning parameter for MCMC simulation. E.g., <code>thin = 10</code> means,
+that only every 10th sampled parameter will be stored.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>verbose</code></td>
+<td>
+<p>Print information during runtime of the algorithm.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>step</code></td>
+<td>
+<p>How many times should algorithm runtime information be printed, divides <code>n.iter</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>propose</code></td>
+<td>
+<p>Sets the propose function for model terms, e.g. for a term <code>s(x)</code> in the model
+formula. Per default this is set to <code>"iwlsC"</code>, a character pointing to the set of propose
+functions, see above. Other options are <code>"iwls"</code> and <code>"slice"</code>, however, this is
+more experimental and should not be set by the user. Another option is to pass a full propose
+function which should be used for each model term, the structure of propose functions is
+described in the details below. Model terms may also have different propose functions, see
+the example section.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>chains</code></td>
+<td>
+<p>How many chains should be started? Chains a sampled sequentially!</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>theta</code></td>
+<td>
+<p>The current state of parameters, provided as a named list. The first level
+represents the parameters of the distribution, the second level the parameters of
+the model terms. E.g., using the <code>gaussian_bamlss</code> family object
+<code>theta[["mu"]][["s(x)"]]</code> extracts the current state of a model term <code>"s(x)"</code>
+of the <code>"mu"</code> parameter. Extraction is done with the <code>id</code> argument.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>id</code></td>
+<td>
+<p>The parameter identifier, a character vector of length 2. The first character
+specifies the current distributional parameter, the second the current model term.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>eta</code></td>
+<td>
+<p>The current value of the predictors, provided as a named list, one list entry
+for each parameter. The names correspond to the parameter names in the family object,
+see <code>family.bamlss</code>. E.g., when using the <code>gaussian_bamlss</code> family
+object, the current values for the mean can be extracted by <code>eta\$mu</code> and for the
+standard deviation by <code>eta\$sigma</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+<p>An object as returned from function
+<code>smooth.construct</code> or <code>smoothCon</code>. The object is
+preprocessed by function <code>bamlss.engine.setup</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>zworking</code></td>
+<td>
+<p>Preinitialized numeric vector of <code>length(y)</code>, only for internal usage.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>resids</code></td>
+<td>
+<p>Preinitialized numeric vector of <code>length(y)</code>, only for internal usage.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>rho</code></td>
+<td>
+<p>An environment, only for internal usage.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Arguments passed to function <code>bamlss.engine.setup</code> and to the
+propose functions.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The sampler function <code>sam_GMCMC()</code> cycles through all distributional parameters and corresponding
+model terms in each iteration of the MCMC chain. Samples of the parameters of a model term (e.g.,
+<code>s(x)</code>) are generated by proposal functions, e.g. <code>GMCMC_iwls()</code>.
+</p>
+<p>The default proposal function that should be used for all model terms is set with argument
+<code>propose</code>. For smooth terms, e.g. terms created with function <code>s</code>, if
+a valid propose function is supplied within the extra <code>xt</code> list, this propose function will
+be used. This way each model term may have its own propose function for creating samples
+of the parameters. See the example section.
+</p>
+<p>The default proposal function <code>GMCMC_iwlsC_gp</code> allows for general priors for the
+smoothing variances and general penalty functions. Samples of smoothing variances are computed
+using slice sampling. Function <code>GMCMC_iwlsC</code> samples smoothing variances of univariate terms
+assuming an inverse gamma prior. Terms of higher dimensions use again slice sampling for creating
+samples of smoothing variances.
+</p>
+<p>Function <code>GMCMC_iwls</code> is similar to function <code>GMCMC_iwlsC</code> but uses plain <span style="font-family: Courier New, Courier; color: #666666;"><b>R</b></span> code.
+</p>
+<p>Function <code>GMCMC_slice</code> applies slice sampling also for the regression coefficients and
+is therefore relatively slow.
+</p>
+
+
+<h3>Value</h3>
+
+<p>The function returns samples of parameters, depending on the return value of the propose functions
+other quantities can be returned. The samples are provided as a <code>mcmc</code> matrix.
+If <code>chains &gt; 1</code>, the samples are provided as a <code>mcmc.list</code>.
+</p>
+
+
+<h3>References</h3>
+
+<p>Umlauf N, Klein N, Zeileis A (2016). Bayesian Additive Models for Location
+Scale and Shape (and Beyond). <em>(to appear)</em>
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>bamlss</code>, <code>bamlss.frame</code>,
+<code>bamlss.engine.setup</code>, <code>set.starting.values</code>, <code>s2</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## Not run: ## Simulated data example illustrating
+## how to call the sampler function.
+## This is done internally within
+## the setup of function bamlss().
+d &lt;- GAMart()
+f &lt;- num ~ s(x1, bs = "ps")
+bf &lt;- bamlss.frame(f, data = d, family = "gaussian")
+
+## First, find starting values with optimizer.
+opt &lt;- with(bf, bfit(x, y, family))
+
+## Sample.
+samps &lt;- with(bf, sam_GMCMC(x, y, family, start = opt$parameters))
+plot(samps)
+
+## End(Not run)
+</code></pre>
+
+
+</div>

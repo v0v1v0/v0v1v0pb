@@ -1,0 +1,134 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>bscui</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Build SVG Custom User Interface</h2>
+
+<h3>Description</h3>
+
+<p>Build SVG Custom User Interface
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">bscui(
+  svg_txt,
+  sanitize_attributes = TRUE,
+  width = NULL,
+  height = NULL,
+  elementId = NULL
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>svg_txt</code></td>
+<td>
+<p>a character with SVG code</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>sanitize_attributes</code></td>
+<td>
+<p>logical indicating if
+'&lt;' and '&gt;' characters in element attributes must be replaced by text</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>width, height</code></td>
+<td>
+<p>widget width: must be a valid CSS unit (like <code>'100\%'</code>,
+<code>'400px'</code>, <code>'auto'</code>) or a number, which will be coerced to a
+string and have <code>'px'</code> appended.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>elementId</code></td>
+<td>
+<p>hmtl identifier of the widget</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>An <code>htmlwidget</code> object
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">##################################@
+### Preparing data ----
+
+library(bscui)
+library(xml2)
+library(readr)
+library(dplyr)
+
+svg &lt;- xml2::read_xml(system.file(
+   "examples", "Animal_cells.svg.gz",
+   package="bscui"
+))
+info &lt;- readr::read_tsv(system.file(
+   "examples", "uniprot_cellular_locations.txt.gz",
+   package="bscui"
+), col_types=strrep("c", 6)) |&gt;
+   mutate(id = sub("-", "", `Subcellular location ID`))
+
+##################################@
+### Building the figure ----
+
+figure &lt;- bscui(svg) |&gt;
+   set_bscui_ui_elements(
+      info |&gt;
+         mutate(
+            ui_type = "selectable",
+            title = Name
+         ) |&gt;
+         select(id, ui_type, title)
+   ) |&gt;
+   set_bscui_styles(
+      info |&gt;
+         filter(Name == "Cytosol") |&gt;
+         mutate(fill = "#FF7F7F") |&gt;
+         select(id, fill)
+   ) |&gt;
+   set_bscui_attributes(
+      info |&gt;
+         filter(Name == "Cytoskeleton") |&gt;
+         mutate(display = "none") |&gt;
+         select(id, display)
+   ) |&gt;
+   set_bscui_selection("SL0188") |&gt;
+   set_bscui_options(zoom_min=1, clip=TRUE)
+figure
+
+##################################@
+### Saving the figure ----
+
+if(interactive()){
+   ## Temporary directory to save example file
+   tdir &lt;- tempdir()
+
+   ## Interactive html file
+   f_path &lt;- file.path(tdir, "figure.html")
+   figure |&gt; htmlwidgets::saveWidget(file=f_path)
+   cat(f_path)
+
+   ## PNG image
+   f_path &lt;- file.path(tdir, "figure.png")
+   figure |&gt;
+      set_bscui_options(show_menu = FALSE) |&gt;
+      export_bscui_to_image(file=f_path, zoom=2)
+   cat(f_path)
+}
+</code></pre>
+
+
+</div>

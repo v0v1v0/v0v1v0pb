@@ -1,0 +1,98 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>PaigeIntegrater</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Integrate manually-cleaned data from Paige Chesshire</h2>
+
+<h3>Description</h3>
+
+<p>Replaces publicly available data with data that has been manually cleaned and error-corrected for use in
+the paper Chesshire, P. R., Fischer, E. E., Dowdy, N. J., Griswold, T., Hughes, A. C., Orr, M. J., . . . McCabe, L. M. (In Press). Completeness analysis for over 3000 United States bee species identifies persistent data gaps. Ecography.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">PaigeIntegrater(db_standardized = NULL, PaigeNAm = NULL, columnStrings = NULL)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>db_standardized</code></td>
+<td>
+<p>A data frame or tibble. Occurrence records as input.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>PaigeNAm</code></td>
+<td>
+<p>A data frame or tibble. The Paige Chesshire dataset.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>columnStrings</code></td>
+<td>
+<p>A list of character vectors. Each vector is a set of columns that will be
+used to iteratively match the public dataset against the Paige dataset.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>Returns db_standardized (input occurrence records) with the Paige Chesshire data integrated.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## Not run: 
+library(dplyr)
+# set the DataPath to tempdir for this example
+DataPath &lt;- tempdir()
+# Integrate Paige Chesshire's cleaned dataset.
+PaigeNAm &lt;- readr::read_csv(paste(DataPath, "Paige_data", "NorAmer_highQual_only_ALLfamilies.csv",
+                                 sep = "/"), col_types = ColTypeR()) %&gt;%
+ # Change the column name from Source to dataSource to match the rest of the data.
+ dplyr::rename(dataSource = Source) %&gt;%
+ # add a NEW database_id column
+ dplyr::mutate(
+   database_id = paste0("Paige_data_", 1:nrow(.)),
+   .before = scientificName)
+
+ # Set up the list of character vectors to iteratively check for matches with public data.
+columnList &lt;- list(
+ c("decimalLatitude", "decimalLongitude", 
+   "recordNumber", "recordedBy", "individualCount", "samplingProtocol",
+   "associatedTaxa", "sex", "catalogNumber", "institutionCode", "otherCatalogNumbers",
+   "recordId", "occurrenceID", "collectionID"), # Iteration 1
+ c("catalogNumber", "institutionCode", "otherCatalogNumbers",
+   "recordId", "occurrenceID", "collectionID"), # Iteration 2
+ c("decimalLatitude", "decimalLongitude", 
+   "recordedBy", "genus", "specificEpithet"), # Iteration 3
+ c("id", "decimalLatitude", "decimalLongitude"), # Iteration 4
+ c("recordedBy", "genus", "specificEpithet", "locality"), # Iteration 5
+ c("recordedBy", "institutionCode", "genus", 
+   "specificEpithet","locality"),# Iteration 6
+ c("occurrenceID","decimalLatitude", "decimalLongitude"), # Iteration 7
+ c("catalogNumber","decimalLatitude", "decimalLongitude"), # Iteration 8
+ c("catalogNumber", "locality") # Iteration 9
+) 
+
+# Merge Paige's data with downloaded data
+db_standardized &lt;- BeeBDC::PaigeIntegrater(
+ db_standardized = db_standardized,
+ PaigeNAm = PaigeNAm,
+ columnStrings = columnList)
+
+## End(Not run)
+
+
+</code></pre>
+
+
+</div>

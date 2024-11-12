@@ -1,0 +1,254 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>bgeva</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Binary Generalized Extreme Value Additive Modelling</h2>
+
+<h3>Description</h3>
+
+ 
+<p><code>bgeva</code> can be used to fit regression models for binary rare events where the link function is the quantile function of 
+the Generalized Extreme Value random variable. The linear predictor can be flexibly specified using parametric and 
+regression spline components. Regression 
+spline bases are extracted from the package <code>mgcv</code>. Multi-dimensional smooths are available 
+via the use of penalized thin plate regression splines (isotropic). The current implementation does not support scale invariant tensor 
+product smooths. 
+</p>
+<p>Consider also using the faster and more stable version implemented in the <code>gamlss()</code> function of the 
+<code>SemiParBIVProbit</code> package. <code>gamlss()</code> also allows for a much wider choice of smoothers.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">bgeva(formula.eq, data=list(), tau=-0.25, Hes=TRUE, gIM="a", iterlimSP=50, 
+                  pr.tol=1e-6, 
+                  gamma=1, aut.sp=TRUE, fp=FALSE, start.v=NULL, start.vo=1, 
+                  rinit=1, rmax=100, fterm=sqrt(.Machine$double.eps), 
+                  mterm=sqrt(.Machine$double.eps),   
+                  control=list(maxit=50,tol=1e-6,step.half=25,
+                               rank.tol=sqrt(.Machine$double.eps)))
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+ 
+<table>
+<tr style="vertical-align: top;">
+<td><code>formula.eq</code></td>
+<td>
+<p>A GAM formula. <code>s</code> terms are used to specify smooth functions of 
+predictors. See the examples below and the documentation of <code>mgcv</code> for further details on GAM formula specifications.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+<p>An optional data frame, list or environment containing the variables in the model.  If not found in <code>data</code>, the
+variables are taken from <code>environment(formula)</code>, typically the environment from which <code>bgeva</code> is called.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>tau</code></td>
+<td>
+<p>Shape parameter of the GEV distribution. It must be provided.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Hes</code></td>
+<td>
+<p>If <code>FALSE</code>, then the Fisher (rather than the observed) information matrix is employed.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>gIM</code></td>
+<td>
+<p>Different versions of GEV distribution. Options are <code>a</code> and <code>b</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>iterlimSP</code></td>
+<td>
+<p>A positive integer specifying the maximum number of loops to be performed before the smoothing parameter estimation step is terminated.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>pr.tol</code></td>
+<td>
+<p>Tolerance to use in judging convergence of the algorithm when automatic smoothing parameter selection is used.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>gamma</code></td>
+<td>
+<p>It is an inflation factor for the model degrees of freedom in the UBRE score. Smoother models can be obtained setting 
+this parameter to a value greater than 1. Typically <code>gamma=1.4</code> achieves this.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>aut.sp</code></td>
+<td>
+<p>If <code>TRUE</code>, then automatic multiple smoothing parameter selection is carried out. If <code>FALSE</code>, then smoothing parameters 
+are set to the values obtained from the univariate fits.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>fp</code></td>
+<td>
+<p>If <code>TRUE</code>, then a fully parametric model with regression splines is fitted. See the example below.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>start.v</code></td>
+<td>
+<p>Starting values for the parameters can be provided here.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>start.vo</code></td>
+<td>
+<p>Default is 1 meaning that starting values are obtained from fitting a logistic model. Otherwise, these can be set as described in Calabrese and Osmetti (2013) (<code>start.vo=2</code>) or from a 
+combination of options 1 and 2 (<code>start.vo=3</code>).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>rinit</code></td>
+<td>
+<p>Starting trust region radius. The trust region radius is adjusted as the algorithm proceeds. See the documentation
+of <code>trust</code> for further details.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>rmax</code></td>
+<td>
+<p>Maximum allowed trust region radius. This may be set very large. If set small, the algorithm traces a steepest 
+descent path.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>fterm</code></td>
+<td>
+<p>Positive scalar giving the tolerance at which the difference in objective function values in a step is considered close 
+enough to zero to terminate the algorithm.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>mterm</code></td>
+<td>
+<p>Positive scalar giving the tolerance at which the two-term Taylor-series approximation to the difference in objective 
+function values in a step is considered close enough to zero to terminate the algorithm.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>control</code></td>
+<td>
+<p>It is a list containing iteration control constants with the following elements: <code>maxit</code>: maximum number of iterations of the 
+<code>magic</code> algorithm; <code>tol</code>: tolerance to use in judging convergence; <code>step.half</code>: if a trial step fails then 
+the method tries halving it up to a maximum of <code>step.half</code> times; <code>rank.tol</code>: constant used to test for numerical rank 
+deficiency of the problem. See the documentation of <code>magic</code> in <code>mgcv</code> for further details.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The Binary Generalized Extreme Value Additive model has the quantile function of the Generalized Extreme Value (GEV) random variable as link 
+function. The linear predictor is flexibly specified using 
+parametric components and smooth functions of covariates. Replacing the smooth components with their regression 
+spline expressions yields a fully parametric univariate GEV model. In principle, classic 
+maximum likelihood estimation can be employed. However, to avoid overfitting, penalized likelihood maximization has to be employed instead. Here the 
+use of 
+penalty matrices allows for the suppression of that part of smooth term complexity which has no support from the data. The trade-off 
+between smoothness 
+and fitness is controlled by smoothing parameters associated with the penalty matrices. Smoothing parameters are chosen to 
+minimize the approximate Un-Biased Risk Estimator (UBRE).
+</p>
+<p>More details can be found in Calabrese, Marra and Osmetti (2016).
+</p>
+<p>Consider also using the faster and more stable version implemented in the <code>gamlss()</code> function of the 
+<code>SemiParBIVProbit</code> package. <code>gamlss()</code> also allows for a much wider choice of smoothers.
+</p>
+
+
+<h3>Value</h3>
+
+<p>The function returns an object of class <code>bgeva</code> as described in <code>bgevaObject</code>.
+</p>
+
+
+<h3>WARNINGS</h3>
+
+<p>Any automatic smoothing parameter selection procedure is not likely to work well when the data have low information content. In binary models, this 
+issue is especially relevant the number of observations low. Here, convergence failure is
+typically associated with an infinite cycling between the two steps detailed above. If this occurs, as some practical solutions, one might 
+either (i) lower the total number of parameters to estimate by reducing the dimension of the regression spline 
+bases, (ii) set the smoothing parameters to the values obtained from the univariate fits (<code>aut.sp=FALSE</code>), or (iii) set the smoothing 
+parameters to the values obtained from the non-converged algorithm. The default option is (iii).
+</p>
+<p>The GEV distribution may not be defined for certain combinations of parameter and covariate values. In such cases, a sub-design matrix is formed. This 
+consists of the rows (of the original design matrix) for which the distributrion is defined.
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Maintainer: Giampiero Marra <a href="mailto:giampiero.marra@ucl.ac.uk">giampiero.marra@ucl.ac.uk</a>
+</p>
+
+
+<h3>References</h3>
+
+<p>Calabrese R., Marra G., Osmetti S.A. (2016), Bankruptcy Prediction of Small and Medium Enterprises Using a Flexible Binary Generalized Extreme Value Model. <em>Journal of the Operational Research Society</em>, 67(4), 604-615.
+</p>
+<p>Gu C. (1992), Cross validating non-Gaussian data. <em>Journal of Computational and Graphical Statistics</em>, 1(2), 169-179.
+</p>
+<p>Wood S.N. (2004), Stable and efficient multiple smoothing parameter estimation for generalized additive models. <em>Journal of the American Statistical Association</em>, 99(467), 673-686.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>plot.bgeva</code>, <code>bgeva-package</code>, <code>bgevaObject</code>, <code>summary.bgeva</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+library(bgeva)
+
+##########
+## EXAMPLE 
+##########
+
+set.seed(0)
+
+n &lt;- 1500
+
+x1 &lt;- round(runif(n))
+x2 &lt;- runif(n)
+x3 &lt;- runif(n)
+
+f1 &lt;- function(x) (cos(pi*2*x)) + sin(pi*x)
+f2 &lt;- function(x) (x+exp(-30*(x-0.5)^2))   
+
+y &lt;- as.integer(rlogis(n, location = -6 + 2*x1 + f1(x2) + f2(x3), scale = 1) &gt; 0)
+
+dataSim &lt;- data.frame(y,x1,x2,x3)
+
+out &lt;- bgeva(y ~ x1 + s(x2) + s(x3))
+bg.checks(out)
+
+summary(out)
+plot(out,scale=0,pages=1,shade=TRUE)
+
+
+#
+#
+
+</code></pre>
+
+
+</div>

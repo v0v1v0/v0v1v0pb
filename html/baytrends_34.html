@@ -1,0 +1,257 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>analysisOrganizeData</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Analysis Organization &amp; Data Preparation</h2>
+
+<h3>Description</h3>
+
+<p>This function assesses the user supplied specifications in the argument,
+analySpec, and prepares the data (argument df) for analysis. In those cases
+where the user doesn't supply a needed specification, a basic option is
+supplied by this function.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">analysisOrganizeData(
+  df,
+  analySpec = list(),
+  reports = c(0, 1, 2, 3, 4),
+  parameterList = NA,
+  stationMasterList = NA,
+  layerLukup = NA
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>df</code></td>
+<td>
+<p>Data frame of water quality data</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>analySpec</code></td>
+<td>
+<p>Specifications for analysis</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>reports</code></td>
+<td>
+<p>Optional reports about parameters, layers and stations
+[default = c(0,1,2,3)]</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>parameterList</code></td>
+<td>
+<p>User-supplied dataframe with list of parameters [default
+= NA]</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>stationMasterList</code></td>
+<td>
+<p>User-supplied dataframe with list of stations
+[default = NA]</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>layerLukup</code></td>
+<td>
+<p>User-supplied dataframe with list of layers [default = NA]</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The supplied data frame, df, is a data frame with the variables station,
+date, and layer included along with multiple additional columns for a
+variety of water quality variables structured as numeric fields or 
+survival::Surv objects. An example data frame, dataCensored, is included
+with baytrends as an example.
+</p>
+<p>The argument, analySpec, is a list that includes basic specifications for
+performing GAM analyses. The components in analySpec are identified below.
+The user may create analySpec (which can include all or some of the below
+components; and pass the user-supplied analySpec to this function. Or, the
+user may accept the default argument and allow analysisOrganizeData to
+create and return analySpec. If the user passes a user-supplied analySpec,
+then analysisOrganizeData will "fill in" required arguments not provided by
+the user. The user can also adjust analySpec after it is returned from
+analysisOrganizeData although requirements for down selecting the data frame,
+df, or aggregating data by layer would need to be passed to analysisOrganizeData.    
+</p>
+<p>The default setting for the argument report is to provide tabular summary
+reports about the parameters, stations, and layers to be analyzed. Setting
+report=NA will suppress the tabular summary reports.
+</p>
+<p>The user can supply their own parameterList, stationMasterList, or
+layerLukup data sets; or the user can use the example data frames included
+with baytrends.
+</p>
+<p>The following steps are performed by analysisOrganizeData:
+</p>
+<p>1) Review user supplied specifications through the analySpec argument. Fill
+in with default values. For example, if the user doesn't specify a dataframe
+with a list of stations, parameters, or layers, then the built-in data
+frames, baytrends::stationMasterList, baytrends::parameterList, and
+baytrends::layerLukup are used. Some other default values include the
+following: date range (1/1/1984-present), parameter list (all parameters in
+data set parameterList), layers (all layers in data set layerLukup), layer
+aggregation option (0, no aggregation), minimum number of observations to
+perform a GAM analysis (60), GAM formulas (Linear Trend with Seasonality,
+Non-linear Trend with Seasonality, and Non-linear trend with Seasonality
+(plus Interactions)), GAM alpha level for plots and output (0.05), periods
+for multi-time period analyses using GAM (Full Record, 1999/00-Present, and
+2005/06-Present), and seasons for sub-annual analyses using GAM (All,
+Spring1, Spring2, Summer1, Summer2, SAV1, SAV2, Winter, and Fall.)
+</p>
+<p>2) Based on the settings in analySpec, the data frame df, is down selected
+based on parameters, stations, dates, and layers. A dependent variable list
+(depVarList) is created that includes variable descriptions, units, and log
+transformation selections. A station list (stationList) is created that
+includes the station ID, a selected USGS gage for correlating flow, and
+latitude/longitude.  
+</p>
+<p>3) Aggregate data layers. If analySpec$layerAggOption is equal to 0, then
+there is no aggregation. The analySpec$layerAggOption of 1 would result in
+averaging (mean) surface and above pycnocline data. In this example, records
+with layer = "S" and layer = "AP" are relabeled as "SAP". Other
+layerAggOption values are 2) "B"&amp;"BP"; 3) "S"&amp;"AP" and "B"&amp;"BP"; 4) all
+layers; and 5) "S"&amp;"B", respectively. A layer list (layerList) is created
+and returned.
+</p>
+<p>4) Data are then averaged (mean) by date.  
+</p>
+<p>5) Date features are added. Columns for year, day of year (doy), decimal
+year (dyear), and month are added based on date. Note that the doy is based on 
+a 366 day calendar regardless of leap year.
+</p>
+<p>6) Reports on the number of records (0), parameters (1), layers (2) and
+stations (3) can be controlled with the reports option.
+</p>
+
+
+<h3>Value</h3>
+
+<p>Returns a list. Use dfr[["df"]] and dfr[["analySpec"]] to extract
+updated data frame and updated (or created) analySpec. analySpec is a list
+that includes the following components:
+</p>
+<p>analyTitle       - Analysis trend title
+</p>
+<p>parameterFilt    - Parameter filter used for data down selection
+</p>
+<p>stationFilt      - Station filter used for data down selection
+</p>
+<p>dateFilt         - Date filter for data down selection (default =  c( as.POSIXct('1984-01-01')
+, as.POSIXct(Sys.time())))
+</p>
+<p>setTZ            - time zone (default = "America/New_York")
+</p>
+<p>layerFilt        - Layer filter
+</p>
+<p>layerAggOption   - Layer averaging option (default = 0). Other options are:
+1: combine "S" &amp; "AP" ("SAP"); 2: combine "B" &amp; "BP" ("BBP"); 3: opt 1 &amp; 2
+("SAP", "BBP"); 4: combine all ("ALL")); 5: combine "S" and "B" ("SB")
+</p>
+<p>obsMin           - Minimum number of observations required to allow GAM
+analysis to proceed for a specific station, parameter, and layer
+combination (default = 60).
+</p>
+<p>obsMinInter      - Minimum number of observations required to allow GAM
+analysis to proceed for a specific intervention (default = 10).
+</p>
+<p>gamAlpha         - Alpha level used GAM analyses (default = 0.05).
+</p>
+<p>censorTrim       - Values to apply for trimming data due to too much
+censoring (default = c(0.5, 0.4)). First argument indicates fraction of
+observations in a year that are allowed to be censored. Second argument is
+the fraction of years, starting from the beginning of the record, that are
+allowed to be "flagged" for too much censoring. A minimum of two years must
+have too much censoring before data are removed. The default settings can
+be read as no more than 40 percent of the beginning years of data are
+allowed to have more than 50 percent censoring before the beginning portion
+of the record is trimmed. For example, years 1 and 3 of data have more than
+50 percent censoring then the first three years of data are trimmed.
+Similarly, for years 1 and 4, then the first four years are removed. If
+years 1 and 5 have more than 50 percent censoring the data are kept since
+2/5 is not greater than 0.4. Changing this setting to, say, c(0.2,0.4) would require
+that 80
+</p>
+<p>gamModels        - model formulations. See baytrends::loadModels() for 
+simplified approach for selecting which built-in models to include
+</p>
+<p>showGamNumOnPlot	- Show gam option (i.e., 0-6) on gam plots (TRUE/FALSE)
+</p>
+<p>gamDiffPeriods   - list of time periods (years) used for computing changes
+(differences). The default options are: full record, 1999/00-present, and
+2005/06-present.  
+</p>
+<p>gamDiffSeasons   - list List of seasons used for sub-annual analyses of
+computing differences. The default options include the following: All
+(months 1:12), Spring1 (3:5), Spring2 (months: 4:6)), Summer1 (months:
+6:9)), Summer2 (months: 7:9)), SAV1 (months: 4:10)), SAV2 (months:
+3:5,9:11)), Winter (months: 1:2)), and Fall (months: 10:12))).
+</p>
+<p>gamDiffNumChgYrs - number of years to use in computing differences.
+</p>
+<p>gamPenalty       - allow the user to set the mgcv::gam select argument to
+TRUE, FALSE, or baytrend algorithm default (default = NA). When the default
+option is specified, then the mgcv::gam select argument is set to FALSE
+when none of the data are censored; otherwise (when some censoring exists
+in the data set) the select argument is set to TRUE
+</p>
+<p>gamPenaltyCrit   - edf and F-stat values used to flag ANOVA table results
+(default = c(1, 9e9))
+</p>
+<p>gamCoeffDeltaMaxCrit - convergence criteria for expectation maximization
+(default = 1e-6)
+</p>
+<p>gamFlw_Sal.Wgt.Perc - percentiles of flow [or salinity] to use for
+computing flow [salinity] averaged result (default = c(0.05, 0.25, 0.50,
+0.75, 0.95))
+</p>
+<p>gamLegend        - default settings for gam figure legend
+</p>
+<p>idVar            - primary key for data frame returned as df
+</p>
+<p>depVarList       - data frame of dependent variables (useful for setting up gam analyses in for loops)
+</p>
+<p>stationList      - data frame of stations (useful for setting up gam analyses in for loops)
+</p>
+<p>layerList        - data frame of layers (useful for setting up gam analyses in for loops)
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R"># run analysis relying on default specifications, examine analySpec for
+# default options
+dfr &lt;- analysisOrganizeData(dataCensored)
+df        &lt;- dfr[["df"]]
+analySpec &lt;- dfr[["analySpec"]]
+
+# analyze bottom dissolved oxygen at 2 stations using only data from 1/1/1995-12/31/2015
+analySpec &lt;-list()
+analySpec$parameterFilt &lt;- c('do')
+analySpec$layerFilt     &lt;- c('B')
+analySpec$stationFilt   &lt;- c('CB3.3C', 'CB5.4')
+analySpec$dateFilt      &lt;- as.POSIXct(c("1995-01-01", "2015-12-31"))
+dfr &lt;- analysisOrganizeData(dataCensored, analySpec)
+df        &lt;- dfr[["df"]]
+analySpec &lt;- dfr[["analySpec"]]
+
+</code></pre>
+
+
+</div>

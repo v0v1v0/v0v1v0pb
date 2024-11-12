@@ -1,0 +1,271 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>hclu_hierarclust</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Hierarchical clustering based on dissimilarity or beta-diversity</h2>
+
+<h3>Description</h3>
+
+<p>This function generates a hierarchical tree from a dissimilarity
+(beta-diversity) <code>data.frame</code>, calculates the cophenetic correlation
+coefficient, and can get clusters from the tree if requested by the user.
+The function implements randomization of the dissimilarity matrix to
+generate the tree, with a selection method based on the optimal cophenetic
+correlation coefficient. Typically, the dissimilarity <code>data.frame</code> is a
+<code>bioregion.pairwise.metric</code> object obtained by running <code>similarity</code>
+or <code>similarity</code> and then <code>similarity_to_dissimilarity</code>.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">hclu_hierarclust(
+  dissimilarity,
+  index = names(dissimilarity)[3],
+  method = "average",
+  randomize = TRUE,
+  n_runs = 30,
+  keep_trials = FALSE,
+  optimal_tree_method = "best",
+  n_clust = NULL,
+  cut_height = NULL,
+  find_h = TRUE,
+  h_max = 1,
+  h_min = 0
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>dissimilarity</code></td>
+<td>
+<p>the output object from <code>dissimilarity()</code> or
+<code>similarity_to_dissimilarity()</code>, or a <code>dist</code> object.
+If a <code>data.frame</code> is used, the first two
+columns represent pairs of sites (or any pair of nodes), and the next
+column(s) are the dissimilarity indices.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>index</code></td>
+<td>
+<p>name or number of the dissimilarity column to use. By default,
+the third column name of <code>dissimilarity</code> is used.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>method</code></td>
+<td>
+<p>name of the hierarchical classification method, as in
+hclust. Should be one of "ward.D",
+"ward.D2", "single", "complete", "average"
+(= UPGMA), "mcquitty" (= WPGMA), "median" (= WPGMC) or
+"centroid" (= UPGMC).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>randomize</code></td>
+<td>
+<p>a <code>boolean</code> indicating if the dissimilarity matrix should be
+randomized, to account for the order of sites in the dissimilarity matrix.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>n_runs</code></td>
+<td>
+<p>number of trials to randomize the dissimilarity matrix.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>keep_trials</code></td>
+<td>
+<p>a <code>boolean</code> indicating if all random trial results.
+should be stored in the output object (set to FALSE to save space if your
+<code>dissimilarity</code> object is large).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>optimal_tree_method</code></td>
+<td>
+<p>a <code>character</code> indicating how the final tree
+should be obtained from all trials. The only option currently is
+"best", which means the tree with the best cophenetic correlation
+coefficient will be chosen.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>n_clust</code></td>
+<td>
+<p>an <code>integer</code> or an <code>integer</code> vector indicating the number of
+clusters to be obtained from the hierarchical tree, or the output from
+partition_metrics. Should not be used at the same time as
+<code>cut_height</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>cut_height</code></td>
+<td>
+<p>a <code>numeric</code> vector indicating the height(s) at which the
+tree should be cut. Should not be used at the same time as <code>n_clust</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>find_h</code></td>
+<td>
+<p>a <code>boolean</code> indicating if the height of cut should be found for
+the requested <code>n_clust</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>h_max</code></td>
+<td>
+<p>a <code>numeric</code> indicating the maximum possible tree height for
+the chosen <code>index</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>h_min</code></td>
+<td>
+<p>a <code>numeric</code> indicating the minimum possible height in the tree
+for the chosen <code>index</code>.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The function is based on hclust.
+The default method for the hierarchical tree is <code>average</code>, i.e.
+UPGMA as it has been recommended as the best method to generate a tree
+from beta diversity dissimilarity (Kreft and Jetz 2010).
+</p>
+<p>Clusters can be obtained by two methods:
+</p>
+
+<ul>
+<li>
+<p>Specifying a desired number of clusters in <code>n_clust</code>
+</p>
+</li>
+<li>
+<p>Specifying one or several heights of cut in <code>cut_height</code></p>
+</li>
+</ul>
+<p>To find an optimal number of clusters, see <code>partition_metrics()</code>
+</p>
+
+
+<h3>Value</h3>
+
+<p>A <code>list</code> of class <code>bioregion.clusters</code> with five slots:
+</p>
+
+<ol>
+<li>
+<p><strong>name</strong>: <code>character</code> containing the name of the algorithm
+</p>
+</li>
+<li>
+<p><strong>args</strong>: <code>list</code> of input arguments as provided by the user
+</p>
+</li>
+<li>
+<p><strong>inputs</strong>: <code>list</code> of characteristics of the clustering process
+</p>
+</li>
+<li>
+<p><strong>algorithm</strong>: <code>list</code> of all objects associated with the
+clustering procedure, such as original cluster objects
+</p>
+</li>
+<li>
+<p><strong>clusters</strong>: <code>data.frame</code> containing the clustering results</p>
+</li>
+</ol>
+<p>In the <code>algorithm</code> slot, users can find the following elements:
+</p>
+
+<ul>
+<li>
+<p><code>trials</code>: a list containing all randomization trials. Each trial
+contains the dissimilarity matrix, with site order randomized, the
+associated tree and the cophenetic correlation coefficient (Spearman) for
+that tree
+</p>
+</li>
+<li>
+<p><code>final.tree</code>: a <code>hclust</code> object containing the final
+hierarchical tree to be used
+</p>
+</li>
+<li>
+<p><code>final.tree.coph.cor</code>: the cophenetic correlation coefficient
+between the initial dissimilarity matrix and <code>final.tree</code>
+</p>
+</li>
+</ul>
+<h3>Author(s)</h3>
+
+<p>Boris Leroy (<a href="mailto:leroy.boris@gmail.com">leroy.boris@gmail.com</a>),
+Pierre Denelle (<a href="mailto:pierre.denelle@gmail.com">pierre.denelle@gmail.com</a>) and
+Maxime Lenormand (<a href="mailto:maxime.lenormand@inrae.fr">maxime.lenormand@inrae.fr</a>)
+</p>
+
+
+<h3>References</h3>
+
+<p>Kreft H, Jetz W (2010).
+“A framework for delineating biogeographical regions based on species distributions.”
+<em>Journal of Biogeography</em>, <b>37</b>, 2029–2053.
+</p>
+
+
+<h3>See Also</h3>
+
+<p>cut_tree
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">comat &lt;- matrix(sample(0:1000, size = 500, replace = TRUE, prob = 1/1:1001),
+20, 25)
+rownames(comat) &lt;- paste0("Site",1:20)
+colnames(comat) &lt;- paste0("Species",1:25)
+
+dissim &lt;- dissimilarity(comat, metric = "all")
+
+# User-defined number of clusters
+tree1 &lt;- hclu_hierarclust(dissim, n_clust = 5)
+tree1
+plot(tree1)
+str(tree1)
+tree1$clusters
+
+# User-defined height cut
+# Only one height
+tree2 &lt;- hclu_hierarclust(dissim, cut_height = .05)
+tree2
+tree2$clusters
+
+# Multiple heights
+tree3 &lt;- hclu_hierarclust(dissim, cut_height = c(.05, .15, .25))
+
+tree3$clusters # Mind the order of height cuts: from deep to shallow cuts
+# Info on each partition can be found in table cluster_info
+tree3$cluster_info
+plot(tree3)
+
+# Recut the tree afterwards
+tree3.1 &lt;- cut_tree(tree3, n = 5)
+
+tree4 &lt;- hclu_hierarclust(dissim, n_clust = 1:19)
+
+</code></pre>
+
+
+</div>

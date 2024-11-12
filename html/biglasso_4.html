@@ -1,0 +1,293 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>biglasso_path</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Direct interface to biglasso fitting, no preprocessing, path version</h2>
+
+<h3>Description</h3>
+
+<p>This function is intended for users who know exactly what they're doing and
+want complete control over the fitting process. It
+</p>
+
+<ul>
+<li>
+<p> does NOT add an intercept
+</p>
+</li>
+<li>
+<p> does NOT standardize the design matrix
+both of the above are critical steps in data analysis. However, a direct API
+has been provided for use in situations where the lasso fitting process is
+an internal component of a more complicated algorithm and standardization
+must be handled externally.
+</p>
+</li>
+</ul>
+<h3>Usage</h3>
+
+<pre><code class="language-R">biglasso_path(
+  X,
+  y,
+  r,
+  init = rep(0, ncol(X)),
+  xtx,
+  penalty = "lasso",
+  lambda,
+  alpha = 1,
+  gamma,
+  ncores = 1,
+  max.iter = 1000,
+  eps = 1e-05,
+  dfmax = ncol(X) + 1,
+  penalty.factor = rep(1, ncol(X)),
+  warn = TRUE,
+  output.time = FALSE,
+  return.time = TRUE
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>X</code></td>
+<td>
+<p>The design matrix, without an intercept. It must be a
+double type <code>bigmemory::big.matrix()</code> object.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>y</code></td>
+<td>
+<p>The response vector</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>r</code></td>
+<td>
+<p>Residuals (length n vector) corresponding to <code>init</code>.
+WARNING: If you supply an incorrect value of <code>r</code>, the
+solution will be incorrect.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>init</code></td>
+<td>
+<p>Initial values for beta.  Default: zero (length p vector)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>xtx</code></td>
+<td>
+<p>X scales: the jth element should equal <code>crossprod(X[,j])/n</code>.
+In particular, if X is standardized, one should pass
+<code>xtx = rep(1, p)</code>. WARNING: If you supply an incorrect value of
+<code>xtx</code>, the solution will be incorrect. (length p vector)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>penalty</code></td>
+<td>
+<p>String specifying which penalty to use. Default is 'lasso',
+Other options are 'SCAD' and 'MCP' (the latter are non-convex)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>lambda</code></td>
+<td>
+<p>A vector of numeric values the lasso tuning parameter.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>alpha</code></td>
+<td>
+<p>The elastic-net mixing parameter that controls the relative
+contribution from the lasso (l1) and the ridge (l2) penalty.
+The penalty is defined as:
+</p>
+<p style="text-align: center;"><code class="reqn"> \alpha||\beta||_1 + (1-\alpha)/2||\beta||_2^2.</code>
+</p>
+
+<p><code>alpha=1</code> is the lasso penalty, <code>alpha=0</code> the ridge penalty,
+<code>alpha</code> in between 0 and 1 is the elastic-net ("enet") penalty.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>gamma</code></td>
+<td>
+<p>Tuning parameter value for nonconvex penalty. Defaults are
+3.7 for <code>penalty = 'SCAD'</code> and 3 for <code>penalty = 'MCP'</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ncores</code></td>
+<td>
+<p>The number of OpenMP threads used for parallel computing.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>max.iter</code></td>
+<td>
+<p>Maximum number of iterations.  Default is 1000.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>eps</code></td>
+<td>
+<p>Convergence threshold for inner coordinate descent. The
+algorithm iterates until the maximum change in the objective
+after any coefficient update is less than <code>eps</code> times
+the null deviance. Default value is <code>1e-7</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>dfmax</code></td>
+<td>
+<p>Upper bound for the number of nonzero coefficients. Default is
+no upper bound.  However, for large data sets,
+computational burden may be heavy for models with a large
+number of nonzero coefficients.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>penalty.factor</code></td>
+<td>
+<p>A multiplicative factor for the penalty applied to
+each coefficient. If supplied, <code>penalty.factor</code> must be a numeric
+vector of length equal to the number of columns of <code>X</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>warn</code></td>
+<td>
+<p>Return warning messages for failures to converge and model
+saturation?  Default is TRUE.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>output.time</code></td>
+<td>
+<p>Whether to print out the start and end time of the model
+fitting. Default is FALSE.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>return.time</code></td>
+<td>
+<p>Whether to return the computing time of the model
+fitting. Default is TRUE.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p><code>biglasso_path()</code> works identically to <code>biglasso_fit()</code> except it offers the
+additional option of fitting models across a path of tuning parameter values.
+</p>
+<p>Note:
+</p>
+
+<ul>
+<li>
+<p> Hybrid safe-strong rules are turned off for <code>biglasso_fit()</code>, as these rely
+on standardization
+</p>
+</li>
+<li>
+<p> Currently, the function only works with linear regression
+(<code>family = 'gaussian'</code>).
+</p>
+</li>
+</ul>
+<h3>Value</h3>
+
+<p>An object with S3 class <code>"biglasso"</code> with following variables.
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>beta</code></td>
+<td>
+<p>A sparse matrix where rows are estimates a given coefficient across all values of lambda</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>iter</code></td>
+<td>
+<p>A vector of length <code>nlambda</code> containing the number of
+iterations until convergence</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>resid</code></td>
+<td>
+<p>Vector of residuals calculated from estimated coefficients.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>lambda</code></td>
+<td>
+<p>The sequence of regularization parameter values in the path.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>alpha</code></td>
+<td>
+<p>Same as in <code>biglasso()</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>loss</code></td>
+<td>
+<p>A vector containing either the residual sum of squares of the fitted model at each value of lambda.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>penalty.factor</code></td>
+<td>
+<p>Same as in <code>biglasso()</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>n</code></td>
+<td>
+<p>The number of observations used in the model fitting.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>y</code></td>
+<td>
+<p>The response vector used in the model fitting.</p>
+</td>
+</tr>
+</table>
+<h3>Author(s)</h3>
+
+<p>Tabitha Peter and Patrick Breheny
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">data(Prostate)
+X &lt;- cbind(1, Prostate$X)
+xtx &lt;- apply(X, 2, crossprod)/nrow(X)
+y &lt;- Prostate$y
+X.bm &lt;- as.big.matrix(X)
+init &lt;- rep(0, ncol(X))
+fit &lt;- biglasso_path(X = X.bm, y = y, r = y, init = init, xtx = xtx,
+  lambda = c(0.5, 0.1, 0.05, 0.01, 0.001), 
+  penalty.factor=c(0, rep(1, ncol(X)-1)), max.iter=2000)
+fit$beta
+  
+fit &lt;- biglasso_path(X = X.bm, y = y, r = y, init = init, xtx = xtx,
+  lambda = c(0.5, 0.1, 0.05, 0.01, 0.001), penalty='MCP',
+  penalty.factor=c(0, rep(1, ncol(X)-1)), max.iter = 2000)
+fit$beta
+</code></pre>
+
+
+</div>

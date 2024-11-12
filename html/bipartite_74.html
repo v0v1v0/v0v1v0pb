@@ -1,0 +1,121 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>nullmodel</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Generates null models for network analysis</h2>
+
+<h3>Description</h3>
+
+<p>A wrapper function for convenient generation of null models for quantitative and binary networks
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">nullmodel(web, N=1000, method="r2d", ...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>web</code></td>
+<td>
+<p>Web is a matrix representing the interactions observed between higher trophic level species (columns) and lower trophic level species (rows). Usually this will be number of pollinators on each species of plants or number of parasitoids on each species of prey.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>N</code></td>
+<td>
+<p>number of null models to be generated; defaults to 1000 (more might be better, less probably not).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>method</code></td>
+<td>
+<p>Null model type. Can be given as an integer or name: 1/"r2dtable", 2/"swap.web", 3/"vaznull", 4/"shuffle.web", 5/"mgen"; allows for partial match of names; methods 1 to 4 works for quantitative webs, 4 and 5 for binary.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>arguments to be passed to the function generating the specific null models, see there for options.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>ADVICE: Look at the same-named function in <span class="pkg">vegan</span>, as well as the long list of potential null models described in <code>commsim</code> in that package. It offers a richer and more standardised implementation of null models than this (earlier) function. In particular the method <span class="option">shuffle.web</span> is potentially confusing, as it calls <span class="pkg">bipartite</span>'s <code>shuffle.web</code> for quantitative networks, but <span class="pkg">vegan</span>'s <span class="option">quasiswab</span> algorithm for binary. Since <span class="pkg">vegan</span> also now offers the argument <span class="option">greedyqswap</span> for quantitative networks, please have a look at <span class="pkg">vegan</span>'s <code>nullmodel</code> function.
+</p>
+<p>This is only a wrapper function to facilitate and standardise the generation of null models.
+</p>
+<p>These null models assume that interaction weights are integers that represent frequencies that are “individually” counted, not decimal numbers. Multiplication by 1000 (say) and rounding does NOT necessarily make your value frequencies satisfy this assumption. Null models for “continuously quantitative” webs still have to be developed!
+</p>
+
+<p>A warning is returned when all entries in a quantitative network are 0 or 1 (which suggests a binary network).
+</p>
+
+
+<h3>Value</h3>
+
+<p>Returns a list of <code>N</code> null model-generated networks. Species names are (obviously) dropped.
+</p>
+
+
+<h3>Note</h3>
+
+<p>When a quantitative network contains only 1s (as may happen when sampling intensity is low), the quantitative null model will be extremely similar (often identical) to the observed network. This is no error. It is reflecting the fact that this network contains little (no) information beyond the abundances.
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p> Carsten F. Dormann <a href="mailto:carsten.dormann@biom.uni-freiburg.de">carsten.dormann@biom.uni-freiburg.de</a></p>
+
+
+<h3>See Also</h3>
+
+<p> For the functions generating the null model network: <code>shuffle.web</code>, <code>swap.web</code>, <code>vaznull</code>, <code>mgen</code>, <code>vegan::simulate</code> and <code>r2dtable</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## Not run: 
+	data(Safariland)
+	nullmodel(Safariland, N=2, method=1)
+	nullmodel(Safariland&gt;0, N=2, method=4)
+	# analysis example:
+	obs &lt;- unlist(networklevel(Safariland, index="weighted nestedness"))
+	nulls &lt;- nullmodel(Safariland, N=100, method=1)
+	null &lt;- unlist(sapply(nulls, networklevel, index="weighted nestedness")) #takes a while ...
+	
+	plot(density(null), xlim=c(min(obs, min(null)), max(obs, max(null))), 
+		main="comparison of observed with null model Patefield")
+	abline(v=obs, col="red", lwd=2)    
+	
+	praw &lt;- sum(null&gt;obs) / length(null)
+	ifelse(praw &gt; 0.5, 1-praw, praw)    # P-value
+	
+	# comparison of null model 4 and 5 for binary:
+	nulls4 &lt;- nullmodel(Safariland&gt;0, N=100, method=4)
+	nulls5 &lt;- nullmodel(Safariland&gt;0, N=100, method=5)
+	null4 &lt;- unlist(sapply(nulls4, networklevel, index="weighted nestedness"))
+	null5 &lt;- unlist(sapply(nulls5, networklevel, index="weighted nestedness"))
+	
+	
+	plot(density(null4), xlim=range(c(null4, null5)), lwd=2, 
+		main="comparison of null models")
+	lines(density(null5), col="red", lwd=2)
+	legend("topright", c("shuffle", "mgen"), col=c("black", "red"), lwd=c(2,2), 
+		bty="n", cex=1.5)
+	abline(v=networklevel(Safariland&gt;0, index="weighted nestedness"))
+	
+## End(Not run)
+</code></pre>
+
+
+</div>

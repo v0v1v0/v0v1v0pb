@@ -1,0 +1,348 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>brm_multiple</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Run the same <span class="pkg">brms</span> model on multiple datasets</h2>
+
+<h3>Description</h3>
+
+<p>Run the same <span class="pkg">brms</span> model on multiple datasets and then combine the
+results into one fitted model object. This is useful in particular for
+multiple missing value imputation, where the same model is fitted on multiple
+imputed data sets. Models can be run in parallel using the <span class="pkg">future</span>
+package.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">brm_multiple(
+  formula,
+  data,
+  family = gaussian(),
+  prior = NULL,
+  data2 = NULL,
+  autocor = NULL,
+  cov_ranef = NULL,
+  sample_prior = c("no", "yes", "only"),
+  sparse = NULL,
+  knots = NULL,
+  stanvars = NULL,
+  stan_funs = NULL,
+  silent = 1,
+  recompile = FALSE,
+  combine = TRUE,
+  fit = NA,
+  algorithm = getOption("brms.algorithm", "sampling"),
+  seed = NA,
+  file = NULL,
+  file_compress = TRUE,
+  file_refit = getOption("brms.file_refit", "never"),
+  ...
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>formula</code></td>
+<td>
+<p>An object of class <code>formula</code>,
+<code>brmsformula</code>, or <code>mvbrmsformula</code> (or one that can
+be coerced to that classes): A symbolic description of the model to be
+fitted. The details of model specification are explained in
+<code>brmsformula</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+<p>A <em>list</em> of data.frames each of which will be used to fit a
+separate model. Alternatively, a <code>mids</code> object from the <span class="pkg">mice</span>
+package.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>family</code></td>
+<td>
+<p>A description of the response distribution and link function to
+be used in the model. This can be a family function, a call to a family
+function or a character string naming the family. Every family function has
+a <code>link</code> argument allowing to specify the link function to be applied
+on the response variable. If not specified, default links are used. For
+details of supported families see <code>brmsfamily</code>. By default, a
+linear <code>gaussian</code> model is applied. In multivariate models,
+<code>family</code> might also be a list of families.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>prior</code></td>
+<td>
+<p>One or more <code>brmsprior</code> objects created by
+<code>set_prior</code> or related functions and combined using the
+<code>c</code> method or the <code>+</code> operator. See also <code>default_prior</code>
+for more help.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>data2</code></td>
+<td>
+<p>A <em>list</em> of named lists each of which will be used to fit a
+separate model. Each of the named lists contains objects representing data
+which cannot be passed via argument <code>data</code> (see <code>brm</code> for
+examples). The length of the outer list should match the length of the list
+passed to the <code>data</code> argument.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>autocor</code></td>
+<td>
+<p>(Deprecated) An optional <code>cor_brms</code> object
+describing the correlation structure within the response variable (i.e.,
+the 'autocorrelation'). See the documentation of <code>cor_brms</code> for
+a description of the available correlation structures. Defaults to
+<code>NULL</code>, corresponding to no correlations. In multivariate models,
+<code>autocor</code> might also be a list of autocorrelation structures.
+It is now recommend to specify autocorrelation terms directly
+within <code>formula</code>. See <code>brmsformula</code> for more details.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>cov_ranef</code></td>
+<td>
+<p>(Deprecated) A list of matrices that are proportional to the
+(within) covariance structure of the group-level effects. The names of the
+matrices should correspond to columns in <code>data</code> that are used as
+grouping factors. All levels of the grouping factor should appear as
+rownames of the corresponding matrix. This argument can be used, among
+others to model pedigrees and phylogenetic effects.
+It is now recommended to specify those matrices in the formula
+interface using the <code>gr</code> and related functions. See
+<code>vignette("brms_phylogenetics")</code> for more details.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>sample_prior</code></td>
+<td>
+<p>Indicate if draws from priors should be drawn
+additionally to the posterior draws. Options are <code>"no"</code> (the
+default), <code>"yes"</code>, and <code>"only"</code>. Among others, these draws can
+be used to calculate Bayes factors for point hypotheses via
+<code>hypothesis</code>. Please note that improper priors are not sampled,
+including the default improper priors used by <code>brm</code>. See
+<code>set_prior</code> on how to set (proper) priors. Please also note
+that prior draws for the overall intercept are not obtained by default
+for technical reasons. See <code>brmsformula</code> how to obtain prior
+draws for the intercept. If <code>sample_prior</code> is set to <code>"only"</code>,
+draws are drawn solely from the priors ignoring the likelihood, which
+allows among others to generate draws from the prior predictive
+distribution. In this case, all parameters must have proper priors.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>sparse</code></td>
+<td>
+<p>(Deprecated) Logical; indicates whether the population-level
+design matrices should be treated as sparse (defaults to <code>FALSE</code>). For
+design matrices with many zeros, this can considerably reduce required
+memory. Sampling speed is currently not improved or even slightly
+decreased. It is now recommended to use the <code>sparse</code> argument of
+<code>brmsformula</code> and related functions.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>knots</code></td>
+<td>
+<p>Optional list containing user specified knot values to be used
+for basis construction of smoothing terms. See
+<code>gamm</code> for more details.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>stanvars</code></td>
+<td>
+<p>An optional <code>stanvars</code> object generated by function
+<code>stanvar</code> to define additional variables for use in
+<span class="pkg">Stan</span>'s program blocks.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>stan_funs</code></td>
+<td>
+<p>(Deprecated) An optional character string containing
+self-defined  <span class="pkg">Stan</span> functions, which will be included in the functions
+block of the generated <span class="pkg">Stan</span> code. It is now recommended to use the
+<code>stanvars</code> argument for this purpose instead.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>silent</code></td>
+<td>
+<p>Verbosity level between <code>0</code> and <code>2</code>.
+If <code>1</code> (the default), most of the
+informational messages of compiler and sampler are suppressed.
+If <code>2</code>, even more messages are suppressed. The actual
+sampling progress is still printed. Set <code>refresh = 0</code> to turn this off
+as well. If using <code>backend = "rstan"</code> you can also set
+<code>open_progress = FALSE</code> to prevent opening additional progress bars.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>recompile</code></td>
+<td>
+<p>Logical, indicating whether the Stan model should be
+recompiled for every imputed data set. Defaults to <code>FALSE</code>. If
+<code>NULL</code>, <code>brm_multiple</code> tries to figure out internally, if recompilation
+is necessary, for example because data-dependent priors have changed.
+Using the default of no recompilation should be fine in most cases.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>combine</code></td>
+<td>
+<p>Logical; Indicates if the fitted models should be combined
+into a single fitted model object via <code>combine_models</code>.
+Defaults to <code>TRUE</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>fit</code></td>
+<td>
+<p>An instance of S3 class <code>brmsfit_multiple</code> derived from a
+previous fit; defaults to <code>NA</code>. If <code>fit</code> is of class
+<code>brmsfit_multiple</code>, the compiled model associated with the fitted
+result is re-used and all arguments modifying the model code or data are
+ignored. It is not recommended to use this argument directly, but to call
+the <code>update</code> method, instead.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>algorithm</code></td>
+<td>
+<p>Character string naming the estimation approach to use.
+Options are <code>"sampling"</code> for MCMC (the default), <code>"meanfield"</code> for
+variational inference with independent normal distributions,
+<code>"fullrank"</code> for variational inference with a multivariate normal
+distribution, <code>"pathfinder"</code> for the pathfinder algorithm,
+<code>"laplace"</code> for the laplace approximation,
+or <code>"fixed_param"</code> for sampling from fixed parameter
+values. Can be set globally for the current <span style="font-family: Courier New, Courier; color: #666666;"><b>R</b></span> session via the
+<code>"brms.algorithm"</code> option (see <code>options</code>).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>seed</code></td>
+<td>
+<p>The seed for random number generation to make results
+reproducible. If <code>NA</code> (the default), <span class="pkg">Stan</span> will set the seed
+randomly.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>file</code></td>
+<td>
+<p>Either <code>NULL</code> or a character string. In the latter case, the
+fitted model object is saved via <code>saveRDS</code> in a file named
+after the string supplied in <code>file</code>. The <code>.rds</code> extension is
+added automatically. If the file already exists, <code>brm</code> will load and
+return the saved model object instead of refitting the model.
+Unless you specify the <code>file_refit</code> argument as well, the existing
+files won't be overwritten, you have to manually remove the file in order
+to refit and save the model under an existing file name. The file name
+is stored in the <code>brmsfit</code> object for later usage.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>file_compress</code></td>
+<td>
+<p>Logical or a character string, specifying one of the
+compression algorithms supported by <code>saveRDS</code>. If the
+<code>file</code> argument is provided, this compression will be used when saving
+the fitted model object.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>file_refit</code></td>
+<td>
+<p>Modifies when the fit stored via the <code>file</code> argument
+is re-used. Can be set globally for the current <span style="font-family: Courier New, Courier; color: #666666;"><b>R</b></span> session via the
+<code>"brms.file_refit"</code> option (see <code>options</code>).
+For <code>"never"</code> (default) the fit is always loaded if it
+exists and fitting is skipped. For <code>"always"</code> the model is always
+refitted. If set to <code>"on_change"</code>, brms will
+refit the model if model, data or algorithm as passed to Stan differ from
+what is stored in the file. This also covers changes in priors,
+<code>sample_prior</code>, <code>stanvars</code>, covariance structure, etc. If you
+believe there was a false positive, you can use
+<code>brmsfit_needs_refit</code> to see why refit is deemed necessary.
+Refit will not be triggered for changes in additional parameters of the fit
+(e.g., initial values, number of iterations, control arguments, ...). A
+known limitation is that a refit will be triggered if within-chain
+parallelization is switched on/off.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Further arguments passed to <code>brm</code>.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The combined model may issue false positive convergence warnings, as
+the MCMC chains corresponding to different datasets may not necessarily
+overlap, even if each of the original models did converge. To find out
+whether each of the original models converged, subset the draws belonging
+to the individual models and then run convergence diagnostics.
+See Examples below for details.
+</p>
+
+
+<h3>Value</h3>
+
+<p>If <code>combine = TRUE</code> a <code>brmsfit_multiple</code> object, which
+inherits from class <code>brmsfit</code> and behaves essentially the same. If
+<code>combine = FALSE</code> a list of <code>brmsfit</code> objects.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## Not run: 
+library(mice)
+m &lt;- 5
+imp &lt;- mice(nhanes2, m = m)
+
+# fit the model using mice and lm
+fit_imp1 &lt;- with(lm(bmi ~ age + hyp + chl), data = imp)
+summary(pool(fit_imp1))
+
+# fit the model using brms
+fit_imp2 &lt;- brm_multiple(bmi ~ age + hyp + chl, data = imp, chains = 1)
+summary(fit_imp2)
+plot(fit_imp2, variable = "^b_", regex = TRUE)
+
+# investigate convergence of the original models
+library(posterior)
+draws &lt;- as_draws_array(fit_imp2)
+# every dataset has just one chain here
+draws_per_dat &lt;- lapply(1:m, \(i) subset_draws(draws, chain = i))
+lapply(draws_per_dat, summarise_draws, default_convergence_measures())
+
+# use the future package for parallelization
+library(future)
+plan(multisession, workers = 4)
+fit_imp3 &lt;- brm_multiple(bmi ~ age + hyp + chl, data = imp, chains = 1)
+summary(fit_imp3)
+
+## End(Not run)
+
+</code></pre>
+
+
+</div>

@@ -1,0 +1,222 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>generateRandomNKNetwork</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>
+Generate a random N-K Boolean network
+</h2>
+
+<h3>Description</h3>
+
+<p>Generates a random N-K Boolean network (see Kauffman, 1969) using different configurations for the topology, the linkage, and the functions.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">generateRandomNKNetwork(n, k, 
+                        topology = c("fixed", "homogeneous", "scale_free"), 
+                        linkage = c("uniform", "lattice"), 
+                        functionGeneration = c("uniform", "biased"), 
+                        validationFunction, failureIterations=10000,
+                        simplify = FALSE, noIrrelevantGenes=TRUE, 
+                        readableFunctions = FALSE, 
+                        d_lattice = 1, zeroBias = 0.5, 
+                        gamma = 2.5, approx_cutoff = 100)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>n</code></td>
+<td>
+
+<p>The total number of genes in the network
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>k</code></td>
+<td>
+
+<p>If this is a single number, this is either the maximum number of genes in the input of a transition function (for <code>topology="fixed"</code> and <code>topology="scale_free"</code>) or the mean number of genes in the input of a function (for <code>topology="homogeneous"</code>). If <code>topology="fixed"</code>, this can also be a vector with <code>n</code> elements specifying the number of input genes for each gene separately.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>topology</code></td>
+<td>
+
+<p>If set to "fixed", all transition functions of the network depend on exactly <code>k</code> input genes (unless there are irrelevant input genes to be removed if <code>simplify=TRUE</code> and <code>noIrrelevantGenes=FALSE</code>).
+</p>
+<p>If set to "homogeneous", the number of input genes is drawn independently at random from a Poisson distribution with lambda = k.
+</p>
+<p>If set to "scale_free", the number of input genes of each function is drawn from a Zeta distribution with parameter <code>gamma</code>.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>linkage</code></td>
+<td>
+
+<p>If this parameter is "uniform", the actual input genes are drawn uniformly at random from the total <code>k</code> genes.
+</p>
+<p>If set to "lattice", only genes from the neighbourhood <code>(i - d_lattice * k_i):(i + d_lattice * k_i)</code> are taken, which means that all genes are dependent from other genes in the direct neighbourhood.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>functionGeneration</code></td>
+<td>
+
+<p>This parameter specifies how the truth tables of the transition functions are generated. 
+If set to "uniform", the truth table result column of the function is filled uniformly at random with 0 and 1. If set to "biased", a bias is introduced, where the probability of drawing a 0 is determined by the parameter <code>zeroBias</code>.
+</p>
+<p>As a third option, <code>functionGeneration</code> can be set to a user-defined function that generates the truth tables. This function must have a single parameter <code>input</code> that is supplied with a vector of input gene indices. It must return a binary vector of size <code>2^length(input)</code> corresponding to the result column of the truth table. For the generation of canalyzing and nested canalyzing functions that are often assumed to be biologically plausible, the generation functions <code>generateCanalyzing</code> and <code>generateNestedCanalyzing</code> are included in <span class="pkg">BoolNet</span>.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>validationFunction</code></td>
+<td>
+
+<p>An optional function that restricts the generated Boolean functions to certain classes. This can be used if no explicit generation function can be specified in <code>functionGeneration</code>, but it is nevertheless possible to check whether a generated function belongs to that class or not. The function should have two input parameter <code>input</code> and <code>func</code> that receive a candidate function. <code>input</code> is a matrix of 0/1 integer values specifying the input part of the truth table of the candidate function, with the input genes in the columns. Each of the 2^k rows of <code>input</code>  (where k is the number of input genes) corresponds to one entry of <code>func</code>, which is an integer vector of 0/1 values corresponding to the output of the candidate function. The validation function should return <code>TRUE</code> if the candidate function is accepted or <code>FALSE</code> if it is rejected.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>failureIterations</code></td>
+<td>
+
+<p>The maximum number of iterations the generator tries to generate a function that is accepted by <code>validationFunction</code> before it gives up and throws an error. Defaults to 10000.  
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>simplify</code></td>
+<td>
+
+<p>If this is true, <code>simplifyNetwork</code> is called to simplify the gene transition functions after the perturbation. This removes irrelevant input genes. Should not be used together with <code>noIrrelevantGenes=TRUE</code>, as this automatically generates a network that cannot be simplified any further. Defaults to FALSE.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>noIrrelevantGenes</code></td>
+<td>
+
+<p>If set to true, gene transition functions are not allowed to contain irrelevant genes, i.e. the functions have exactly the number of input genes determined by the <code>topology</code> method. This means that the network cannot be simplified any further, and <code>simplify</code> should be turned off. The default value is TRUE.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>readableFunctions</code></td>
+<td>
+
+<p>This parameter specifies if readable DNF representations of the transition function truth tables are generated and displayed when the network is printed. If set to FALSE, the truth table result column is displayed. If set to "canonical", a canonical Disjunctive Normal Form is generated from each truth table. If set to "short", the canonical DNF is minimized by joining terms (which can be time-consuming for functions with many inputs). If set to TRUE, a short DNF is generated for functions with up to 12 inputs, and a canonical DNF is generated for functions with more than 12 inputs.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>d_lattice</code></td>
+<td>
+
+<p>The dimension parameter for the lattice if <code>linkage="lattice"</code>. Defaults to 1.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>zeroBias</code></td>
+<td>
+
+<p>The bias parameter for biased functions for <code>functionGeneration="biased"</code>. Defaults to 0.5 (no bias).
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>gamma</code></td>
+<td>
+
+<p>The Gamma parameter of the Zeta distribution for <code>topology="scale_free"</code>. Default is 2.5.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>approx_cutoff</code></td>
+<td>
+
+<p>This parameter is only used with <code>topology="scale_free"</code>. It sets the number of iterations in the sum used to approximate the Riemann Zeta function. Defaults to 100.
+</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The function supports a high number of different configurations to generate random networks. Several of the parameters are only needed for special configurations. The generated networks have different structural properties. Refer to the literature for more details.
+</p>
+<p>Constant genes are automatically fixed (e.g. knocked-out or over-expressed). This means that they are always set to the constant value, and states with the complementary value are not considered in transition tables etc. If you would like to change this behaviour, use <code>fixGenes</code> to reset the fixing.
+</p>
+
+
+<h3>Value</h3>
+
+<p>An object of class <code>BooleanNetwork</code> containing the generated random network. The class <code>BooleanNetwork</code> is described in more detail in <code>loadNetwork</code>.
+</p>
+
+
+<h3>References</h3>
+
+<p>S. A. Kauffman (1969), Metabolic stability and epigenesis in randomly constructed nets. J. Theor. Biol. 22:437–467.
+</p>
+<p>S. A. Kauffman (1993), The Origins of Order. Oxford University Press.
+</p>
+<p>M. Aldana (2003), Boolean dynamics of networks with scale-free topology. Physica D 185: 45–66.
+</p>
+<p>M. Aldana and S. Coppersmith and L. P. Kadanoff (2003), Boolean dynamics with random coupling. In E. Kaplan, J. E. Marsden  and K. R. Sreenivasan (editors): Perspectives and Problems in Nonlinear Science, Springer.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>perturbNetwork</code>,<code>loadNetwork</code>, <code>simplifyNetwork</code>, <code>fixGenes</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## Not run: 
+# generate different random networks
+net1 &lt;- generateRandomNKNetwork(n=10, k=10, 
+                                topology="scale_free", 
+                                linkage="uniform", 
+                                functionGeneration="uniform",
+                                noIrrelevantGenes=FALSE, 
+                                simplify=TRUE)
+                                
+net2 &lt;- generateRandomNKNetwork(n=10, k=3, 
+                                topology="homogeneous", 
+                                linkage="lattice", 
+                                functionGeneration="uniform", 
+                                d_lattice=1.5, 
+                                simplify=TRUE)
+                                
+net3 &lt;- generateRandomNKNetwork(n=10, k=2, 
+                                topology="fixed", 
+                                linkage="uniform", 
+                                functionGeneration="biased", 
+                                noIrrelevantGenes=FALSE,                                
+                                zeroBias=0.6)
+
+# get attractors
+print(getAttractors(net1))
+print(getAttractors(net2))
+print(getAttractors(net3))
+
+## End(Not run)
+</code></pre>
+
+
+</div>

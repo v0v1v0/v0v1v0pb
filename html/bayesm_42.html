@@ -1,0 +1,381 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>rhierMnlRwMixture</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>MCMC Algorithm for Hierarchical Multinomial Logit with Mixture-of-Normals Heterogeneity</h2>
+
+<h3>Description</h3>
+
+<p><code>rhierMnlRwMixture</code> is a MCMC algorithm for a hierarchical multinomial logit with a mixture of normals heterogeneity distribution. This is a hybrid Gibbs Sampler with a RW Metropolis step for the MNL coefficients for each panel unit. 
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">rhierMnlRwMixture(Data, Prior, Mcmc)</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>Data </code></td>
+<td>
+<p>list(lgtdata, Z, p)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Prior</code></td>
+<td>
+<p>list(a, deltabar, Ad, mubar, Amu, nu, V, a, ncomp, SignRes)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Mcmc </code></td>
+<td>
+<p>list(R, keep, nprint, s, w)</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+
+
+<h4>Model and Priors</h4>
+
+<p><code class="reqn">y_i</code> <code class="reqn">\sim</code> <code class="reqn">MNL(X_i,\beta_i)</code> with <code class="reqn">i = 1, \ldots,</code> length(lgtdata) 
+and where <code class="reqn">\beta_i</code> is <code class="reqn">nvar x 1</code>
+</p>
+<p><code class="reqn">\beta_i</code> = <code class="reqn">Z\Delta</code>[i,] + <code class="reqn">u_i</code> <br>
+Note:  Z<code class="reqn">\Delta</code> is the matrix Z * <code class="reqn">\Delta</code> and [i,] refers to <code class="reqn">i</code>th row of this product <br>
+Delta is an <code class="reqn">nz x nvar</code> array
+</p>
+<p><code class="reqn">u_i</code> <code class="reqn">\sim</code> <code class="reqn">N(\mu_{ind},\Sigma_{ind})</code> with <code class="reqn">ind</code> <code class="reqn">\sim</code> multinomial(pvec)
+</p>
+<p><code class="reqn">pvec</code>                <code class="reqn">\sim</code> dirichlet(a) <br><code class="reqn">delta = vec(\Delta)</code> <code class="reqn">\sim</code> <code class="reqn">N(deltabar, A_d^{-1})</code> <br><code class="reqn">\mu_j</code>               <code class="reqn">\sim</code> <code class="reqn">N(mubar, \Sigma_j (x) Amu^{-1})</code> <br><code class="reqn">\Sigma_j</code>            <code class="reqn">\sim</code> <code class="reqn">IW(nu, V)</code>
+</p>
+<p>Note: <code class="reqn">Z</code> should NOT include an intercept and is centered for ease of interpretation. 
+The mean of each of the <code>nlgt</code> <code class="reqn">\beta</code>s is the mean of the normal mixture. 
+Use <code>summary()</code> to compute this mean from the <code>compdraw</code> output.<br></p>
+<p>Be careful in assessing prior parameter <code>Amu</code>: 0.01 is too small for many applications. 
+See chapter 5 of Rossi et al for full discussion.
+</p>
+
+
+
+<h4>Argument Details</h4>
+
+<p><em><code>Data  = list(lgtdata, Z, p)</code> [<code>Z</code> optional]</em>
+</p>
+
+<table>
+<tr>
+<td style="text-align: left;">
+    <code>lgtdata:        </code> </td>
+<td style="text-align: left;"> list of <code>nlgt=length(lgtdata)</code> lists with each cross-section unit MNL data </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+    <code>lgtdata[[i]]$y: </code> </td>
+<td style="text-align: left;"> <code class="reqn">n_i x 1</code> vector of multinomial outcomes (1, ..., p) </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+    <code>lgtdata[[i]]$X: </code> </td>
+<td style="text-align: left;"> <code class="reqn">n_i*p x nvar</code> design matrix for <code class="reqn">i</code>th unit </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+    <code>Z:              </code> </td>
+<td style="text-align: left;"> <code class="reqn">nreg x nz</code> matrix of unit chars (def: vector of ones) </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+    <code>p:              </code> </td>
+<td style="text-align: left;"> number of choice alternatives 
+    </td>
+</tr>
+</table>
+<p><em><code>Prior = list(a, deltabar, Ad, mubar, Amu, nu, V, a, ncomp, SignRes)</code> [all but <code>ncomp</code> are optional]</em>
+</p>
+
+<table>
+<tr>
+<td style="text-align: left;">
+    <code>a:              </code> </td>
+<td style="text-align: left;"> <code class="reqn">ncomp x 1</code> vector of Dirichlet prior parameters (def: <code>rep(5,ncomp)</code>) </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+    <code>deltabar:       </code> </td>
+<td style="text-align: left;"> <code class="reqn">nz*nvar x 1</code> vector of prior means (def: 0) </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+    <code>Ad:             </code> </td>
+<td style="text-align: left;"> prior precision matrix for vec(D) (def: 0.01*I) </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+    <code>mubar:          </code> </td>
+<td style="text-align: left;"> <code class="reqn">nvar x 1</code> prior mean vector for normal component mean (def: 0 if unrestricted; 2 if restricted) </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+    <code>Amu:            </code> </td>
+<td style="text-align: left;"> prior precision for normal component mean (def: 0.01 if unrestricted; 0.1 if restricted) </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+    <code>nu:             </code> </td>
+<td style="text-align: left;"> d.f. parameter for IW prior on normal component Sigma (def: nvar+3 if unrestricted; nvar+15 if restricted) </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+    <code>V:              </code> </td>
+<td style="text-align: left;"> PDS location parameter for IW prior on normal component Sigma (def: nu*I if unrestricted; nu*D if restricted with d_pp = 4 if unrestricted and d_pp = 0.01 if restricted) </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+    <code>ncomp:          </code> </td>
+<td style="text-align: left;"> number of components used in normal mixture </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+    <code>SignRes:        </code> </td>
+<td style="text-align: left;"> <code class="reqn">nvar x 1</code> vector of sign restrictions on the coefficient estimates (def: <code>rep(0,nvar)</code>)
+    </td>
+</tr>
+</table>
+<p><em><code>Mcmc  = list(R, keep, nprint, s, w)</code> [only <code>R</code> required]</em>
+</p>
+
+<table>
+<tr>
+<td style="text-align: left;">
+    <code>R:              </code> </td>
+<td style="text-align: left;"> number of MCMC draws </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+    <code>keep:           </code> </td>
+<td style="text-align: left;"> MCMC thinning parameter -- keep every <code>keep</code>th draw (def: 1) </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+    <code>nprint:         </code> </td>
+<td style="text-align: left;"> print the estimated time remaining for every <code>nprint</code>'th draw (def: 100, set to 0 for no print) </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+    <code>s:              </code> </td>
+<td style="text-align: left;"> scaling parameter for RW Metropolis (def: 2.93/<code>sqrt(nvar)</code>) </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+    <code>w:              </code> </td>
+<td style="text-align: left;"> fractional likelihood weighting parameter (def: 0.1)
+    </td>
+</tr>
+</table>
+<h4>Sign Restrictions</h4>
+
+<p>If <code class="reqn">\beta_ik</code> has a sign restriction: <code class="reqn">\beta_ik = SignRes[k] * exp(\beta*_ik)</code>
+</p>
+<p>To use sign restrictions on the coefficients, <code>SignRes</code> must be an <code class="reqn">nvar x 1</code> vector containing values of either 0, -1, or 1. The value 0 means there is no sign restriction, -1 ensures that the coefficient is <em>negative</em>, and 1 ensures that the coefficient is <em>positive</em>. For example, if <code>SignRes = c(0,1,-1)</code>, the first coefficient is unconstrained, the second will be positive, and the third will be negative.
+</p>
+<p>The sign restriction is implemented such that if the the <code class="reqn">k</code>'th <code class="reqn">\beta</code> has a non-zero sign restriction (i.e., it is constrained), we have <code class="reqn">\beta_k = SignRes[k] * exp(\beta*_k)</code>.
+</p>
+<p>The sign restrictions (if used) will be reflected in the <code>betadraw</code> output. However, the unconstrained mixture components are available in <code>nmix</code>. <b>Important:</b> Note that draws from <code>nmix</code> are distributed according to the mixture of normals but <b>not</b> the coefficients in <code>betadraw</code>.
+</p>
+<p>Care should be taken when selecting priors on any sign restricted coefficients. See related vignette for additional information.
+</p>
+
+
+
+<h4>
+<code>nmix</code> Details</h4>
+
+<p><code>nmix</code> is a list with 3 components. Several functions in the <code>bayesm</code> package that involve a Dirichlet Process or mixture-of-normals return <code>nmix</code>. Across these functions, a common structure is used for <code>nmix</code> in order to utilize generic summary and plotting functions. 
+</p>
+
+<table>
+<tr>
+<td style="text-align: left;">
+  <code>probdraw:</code> </td>
+<td style="text-align: left;"> <code class="reqn">ncomp x R/keep</code> matrix that reports the probability that each draw came from a particular component </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+  <code>zdraw:   </code> </td>
+<td style="text-align: left;"> <code class="reqn">R/keep x nobs</code> matrix that indicates which component each draw is assigned to (here, null) </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+  <code>compdraw:</code> </td>
+<td style="text-align: left;"> A list of <code class="reqn">R/keep</code> lists of <code class="reqn">ncomp</code> lists. Each of the inner-most lists has 2 elemens: a vector of draws for <code>mu</code> and a matrix of draws for the Cholesky root of <code>Sigma</code>.
+  </td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>A list containing:
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>Deltadraw </code></td>
+<td>
+ <p><code class="reqn">R/keep x nz*nvar</code> matrix of draws of Delta, first row is initial value</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>betadraw  </code></td>
+<td>
+ <p><code class="reqn">nlgt x nvar x R/keep</code> array of beta draws</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nmix      </code></td>
+<td>
+<p> a list containing: <code>probdraw</code>, <code>zdraw</code>, <code>compdraw</code> (see “<code>nmix</code> Details” section)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>loglike   </code></td>
+<td>
+ <p><code class="reqn">R/keep x 1</code> vector of log-likelihood for each kept draw</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>SignRes   </code></td>
+<td>
+ <p><code class="reqn">nvar x 1</code> vector of sign restrictions</p>
+</td>
+</tr>
+</table>
+<h3>Note</h3>
+
+<p>Note: as of version 2.0-2 of <code>bayesm</code>, the fractional weight parameter has been changed to a weight between 0 and 1. 
+<code class="reqn">w</code> is the fractional weight on the normalized pooled likelihood. This differs from what is in Rossi et al chapter 5, i.e.
+</p>
+<p><code class="reqn">like_i^{(1-w)} x like_pooled^{((n_i/N)*w)}</code>
+</p>
+<p>Large <code>R</code> values may be required (&gt;20,000).
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Peter Rossi, Anderson School, UCLA, <a href="mailto:perossichi@gmail.com">perossichi@gmail.com</a>.</p>
+
+
+<h3>References</h3>
+
+<p>For further discussion, see Chapter 5, <em>Bayesian Statistics and Marketing</em> by Rossi, Allenby, and McCulloch.</p>
+
+
+<h3>See Also</h3>
+
+ <p><code>rmnlIndepMetrop</code> </p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">if(nchar(Sys.getenv("LONG_TEST")) != 0) {R=10000} else {R=10}
+set.seed(66)
+
+p = 3                                # num of choice alterns
+ncoef = 3  
+nlgt = 300                           # num of cross sectional units
+nz = 2
+Z = matrix(runif(nz*nlgt),ncol=nz)
+Z = t(t(Z) - apply(Z,2,mean))        # demean Z
+ncomp = 3                            # num of mixture components
+Delta = matrix(c(1,0,1,0,1,2),ncol=2)
+
+comps=NULL
+comps[[1]] = list(mu=c(0,-1,-2),   rooti=diag(rep(1,3)))
+comps[[2]] = list(mu=c(0,-1,-2)*2, rooti=diag(rep(1,3)))
+comps[[3]] = list(mu=c(0,-1,-2)*4, rooti=diag(rep(1,3)))
+pvec = c(0.4, 0.2, 0.4)
+
+##  simulate from MNL model conditional on X matrix
+simmnlwX= function(n,X,beta) {
+  k = length(beta)
+  Xbeta = X%*%beta
+  j = nrow(Xbeta) / n
+  Xbeta = matrix(Xbeta, byrow=TRUE, ncol=j)
+  Prob = exp(Xbeta)
+  iota = c(rep(1,j))
+  denom = Prob%*%iota
+  Prob = Prob/as.vector(denom)
+  y = vector("double",n)
+  ind = 1:j
+  for (i in 1:n) { 
+    yvec = rmultinom(1, 1, Prob[i,])
+    y[i] = ind%*%yvec
+  }
+  return(list(y=y, X=X, beta=beta, prob=Prob))
+}
+
+## simulate data
+simlgtdata = NULL
+ni = rep(50, 300)
+for (i in 1:nlgt) {
+  betai = Delta%*%Z[i,] + as.vector(rmixture(1,pvec,comps)$x)
+   Xa = matrix(runif(ni[i]*p,min=-1.5,max=0), ncol=p)
+   X = createX(p, na=1, nd=NULL, Xa=Xa, Xd=NULL, base=1)
+   outa = simmnlwX(ni[i], X, betai)
+   simlgtdata[[i]] = list(y=outa$y, X=X, beta=betai)
+}
+
+## plot betas
+if(0){
+  bmat = matrix(0, nlgt, ncoef)
+  for(i in 1:nlgt) {bmat[i,] = simlgtdata[[i]]$beta}
+  par(mfrow = c(ncoef,1))
+  for(i in 1:ncoef) { hist(bmat[,i], breaks=30, col="magenta") }
+}
+
+## set parms for priors and Z
+Prior1 = list(ncomp=5)
+keep = 5
+Mcmc1 = list(R=R, keep=keep)
+Data1 = list(p=p, lgtdata=simlgtdata, Z=Z)
+
+## fit model without sign constraints
+out1 = rhierMnlRwMixture(Data=Data1, Prior=Prior1, Mcmc=Mcmc1)
+
+cat("Summary of Delta draws", fill=TRUE)
+summary(out1$Deltadraw, tvalues=as.vector(Delta))
+
+cat("Summary of Normal Mixture Distribution", fill=TRUE)
+summary(out1$nmix)
+
+## plotting examples
+if(0) {
+  plot(out1$betadraw)
+  plot(out1$nmix)
+}
+
+## fit model with constraint that beta_i2 &lt; 0 forall i
+Prior2 = list(ncomp=5, SignRes=c(0,-1,0))
+out2 = rhierMnlRwMixture(Data=Data1, Prior=Prior2, Mcmc=Mcmc1)
+
+cat("Summary of Delta draws", fill=TRUE)
+summary(out2$Deltadraw, tvalues=as.vector(Delta))
+
+cat("Summary of Normal Mixture Distribution", fill=TRUE)
+summary(out2$nmix)
+
+## plotting examples
+if(0) {
+  plot(out2$betadraw)
+  plot(out2$nmix)
+}
+</code></pre>
+
+
+</div>

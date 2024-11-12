@@ -1,0 +1,221 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>performAnalyses</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>performAnalyses</h2>
+
+<h3>Description</h3>
+
+<p>This function performs the analysis of simulated or observed trial data with the
+specified methods
+and returns the quantiles of the posterior response rates
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">performAnalyses(
+  scenario_list,
+  evidence_levels = c(0.025, 0.05, 0.5, 0.8, 0.9, 0.95, 0.975),
+  method_names = c("berry", "exnex", "exnex_adj", "pooled", "stratified"),
+  target_rates = NULL,
+  prior_parameters_list = NULL,
+  calc_differences = NULL,
+  n_mcmc_iterations = 10000,
+  n_cores = 1,
+  seed = 1,
+  verbose = TRUE
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>scenario_list</code></td>
+<td>
+<p>An object of class <code>scenario_list</code>,
+as e.g. created with <code>simulateScenarios</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>evidence_levels</code></td>
+<td>
+<p>A vector of numerics in <code style="white-space: pre;">⁠(0, 1)⁠</code> for the
+<code>1-evidence_levels</code>-quantiles of the posterior response rates to be saved.
+Default: <code>c(0.025, 0.05, 0.5, 0.8, 0.9, 0.95, 0.975)</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>method_names</code></td>
+<td>
+<p>A vector of strings for the names of the methods to be used. Must
+be one of the default values, Default: <code>c("berry", "exnex", "exnex_adj", "pooled", "stratified")</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>target_rates</code></td>
+<td>
+<p>A vector of numerics in <code style="white-space: pre;">⁠(0, 1)⁠</code> for the
+target rates of each cohort, Default: <code>NULL</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>prior_parameters_list</code></td>
+<td>
+<p>An object of class <code>prior_parameters_list</code>,
+as e.g. created with <code>getPriorParameters</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>calc_differences</code></td>
+<td>
+<p>A matrix of positive integers with 2 columns.
+For each row the differences will be calculated.
+Also a vector of positive integers can be provided for a single difference.
+The integers are the numbers for the cohorts to be subtracted from one another.
+E.g. providing <code>c(2, 1)</code> calculates the difference between cohort <code>2</code> and cohort <code>1</code>.
+If <code>NULL</code>, no subtractions are performed, Default: <code>NULL</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>n_mcmc_iterations</code></td>
+<td>
+<p>A positive integer for the number of MCMC iterations,
+see Details, Default: <code>10000</code>.
+If <code>n_mcmc_iterations</code> is present in <code>.GlobalEnv</code> and <code>missing(n_mcmc_iterations)</code>,
+the globally available value will be used.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>n_cores</code></td>
+<td>
+<p>Argument is deprecated and does nothing as of version 0.9.3.
+A positive integer for the number of cores for the parallelization,
+Default: <code>1</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>seed</code></td>
+<td>
+<p>Argument is deprecated and does nothing as of version 0.9.3.
+A numeric for the random seed, Default: <code>1</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>verbose</code></td>
+<td>
+<p>A logical indicating whether messages should be printed, Default: <code>TRUE</code></p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>This function applies the following analysis models to (simulated) scenarios of class
+<code>scenario_list</code>:
+</p>
+
+<ul>
+<li>
+<p> Bayesian hierarchical model (BHM) proposed by Berry et al. (2013): <code>"berry"</code>
+</p>
+</li>
+<li>
+<p> BHM proposed by Neuenschwander et al. (2016): <code>"exnex"</code>
+</p>
+</li>
+<li>
+<p> BHM that combines above approaches: <code>"exnex_adj"</code>
+</p>
+</li>
+<li>
+<p> Pooled beta-binomial approach: <code>"pooled"</code>
+</p>
+</li>
+<li>
+<p> Stratified beta-binomial approach: <code>"stratified"</code>
+</p>
+</li>
+</ul>
+<p>The posterior distributions of the BHMs are approximated with Markov chain Monte Carlo (MCMC)
+methods implemented in JAGS.
+Two independent chains are used with each <code>n_mcmc_iterations</code> number of MCMC iterations.
+The first <code>floor(n_mcmc_iterations / 3)</code> number of iterations are discarded as burn-in period.
+No thinning is applied.
+</p>
+<p>Note that the value for <code>n_mcmc_iterations</code> required for a good approximation of the posterior
+distributions depends on the analysis model, the investigated scenarios, and the use case.
+The default value might be a good compromise between run-time and approximation for
+the estimation of decision probabilities, but
+it should definitively be increased for the analysis of a single trial's outcome.
+</p>
+<p>The analysis models will only be applied to the unique trial realizations across
+all simulated scenarios.
+The models can be applied in parallel by registering a parallel backend for the 'foreach'
+framework, e.g. with <code>doFuture::registerDoFuture()</code> and <code>future::plan(future::multisession)</code>.
+The parallelization is nested, so that the resources of a HPC environment can be used
+efficiently.
+For more on this topic, kindly see the respective vignette.
+The tasks that are to be performed in parallel are chunked according to the number of workers
+determined with <code>foreach::getDoParWorkers()</code>.
+</p>
+<p>The JAGS code for the BHM <code>"exnex"</code> was taken from Neuenschwander et al. (2016).
+The JAGS code for the BHM <code>"exnex_adj"</code> is based on the JAGS code for <code>"exnex"</code>.
+</p>
+
+
+<h3>Value</h3>
+
+<p>An object of class <code>analysis_list</code>.
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Stephan Wojciekowski
+</p>
+
+
+<h3>References</h3>
+
+<p>Berry, Scott M., et al. "Bayesian hierarchical modeling of patient subpopulations:
+efficient designs of phase II oncology clinical trials."
+<em>Clinical Trials</em> 10.5 (2013): 720-734.
+</p>
+<p>Neuenschwander, Beat, et al. "Robust exchangeability designs
+for early phase clinical trials with multiple strata."
+<em>Pharmaceutical statistics</em> 15.2 (2016): 123-134.
+</p>
+<p>Plummer, Martyn. "JAGS: A program for analysis of Bayesian graphical models
+using Gibbs sampling."
+<em>Proceedings of the 3rd international workshop on distributed statistical computing.</em>
+Vol. 124. No. 125.10. 2003.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>simulateScenarios</code>
+<code>createTrial</code>
+<code>getPriorParameters</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R"> trial_data &lt;- createTrial(
+   n_subjects   = c(10, 20, 30),
+   n_responders = c(1, 2, 3))
+
+ analysis_list &lt;- performAnalyses(
+   scenario_list      = trial_data,
+   target_rates       = rep(0.5, 3),
+   calc_differences   = matrix(c(3, 2, 1, 1), ncol = 2),
+   n_mcmc_iterations  = 100)
+</code></pre>
+
+
+</div>

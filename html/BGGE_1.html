@@ -1,0 +1,167 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>BGGE</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Genotype x Environment models using regression kernel</h2>
+
+<h3>Description</h3>
+
+<p>BGGE function fits Bayesian regression for continuous observations through regression kernels
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">BGGE(y, K, XF = NULL, ne, ite = 1000, burn = 200, thin = 3, verbose = FALSE, 
+            tol = 1e-10, R2 = 0.5)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>y</code></td>
+<td>
+<p>Vector of data. Should be numeric and NAs are allowed.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>K</code></td>
+<td>
+<p>list A two-level list Specify the regression kernels (co-variance matrix). The former is the <code>Kernel</code>,
+where is included the regression kernels. The later is the <code>Type</code>, specifying if the matrix is either <code>D</code> Dense or
+<code>BD</code> Block Diagonal. A number of regression kernels or random effects to be fitted are specified in this list.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>XF</code></td>
+<td>
+<p>matrix Design matrix (<code class="reqn">n \times p</code>) for fixed effects</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ne</code></td>
+<td>
+<p>vector Number of genotypes by environment.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ite</code></td>
+<td>
+<p>numeric Number of iterations.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>burn</code></td>
+<td>
+<p>numeric Number of iterations to be discarded as burn-in.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>thin</code></td>
+<td>
+<p>numeric Thinin interval.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>verbose</code></td>
+<td>
+<p>Should iteration history be printed on console? If TRUE or 1 then it is printed,
+otherwise, if another number $n$ is choosen the history is printed every $n$ times. The default is FALSE.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>tol</code></td>
+<td>
+<p>a numeric tolerance level. Eigenvalues lower than <code>tol</code> are discarded. Default is 1e-10.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>R2</code></td>
+<td>
+<p>the proportion of variance expected to be explained by the regression.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The goal is to fit genomic prediction models for continuous outcomes through Gibbs sampler. BGGE uses a proposal for dimension reduction
+through an orthogonal transformation of observed data (y) as well as differential shrinkage because of the prior variance assigned 
+to regression parameters. Further details on this approach can be found in Cuevas et al. (2014).
+The primaty genetic model is
+</p>
+<p style="text-align: center;"><code class="reqn">y = g + e</code>
+</p>
+
+<p>where <code class="reqn">y</code> is the response, <code class="reqn">g</code> is the unknown random effect and <code class="reqn">e</code> is the residual effect.
+You can specify a number of random effects <code class="reqn">g</code>, as many as desired, through a list of regression kernels related to each random effect in the
+argument <code>K</code>.
+The structure of <code>K</code> is a two level list, where the first element on the second level is the Kernel and the second element is a definition of
+type of matrix. There are two definitions, either matrix is <code>D</code> (dense) or <code>BD</code> (Block Diagonal). As we make the spectral decomposition 
+on the kernels, for block diagonal matrices, we take advantage of its structure and make decomposition on the submatrices instead of one big matrix.
+For example, the regression kernels should be an structure like K = list(list(Kernel = G, Type = "D"), list(Kernel = G, Type = "BD")). 
+The definition of one matrix as a block diagonal must be followed by the number of subjects in each submatrix in the block diagonal,
+present in the <code>ne</code>, which allows sub matrices to be drawn. Some genotype by environment models has the block diagonal matrix type or similar.
+The genotype x environment deviation matrix in MDs model (Sousa et al., 2017) has the structure of block diagonal. 
+Also, the matrices for environment-specific variance in MDe models (Sousa et al., 2017) if summed, can form a structure of block diagonal, 
+where is possible to extract sub matrices for each environment. In the case of all kernel be of the dense type, <code>ne</code> is ignored.
+</p>
+
+
+<h3>Value</h3>
+
+<p>A list with estimated posterior means of residual and genetic variance component for each term in the linear model and the genetic value predicted. Also the 
+values along with the chains are released.
+</p>
+
+
+<h3>References</h3>
+
+<p>Cuevas, J., Perez-Elizalde, S., Soberanis, V., Perez-Rodriguez, P., Gianola, D., &amp; Crossa, J. (2014).
+Bayesian genomic-enabled prediction as an inverse problem. G3: Genes, Genomes, Genetics, 4(10), 1991-2001.
+</p>
+<p>Sousa, M. B., Cuevas, J., Oliveira, E. G. C., Perez-Rodriguez, P., Jarquin, D., Fritsche-Neto, R., Burgueno, J. 
+&amp; Crossa, J. (2017). Genomic-enabled prediction in maize using kernel models with genotype x environment interaction.
+G3: Genes, Genomes, Genetics, 7(6), 1995-2014.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>BGLR</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R"># multi-environment main genotypic model
+library(BGLR)
+data(wheat)
+X&lt;-wheat.X[1:200,1:600]  # Subset of 200 subjects and 600 markers
+rownames(X) &lt;- 1:200
+Y&lt;-wheat.Y[1:200,]
+A&lt;-wheat.A[1:200,1:200] # Pedigree
+
+GB&lt;-tcrossprod(X)/ncol(X)
+K&lt;-list(G = list(Kernel = GB, Type = "D"))
+y&lt;-Y[,1]
+fit&lt;-BGGE(y = y,K = K, ne = length(y), ite = 300, burn = 100, thin = 2)
+
+# multi-environment main genotypic model
+Env &lt;- as.factor(c(2,3)) #subset of 2 environments
+pheno_geno &lt;- data.frame(env = gl(n = 2, k = nrow(Y), labels = Env),
+                         GID = gl(n = nrow(Y), k = 1,length = nrow(Y) * length(Env)),
+                         value = as.vector(Y[,2:3]))
+
+K &lt;- getK(Y = pheno_geno, X = X, kernel = "GB", model = "MM")
+y &lt;- pheno_geno[,3]
+fit &lt;- BGGE(y = y, K = K, ne = rep(nrow(Y), length(Env)), ite = 300, burn = 100,thin = 1)
+
+
+</code></pre>
+
+
+</div>

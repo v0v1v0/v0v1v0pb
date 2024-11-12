@@ -1,0 +1,224 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>BIFIE.pathmodel</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>
+Path Model Estimation
+</h2>
+
+<h3>Description</h3>
+
+<p>This function computes a path model. Predictors are allowed to possess
+measurement errors.
+Known measurement error variances (and covariances) or reliabilities
+can be specified by the user. Alternatively, a set of indicators can be
+defined for each latent variable, and for each imputed and replicated
+dataset the measurement error variance is determined by means
+of calculating the reliability Cronbachs alpha. Measurement errors
+are handled by adjusting covariance matrices (see Buonaccorsi, 2010, Ch. 5).
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">BIFIE.pathmodel( BIFIEobj, lavaan.model, reliability=NULL, group=NULL,
+        group_values=NULL, se=TRUE )
+
+## S3 method for class 'BIFIE.pathmodel'
+summary(object,digits=4,...)
+
+## S3 method for class 'BIFIE.pathmodel'
+coef(object,...)
+
+## S3 method for class 'BIFIE.pathmodel'
+vcov(object,...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>BIFIEobj</code></td>
+<td>
+
+<p>Object of class <code>BIFIEdata</code>
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>lavaan.model</code></td>
+<td>
+<p>String including the model specification in
+<span class="pkg">lavaan</span> syntax. <code>lavaan.model</code> also allows the
+extended functionality in the
+<code>TAM::lavaanify.IRT</code> function.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>reliability</code></td>
+<td>
+
+<p>Optional vector containing the reliabilities of each variable.
+This vector can also include only a subset of all variables.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>group</code></td>
+<td>
+
+<p>Optional grouping variable(s)
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>group_values</code></td>
+<td>
+
+<p>Optional vector of grouping values. This can be omitted and grouping
+values will be determined automatically.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>se</code></td>
+<td>
+<p>Optional logical indicating whether statistical inference
+based on replication should be employed.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>object</code></td>
+<td>
+<p>Object of class <code>BIFIE.pathmodel</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>digits</code></td>
+<td>
+<p>Number of digits for rounding output</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Further arguments to be passed</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The following conventions are used as parameter labels in the output.
+</p>
+<p><code>Y~X</code> is the regression coefficient of the regression from <code class="reqn">Y</code>
+on <code class="reqn">X</code>.
+</p>
+<p><code>X-&gt;Z-&gt;Y</code> denotes the path coefficient from <code class="reqn">X</code> to <code class="reqn">Y</code>
+passing the mediating variable <code class="reqn">Z</code>.
+</p>
+<p><code>X-+&gt;Y</code> denotes the total effect (of all paths) from <code class="reqn">X</code> to <code class="reqn">Y</code>.
+</p>
+<p><code>X-~&gt;Y</code> denotes the sum of all indirect effects from <code class="reqn">X</code> to <code class="reqn">Y</code>.
+</p>
+<p>The parameter suffix <code>_stand</code> refers to parameters for which
+all variables are standardized.
+</p>
+
+
+<h3>Value</h3>
+
+<p>A list with following entries
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>stat</code></td>
+<td>
+<p>Data frame with unstandardized and standardized regression
+coefficients, path coefficients, total and indirect effects,
+residual variances, and <code class="reqn">R^2</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>output</code></td>
+<td>
+<p>Extensive output with all replicated statistics</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>More values</p>
+</td>
+</tr>
+</table>
+<h3>References</h3>
+
+<p>Buonaccorsi, J. P. (2010).
+<em>Measurement error: Models, methods, and applications</em>. CRC Press.
+</p>
+
+
+<h3>See Also</h3>
+
+<p>See the <span class="pkg">lavaan</span> and <b>lavaan.survey</b> package.
+</p>
+<p>For the <code>lavaan</code> syntax, see
+<code>lavaan::lavaanify</code> and
+<code>TAM::lavaanify.IRT</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## Not run: 
+#############################################################################
+# EXAMPLE 1: Path model data.bifie01
+#############################################################################
+
+data(data.bifie01)
+dat &lt;- data.bifie01
+# create dataset with replicate weights and plausible values
+bifieobj &lt;- BIFIEsurvey::BIFIE.data.jack( data=dat,  jktype="JK_TIMSS",
+                jkzone="JKCZONE", jkrep="JKCREP", wgt="TOTWGT",
+                pv_vars=c("ASMMAT","ASSSCI") )
+
+#**************************************************************
+#*** Model 1: Path model
+lavmodel1 &lt;- "
+     ASMMAT ~ ASBG07A + ASBG07B  + ASBM03 + ASBM02A + ASBM02E
+     # define latent variable with 2nd and 3rd item in reversed scoring
+     ASBM03=~ 1*ASBM03A + (-1)*ASBM03B + (-1)*ASBM03C + 1*ASBM03D
+     ASBG07A ~ ASBM02E
+     ASBG07A ~~ .2*ASBG07A    # measurement error variance of .20
+     ASBM02E ~~ .45*ASBM02E     # measurement error variance of .45
+     ASBM02E ~ ASBM02A + ASBM02B
+        "
+#--- Model 1a: model calculated by gender
+mod1a &lt;- BIFIEsurvey::BIFIE.pathmodel( bifieobj, lavmodel1, group="female" )
+summary(mod1a)
+
+#--- Model 1b: Input of some known reliabilities
+reliability &lt;- c( "ASBM02B"=.6, "ASBM02A"=.8 )
+mod1b &lt;- BIFIEsurvey::BIFIE.pathmodel( bifieobj, lavmodel1, reliability=reliability)
+summary(mod1b)
+
+#**************************************************************
+#*** Model 2: Linear regression with errors in predictors
+
+# specify lavaan model
+lavmodel2 &lt;- "
+     ASMMAT ~ ASBG07A + ASBG07B + ASBM03A
+     ASBG07A ~~ .2*ASBG07A
+        "
+mod2 &lt;- BIFIEsurvey::BIFIE.pathmodel( bifieobj, lavmodel2  )
+summary(mod2)
+
+## End(Not run)
+</code></pre>
+
+
+</div>

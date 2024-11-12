@@ -1,0 +1,256 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>bm_raster</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Make Black Marble Raster</h2>
+
+<h3>Description</h3>
+
+<p>Make a raster of nighttime lights from <a href="https://blackmarble.gsfc.nasa.gov/">NASA Black Marble data</a>
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">bm_raster(
+  roi_sf,
+  product_id,
+  date,
+  bearer,
+  variable = NULL,
+  quality_flag_rm = NULL,
+  check_all_tiles_exist = TRUE,
+  interpol_na = FALSE,
+  output_location_type = "memory",
+  file_dir = NULL,
+  file_prefix = NULL,
+  file_skip_if_exists = TRUE,
+  file_return_null = FALSE,
+  h5_dir = NULL,
+  quiet = FALSE,
+  ...
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>roi_sf</code></td>
+<td>
+<p>Region of interest; sf polygon. Must be in the <a href="https://epsg.io/4326">WGS 84 (epsg:4326)</a> coordinate reference system.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>product_id</code></td>
+<td>
+<p>One of the following:
+</p>
+
+<ul>
+<li> <p><code>"VNP46A1"</code>: Daily (raw)
+</p>
+</li>
+<li> <p><code>"VNP46A2"</code>: Daily (corrected)
+</p>
+</li>
+<li> <p><code>"VNP46A3"</code>: Monthly
+</p>
+</li>
+<li> <p><code>"VNP46A4"</code>: Annual
+</p>
+</li>
+</ul>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>date</code></td>
+<td>
+<p>Date of raster data. Entering one date will produce a <code>SpatRaster</code> object. Entering multiple dates will produce a <code>SpatRaster</code> object with multiple bands; one band per date.
+</p>
+
+<ul>
+<li>
+<p> For <code>product_id</code>s <code>"VNP46A1"</code> and <code>"VNP46A2"</code>, a date (eg, <code>"2021-10-03"</code>).
+</p>
+</li>
+<li>
+<p> For <code>product_id</code> <code>"VNP46A3"</code>, a date or year-month (e.g., <code>"2021-10-01"</code>, where the day will be ignored, or <code>"2021-10"</code>).
+</p>
+</li>
+<li>
+<p> For <code>product_id</code> <code>"VNP46A4"</code>, year or date  (e.g., <code>"2021-10-01"</code>, where the month and day will be ignored, or <code>2021</code>).
+</p>
+</li>
+</ul>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>bearer</code></td>
+<td>
+<p>NASA bearer token. For instructions on how to create a token, see <a href="https://github.com/worldbank/blackmarbler#bearer-token-">here</a>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>variable</code></td>
+<td>
+<p>Variable to used to create raster (default: <code>NULL</code>). If <code>NULL</code>, uses the following default variables:
+</p>
+
+<ul>
+<li>
+<p> For <code>product_id</code> <code style="white-space: pre;">⁠:VNP46A1"⁠</code>, uses <code>DNB_At_Sensor_Radiance_500m</code>.
+</p>
+</li>
+<li>
+<p> For <code>product_id</code> <code>"VNP46A2"</code>, uses <code>Gap_Filled_DNB_BRDF-Corrected_NTL</code>.
+</p>
+</li>
+<li>
+<p> For <code>product_id</code>s <code>"VNP46A3"</code> and <code>"VNP46A4"</code>, uses <code>NearNadir_Composite_Snow_Free</code>.
+For information on other variable choices, see <a href="https://ladsweb.modaps.eosdis.nasa.gov/api/v2/content/archives/Document%20Archive/Science%20Data%20Product%20Documentation/VIIRS_Black_Marble_UG_v1.2_April_2021.pdf">here</a>; for <code>VNP46A1</code>, see Table 3; for <code>VNP46A2</code> see Table 6; for <code>VNP46A3</code> and <code>VNP46A4</code>, see Table 9.
+</p>
+</li>
+</ul>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>quality_flag_rm</code></td>
+<td>
+<p>Quality flag values to use to set values to <code>NA</code>. Each pixel has a quality flag value, where low quality values can be removed. Values are set to <code>NA</code> for each value in ther <code>quality_flag_rm</code> vector. (Default: <code>NULL</code>).
+</p>
+<p>For <code>VNP46A1</code> and <code>VNP46A2</code> (daily data):
+</p>
+
+<ul>
+<li> <p><code>0</code>: High-quality, Persistent nighttime lights
+</p>
+</li>
+<li> <p><code>1</code>: High-quality, Ephemeral nighttime Lights
+</p>
+</li>
+<li> <p><code>2</code>: Poor-quality, Outlier, potential cloud contamination, or other issues
+</p>
+</li>
+</ul>
+<p>For <code>VNP46A3</code> and <code>VNP46A4</code> (monthly and annual data):
+</p>
+
+<ul>
+<li> <p><code>0</code>: Good-quality, The number of observations used for the composite is larger than 3
+</p>
+</li>
+<li> <p><code>1</code>: Poor-quality, The number of observations used for the composite is less than or equal to 3
+</p>
+</li>
+<li> <p><code>2</code>: Gap filled NTL based on historical data
+</p>
+</li>
+</ul>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>check_all_tiles_exist</code></td>
+<td>
+<p>Check whether all Black Marble nighttime light tiles exist for the region of interest. Sometimes not all tiles are available, so the full region of interest may not be covered. If <code>TRUE</code>, skips cases where not all tiles are available. (Default: <code>TRUE</code>).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>interpol_na</code></td>
+<td>
+<p>When data for more than one date is downloaded, whether to interpolate <code>NA</code> values using the <code>terra::approximate</code> function. Additional arguments for the <code>terra::approximate</code> function can also be passed into <code>bm_raster</code> (eg, <code>method</code>, <code>rule</code>, <code>f</code>, <code>ties</code>, <code>z</code>, <code>NA_rule</code>). (Default: <code>FALSE</code>).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>output_location_type</code></td>
+<td>
+<p>Where to produce output; either <code>memory</code> or <code>file</code>. If <code>memory</code>, functions returns a raster in R. If <code>file</code>, function exports a <code>.tif</code> file and returns <code>NULL</code>.
+For <code>output_location_type = file</code>:</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>file_dir</code></td>
+<td>
+<p>The directory where data should be exported (default: <code>NULL</code>, so the working directory will be used)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>file_prefix</code></td>
+<td>
+<p>Prefix to add to the file to be saved. The file will be saved as the following: <code style="white-space: pre;">⁠[file_prefix][product_id]_t[date].tif⁠</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>file_skip_if_exists</code></td>
+<td>
+<p>Whether the function should first check wither the file already exists, and to skip downloading or extracting data if the data for that date if the file already exists (default: <code>TRUE</code>).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>file_return_null</code></td>
+<td>
+<p>Whether to return <code>NULL</code> instead of a <code>SpatRaster</code>. When <code>output_location_type = 'file'</code>, the function will export data to the <code>file_dir</code> directory. When <code>file_return_null = FALSE</code>, the function will also return a <code>SpatRaster</code> of the queried data—so the data is available in R memory. Setting <code>file_return_null = TRUE</code>, data will be saved to <code>file_dir</code> but no data will be returned by the function to R memory (default: <code>FALSE</code>).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>h5_dir</code></td>
+<td>
+<p>Black Marble data are originally downloaded as <code>h5</code> files. If <code>h5_dir = NULL</code>, the function downloads to a temporary directory then deletes the directory. If <code>h5_dir</code> is set to a path, <code>h5</code> files are saved to that directory and not deleted. The function will then check if the needed <code>h5</code> file already exists in the directory; if it exists, the function will not re-download the <code>h5</code> file.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>quiet</code></td>
+<td>
+<p>Suppress output that show downloading progress and other messages. (Default: <code>FALSE</code>).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Additional arguments for <code>terra::approximate</code>, if <code>interpol_na = TRUE</code></p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>Raster
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## Not run: 
+# Define bearer token
+bearer &lt;- "BEARER-TOKEN-HERE"
+
+# sf polygon of Ghana
+library(geodata)
+roi_sf &lt;- gadm(country = "GHA", level=0, path = tempdir()) %&gt;% st_as_sf()
+
+# Daily data: raster for October 3, 2021
+ken_20210205_r &lt;- bm_raster(roi_sf = roi_sf,
+                            product_id = "VNP46A2",
+                            date = "2021-10-03",
+                            bearer = bearer)
+
+# Monthly data: raster for March 2021
+ken_202103_r &lt;- bm_raster(roi_sf = roi_sf,
+                          product_id = "VNP46A3",
+                          date = "2021-03-01",
+                          bearer = bearer)
+
+# Annual data: raster for 2021
+ken_2021_r &lt;- bm_raster(roi_sf = roi_sf,
+                        product_id = "VNP46A4",
+                        date = 2021,
+                        bearer = bearer)
+
+## End(Not run)
+
+</code></pre>
+
+
+</div>

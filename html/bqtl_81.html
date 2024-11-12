@@ -1,0 +1,196 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>swapbc1</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>
+Sample BC1 or Recombinant Inbred loci  via approximate posterior.
+</h2>
+
+<h3>Description</h3>
+
+<p>An MCMC sampler for loci using precomputed dispersion matrices,
+various priors, and a pre-selected set of variables.  For use with BC1
+(backcross) designs and recombinant inbred lines.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">swapbc1(varcov, invars, rparm, nreps, ana.obj, locs=NULL,
+locs.prior=NULL, tol=1e-10 )
+
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>varcov</code></td>
+<td>
+<p> The result of <code> make.varcov</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>rparm</code></td>
+<td>
+<p> Scalar or vector with <code>nrow(varcov$var.x)</code> elements;
+the 'ridge' parameters for the independent variables - larger values
+imply more shrinkage or a more concentrated prior for the regresion
+coefficients. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nreps</code></td>
+<td>
+<p>How many cycles of MCMC to perform</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ana.obj</code></td>
+<td>
+<p>A object produced by <code>make.analysis.obj</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>invars</code></td>
+<td>
+
+<p>Which variables to start in the model. The first of these is
+immediately removed, so it is merely a placeholder.  The number of
+genes in the model is therefore <code>k &lt;- length(invars)</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>locs</code></td>
+<td>
+
+<p>The columns of <code>varcov\$var.x</code> to use.  The default uses all of
+them.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>locs.prior</code></td>
+<td>
+
+<p>The prior mass to associate with each variable.  Typically, these sum
+to one, but sometimes they might each be set to one (as in computing
+lod scores). </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>tol</code></td>
+<td>
+<p>Used in forming QR decomposition.  Let it be.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>An MCMC sampler for loci using the object of <code> make.varcov </code> is
+executed.  This sampler uses the exact posterior probability under the
+assumed correctness of the regression model using expected genotypes
+given marker values.  This amounts to linearizing the likelihood with
+respect to the  (possibly unknown) locus states.  For models where the
+loci are fully informative markers this is the true posterior.
+</p>
+<p>The chain is implemented as follows: given a set of regressor
+variables to start, one variable is removed, all regressor
+variables not in the model are examined to determine the effect of each
+on the posterior.  One variable is sampled.  The process is repeated until
+each variable has been removed and a new one sampled in its place
+(possibly the same variable that was removed is sampled).  And this whole
+cycle is repeated <code>nreps</code> times.  
+</p>
+
+
+<h3>Value</h3>
+
+<p>A list with components:
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>config</code></td>
+<td>
+<p> A k by k by nreps array of the locations sampled in
+each iteration. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>posteriors</code></td>
+<td>
+<p> A vector of length <code>k*nreps</code> with the
+posteriors of the models.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>coefs</code></td>
+<td>
+<p>A k by k matrix of the regression coefficients.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>call</code></td>
+<td>
+<p>The call to <code>swapbc1</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>cond</code></td>
+<td>
+<p>The <code>k*nreps</code> posterior probabilities of the k-1 gene
+models.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>marg</code></td>
+<td>
+<p>The <code>k*nreps</code> marginal posteriors for all k gene
+models that could be formed  using  the current k-1 gene model</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>alt.marginal</code></td>
+<td>
+<p>A vector with <code>length(locs)</code> elements.  At
+each step, the posterior associated with  each candidate locus is
+added to an element of this vector.  After all steps are finished,
+the result is normalized to sum to one.  This turns out to be an
+exceedingly stable estimate of the marginal posterior. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>alt.coef</code></td>
+<td>
+<p>A vector with <code>length(locs)</code> elements.  At
+each step, the product of each posterior times the coefficient
+associated with a candidate locus is 
+added to an element of this vector.  After all steps are finished,
+the result is normalized by the total marginal posterior.  This turns
+out to be an exceedingly stable estimate of the marginal (over all
+models) posterior mean of the regression coefficients. </p>
+</td>
+</tr>
+</table>
+<h3>Author(s)</h3>
+
+<p>Charles C. Berry <a href="mailto:cberry@ucsd.edu">cberry@ucsd.edu</a> </p>
+
+
+<h3>References</h3>
+
+<p>Berry C.C. (1998) Computationally Efficient Bayesian QTL Mapping in
+Experimental Crosses. <em>ASA Proceedings of the Biometrics
+Section,</em> 164-169.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>swapf2</code>
+</p>
+
+
+</div>

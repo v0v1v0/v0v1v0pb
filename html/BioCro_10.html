@@ -1,0 +1,135 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>crop_model_definitions</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Crop model definitions</h2>
+
+<h3>Description</h3>
+
+<p>In BioCro, a crop model is defined by sets of direct modules, differential
+modules, initial values, and parameters, along with an ordinary differential
+equation (ODE) solver. To run a model, these values, along with a set of
+weather data, are passed to the <code>run_biocro</code> function. For
+convenience, several crop model definitions are included in the BioCro R
+package. A full list can be obtained by typing <code>??crop_models</code> into the R
+terminal.
+</p>
+
+
+<h3>Details</h3>
+
+<p>Each crop model definition is stored as a list with the following named
+elements:
+</p>
+
+<ul>
+<li> <p><code>direct_modules</code>: A list of direct module names; can be passed to
+<code>run_biocro</code> as its <code>direct_module_names</code> argument.
+</p>
+</li>
+<li> <p><code>differential_modules</code>: A list of differential module names; can
+be passed to <code>run_biocro</code> as its
+<code>differential_module_names</code> argument.
+</p>
+</li>
+<li> <p><code>ode_solver</code>: A list specifying details of a numerical ODE
+solver; can be passed to <code>run_biocro</code> as its <code>ode_solver</code>
+argument.
+</p>
+</li>
+<li> <p><code>initial_values</code>: A list of named quantity values; can be passed
+to <code>run_biocro</code> as its <code>initial_values</code> argument.
+</p>
+</li>
+<li> <p><code>parameters</code>: A list of named quantity values; can be passed to
+<code>run_biocro</code> as its <code>parameters</code> argument, and also can be
+passed to <code>evaluate_module</code> and
+<code>module_response_curve</code> when investigating the behavior of one
+of the crop's modules.
+</p>
+</li>
+</ul>
+<p>These model definitions are not sufficient for running a simulation because
+<code>run_biocro</code> also requires drivers; for these crop growth models,
+the drivers should be sets of weather data. The <code>soybean</code> model is
+intended to be used along with the specialized soybean weather data
+(see <code>cmi_soybean_weather_data</code>). The other crops should be used
+with the other weather data (see <code>cmi_weather_data</code>).
+</p>
+<p>Some quantities in the crop model definitions, such as the values of
+photosynthetic parameters, would remain the same in any location; others, such
+as the latitude or longitude, would need to change when simulating crop growth
+in different locations. Care must be taken to understand each input quantity
+before attempting to run simulations in other places or for other cultivars.
+</p>
+<p>Typically, the modules in a crop model definition are defined as lists with
+some named elements; the names facilitate on-the-fly module swapping via the
+<code>within</code> function. For example, to change the soybean canopy
+photosynthesis module to the <code>BioCro:ten_layer_rue_canopy</code> module, one
+could pass <code>within(soybean$direct_modules, {canopy_photosynthesis =
+  "BioCro:ten_layer_rue_canopy"})</code> as the <code>direct_module_names</code> argument
+when calling <code>run_biocro</code> instead of
+<code>soybean$direct_modules</code>.
+</p>
+<p>Because each crop model definition is stored as a list with named elements,
+it is possible to use the <code>with</code> function to save some typing when
+calling <code>run_biocro</code> or related functions such as
+<code>partial_run_biocro</code> or
+<code>validate_dynamical_system_inputs</code>. For an example, compare
+<code style="white-space: pre;">⁠Example 1⁠</code> and <code style="white-space: pre;">⁠Example 2⁠</code> below. Besides shortening the code,
+using <code>with</code> also makes it easy to modify a command to simulate the
+growth of a different crop; if the two models can use the same drivers, this
+switch can be accomplished with one small change (<code style="white-space: pre;">⁠Example 3⁠</code>).
+</p>
+
+
+<h3>See Also</h3>
+
+
+<ul>
+<li> <p><code>run_biocro</code>
+</p>
+</li>
+<li> <p><code>modules</code>
+</p>
+</li>
+</ul>
+<h3>Examples</h3>
+
+<pre><code class="language-R"># Example 1: Simulating Miscanthus growth using its model definition list
+result1 &lt;- run_biocro(
+  miscanthus_x_giganteus$initial_values,
+  miscanthus_x_giganteus$parameters,
+  get_growing_season_climate(weather$'2002'),
+  miscanthus_x_giganteus$direct_modules,
+  miscanthus_x_giganteus$differential_modules,
+  miscanthus_x_giganteus$ode_solver
+)
+
+# Example 2: Performing the same simulation as in Example 1, but making use of
+# the `with` command to reduce repeated references to the model definition list
+result2 &lt;- with(miscanthus_x_giganteus, {run_biocro(
+  initial_values,
+  parameters,
+  get_growing_season_climate(weather$'2002'),
+  direct_modules,
+  differential_modules,
+  ode_solver
+)})
+
+# Example 3: Simulating willow growth using the same weather data as Examples 1
+# and 2, which just requires one change relative to Example 2
+result3 &lt;- with(willow, {run_biocro(
+  initial_values,
+  parameters,
+  get_growing_season_climate(weather$'2002'),
+  direct_modules,
+  differential_modules,
+  ode_solver
+)})
+</code></pre>
+
+
+</div>

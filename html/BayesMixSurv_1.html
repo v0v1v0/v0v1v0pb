@@ -1,0 +1,394 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>bayesmixsurv</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>
+Dynamic Bayesian survival model - with stratification and Lasso shrinkage - for right-censored data using two-component additive mixture-of-Weibull hazards.
+</h2>
+
+<h3>Description</h3>
+
+<p>Bayesian survival model for right-censored data, using a sum of two hazard functions, each having a power dependence on time, corresponding to a Weibull distribution on event density. (Note that event density function for the mixture model does NOT remain a Weibull distribution.) Each component has a different shape and scale parameter, with scale parameters each being the exponential of a linear function of covariates specified in <code>formula1</code> and <code>formula2</code>. Stratification is implemented using a common set of intercepts between the two components. Lasso shrinkage - using Laplace prior on coefficients (Park and Casella 2008) - allows for variable selection in the presence of low observation-to-variable ratio. The mixture model allows for time-dependent (and context-dependent) hazard ratios. Confidence intervals for coefficient estimation and prediction are generated using full Bayesian paradigm, i.e. by keeping all samples rather than summarizing them into mean and sd. Posterior distribution is estimated via MCMC sampling, using univariate slice sampler with stepout and shrinkage (Neal 2003).
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">bayesmixsurv(formula1, data, formula2=formula1, stratCol=NULL, weights, subset
+  , na.action=na.fail, control=bayesmixsurv.control(), print.level=2)
+bayesmixsurv.control(single=FALSE, alpha2.fixed=NULL, alpha.boundary=1.0, lambda1=1.0
+  , lambda2=lambda1, iter=1000, burnin=round(iter/2), sd.thresh=1e-4, scalex=TRUE
+  , nskip=round(iter/10))
+## S3 method for class 'bayesmixsurv'
+print(x, ...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>formula1</code></td>
+<td>
+<p>Survival formula expressing the time/status variables as well as covariates used in the first component.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+<p>Data frame containing the covariates and response variable, as well as the stratification column.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>formula2</code></td>
+<td>
+<p>Survival formula expressing the covariates used in the second component. No left-hand side is necessary since the response variable information is extracted from <code>formula1</code>. Defaults to <code>formula1</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>stratCol</code></td>
+<td>
+<p>Name of column in <code>data</code> used for stratification. Must be a factor or coerced into one. Default is no stratification (<code>stratCol=NULL</code>).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>weights</code></td>
+<td>
+<p>Optional vector of case weights. *Not supported yet*</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>subset</code></td>
+<td>
+<p>Subset of the observations to be used in the fit. *Not supported yet*</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>na.action</code></td>
+<td>
+<p>Missing-data filter function. *Not supported yet (only na.fail behavior works)*</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>control</code></td>
+<td>
+<p>See <code>bayesmixsurv.control</code> for a description of the parameters inside the <code>control</code> list.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>print.level</code></td>
+<td>
+<p>Controlling verbosity level.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>single</code></td>
+<td>
+<p>If <code>TRUE</code>, a single-component model, equivalent to Bayesian Weibull survival regression, with Lasso shrinkage, is implemented. Default is <code>FALSE</code>, i.e. a two-component mixture-of-Weibull model.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>alpha2.fixed</code></td>
+<td>
+<p>If provided, it specifies the shape parameter of the second component. Default is <code>NULL</code>, which allows the MCMC sampling to estimate both shape parameters.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>alpha.boundary</code></td>
+<td>
+<p>When <code>single=FALSE</code> and <code>alpha2.fixed=NULL</code>, this parameter specifies an upper bound for the shape parameter of the first component, and a lower bound for the shape parameter of the second component. These boundary conditions are enforced in the univariate slice sampler function calls.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>lambda1</code></td>
+<td>
+<p>Lasso Shrinkage parameter used in the Laplace prior on covariates used in the first component.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>lambda2</code></td>
+<td>
+<p>Lasso Shrinkage parameter used in the Laplace prior on covariates used in the second component. Defaults to <code>lambda1</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>iter</code></td>
+<td>
+<p>Number of posterior MCMC samples to generate.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>burnin</code></td>
+<td>
+<p>Number of initial MCMC samples to discard before calculating summary statistics.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>sd.thresh</code></td>
+<td>
+<p>Threshold for standard deviation of a covariate (after possible centering/scaling). If below the threshold, the corresponding coefficient is removed from sampling, i.e. its value is clamped to zero.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>scalex</code></td>
+<td>
+<p>If <code>TRUE</code>, each covariate vector is centered and scaled before model estimation. The scaling parameters are saved in return object, and used in subsequent calls to <code>predict</code> function. Users are strongly advised against turning this feature off, since the quality of Gibbs sampling MCMC is greatly enhanced by covariate centering and scaling.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nskip</code></td>
+<td>
+<p>Controlling how often to print progress report during MCMC run. For example, if <code>nskip=10</code>, progress will be reported after 10,20,30,... samples.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>Object of class 'bayesmixsurv', usually the result of a call to <code>bayesmixsurv</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Arguments to be passed to/from other methods.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>The function <code>bayesmixsurv.control</code> return a list with the same elements as its input parameters. The function <code>bayesmixsurv</code> returns object of class <code>bayesmixsurv</code>, with the following components:
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>call</code></td>
+<td>
+<p>The matched call</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>formula1</code></td>
+<td>
+<p>Same as input.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>formula2</code></td>
+<td>
+<p>Same as input.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>weights</code></td>
+<td>
+<p>Same as input. *Not supported yet*</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>subset</code></td>
+<td>
+<p>Same as input. *Not supported yet*</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>na.action</code></td>
+<td>
+<p>Same as input. *Not supported yet* (current behavior is <code>na.fail</code>)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>control</code></td>
+<td>
+<p>Same as input.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>X1</code></td>
+<td>
+<p>Model matrix used for component 1, after potential centering and scaling.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>X2</code></td>
+<td>
+<p>Model matrix used for component 2, after potential centering and scaling.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>y</code></td>
+<td>
+<p>Survival response variable (time and status) used in the model.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>contrasts1</code></td>
+<td>
+<p>The contrasts used for component 1 (where relevant).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>contrasts2</code></td>
+<td>
+<p>The contrasts used for component 2 (where relevant).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>xlevels1</code></td>
+<td>
+<p>A record of the levels of the factors used in fitting for component 1 (where relevant).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>xlevels2</code></td>
+<td>
+<p>A record of the levels of the factors used in fitting for component 2 (where relevant).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>terms1</code></td>
+<td>
+<p>The terms object used for component 1.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>terms2</code></td>
+<td>
+<p>The terms object used for component 2.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>colnamesX1</code></td>
+<td>
+<p>Names of columns for <code>X1</code>, also names of scale coefficients for component 1.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>colnamesX2</code></td>
+<td>
+<p>Names of columns for <code>X1</code>, also names of scale coefficients for component 2.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>apply.scale.X1</code></td>
+<td>
+<p>Index of columns of <code>X1</code> where scaling has been applied.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>apply.scale.X2</code></td>
+<td>
+<p>Index of columns of <code>X2</code> where scaling has been applied.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>centerVec.X1</code></td>
+<td>
+<p>Vector of centering parameters for columns of <code>X1</code> indicated by <code>apply.scale.X1</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>centerVec.X2</code></td>
+<td>
+<p>Vector of centering parameters for columns of <code>X2</code> indicated by <code>apply.scale.X2</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>scaleVec.X1</code></td>
+<td>
+<p>Vector of scaling parameters for columns of <code>X1</code> indicated by <code>apply.scale.X1</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>scaleVec.X2</code></td>
+<td>
+<p>Vector of scaling parameters for columns of <code>X2</code> indicated by <code>apply.scale.X2</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Xg</code></td>
+<td>
+<p>Model matrix associated with stratification (if any).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>stratContrasts</code></td>
+<td>
+<p>The contrasts used for stratification model matrix, if any.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>stratXlevels</code></td>
+<td>
+<p>A record of the levels of the factors used in stratification (if any)).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>stratTerms</code></td>
+<td>
+<p>The terms object used for stratification.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>colnamesXg</code></td>
+<td>
+<p>Names of columns for <code>Xg</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>idx1</code></td>
+<td>
+<p>Vector of indexes into <code>X1</code> for which sampling occured. All columns of <code>X1</code> whose standard deviation falls below <code>sd.thresh</code> are excluded from sampling and their corresponding coefficients are clamped to <code>0</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>idx2</code></td>
+<td>
+<p>Vector of indexes into <code>X2</code> for which sampling occured. All columns of <code>X2</code> whose standard deviation falls below <code>sd.thresh</code> are excluded from sampling and their corresponding coefficients are clamped to <code>0</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>median</code></td>
+<td>
+<p>List of median values, with elements including <code>alpha1,alpha2</code> (shape parameter of components 1 and 2), <code>beta1,beta2</code> (coefficients of scale parameter for components 1 and 2), <code>gamma</code> (stratification intercept adjustments, shared by 2 comoponents), and <code>sigma.gamma</code> (standard deviation of zero-mean Gaussian distribution that is the prior for <code>gamma</code>'s).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>max</code></td>
+<td>
+<p>Currently, a list with one element, <code>loglike</code>, containing the maximum sampled log-likelihood of the model.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>smp</code></td>
+<td>
+<p>List of coefficient samples, with elements <code>alpha1,alpha2</code> (shape parameters for components 1 and 2), <code>beta1,beta2</code> (scale parameter coefficients for components 1 and 2), <code>loglike</code> (model log-likelihood), <code>gamma</code> (stratification intercept adjustments, shared by 2 comoponents), and <code>sigma.gamma</code> (standard deviation of zero-mean Gaussian distribution that is the prior for <code>gamma</code>'s). Each parameter has <code>iter</code> samples. For vector parameters, first dimension is the number of samples (<code>iter</code>), while the second dimension is the length of the vector.</p>
+</td>
+</tr>
+</table>
+<h3>Author(s)</h3>
+
+<p>Alireza S. Mahani, Mansour T.A. Sharabiani</p>
+
+
+<h3>References</h3>
+
+<p>Neal R.M. (2003). Slice Sampling. <em>Annals of Statistics</em>, <b>31</b>, 705-767.
+</p>
+<p>Park T. and Casella G. (2008) The Bayesian Lasso. <em>Journal of the American Statistical Association</em>, <b>103</b>, 681-686.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R"># NOTE: to ensure convergence, typically more than 100 samples are needed
+# fit the most general model, with two Weibull components and unspecified shape parameters
+ret &lt;- bayesmixsurv(Surv(time, status)~as.factor(trt)+age+as.factor(celltype)+prior, veteran
+  , control=bayesmixsurv.control(iter=100))
+# fix one of the two shape parameters
+ret2 &lt;- bayesmixsurv(Surv(time, status)~as.factor(trt)+age+as.factor(celltype)+prior, veteran
+    , control=bayesmixsurv.control(iter=100, alpha2.fixed=1.0))
+</code></pre>
+
+
+</div>

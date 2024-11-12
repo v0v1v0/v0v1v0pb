@@ -1,0 +1,288 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>logreg_bvs</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Non-parallel version of Bayesian variable selector for logistic regression
+data using nonlocal priors</h2>
+
+<h3>Description</h3>
+
+<p>This function performs Bayesian variable selection for
+logistic regression data in a non-parallel fashion. It does not contain any
+pre-processing step or variable initialization. Moreover it does not have
+the feature to be run in parallel for performing the coupling algorithm.
+Therefore in general, it is NOT recommended to be used unless the user
+knows how to initialize all the parameters. However, this function is
+called by <code>bvs</code> function, the recommended way to run Bayesian
+variable selection for such datasets.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">logreg_bvs(
+  exmat,
+  chain1,
+  nf,
+  tau,
+  r,
+  nlptype,
+  a,
+  b,
+  in_cons,
+  loopcnt,
+  cplng,
+  chain2
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>exmat</code></td>
+<td>
+<p>An extended matrix where the first column is binary resonse
+vector and the rest is the design matrix which has its first column all 1
+to account for the intercept in the model and is the output of
+<code>PreProcess</code> code where the fixed columns are moved to the beginning.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>chain1</code></td>
+<td>
+<p>The first chain or initial model where the MCMC algorithm
+starts from. Note that the first <code>nf+1</code> elements are <code>1</code> where
+<code>nf</code> is the number of fixed covariates that do not enter the selection
+procedure and <code>1</code> is for the intercept.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nf</code></td>
+<td>
+<p>The number of fixed covariates that do not enter the selection
+procedure.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>tau</code></td>
+<td>
+<p>The paramter <code>tau</code> of the iMOM prior.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>r</code></td>
+<td>
+<p>The paramter <code>r</code> of the iMOM prior.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nlptype</code></td>
+<td>
+<p>Determines the type of nonlocal prior that is used in the
+analyses. <code>0</code> is for piMOM and <code>1</code> is for pMOM.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>a</code></td>
+<td>
+<p>The first parameter in beta distribution used as prior on model
+size. This parameter is equal to 1 when uinform-binomial prior is used.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>b</code></td>
+<td>
+<p>The second paramter in beta distribution used as prior on model
+size. This parameter is equal to 1 when uinform-binomial prior is used.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>in_cons</code></td>
+<td>
+<p>The average model size. This value under certain conditions
+and when <code>p</code> is large, is equal to parameter <code>a</code> of the
+beta-binomial prior.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>loopcnt</code></td>
+<td>
+<p>Number of iterations for MCMC procedure.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>cplng</code></td>
+<td>
+<p>A boolean variable indicating the coupling algorithm to be
+performed or not.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>chain2</code></td>
+<td>
+<p>Second chain or model for starting the MCMC procedure. This
+parameter is only used when <code>cplng=TRUE</code>. Thus, it could be simply
+set to <code>chain1</code> when it is not used.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>It returns a list containing following objects:
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>max_chain</code></td>
+<td>
+<p>A <code>1</code> by <code>p+1</code> binary vector showing the selected
+model with maximum probability. <code>1</code> means a specific variable is
+selected. The first variable is always the intercept.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>beta_hat</code></td>
+<td>
+<p>The coefficient vector for the selected model. The first one
+is always for the intercept.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>max_prop</code></td>
+<td>
+<p>The unnormalized probability of the model with highest
+posterior probability.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>num_iterations</code></td>
+<td>
+<p>The number of MCMC iterations that are executed.
+This is used when <code>cplng=TRUE</code> to check whether the total designated
+MCMC iterations were used or two chains are coupled sooner than that.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>cplng_flag</code></td>
+<td>
+<p>This is used when <code>cplng=TRUE</code> and indicates whether
+two chains are coupled or not.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>num_vis_models</code></td>
+<td>
+<p>Number of visited models in search for the highest
+probability model. This contains redundant models too and is not the number
+of unique models.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>hash_key</code></td>
+<td>
+<p>This is only used when <code>cplng = FALSE</code>. This is a
+vector containing real numbers uniquely assigned to each model for
+distinguishing them.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>hash_prob</code></td>
+<td>
+<p>This is only used when <code>cplng = FALSE</code>. This is a
+vector of probabilities for each visited model.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>vis_covs</code></td>
+<td>
+<p>This is only used when <code>cplng = FALSE</code>. This is a
+list where each element contains indices of covariates for each visited
+model.</p>
+</td>
+</tr>
+</table>
+<h3>Author(s)</h3>
+
+<p>Amir Nikooienejad
+</p>
+
+
+<h3>References</h3>
+
+<p>Nikooienejad, A., Wang, W., and Johnson, V. E. (2016). Bayesian
+variable selection for binary outcomes in high dimensional genomic studies
+using nonlocal priors. Bioinformatics, 32(9), 1338-1345.<br><br>
+Nikooienejad, A., Wang, W., and Johnson, V. E. (2017). Bayesian Variable
+Selection in High Dimensional Survival Time Cancer Genomic Datasets using
+Nonlocal Priors. arXiv preprint, arXiv:1712.02964.<br><br>
+Johnson, V. E., and Rossell, D. (2010). On the use of non-local prior
+densities in Bayesian hypothesis tests. Journal of the Royal Statistical
+Society: Series B (Statistical Methodology), 72(2), 143-170.<br><br>
+Johnson, V. E. (1998). A coupling-regeneration scheme for
+diagnosing convergence in Markov chain Monte Carlo algorithms. Journal of
+the American Statistical Association, 93(441), 238-248.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>bvs</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">### Initializing parameters
+n &lt;- 200
+p &lt;- 40
+set.seed(123)
+Sigma &lt;- diag(p)
+full &lt;- matrix(c(rep(0.5, p*p)), ncol=p)
+Sigma &lt;- full + 0.5*Sigma
+cholS &lt;- chol(Sigma)
+Beta &lt;- c(-1.7,1.8,2.5)
+X &lt;- matrix(rnorm(n*p), ncol=p)
+X &lt;- X%*%cholS
+colnames(X) &lt;- paste("gene_",c(1:p),sep="")
+beta &lt;- numeric(p)
+beta[c(1:length(Beta))] &lt;- Beta
+XB &lt;- X%*%beta
+probs &lt;- as.vector(exp(XB)/(1+exp(XB)))
+y &lt;- rbinom(n,1,probs)
+exmat &lt;- cbind(y,X)
+tau &lt;- 0.5; r &lt;- 1; a &lt;- 3; b &lt;- p-a; in_cons &lt;- a;
+loopcnt &lt;- 100; cplng &lt;- FALSE;
+initProb &lt;- in_cons/p
+
+### Initializing Chains
+schain &lt;- p
+while (schain &gt; in_cons || schain == 0) {
+chain1 &lt;- rbinom(p, 1, initProb)
+ schain &lt;- sum(chain1)
+}
+chain1 &lt;- as.numeric(c(1, chain1))
+chain2 &lt;- chain1
+nlptype &lt;- 0 ## PiMOM nonlocal prior
+nf &lt;- 0 ### No fixed columns
+
+### Running the function
+bvsout &lt;- logreg_bvs(exmat,chain1,nf,tau,r,nlptype,a,b,in_cons,loopcnt,cplng,chain2)
+
+### Number of visited models for this specific run:
+bvsout$num_vis_models
+
+### The selected model:
+which(bvsout$max_chain &gt; 0)
+
+### Estimated coefficients:
+bvsout$beta_hat
+
+### The unnormalized probability of the selected model:
+bvsout$max_prob
+</code></pre>
+
+
+</div>

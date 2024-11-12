@@ -1,0 +1,156 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>mainEff</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Main Effects</h2>
+
+<h3>Description</h3>
+
+<p>Calculates the main effect of a variable, which is independent of process performance, on a function.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">mainEff(
+  BMBobj,
+  fn,
+  rangex,
+  xj,
+  N = 50,
+  res = 100,
+  hdi.params = c(1, 0.95),
+  ...
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>BMBobj</code></td>
+<td>
+<p>A <code>BayesMassBal</code> object originally obtained from the <code>BMB</code> function.  See <code>BMB</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>fn</code></td>
+<td>
+<p>A character string naming a function with arguments of <code>BMBobj$ybal</code> and independent random variables <code>X</code>.  See Details and examples for more on function requirements.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>rangex</code></td>
+<td>
+<p>A numeric matrix.  Each column of <code>rangex</code> contains the minimum and maximum value of uniformly distributed random values making up vector <code class="reqn">x</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>xj</code></td>
+<td>
+<p>Integer indexing which element in <code class="reqn">x</code> is used for conditioning for  <code class="reqn">E_x\lbrack f(x,y)|x_j\rbrack</code>. If a vector is supplied the marginal main effect of each element is calculated sequentially.  The integers supplied in <code>xj</code> are equivalent to the indices of the columns in <code>rangex</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>N</code></td>
+<td>
+<p>Integer specifying the length of the sequence used for <code>xj</code>.  Larger <code>N</code> trades a higher resolution of the main effect of <code>xj</code> for longer computation time and larger RAM requirements.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>res</code></td>
+<td>
+<p>Integer indicating the number of points to be used for each Monte-Carlo integration step.  Larger <code>res</code> reduces Monte-Carlo variance as the expense of computation time.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>hdi.params</code></td>
+<td>
+<p>Numeric vector of length two, used to calculate Highest Posterior Density Interval (HPDI) of the main effect <code>xj</code> using <code>hdi</code>. <code>hdi.params[1] = 1</code> indicates <code>hdi</code> is used, and the mean and HPDI bounds are returned instead of the every sample from the distribution of <code class="reqn">E_x\lbrack f(x,y)|x_j\rbrack</code>.  The second element of <code>hdi</code> is passed to the <code>credMass</code> argument in the <code>hdi</code> function.  The default, <code>hdi.params = c(1,0.95)</code>, returns 95% HPDI bounds.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Extra arguments passed to the named <code>fn</code></p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The <code>mainEff</code> function returns a distribution of <code class="reqn">E_x\lbrack f(x,y)|x_j\rbrack</code>, marginalized over the samples of <code>BMBobj$ybal</code>, giving the distribution of <code class="reqn">E_x\lbrack f(x,y)|x_j\rbrack</code> which incorporates uncertainty of a chemical or particulate process.
+</p>
+<p>In the current implementation of <code>mainEff</code> in the <code>BayesMassBal</code> package, only uniformly distributed values of <code class="reqn">x</code> are supported.
+</p>
+<p>The <code class="reqn">f(x,y)</code> is equivalent to the supplied function named in <code>mainEff(fn)</code>.  For the arguments of <code>fn</code>, <code>ybal</code> is structured in a similar manner as <code>BMBobj$ybal</code>.  The only difference being individual columns of each matrix are used at a time, and are vectorized.  Note the way <code>ybal</code> is subset in the example function <code>fn_example</code>.  The supplied <code>X</code> is a matrix, with columns corresponding to each element in <code class="reqn">x</code>.  The output to <code>fn</code> must be a vector of length <code>nrow(x)</code>.  The first argument of <code>fn</code> must be <code>X</code>, the second argument must be <code>BMBobj$ybal</code>.  Order of other arguments passed to <code>fn</code> through <code>...</code> does not matter. Look at the example closely for details!
+</p>
+
+
+<h3>Value</h3>
+
+<p>A list of <code>length(xj)</code> list(s).  Each list specifies output for the main effect of a <code>xj</code>
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>g</code></td>
+<td>
+<p>The grid used for a particular <code>xj</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>fn.out</code></td>
+<td>
+<p>A matrix giving results on <code class="reqn">E_x\lbrack f(x,y)|x_j\rbrack</code>.  If <code>hdi.params[1] = 1</code>, the mean and Highest Posterior Density Interval (HPDI) bounds of <code class="reqn">E_x\lbrack f(x,y)|x_j\rbrack</code> are returned.  Otherwise, samples of <code class="reqn">E_x\lbrack f(x,y)|x_j\rbrack</code> are returned.  The index of each column of <code>fn.out</code> corresponds to the the value of <code>g</code> at the same index.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>fn</code></td>
+<td>
+<p>Character string giving the name of the function used.  Same value as argument <code>fn</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>xj</code></td>
+<td>
+<p>Integer indicating the index of <code class="reqn">x</code> corresponding to a grouped <code>fn.out</code> and <code>g</code>.</p>
+</td>
+</tr>
+</table>
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+## Importing Data, generating BMB object
+y &lt;- importObservations(file = system.file("extdata", "twonode_example.csv",
+                                    package = "BayesMassBal"),
+                   header = TRUE, csv.params = list(sep = ";"))
+
+C &lt;- matrix(c(1,-1,0,-1,0,0,1,-1,0,-1), byrow = TRUE, ncol = 5, nrow = 2)
+X &lt;- constrainProcess(C = C)
+
+BMB_example &lt;- BMB(X = X, y = y, cov.structure = "indep",
+                   BTE = c(10,200,1), lml = FALSE, verb=0)
+
+fn_example &lt;- function(X,ybal){
+    cu.frac &lt;- 63.546/183.5
+    feed.mass &lt;- ybal$CuFeS2[1] + ybal$gangue[1]
+    ## Concentrate mass per ton feed
+    con.mass &lt;- (ybal$CuFeS2[3] + ybal$gangue[3])/feed.mass
+    ## Copper mass per ton feed
+    cu.mass &lt;- (ybal$CuFeS2[3]*cu.frac)/feed.mass
+    gam &lt;- c(-1,-1/feed.mass,cu.mass,-con.mass,-cu.mass,-con.mass)
+    f &lt;- X %*% gam
+    return(f)
+    }
+
+rangex &lt;- matrix(c(4.00 ,6.25,1125,1875,3880,9080,20,60,96,208,20.0,62.5),
+                  ncol = 6, nrow = 2)
+
+mE_example &lt;- mainEff(BMB_example, fn = "fn_example",rangex =  rangex,xj = 3, N = 15, res = 4)
+
+</code></pre>
+
+
+</div>

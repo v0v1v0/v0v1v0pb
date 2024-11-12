@@ -1,0 +1,240 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>tidy.MCMCglmm</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Tidying methods for MCMC (Stan, JAGS, etc.) fits</h2>
+
+<h3>Description</h3>
+
+<p>Tidying methods for MCMC (Stan, JAGS, etc.) fits
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">## S3 method for class 'MCMCglmm'
+tidy(x, effects = c("fixed", "ran_pars"), scales = NULL, ...)
+
+tidyMCMC(
+  x,
+  pars,
+  robust = FALSE,
+  conf.int = FALSE,
+  conf.level = 0.95,
+  conf.method = c("quantile", "HPDinterval"),
+  drop.pars = c("lp__", "deviance"),
+  rhat = FALSE,
+  ess = FALSE,
+  index = FALSE,
+  ...
+)
+
+## S3 method for class 'rjags'
+tidy(
+  x,
+  robust = FALSE,
+  conf.int = FALSE,
+  conf.level = 0.95,
+  conf.method = "quantile",
+  ...
+)
+
+## S3 method for class 'stanfit'
+tidy(
+  x,
+  pars,
+  robust = FALSE,
+  conf.int = FALSE,
+  conf.level = 0.95,
+  conf.method = c("quantile", "HPDinterval"),
+  drop.pars = c("lp__", "deviance"),
+  rhat = FALSE,
+  ess = FALSE,
+  index = FALSE,
+  ...
+)
+
+## S3 method for class 'mcmc'
+tidy(
+  x,
+  pars,
+  robust = FALSE,
+  conf.int = FALSE,
+  conf.level = 0.95,
+  conf.method = c("quantile", "HPDinterval"),
+  drop.pars = c("lp__", "deviance"),
+  rhat = FALSE,
+  ess = FALSE,
+  index = FALSE,
+  ...
+)
+
+## S3 method for class 'mcmc.list'
+tidy(
+  x,
+  pars,
+  robust = FALSE,
+  conf.int = FALSE,
+  conf.level = 0.95,
+  conf.method = c("quantile", "HPDinterval"),
+  drop.pars = c("lp__", "deviance"),
+  rhat = FALSE,
+  ess = FALSE,
+  index = FALSE,
+  ...
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>a model fit to be converted to a data frame</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>effects</code></td>
+<td>
+<p>which effects (fixed, random, etc.) to return</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>scales</code></td>
+<td>
+<p>scales on which to report results</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>mostly unused; for <code>tidy.MCMCglmm</code>, these represent options
+passed through to <code>tidy.mcmc</code> (e.g. <code>robust</code>, <code>conf.int</code>, <code>conf.method</code>, ...)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>pars</code></td>
+<td>
+<p>(character) specification of which parameters to include</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>robust</code></td>
+<td>
+<p>use mean and standard deviation (if FALSE) or median and mean absolute deviation (if TRUE) to compute point estimates and uncertainty?</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>conf.int</code></td>
+<td>
+<p>(logical) include confidence interval?</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>conf.level</code></td>
+<td>
+<p>probability level for CI</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>conf.method</code></td>
+<td>
+<p>method for computing confidence intervals
+("quantile" or "HPDinterval")</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>drop.pars</code></td>
+<td>
+<p>Parameters not to include in the output (such
+as log-probability information)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>rhat, ess</code></td>
+<td>
+<p>(logical) include Rhat and/or effective sample size estimates?</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>index</code></td>
+<td>
+<p>Add index column, remove index from term. For example,
+<code>term a[13]</code> becomes <code>term a</code> and <code>index 13</code>.</p>
+</td>
+</tr>
+</table>
+<h3>Examples</h3>
+
+<pre><code class="language-R">if (require("MCMCglmm")) {
+  ## original model
+  ## Not run: 
+      mm0 &lt;- MCMCglmm(Reaction ~ Days,
+                 random = ~Subject, data = sleepstudy,
+                 nitt=4000,
+                 pr = TRUE
+             )
+   
+## End(Not run)
+   ## load stored object
+   load(system.file("extdata","MCMCglmm_example.rda",
+                                     package="broom.mixed"))
+   tidy(mm0)
+   tidy(mm1)
+   tidy(mm2)
+   tail(tidy(mm0,effects="ran_vals"))
+}
+
+# Using example from "RStan Getting Started"
+# https://github.com/stan-dev/rstan/wiki/RStan-Getting-Started
+
+model_file &lt;- system.file("extdata", "8schools.stan", package = "broom.mixed")
+schools_dat &lt;- list(J = 8,
+                    y = c(28,  8, -3,  7, -1,  1, 18, 12),
+                    sigma = c(15, 10, 16, 11,  9, 11, 10, 18))
+## original model
+## Not run: 
+    set.seed(2015)
+    rstan_example &lt;- rstan::stan(file = model_file, data = schools_dat,
+                         iter = 1000, chains = 2, save_dso = FALSE)
+
+## End(Not run)
+if (require(rstan)) {
+   ## load stored object
+   rstan_example &lt;- readRDS(system.file("extdata", "rstan_example.rds", package = "broom.mixed"))
+   tidy(rstan_example)
+   tidy(rstan_example, conf.int = TRUE, pars = "theta")
+   td_mean &lt;- tidy(rstan_example, conf.int = TRUE)
+   td_median &lt;- tidy(rstan_example, conf.int = TRUE, robust = TRUE)
+   
+   if (require(dplyr) &amp;&amp; require(ggplot2)) {
+       tds &lt;- (dplyr::bind_rows(list(mean=td_mean, median=td_median), .id="method")
+          %&gt;% mutate(type=ifelse(grepl("^theta",term),"theta",
+            ifelse(grepl("^eta",term),"eta",
+                  "other")))
+      )
+
+     ggplot(tds, aes(estimate, term)) +
+      geom_errorbarh(aes(xmin = conf.low, xmax = conf.high),height=0) +
+      geom_point(aes(color = method))+
+      facet_wrap(~type,scale="free",ncol=1)
+ } ## require(dplyr,ggplot2)
+} ## require(rstan)
+if (require(R2jags)) {
+   ## see help("jags",package="R2jags")
+   ## and  example("jags",package="R2jags")
+   ## for details
+   ## load stored object
+   R2jags_example &lt;- readRDS(system.file("extdata", "R2jags_example.rds", package = "broom.mixed"))
+   tidy(R2jags_example)
+   tidy(R2jags_example, conf.int=TRUE, conf.method="quantile")
+}
+
+</code></pre>
+
+
+</div>

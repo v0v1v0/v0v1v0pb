@@ -1,0 +1,184 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>sample_mallows</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Random Samples from the Mallows Rank Model</h2>
+
+<h3>Description</h3>
+
+<p>Generate random samples from the Mallows Rank Model
+(Mallows 1957) with consensus ranking <code class="reqn">\rho</code> and
+scale parameter <code class="reqn">\alpha</code>. The samples are obtained by running the
+Metropolis-Hastings algorithm described in Appendix C of
+Vitelli et al. (2018).
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">sample_mallows(
+  rho0,
+  alpha0,
+  n_samples,
+  leap_size = max(1L, floor(n_items/5)),
+  metric = "footrule",
+  diagnostic = FALSE,
+  burnin = ifelse(diagnostic, 0, 1000),
+  thinning = ifelse(diagnostic, 1, 1000),
+  items_to_plot = NULL,
+  max_lag = 1000L
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>rho0</code></td>
+<td>
+<p>Vector specifying the latent consensus ranking in the Mallows
+rank model.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>alpha0</code></td>
+<td>
+<p>Scalar specifying the scale parameter in the Mallows rank
+model.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>n_samples</code></td>
+<td>
+<p>Integer specifying the number of random samples to generate.
+When <code>diagnostic = TRUE</code>, this number must be larger than 1.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>leap_size</code></td>
+<td>
+<p>Integer specifying the step size of the leap-and-shift
+proposal distribution.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>metric</code></td>
+<td>
+<p>Character string specifying the distance measure to use.
+Available options are <code>"footrule"</code> (default), <code>"spearman"</code>,
+<code>"cayley"</code>, <code>"hamming"</code>, <code>"kendall"</code>, and <code>"ulam"</code>.
+See also the <code>rmm</code> function in the <code>PerMallows</code> package
+(Irurozki et al. 2016) for sampling from the Mallows
+model with Cayley, Hamming, Kendall, and Ulam distances.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>diagnostic</code></td>
+<td>
+<p>Logical specifying whether to output convergence
+diagnostics. If <code>TRUE</code>, a diagnostic plot is printed, together with
+the returned samples.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>burnin</code></td>
+<td>
+<p>Integer specifying the number of iterations to discard as
+burn-in. Defaults to 1000 when <code>diagnostic = FALSE</code>, else to 0.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>thinning</code></td>
+<td>
+<p>Integer specifying the number of MCMC iterations to perform
+between each time a random rank vector is sampled. Defaults to 1000 when
+<code>diagnostic = FALSE</code>, else to 1.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>items_to_plot</code></td>
+<td>
+<p>Integer vector used if <code>diagnostic = TRUE</code>, in
+order to specify the items to plot in the diagnostic output. If not
+provided, 5 items are picked at random.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>max_lag</code></td>
+<td>
+<p>Integer specifying the maximum lag to use in the computation
+of autocorrelation. Defaults to 1000L. This argument is passed to
+<code>stats::acf</code>. Only used when <code>diagnostic = TRUE</code>.</p>
+</td>
+</tr>
+</table>
+<h3>References</h3>
+
+<p>Irurozki E, Calvo B, Lozano JA (2016).
+“PerMallows: An R Package for Mallows and Generalized Mallows Models.”
+<em>Journal of Statistical Software</em>, <b>71</b>(12), 1–30.
+<a href="https://doi.org/10.18637/jss.v071.i12">doi:10.18637/jss.v071.i12</a>.<br><br> Mallows CL (1957).
+“Non-Null Ranking Models. I.”
+<em>Biometrika</em>, <b>44</b>(1/2), 114–130.<br><br> Vitelli V, Sørensen, Crispino M, Arjas E, Frigessi A (2018).
+“Probabilistic Preference Learning with the Mallows Rank Model.”
+<em>Journal of Machine Learning Research</em>, <b>18</b>(1), 1–49.
+<a href="https://jmlr.org/papers/v18/15-481.html">https://jmlr.org/papers/v18/15-481.html</a>.
+</p>
+
+
+<h3>See Also</h3>
+
+<p>Other rank functions: 
+<code>compute_expected_distance()</code>,
+<code>compute_observation_frequency()</code>,
+<code>compute_rank_distance()</code>,
+<code>create_ranking()</code>,
+<code>get_mallows_loglik()</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R"># Sample 100 random rankings from a Mallows distribution with footrule distance
+set.seed(1)
+# Number of items
+n_items &lt;- 15
+# Set the consensus ranking
+rho0 &lt;- seq(from = 1, to = n_items, by = 1)
+# Set the scale
+alpha0 &lt;- 10
+# Number of samples
+n_samples &lt;- 100
+# We first do a diagnostic run, to find the thinning and burnin to use
+# We set n_samples to 1000, in order to run 1000 diagnostic iterations.
+test &lt;- sample_mallows(rho0 = rho0, alpha0 = alpha0, diagnostic = TRUE,
+                       n_samples = 1000, burnin = 1, thinning = 1)
+# When items_to_plot is not set, 5 items are picked at random. We can change this.
+# We can also reduce the number of lags computed in the autocorrelation plots
+test &lt;- sample_mallows(rho0 = rho0, alpha0 = alpha0, diagnostic = TRUE,
+                       n_samples = 1000, burnin = 1, thinning = 1,
+                       items_to_plot = c(1:3, 10, 15), max_lag = 500)
+# From the autocorrelation plot, it looks like we should use
+# a thinning of at least 200. We set thinning = 1000 to be safe,
+# since the algorithm in any case is fast. The Markov Chain
+# seems to mix quickly, but we set the burnin to 1000 to be safe.
+# We now run sample_mallows again, to get the 100 samples we want:
+samples &lt;- sample_mallows(rho0 = rho0, alpha0 = alpha0, n_samples = 100,
+                          burnin = 1000, thinning = 1000)
+# The samples matrix now contains 100 rows with rankings of 15 items.
+# A good diagnostic, in order to confirm that burnin and thinning are set high
+# enough, is to run compute_mallows on the samples
+model_fit &lt;- compute_mallows(
+  setup_rank_data(samples),
+  compute_options = set_compute_options(nmc = 10000))
+# The highest posterior density interval covers alpha0 = 10.
+burnin(model_fit) &lt;- 2000
+compute_posterior_intervals(model_fit, parameter = "alpha")
+
+</code></pre>
+
+
+</div>

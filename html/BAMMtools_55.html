@@ -1,0 +1,170 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>testTimeVariableBranches</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Evaluate evidence for temporal rate variation across tree</h2>
+
+<h3>Description</h3>
+
+<p>For each branch in a phylogenetic tree, evaluates the
+evidence (posterior probability or Bayes factor) that
+macroevolutionary rates have varied through time.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">testTimeVariableBranches(ephy, prior_tv = 0.5, return.type = "posterior")
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>ephy</code></td>
+<td>
+<p>An object of class <code>bammdata</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>prior_tv</code></td>
+<td>
+<p>The prior probability that rate shifts lead to a new
+time-varying rate process (versus a time-constant process).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>return.type</code></td>
+<td>
+<p>Either <code>"posterior"</code> or <code>"bayesfactor"</code>,
+depending on which form of evidence you would like.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>In <code>BAMM 2.0</code>, rate shifts on trees can lead to time-varying
+or constant-rate diversification processes. In other words, the model
+will incorporate temporal variation in rates only if there is
+sufficient evidence in the data to favor it. The function
+<code>testTimeVariableBranches</code> enables the user to extract the
+evidence in favor of time-varying rates on any branch of a
+phylogenetic tree from a <code>bammdata</code> object. 
+</p>
+<p>The function returns a copy of the original phylogenetic tree, but
+where branch lengths have been replaced by either the posterior
+probability (<code>return.type = "posterior"</code>) or the Bayes factor
+evidence (<code>return.type = "bayesfactor"</code>) that the
+macroevolutionary rate regime governing each branch is time-variable.
+Consider a particular branch X on a phylogenetic tree. If the length
+of this branch is 0.97 and <code>return.type = "posterior"</code>, this
+implies that branch X was governed by a time-varying rate dynamic in
+97% of all samples in the posterior. Alternatively, only 3% of
+samples specified a constant rate dynamic on this branch. 
+</p>
+<p>The function also provides an alternative measure of support if
+<code>return.type = "bayesfactor"</code>. In this case, the Bayes factor
+evidence for temporal rate variation is computed for each branch. We
+simply imagine that diversification rates on each branch can be
+explained by one of two models: either rates vary through time, or
+they do not. In the above example (branch X), the Bayes factor would
+be computed as follows, letting <em>Prob_timevar</em> and
+<em>Prior_timevar</em> be the posterior and prior probabilities that a
+particular branch is governed by a time-varying rate process:
+</p>
+<p><em>( Prob_timevar) / (1 - Prob_timevar)</em> * <em> (1 -
+prior_timevar) / (prior_timevar) </em>
+</p>
+<p>The Bayes factor is not particularly useful under uniform prior odds
+(e.g., <code>prior_tv = 0.5</code>), since this simply reduces to the ratio
+of posterior probabilities. Note that the prior must correspond to
+whatever you used to analyze your data in <code>BAMM</code>. By default,
+time-variable and time-constant processes are assumed to have equal
+prior odds.
+</p>
+<p>This function can be used several ways, but this function allows the
+user to quickly evaluate which portions of a phylogenetic tree have
+"significant" evidence for rate variation through time (see Examples
+below).
+</p>
+
+
+<h3>Value</h3>
+
+<p>An object of class <code>phylo</code>, but where branch lengths are
+replaced with the desired evidence (posterior probability or Bayes
+factor) that each branch is governed by a time-varying rate dynamic.
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Dan Rabosky
+</p>
+
+
+<h3>References</h3>
+
+<p><a href="http://bamm-project.org/">http://bamm-project.org/</a>
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>getRateThroughTimeMatrix</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R"># Load whale data:
+data(whales, events.whales)
+ed &lt;- getEventData(whales, events.whales, burnin=0.1, nsamples=200)
+
+# compute the posterior probability of 
+# time-varying rates on each branch
+tree.pp &lt;- testTimeVariableBranches(ed)
+
+# Plot tree, but color all branches where the posterior 
+# probability of time-varying rates exceeds 95\%:
+
+colvec &lt;- rep("black", nrow(whales$edge))
+colvec[tree.pp$edge.length &gt;= 0.95] &lt;- 'red'
+
+plot.phylo(whales, edge.color=colvec, cex=0.5)
+
+# now, compute Bayes factors for each branch:
+
+tree.bf &lt;- testTimeVariableBranches(ed, return.type = "bayesfactor")
+
+# now, assume that our prior was heavily stacked in favor
+# of a time-constant process:
+tree.bf2 &lt;- testTimeVariableBranches(ed, prior_tv = 0.1,
+                                     return.type = "bayesfactor")
+
+# Plotting the branch-specific Bayes factors against each other:
+
+plot.new()
+par(mar=c(5,5,1,1))
+plot.window(xlim=c(0, 260), ylim=c(0, 260))
+points(tree.bf2$edge.length, tree.bf$edge.length, pch=21, bg='red',
+       cex=1.5)
+axis(1)
+axis(2, las=1)
+mtext(side=1, text="Bayes factor: prior_tv = 0.1", line=3, cex=1.5)
+mtext(side = 2, text = "Bayes factor: uniform prior odds", line=3,
+      cex=1.5)
+
+# and you can see that if your prior favors CONSTANT RATE dynamics
+# you will obtain much stronger Bayes factor support for time varying
+# rates.
+# IF the evidence is present in your data to support time variation.
+# To be clear, the Bayes factors in this example were computed from the
+#  same posterior probabilities: it is only the prior odds that differed.
+</code></pre>
+
+
+</div>

@@ -1,0 +1,239 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>rnmixGibbs</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Gibbs Sampler for Normal Mixtures</h2>
+
+<h3>Description</h3>
+
+<p><code>rnmixGibbs</code> implements a Gibbs Sampler for normal mixtures.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">rnmixGibbs(Data, Prior, Mcmc)</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>Data </code></td>
+<td>
+<p>list(y)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Prior</code></td>
+<td>
+<p>list(Mubar, A, nu, V, a, ncomp)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Mcmc </code></td>
+<td>
+<p>list(R, keep, nprint, Loglike)</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+
+
+<h4>Model and Priors</h4>
+
+<p><code class="reqn">y_i</code> <code class="reqn">\sim</code> <code class="reqn">N(\mu_{ind_i}, \Sigma_{ind_i})</code> <br>
+ind <code class="reqn">\sim</code> iid multinomial(p) with <code class="reqn">p</code> an <code class="reqn">ncomp x 1</code> vector of probs
+</p>
+<p><code class="reqn">\mu_j</code>    <code class="reqn">\sim</code> <code class="reqn">N(mubar, \Sigma_j (x) A^{-1})</code> with <code class="reqn">mubar=vec(Mubar)</code> <br><code class="reqn">\Sigma_j</code> <code class="reqn">\sim</code> <code class="reqn">IW(nu, V)</code> <br>
+Note: this is the natural conjugate prior – a special case of multivariate regression <br></p>
+<p><code class="reqn">p</code> <code class="reqn">\sim</code> Dirchlet(a)
+</p>
+
+
+
+<h4>Argument Details</h4>
+
+<p><em><code>Data  = list(y)</code></em>
+</p>
+
+<table><tr>
+<td style="text-align: left;">
+    <code>y:       </code> </td>
+<td style="text-align: left;"> <code class="reqn">n x k</code> matrix of data (rows are obs)
+    </td>
+</tr></table>
+<p><em><code>Prior = list(Mubar, A, nu, V, a, ncomp)</code> [only <code>ncomp</code> required]</em>
+</p>
+
+<table>
+<tr>
+<td style="text-align: left;">
+    <code>Mubar:   </code> </td>
+<td style="text-align: left;"> <code class="reqn">1 x k</code> vector with prior mean of normal component means (def: 0) </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+    <code>A:       </code> </td>
+<td style="text-align: left;"> <code class="reqn">1 x 1</code> precision parameter for prior on mean of normal component (def: 0.01) </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+    <code>nu:      </code> </td>
+<td style="text-align: left;"> d.f. parameter for prior on Sigma (normal component cov matrix) (def: k+3) </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+    <code>V:       </code> </td>
+<td style="text-align: left;"> <code class="reqn">k x k</code> location matrix of IW prior on Sigma (def: nu*I) </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+    <code>a:       </code> </td>
+<td style="text-align: left;"> <code class="reqn">ncomp x 1</code> vector of Dirichlet prior parameters (def: <code>rep(5,ncomp)</code>) </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+    <code>ncomp:   </code> </td>
+<td style="text-align: left;"> number of normal components to be included
+    </td>
+</tr>
+</table>
+<p><em><code>Mcmc  = list(R, keep, nprint, Loglike)</code> [only <code>R</code> required]</em>
+</p>
+
+<table>
+<tr>
+<td style="text-align: left;">
+    <code>R:       </code> </td>
+<td style="text-align: left;"> number of MCMC draws </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+    <code>keep:    </code> </td>
+<td style="text-align: left;"> MCMC thinning parameter -- keep every <code>keep</code>th draw (def: 1) </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+    <code>nprint:  </code> </td>
+<td style="text-align: left;"> print the estimated time remaining for every <code>nprint</code>'th draw (def: 100, set to 0 for no print) </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+    <code>LogLike: </code> </td>
+<td style="text-align: left;"> logical flag for whether to compute the log-likelihood (def: <code>FALSE</code>)
+    </td>
+</tr>
+</table>
+<h4>
+<code>nmix</code> Details</h4>
+
+<p><code>nmix</code> is a list with 3 components. Several functions in the <code>bayesm</code> package that involve a Dirichlet Process or mixture-of-normals return <code>nmix</code>. Across these functions, a common structure is used for <code>nmix</code> in order to utilize generic summary and plotting functions. 
+</p>
+
+<table>
+<tr>
+<td style="text-align: left;">
+  <code>probdraw:</code> </td>
+<td style="text-align: left;"> <code class="reqn">ncomp x R/keep</code> matrix that reports the probability that each draw came from a particular component </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+  <code>zdraw:   </code> </td>
+<td style="text-align: left;"> <code class="reqn">R/keep x nobs</code> matrix that indicates which component each draw is assigned to </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+  <code>compdraw:</code> </td>
+<td style="text-align: left;"> A list of <code class="reqn">R/keep</code> lists of <code class="reqn">ncomp</code> lists. Each of the inner-most lists has 2 elemens: a vector of draws for <code>mu</code> and a matrix of draws for the Cholesky root of <code>Sigma</code>.
+  </td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>A list containing:
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>ll   </code></td>
+<td>
+ <p><code class="reqn">R/keep x 1</code> vector of log-likelihood values</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nmix </code></td>
+<td>
+<p> a list containing: <code>probdraw</code>, <code>zdraw</code>, <code>compdraw</code> (see “<code>nmix</code> Details” section)</p>
+</td>
+</tr>
+</table>
+<h3>Note</h3>
+
+<p>In this model, the component normal parameters are not-identified due to label-switching. However, the fitted mixture of normals density is identified as it is invariant to label-switching. See chapter 5 of Rossi et al below for details. 
+</p>
+<p>Use <code>eMixMargDen</code> or <code>momMix</code> to compute posterior expectation or distribution of various identified parameters.
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Peter Rossi, Anderson School, UCLA, <a href="mailto:perossichi@gmail.com">perossichi@gmail.com</a>.</p>
+
+
+<h3>References</h3>
+
+<p>For further discussion, see Chapter 3, <em>Bayesian Statistics and Marketing</em> by Rossi, Allenby, and McCulloch.</p>
+
+
+<h3>See Also</h3>
+
+ <p><code>rmixture</code>, <code>rmixGibbs</code> ,<code>eMixMargDen</code>, <code>momMix</code>,
+<code>mixDen</code>, <code>mixDenBi</code></p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">if(nchar(Sys.getenv("LONG_TEST")) != 0) {R=2000} else {R=10}
+set.seed(66)
+
+dim = 5
+k = 3   # dimension of simulated data and number of "true" components
+sigma = matrix(rep(0.5,dim^2), nrow=dim)
+diag(sigma) = 1
+sigfac = c(1,1,1)
+mufac = c(1,2,3)
+compsmv = list()
+for(i in 1:k) compsmv[[i]] = list(mu=mufac[i]*1:dim, sigma=sigfac[i]*sigma)
+
+# change to "rooti" scale
+comps = list() 
+for(i in 1:k) comps[[i]] = list(mu=compsmv[[i]][[1]], rooti=solve(chol(compsmv[[i]][[2]])))
+pvec = (1:k) / sum(1:k)
+
+nobs = 500
+dm = rmixture(nobs, pvec, comps)
+
+Data1 = list(y=dm$x)
+ncomp = 9
+Prior1 = list(ncomp=ncomp)
+Mcmc1 = list(R=R, keep=1)
+
+out = rnmixGibbs(Data=Data1, Prior=Prior1, Mcmc=Mcmc1)
+
+cat("Summary of Normal Mixture Distribution", fill=TRUE)
+summary(out$nmix)
+
+tmom = momMix(matrix(pvec,nrow=1), list(comps))
+mat = rbind(tmom$mu, tmom$sd)
+cat(" True Mean/Std Dev", fill=TRUE)
+print(mat)
+
+## plotting examples
+if(0){plot(out$nmix,Data=dm$x)}
+</code></pre>
+
+
+</div>

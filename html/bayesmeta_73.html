@@ -1,0 +1,179 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>SchmidliEtAl2017</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Historical variance example data</h2>
+
+<h3>Description</h3>
+
+<p>Estimates of endpoint variances from six studies.</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">data("SchmidliEtAl2017")</code></pre>
+
+
+<h3>Format</h3>
+
+<p>The data frame contains the following columns:
+</p>
+
+<table>
+<tr>
+<td style="text-align: left;">
+    <b>study</b> </td>
+<td style="text-align: left;"> <code>character</code> </td>
+<td style="text-align: left;"> study label </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+    <b>N</b>     </td>
+<td style="text-align: left;"> <code>integer</code>   </td>
+<td style="text-align: left;"> total sample size </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+    <b>stdev</b> </td>
+<td style="text-align: left;"> <code>numeric</code>   </td>
+<td style="text-align: left;"> standard deviation estimate </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+    <b>df</b>    </td>
+<td style="text-align: left;"> <code>integer</code>   </td>
+<td style="text-align: left;"> associated degrees of freedom
+  </td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>Schmidli <em>et al.</em> (2017) investigated the use of
+information on an endpoint's variance from previous (“historical”)
+studies for the design and analysis of a new clinical trial. As an
+example application, the problem of designing a trial in <em>wet
+age-related macular degeneration (AMD)</em> was considered. Trial
+design, and in particular considerations regarding the required sample
+size, hinge on the expected amount of variability in the primary
+endpoint (here: <em>visual acuity</em>, which is measured on a scale
+ranging from 0 to 100 via an eye test chart).
+</p>
+<p>Historical data from six previous trials are available (Szabo <em>et
+al.</em>; 2015), each trial providing an estimate <code class="reqn">\hat{s}_i</code> of
+the endpoint's standard deviation along with the associated number of
+degrees of freedom <code class="reqn">\nu_i</code>. The standard deviations
+may then be modelled on the logarithmic scale, where the estimates and
+their associated standard errors are given by 
+</p>
+<p style="text-align: center;"><code class="reqn">y_i=\log(\hat{s}_i) \quad \mbox{and} \quad 
+  \sigma_i=\sqrt{\frac{1}{2\,\nu_i}}</code>
+</p>
+
+<p>The <em>unit information standard deviation (UISD)</em> for a logarithmic
+standard deviation then is at approximately
+<code class="reqn">\frac{1}{\sqrt{2}}</code>. 
+</p>
+
+
+<h3>Source</h3>
+
+<p>H. Schmidli, B. Neuenschwander, T. Friede.
+Meta-analytic-predictive use of historical variance data
+for the design and analysis of clinical trials.
+<em>Computational Statistics and Data Analysis</em>, <b>113</b>:100-110, 2017.
+<a href="https://doi.org/10.1016/j.csda.2016.08.007">doi:10.1016/j.csda.2016.08.007</a>.
+</p>
+
+
+<h3>References</h3>
+
+<p>S.M. Szabo, M. Hedegaard, K. Chan, K. Thorlund, R. Christensen,
+H. Vorum, J.P. Jansen.
+Ranibizumab vs. aflibercept for wet age-related macular degeneration:
+network meta-analysis to understand the value of reduced frequency dosing.
+<em>Current Medical Research and Opinion</em>, <b>31</b>(11):2031-2042, 2015.
+<a href="https://doi.org/10.1185/03007995.2015.1084909">doi:10.1185/03007995.2015.1084909</a>.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>uisd</code>, <code>ess</code>.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R"># load data:
+data("SchmidliEtAl2017")
+
+# show data:
+SchmidliEtAl2017
+
+## Not run: 
+# derive log-SDs and their standard errors:
+dat &lt;- cbind(SchmidliEtAl2017,
+             logstdev    = log(SchmidliEtAl2017$stdev),
+             logstdev.se = sqrt(0.5/SchmidliEtAl2017$df))
+dat
+
+# alternatively, use "metafor::escalc()" function:
+es &lt;- escalc(measure="SDLN",
+             yi=log(stdev), vi=0.5/df, ni=N,
+             slab=study, data=SchmidliEtAl2017)
+es
+
+# perform meta-analysis of log-stdevs:
+bm &lt;- bayesmeta(y=dat$logstdev,
+                sigma=dat$logstdev.se,
+                label=dat$study,
+                tau.prior=function(t){dhalfnormal(t, scale=sqrt(2)/4)})
+
+# or, alternatively:
+bm &lt;- bayesmeta(es,
+                tau.prior=function(t){dhalfnormal(t, scale=sqrt(2)/4)})
+
+# draw forest plot (see Fig.1):
+forestplot(bm, zero=NA,
+           xlab="log standard deviation")
+
+# show heterogeneity posterior:
+plot(bm, which=4, prior=TRUE)
+
+# posterior of log-stdevs, heterogeneity,
+# and predictive distribution:
+bm$summary
+
+# prediction (standard deviations):
+exp(bm$summary[c(2,5,6),"theta"])
+exp(bm$qposterior(theta=c(0.025, 0.25, 0.50, 0.75, 0.975), predict=TRUE))
+
+# compute required sample size (per arm):
+power.t.test(n=NULL, delta=8, sd=10.9, power=0.8)
+power.t.test(n=NULL, delta=8, sd=14.0, power=0.8)
+
+# check UISD:
+uisd(es, indiv=TRUE)
+uisd(es)
+1 / sqrt(2)
+
+# compute predictive distribution's ESS:
+ess(bm, uisd=1/sqrt(2))
+# actual total sample size:
+sum(dat$N)
+
+# illustrate predictive distribution
+# on standard-deviation-scale (Fig.2):
+x &lt;- seq(from=5, to=20, length=200)
+plot(x, (1/x) * bm$dposterior(theta=log(x), predict=TRUE), type="l",
+     xlab=expression("predicted standard deviation "*sigma[k+1]),
+     ylab="predictive density")
+abline(h=0, col="grey")
+
+## End(Not run)
+</code></pre>
+
+
+</div>

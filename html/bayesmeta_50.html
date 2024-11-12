@@ -1,0 +1,451 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>pppvalue</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Posterior predictive <code class="reqn">p</code>-values</h2>
+
+<h3>Description</h3>
+
+<p>Compute posterior or prior predictive <code class="reqn">p</code>-values from a
+<code>bayesmeta</code> object.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">  pppvalue(x, parameter = "mu", value = 0.0,
+           alternative = c("two.sided", "less", "greater"),
+           statistic = "median",
+           rejection.region,
+           n = 10,
+           prior = FALSE,
+           quietly = FALSE,
+           parallel, seed, ...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>a <code>bayesmeta</code> object.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>parameter</code></td>
+<td>
+<p>the parameter to be tested. May be the effect
+(<code>"mu"</code>), the heterogeneity (<code>"tau"</code>) or one of the
+study-specific (<code class="reqn">\theta_i</code>) parameters denoted by
+their label or their index.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>value</code></td>
+<td>
+<p>the (null-) hypothesized value.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>alternative</code></td>
+<td>
+<p>the type of alternative hypothesis.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>statistic</code></td>
+<td>
+<p>the figure to be used a the ‘test
+statistic’, or ‘discrepancy variable’. May be chosen as <code>"t"</code>,
+<code>"Q"</code> or <code>"cdf"</code>, or among the row
+names of the <code>bayesmeta</code> object's ‘<code>...$summary</code>’
+element. <em>Or</em> it may be specified as a <code>function</code>. For details, see below.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>rejection.region</code></td>
+<td>
+<p>the test statistic's rejection region. May be
+one of <code>"upper.tail"</code>, <code>"lower.tail"</code> or
+<code>"two.tailed"</code>. If unspecified, it is set automatically based
+on the ‘<code>alternative</code>’ and ‘<code>statistic</code>’
+parameters.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>n</code></td>
+<td>
+<p>the number of Monte Carlo replications to be generated. The
+default value is <code>n=10</code>, but in practice a substantially larger
+value should be appropriate.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>prior</code></td>
+<td>
+<p>a logical flag to request <em>prior predictive</em> (instead
+of <em>posterior predictive</em>) <code class="reqn">p</code>-values. Prior predictive
+values are only available for hypotheses concerning the effect
+(<code class="reqn">\mu</code>) and heterogeneity (<code class="reqn">\tau</code>) parameters.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>quietly</code></td>
+<td>
+<p>a logical flag to show (or suppress) output during
+computation; this may also speed up computations slightly.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>parallel</code></td>
+<td>
+<p>the number of parallel processes to utilize. By
+default, if multiple (k) cores are detected, then k-1 parallel
+processes are used.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>seed</code></td>
+<td>
+<p>(optional) an <code>integer</code> random seed value to
+generate reproducible results.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>further parameters passed to ‘<code>statistic</code>’,
+<em>if</em> the ‘<code>statistic</code>’ argument was specified as a
+<code>function</code>.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>Posterior predictive <code class="reqn">p</code>-values are Bayesian analogues to
+‘classical’ <code class="reqn">p</code>-values (Meng, 1994; Gelman, Meng and Stern,
+1996; Gelman et al., 2014). The <code>pppvalue()</code> function allows to
+compute these values for one- and two-sided hypotheses concerning the
+effect (<code class="reqn">\mu</code>) or heterogeneity (<code class="reqn">\tau</code>) parameter, or one of
+the study-specific effect parameters (<code class="reqn">\theta_i</code>) in a
+random-effects meta-analysis.
+</p>
+<p><em>Prior</em> predictive <code class="reqn">p</code>-values have a
+similar interpretation, but they have a stronger dependence on the
+prior specification and are only available when the prior is proper;
+for a more detailed discussion, see Gelman, Meng and Stern (1996,
+Sec. 4).
+</p>
+<p>The function may also be used to only generate samples (<code class="reqn">\tau</code>,
+<code class="reqn">\mu</code>, <code class="reqn">\theta_i</code>, <code class="reqn">y_i</code>) without having to also
+derive a statistic or a <code class="reqn">p</code>-value. In order to achieve that, the
+‘<code>statistic</code>’ argument may be specified as
+‘<code>NA</code>’, and generated samples may be recovered from the
+‘<code>...$replicates</code>’ output element.
+</p>
+
+
+<h4>
+<code class="reqn">p</code>-values from Monte Carlo sampling</h4>
+
+<p>The computation
+is based on Monte Carlo sampling and repeated analysis of re-generated
+data sets drawn from the parameters' (conditional) posterior
+predictive (or prior) distribution; so the <code class="reqn">p</code>-value derivation is
+somewhat computationally expensive. The <code class="reqn">p</code>-value eventually is
+computed based on how far in the tail area the actual data are (in
+terms of the realized ‘test statistic’ or ‘discrepancy’)
+relative to the Monte-Carlo-sampled distribution. Accuracy of the
+computed <code class="reqn">p</code>-value hence strongly depends on the number of samples
+(as specified through the ‘<code>n</code>’ argument) that are
+generated. Also, (near-) zero <code class="reqn">p</code>-values need to be interpreted
+with caution, and in relation to the used Monte Carlo sample size
+(<code>n</code>).</p>
+
+
+
+<h4>‘Test’-statistics or ‘discrepancy
+variables’</h4>
+
+<p>The ‘<code>statistic</code>’ argument determines the statistic
+to be computed from the data as a measure of deviation from the null
+hypothesis. If specified as <code>"Q"</code>, then Cochran's <code class="reqn">Q</code> statistic is
+computed; this is useful for testing for homogeneity (<code class="reqn">\tau=0</code>). If specified as
+one of the row names of the ‘<code>x$summary</code>’ element, then,
+depending on the type of null hypothesis specified through the
+‘<code>parameter</code>’ argument, the corresponding parameter's posterior
+quantity is used for the statistic. If specified as <code>"t"</code>, then a
+<code class="reqn">t</code>-type statistic is computed (the difference between the
+corresponding parameter's posterior mean and its hypothesized value,
+divided by the posterior standard deviation). If specified as
+<code>"cdf"</code>, the parameter's marginal posterior cumulative
+distribution function evaluated a the hypothesized value
+(‘<code>value</code>’) is used.
+</p>
+<p>The ‘<code>statistic</code>’ argument may also be specified as an
+arbitrary <code>function</code> of the data (<code class="reqn">y</code>). The <code>function</code>'s
+first argument then needs to be the data (<code class="reqn">y</code>), additional
+arguments may be passed as arguments (‘<code>...</code>’) to the
+‘<code>pppvalue()</code>’ function. See also the examples below.</p>
+
+
+
+<h4>One- and two-sided hypotheses</h4>
+
+<p>Specification of one- or
+two-sided hypotheses not only has implications for the determination
+of the <code class="reqn">p</code>-value from the samples, but also for the sampling
+process itself. Parameter values are drawn from a subspace according
+to the null hypothesis, which for a two-sided test is a line, and for
+a one-sided test is a half-plane. This also implies that one- and
+two-sided <code class="reqn">p</code>-values cannot simply be converted into one
+another.
+</p>
+<p>For example, when specifying
+<code>pppvalue(..., param="mu", val=0, alt="two.sided")</code>,
+then first paramater values (<code class="reqn">\tau</code>, <code class="reqn">\mu</code>) are drawn from the
+conditional posterior distribution <code class="reqn">p(\tau, \mu | y, \sigma,
+  \mu=0)</code>, and subsequently new data sets
+are generated based on the parameters. If a one-sided hypothesis is
+specified, e.g. via
+<code>pppvalue(..., param="mu", val=0, alt="less")</code>,
+then parameters are drawn from <code class="reqn">p(\tau, \mu | y,
+  \sigma, \mu&gt;0)</code>.
+</p>
+<p>For a hypothesis concerning the individual effect parameters
+<code class="reqn">\theta_i</code>, conditions are imposed on the corresponding
+<code class="reqn">\theta_i</code>. For example, for a specification of
+<code>pppvalue(..., param=2, val=0, alt="less")</code>, the
+hypothesis concerns the <code class="reqn">i</code>=2nd study's effect paramater
+<code class="reqn">\theta_2</code>. First a sample is generated from
+<code class="reqn">p(\theta_2|y, \sigma, \theta_2 &gt; 0)</code>. Then samples of <code class="reqn">\mu</code> and <code class="reqn">\tau</code> are generated
+by conditioning on the generated <code class="reqn">\theta_2</code> value, and
+data <code class="reqn">y</code> are generated by conditioning on all three.
+</p>
+<p>Unless explicitly specified through the
+‘<code>rejection.region</code>’ argument, the test statistic's
+“rejection region” (the direction in which extreme <code>statistic</code>
+values indicate a departure from the null hypothesis) is set based on the
+‘<code>alternative</code>’ and ‘<code>statistic</code>’
+parameters. The eventually used setting can be checked in the output's
+‘<code>...$rejection.region</code>’ component.</p>
+
+
+
+<h4>Computation</h4>
+
+<p>When aiming to compute a <code class="reqn">p</code>-value, it is
+probably a good idea to first start with a smaller ‘<code>n</code>’
+argument to get a rough idea of the <code class="reqn">p</code>-value's order of magnitude
+as well as the computational speed, before going over to a larger,
+more realistic <code>n</code> value. The implementation is able to utilize
+multiple processors or cores via the <span class="pkg">parallel</span> package; details
+may be specified via the ‘<code>parallel</code>’ argument.</p>
+
+
+
+<h3>Value</h3>
+
+<p>A <code>list</code> of class ‘<code>htest</code>’ containing the following
+components:
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>statistic</code></td>
+<td>
+<p>the ‘test statistic’ (or ‘discrepancy’)
+value based on the actual data.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>parameter</code></td>
+<td>
+<p>the number (<code>n</code>) of Monte Carlo replications used.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>p.value</code></td>
+<td>
+<p>the derived <code class="reqn">p</code>-value.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>null.value</code></td>
+<td>
+<p>the (null-) hypothesized parameter value.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>alternative</code></td>
+<td>
+<p>the type of alternative hypothesis.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>method</code></td>
+<td>
+<p>a character string indicating what type of test was performed.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>data.name</code></td>
+<td>
+<p>the name of the underlying <code>bayesmeta</code> object.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>call</code></td>
+<td>
+<p>an object of class <code>call</code> giving the
+function call that generated the <code>htest</code> object.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>rejection.region</code></td>
+<td>
+<p>the test statistic's rejection region.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>replicates</code></td>
+<td>
+<p>a <code>list</code> containing the replicated parameters
+(<code class="reqn">\tau</code>, <code class="reqn">\mu</code>, <code class="reqn">\theta_i</code>),
+data (<code class="reqn">y_i</code>) and statistic, along with an indicator for those
+samples constituting the distribution's ‘tail area’.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>computation.time</code></td>
+<td>
+<p>The computation time (in seconds) used.</p>
+</td>
+</tr>
+</table>
+<h3>Author(s)</h3>
+
+<p>Christian Roever <a href="mailto:christian.roever@med.uni-goettingen.de">christian.roever@med.uni-goettingen.de</a>
+</p>
+
+
+<h3>References</h3>
+
+<p>X.-L. Meng.
+Posterior predictive p-values.
+<em>The Annals of Statistics</em>, <b>22</b>(3):1142-1160, 1994.
+<a href="https://doi.org/10.1214/aos/1176325622">doi:10.1214/aos/1176325622</a>.
+</p>
+<p>A. Gelman, X.-L. Meng, H. Stern.
+Posterior predictive assessment of model fitness
+via realized discrepancies.
+<em>Statistica Sinica</em>, <b>6</b>(4):733-760, 1996.
+</p>
+<p>A. Gelman, J.B. Carlin, H.S. Stern, D.B. Dunson, A. Vehtari,
+D.B. Rubin.
+<em>Bayesian data analysis</em>.
+Chapman &amp; Hall / CRC, Boca Raton, 2014.
+</p>
+<p>C. Roever.
+Bayesian random-effects meta-analysis using the bayesmeta R package.
+<em>Journal of Statistical Software</em>, <b>93</b>(6):1-51, 2020.
+<a href="https://doi.org/10.18637/jss.v093.i06">doi:10.18637/jss.v093.i06</a>.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>bayesmeta</code>, <code>prop.test</code>.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## Not run: 
+# perform a meta analysis;
+# load data:
+data("CrinsEtAl2014")
+# compute effect sizes (log odds ratios) from count data
+# (using "metafor" package's "escalc()" function):
+require("metafor")
+crins.srr &lt;- escalc(measure="OR",
+                    ai=exp.SRR.events,  n1i=exp.total,
+                    ci=cont.SRR.events, n2i=cont.total,
+                    slab=publication, data=CrinsEtAl2014, subset=c(1,4,6))
+# analyze:
+bma &lt;- bayesmeta(crins.srr, mu.prior.mean=0, mu.prior.sd=4,
+                 tau.prior=function(t){dhalfnormal(t, scale=0.5)})
+
+# compute a 2-sided p-value for the effect (mu) parameter
+# (note: this may take a while!):
+p &lt;- pppvalue(bma, parameter="mu", value=0, n=100)
+
+# show result:
+print(p)
+
+# show the test statistic's distribution
+# along with its actualized value:
+plot(ecdf(p$replicates$statistic[,1]),
+     xlim=range(c(p$statistic, p$replicates$statistic[,1])))
+abline(v=p$statistic, col="red")
+
+# show the parameter values
+# drawn from the (conditional) posterior distribution:
+plot(bma, which=2)
+abline(h=p$null.value)                                # (the null-hypothesized mu value)
+points(p$replicates$tau, p$replicates$mu, col="cyan") # (the samples)
+
+######################################################################
+#  Among the 3 studies, only the first (Heffron, 2003) was randomized.
+#  One might wonder about this particular study's effect (theta[1])
+#  in the light of the additional evidence and compute a one-sided
+#  p-value:
+
+p &lt;- pppvalue(bma, parameter="Heffron", value=0, n=100, alternative="less")
+print(p)
+
+######################################################################
+#  One may also define one's own 'test' statistic to be used.
+#  For example, one could utilize the Bayes factor to generate
+#  a p-value for the homogeneity (tau=0) hypothesis:
+
+BF &lt;- function(y, sigma)
+{
+  bm &lt;- bayesmeta(y=y, sigma=sigma,
+                  mu.prior.mean=0, mu.prior.sd=4,
+                  tau.prior=function(t){dhalfnormal(t, scale=0.5)},
+                  interval.type="central")
+  # (central intervals are faster to compute;
+  #  interval type otherwise is not relevant here)
+  return(bm$bayesfactor[1,"tau=0"])
+}
+# NOTE: the 'bayesmeta()' arguments above should probably match
+#       the specifications from the original analysis
+
+p &lt;- pppvalue(bma, parameter="tau", statistic=BF, value=0, n=100,
+              alternative="greater", rejection.region="lower.tail",
+              sigma=bma$sigma)
+print(p)
+
+######################################################################
+#  If one is only interested in generating samples (and not in test
+#  statistics or p-values), one may specify the 'statistic' argument
+#  as 'NA'.
+#  Note that different 'parameter', 'value' and 'alternative' settings
+#  imply different sampling schemes.
+
+p &lt;- pppvalue(bma, parameter="mu", statistic=NA, value=0,
+              alternative="less", n=100)
+
+plot(bma, which=2)
+abline(h=p$null.value)
+points(p$replicates$tau, p$replicates$mu, col="cyan")
+
+## End(Not run)
+</code></pre>
+
+
+</div>

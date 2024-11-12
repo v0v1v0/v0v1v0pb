@@ -1,0 +1,215 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>BT_call</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>(Adaptive) Boosting Trees (ABT/BT) fit.</h2>
+
+<h3>Description</h3>
+
+<p>Fit a (Adaptive) Boosting Trees algorithm. This is for "power" users who have a large number of variables and wish to avoid calling
+<code>model.frame</code> which can be slow in this instance. This function is in particular called by <code>BT</code>.
+It is mainly split in two parts, the first one considers the initialization (see <code>BT_callInit</code>) whereas the second performs all the boosting iterations (see <code>BT_callBoosting</code>).
+By default, this function does not perform input checks (those are all done in <code>BT</code>) and all the parameters should be given in the right format. We therefore
+suppose that the user is aware of all the choices made.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">BT_call(
+  training.set,
+  validation.set,
+  tweedie.power,
+  respVar,
+  w,
+  explVar,
+  ABT,
+  tree.control,
+  train.fraction,
+  interaction.depth,
+  bag.fraction,
+  shrinkage,
+  n.iter,
+  colsample.bytree,
+  keep.data,
+  is.verbose
+)
+
+BT_callInit(training.set, validation.set, tweedie.power, respVar, w)
+
+BT_callBoosting(
+  training.set,
+  validation.set,
+  tweedie.power,
+  ABT,
+  tree.control,
+  interaction.depth,
+  bag.fraction,
+  shrinkage,
+  n.iter,
+  colsample.bytree,
+  train.fraction,
+  keep.data,
+  is.verbose,
+  respVar,
+  w,
+  explVar
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>training.set</code></td>
+<td>
+<p>a data frame containing all the related variables on which one wants to fit the algorithm.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>validation.set</code></td>
+<td>
+<p>a held-out data frame containing all the related variables on which one wants to assess the algorithm performance. This can be NULL.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>tweedie.power</code></td>
+<td>
+<p>Experimental parameter currently not used - Set to 1 referring to Poisson distribution.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>respVar</code></td>
+<td>
+<p>the name of the target/response variable.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>w</code></td>
+<td>
+<p>a vector of weights.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>explVar</code></td>
+<td>
+<p>a vector containing the name of explanatory variables.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ABT</code></td>
+<td>
+<p>a boolean parameter. If <code>ABT=TRUE</code> an adaptive boosting tree algorithm is built whereas if <code>ABT=FALSE</code> an usual boosting tree algorithm is run.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>tree.control</code></td>
+<td>
+<p>allows to define additional tree parameters that will be used at each iteration. See <code>rpart.control</code> for more information.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>train.fraction</code></td>
+<td>
+<p>the first <code>train.fraction * nrows(data)</code> observations are used to fit the <code>BT</code> and the remainder are used for
+computing out-of-sample estimates (also known as validation error) of the loss function. It is mainly used to report the value in the <code>BTFit</code> object.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>interaction.depth</code></td>
+<td>
+<p>the maximum depth of variable interactions: 1 builds an additive model, 2 builds a model with up to two-way interactions, etc.
+This parameter can also be interpreted as the maximum number of non-terminal nodes. By default, it is set to 4.
+Please note that if this parameter is <code>NULL</code>, all the trees in the expansion are built based on the <code>tree.control</code> parameter only.
+This option is devoted to advanced users only and allows them to benefit from the full flexibility of the implemented algorithm.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>bag.fraction</code></td>
+<td>
+<p>the fraction of independent training observations randomly selected to propose the next tree in the expansion.
+This introduces randomness into the model fit. If <code>bag.fraction</code>&lt;1 then running the same model twice will result in similar but different fits.
+<code>BT</code> uses the R random number generator, so <code>set.seed</code> ensures the same model can be reconstructed. Please note that if this parameter is used the <code>BTErrors$training.error</code>
+corresponds to the normalized in-bag error.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>shrinkage</code></td>
+<td>
+<p>a shrinkage parameter applied to each tree in the expansion. Also known as the learning rate or step-size reduction.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>n.iter</code></td>
+<td>
+<p>the total number of iterations to fit. This is equivalent to the number of trees and the number of basis functions in the additive expansion.
+Please note that the initialization is not taken into account in the <code>n.iter</code>. More explicitly, a weighted average initializes the algorithm and then <code>n.iter</code> trees
+are built. Moreover, note that the <code>bag.fraction</code>, <code>colsample.bytree</code>, ... are not used for this initializing phase.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>colsample.bytree</code></td>
+<td>
+<p>each tree will be trained on a random subset of <code>colsample.bytree</code> number of features. Each tree will consider a new
+random subset of features from the formula, adding variability to the algorithm and reducing computation time. <code>colsample.bytree</code> will be bounded between
+1 and the number of features considered.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>keep.data</code></td>
+<td>
+<p>a boolean variable indicating whether to keep the data frames. This is particularly useful if one wants to keep track of the initial data frames
+and is further used for predicting in case any data frame is specified.
+Note that in case of cross-validation, if <code>keep.data=TRUE</code> the initial data frames are saved whereas the cross-validation samples are not.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>is.verbose</code></td>
+<td>
+<p>if <code>is.verbose=TRUE</code>, the <code>BT</code> will print out the algorithm progress.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>a <code>BTFit</code> object.
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Gireg Willame <a href="mailto:gireg.willame@gmail.com">gireg.willame@gmail.com</a>
+</p>
+<p><em>This package is inspired by the <code>gbm3</code> package. For more details, see <a href="https://github.com/gbm-developers/gbm3/">https://github.com/gbm-developers/gbm3/</a></em>.
+</p>
+
+
+<h3>References</h3>
+
+<p>M. Denuit, D. Hainaut and J. Trufin (2019). <strong>Effective Statistical Learning Methods for Actuaries |: GLMs and Extensions</strong>, <em>Springer Actuarial</em>.
+</p>
+<p>M. Denuit, D. Hainaut and J. Trufin (2019). <strong>Effective Statistical Learning Methods for Actuaries ||: Tree-Based Methods and Extensions</strong>, <em>Springer Actuarial</em>.
+</p>
+<p>M. Denuit, D. Hainaut and J. Trufin (2019). <strong>Effective Statistical Learning Methods for Actuaries |||: Neural Networks and Extensions</strong>, <em>Springer Actuarial</em>.
+</p>
+<p>M. Denuit, D. Hainaut and J. Trufin (2022). <strong>Response versus gradient boosting trees, GLMs and neural networks under Tweedie loss and log-link</strong>.
+Accepted for publication in <em>Scandinavian Actuarial Journal</em>.
+</p>
+<p>M. Denuit, J. Huyghe and J. Trufin (2022). <strong>Boosting cost-complexity pruned trees on Tweedie responses: The ABT machine for insurance ratemaking</strong>.
+Paper submitted for publication.
+</p>
+<p>M. Denuit, J. Trufin and T. Verdebout (2022). <strong>Boosting on the responses with Tweedie loss functions</strong>. Paper submitted for publication.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>BTFit</code>, <code>BTCVFit</code>, <code>BT_perf</code>, <code>predict.BTFit</code>,
+<code>summary.BTFit</code>, <code>print.BTFit</code>, <code>.BT_cv_errors</code>.
+</p>
+
+
+</div>

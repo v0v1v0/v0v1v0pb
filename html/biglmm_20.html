@@ -1,0 +1,229 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>bigglm</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Bounded memory linear regression </h2>
+
+<h3>Description</h3>
+
+<p><code>bigglm</code> creates a generalized linear model object that uses only
+<code>p^2</code> memory for <code>p</code> variables.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">bigglm(formula, data, family=gaussian(),...)
+## S3 method for class 'data.frame'
+bigglm(formula, data,...,chunksize=5000)
+## S3 method for class 'function'
+bigglm(formula, data, family=gaussian(),
+     weights=NULL, sandwich=FALSE, maxit=8, tolerance=1e-7,
+     start=NULL,quiet=FALSE,...)
+## S3 method for class 'RODBC'
+bigglm(formula, data, family=gaussian(),
+      tablename, ..., chunksize=5000)
+## S4 method for signature 'ANY,DBIConnection'
+bigglm(formula, data, family=gaussian(),
+tablename, ..., chunksize=5000)
+## S3 method for class 'bigglm'
+vcov(object,dispersion=NULL, ...)
+## S3 method for class 'bigglm'
+deviance(object,...)
+## S3 method for class 'bigglm'
+family(object,...)
+## S3 method for class 'bigglm'
+AIC(object,...,k=2)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>formula</code></td>
+<td>
+<p>A model formula</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+<p>See Details below. Method dispatch is on this argument</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>family</code></td>
+<td>
+<p>A glm family object</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>chunksize</code></td>
+<td>
+<p>Size of chunks for processng the data frame</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>weights</code></td>
+<td>
+<p>A one-sided, single term formula specifying weights</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>sandwich</code></td>
+<td>
+<p><code>TRUE</code> to compute the Huber/White sandwich
+covariance matrix (uses <code>p^4</code> memory rather than <code>p^2</code>)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>maxit</code></td>
+<td>
+<p>Maximum number of Fisher scoring iterations</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>tolerance</code></td>
+<td>
+<p>Tolerance for change in coefficient (as multiple of
+standard error)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>start</code></td>
+<td>
+<p>Optional starting values for coefficients. If
+<code>NULL</code>, <code>maxit</code> should be at least 2 as some quantities
+will not be computed on the first iteration</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>object</code></td>
+<td>
+<p>A <code>bigglm</code> object</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>dispersion</code></td>
+<td>
+<p>Dispersion parameter, or <code>NULL</code> to estimate</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>tablename</code></td>
+<td>
+<p>For the <code>SQLiteConnection</code> method, the name of a
+SQL table, or a string specifying a join or nested select</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>k</code></td>
+<td>
+<p>penalty per parameter for AIC</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>quiet</code></td>
+<td>
+<p>When <code>FALSE</code>, warn if the fit did not converge</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Additional arguments</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The <code>data</code> argument may be a function, a data frame, or a
+<code>SQLiteConnection</code> or <code>RODBC</code> connection object. 
+</p>
+<p>When it is a function the function must take a single argument
+<code>reset</code>. When this argument is <code>FALSE</code> it returns a data
+frame with the next chunk of data or <code>NULL</code> if no more data are
+available. When<code>reset=TRUE</code> it indicates that the data should be
+reread from the  beginning by subsequent calls. The chunks need not be
+the same size or in the same order when the data are reread, but the
+same data must be provided in total.  The <code>bigglm.data.frame</code>
+method gives an example of how such a function might be written,
+another is in the Examples below.
+</p>
+<p>The model formula must not contain any data-dependent terms, as these
+will not be consistent when updated.  Factors are permitted, but the
+levels of the factor must be the same across all data chunks (empty
+factor levels are ok).  Offsets are allowed (since version 0.8).
+</p>
+<p>The <code>SQLiteConnection</code> and <code>RODBC</code> methods loads only the
+variables needed for the model, not the whole table. The code in the
+<code>SQLiteConnection</code> method should work for other <code>DBI</code>
+connections, but I do not have any of these to check it with.
+</p>
+
+
+<h3>Value</h3>
+
+<p>An object of class <code>bigglm</code>
+</p>
+
+
+<h3>References</h3>
+
+<p>Algorithm AS274  Applied Statistics (1992) Vol.41, 
+No. 2 </p>
+
+
+<h3>See Also</h3>
+
+<p><code>biglm</code>, glm</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">data(trees)
+ff&lt;-log(Volume)~log(Girth)+log(Height)
+a &lt;- bigglm(ff,data=trees, chunksize=10, sandwich=TRUE)
+summary(a)
+
+gg&lt;-log(Volume)~log(Girth)+log(Height)+offset(2*log(Girth)+log(Height))
+b &lt;- bigglm(gg,data=trees, chunksize=10, sandwich=TRUE)
+summary(b)
+
+
+## requires internet access
+make.data&lt;-function(urlname, chunksize,...){
+      conn&lt;-NULL
+     function(reset=FALSE){
+     if(reset){
+       if(!is.null(conn)) close(conn)
+       conn&lt;&lt;-url(urlname,open="r")
+     } else{
+       rval&lt;-read.table(conn, nrows=chunksize,...)
+       if (nrow(rval)==0) {
+            close(conn)
+            conn&lt;&lt;-NULL
+            rval&lt;-NULL
+       }
+       return(rval)
+     }
+  }
+}
+
+airpoll&lt;-make.data("http://faculty.washington.edu/tlumley/NO2.dat",
+        chunksize=150,
+        col.names=c("logno2","logcars","temp","windsp",
+                    "tempgrad","winddir","hour","day"))
+
+b&lt;-bigglm(exp(logno2)~logcars+temp+windsp,
+         data=airpoll, family=Gamma(log),
+         start=c(2,0,0,0),maxit=10)
+summary(b)         
+
+</code></pre>
+
+
+</div>

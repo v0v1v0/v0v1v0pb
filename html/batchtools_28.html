@@ -1,0 +1,206 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>makeExperimentRegistry</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>ExperimentRegistry Constructor</h2>
+
+<h3>Description</h3>
+
+<p><code>makeExperimentRegistry</code> constructs a special <code>Registry</code> which
+is suitable for the definition of large scale computer experiments.
+</p>
+<p>Each experiments consists of a <code>Problem</code> and an <code>Algorithm</code>.
+These can be parametrized with <code>addExperiments</code> to actually define computational
+jobs.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">makeExperimentRegistry(
+  file.dir = "registry",
+  work.dir = getwd(),
+  conf.file = findConfFile(),
+  packages = character(0L),
+  namespaces = character(0L),
+  source = character(0L),
+  load = character(0L),
+  seed = NULL,
+  make.default = TRUE
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>file.dir</code></td>
+<td>
+<p>[<code>character(1)</code>]<br>
+Path where all files of the registry are saved.
+Default is directory “registry” in the current working directory.
+The provided path will get normalized unless it is given relative to the home directory
+(i.e., starting with “~”). Note that some templates do not handle relative paths well.
+</p>
+<p>If you pass <code>NA</code>, a temporary directory will be used.
+This way, you can create disposable registries for <code>btlapply</code> or examples.
+By default, the temporary directory <code>tempdir()</code> will be used.
+If you want to use another directory, e.g. a directory which is shared between nodes,
+you can set it in your configuration file by setting the variable <code>temp.dir</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>work.dir</code></td>
+<td>
+<p>[<code>character(1)</code>]<br>
+Working directory for R process for running jobs.
+Defaults to the working directory currently set during Registry construction (see <code>getwd</code>).
+<code>loadRegistry</code> uses the stored <code>work.dir</code>, but you may also explicitly overwrite it,
+e.g., after switching to another system.
+</p>
+<p>The provided path will get normalized unless it is given relative to the home directory
+(i.e., starting with “~”). Note that some templates do not handle relative paths well.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>conf.file</code></td>
+<td>
+<p>[<code>character(1)</code>]<br>
+Path to a configuration file which is sourced while the registry is created.
+In the configuration file you can define how <span class="pkg">batchtools</span> interacts with the system via <code>ClusterFunctions</code>.
+Separating the configuration of the underlying host system from the R code allows to easily move computation to another site.
+</p>
+<p>The file lookup is implemented in the internal (but exported) function <code>findConfFile</code> which returns the first file found of the following candidates:
+</p>
+
+<ol>
+<li>
+<p>File “batchtools.conf.R” in the path specified by the environment variable “R_BATCHTOOLS_SEARCH_PATH”.
+</p>
+</li>
+<li>
+<p>File “batchtools.conf.R” in the current working directory.
+</p>
+</li>
+<li>
+<p>File “config.R” in the user configuration directory as reported by <code>rappdirs::user_config_dir("batchtools", expand = FALSE)</code> (depending on OS, e.g., on linux this usually resolves to “~/.config/batchtools/config.R”).
+</p>
+</li>
+<li>
+<p>“.batchtools.conf.R” in the home directory (“~”).
+</p>
+</li>
+<li>
+<p>“config.R” in the site config directory as reported by <code>rappdirs::site_config_dir("batchtools")</code> (depending on OS). This file can be used for admins to set sane defaults for a computation site.
+</p>
+</li>
+</ol>
+<p>Set to <code>NA</code> if you want to suppress reading any configuration file.
+If a configuration file is found, it gets sourced inside the environment of the registry after the defaults for all variables are set.
+Therefore you can set and overwrite slots, e.g. <code>default.resources = list(walltime = 3600)</code> to set default resources or “max.concurrent.jobs” to
+limit the number of jobs allowed to run simultaneously on the system.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>packages</code></td>
+<td>
+<p>[<code>character</code>]<br>
+Packages that will always be loaded on each node.
+Uses <code>require</code> internally.
+Default is <code>character(0)</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>namespaces</code></td>
+<td>
+<p>[<code>character</code>]<br>
+Same as <code>packages</code>, but the packages will not be attached.
+Uses <code>requireNamespace</code> internally.
+Default is <code>character(0)</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>source</code></td>
+<td>
+<p>[<code>character</code>]<br>
+Files which should be sourced on the slaves prior to executing a job.
+Calls <code>sys.source</code> using the <code>.GlobalEnv</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>load</code></td>
+<td>
+<p>[<code>character</code>]<br>
+Files which should be loaded on the slaves prior to executing a job.
+Calls <code>load</code> using the <code>.GlobalEnv</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>seed</code></td>
+<td>
+<p>[<code>integer(1)</code>]<br>
+Start seed for jobs. Each job uses the (<code>seed</code> + <code>job.id</code>) as seed.
+Default is a random integer between 1 and 32768.
+Note that there is an additional seeding mechanism to synchronize instantiation of
+<code>Problem</code>s in a <code>ExperimentRegistry</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>make.default</code></td>
+<td>
+<p>[<code>logical(1)</code>]<br>
+If set to <code>TRUE</code>, the created registry is saved inside the package
+namespace and acts as default registry. You might want to switch this
+off if you work with multiple registries simultaneously.
+Default is <code>TRUE</code>.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>[<code>ExperimentRegistry</code>].
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+tmp = makeExperimentRegistry(file.dir = NA, make.default = FALSE)
+
+# Definde one problem, two algorithms and add them with some parameters:
+addProblem(reg = tmp, "p1",
+  fun = function(job, data, n, mean, sd, ...) rnorm(n, mean = mean, sd = sd))
+addAlgorithm(reg = tmp, "a1", fun = function(job, data, instance, ...) mean(instance))
+addAlgorithm(reg = tmp, "a2", fun = function(job, data, instance, ...) median(instance))
+ids = addExperiments(reg = tmp, list(p1 = data.table::CJ(n = c(50, 100), mean = -2:2, sd = 1:4)))
+
+# Overview over defined experiments:
+tmp$problems
+tmp$algorithms
+summarizeExperiments(reg = tmp)
+summarizeExperiments(reg = tmp, by = c("problem", "algorithm", "n"))
+ids = findExperiments(prob.pars = (n == 50), reg = tmp)
+print(unwrap(getJobPars(ids, reg = tmp)))
+
+# Submit jobs
+submitJobs(reg = tmp)
+waitForJobs(reg = tmp)
+
+# Reduce the results of algorithm a1
+ids.mean = findExperiments(algo.name = "a1", reg = tmp)
+reduceResults(ids.mean, fun = function(aggr, res, ...) c(aggr, res), reg = tmp)
+
+# Join info table with all results and calculate mean of results
+# grouped by n and algorithm
+ids = findDone(reg = tmp)
+pars = unwrap(getJobPars(ids, reg = tmp))
+results = unwrap(reduceResultsDataTable(ids, fun = function(res) list(res = res), reg = tmp))
+tab = ljoin(pars, results)
+tab[, list(mres = mean(res)), by = c("n", "algorithm")]
+</code></pre>
+
+
+</div>

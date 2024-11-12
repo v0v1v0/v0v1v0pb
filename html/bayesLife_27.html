@@ -1,0 +1,178 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>e0.jmale.estimate</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>
+Estimation of the Joint Female-Male Model
+</h2>
+
+<h3>Description</h3>
+
+<p>The function estimates the joint female-male model of life expectancy, as described in Raftery et al. (2014, 2012) and Lalic (2011). It consist of two equations with t-distributed errors, see Details below.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">e0.jmale.estimate(mcmc.set, countries.index = NULL, 
+    estDof.eq1 = TRUE, start.eq1 = list(dof = 2), max.e0.eq1 = 83, 
+    estDof.eq2 = TRUE, start.eq2 = list(dof = 2),
+    constant.gap.eq2 = TRUE, include.suppl.gap = FALSE, 
+    my.e0.file = NULL, my.locations.file = NULL, 
+    verbose = FALSE)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>mcmc.set</code></td>
+<td>
+<p>Object of class <code>bayesLife.mcmc.set</code> containing estimation results of female life expectancy.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>countries.index</code></td>
+<td>
+<p>Index of countries (within the mcmc.set object) to be included in the estimation. By default, all countries included in the estimation of <code>mcmc.set</code> are used.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>estDof.eq1, estDof.eq2</code></td>
+<td>
+<p>Logical, controlling whether the degrees of freedom of the first and second  equation, respectively, should be estimated. If it is <code>FALSE</code> the degrees of freedom are set using the arguments <code>start.eq1</code> and <code>start.eq2</code>, respectively.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>start.eq1, start.eq2</code></td>
+<td>
+<p>Argument <code>start</code> of the <code>tlm</code> function of the <span class="pkg">hett</span> package, which is applied to the first and second equation of the model, respectively. It is a list of possibly four named components, ("beta", "lambda", "dof", "omega"), for the location, scale, degrees of freedom parameters and random scale effects respectively. If <code>estDof.eq1</code> (<code>estDof.eq2</code>) is <code>FALSE</code>, the "dof" component must be given.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>max.e0.eq1</code></td>
+<td>
+<p>Maximum female life expectancy of records included in the estimation of the first equation (parameter <code class="reqn">M</code> in Details below).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>constant.gap.eq2</code></td>
+<td>
+<p>Logical. If <code>TRUE</code> the coefficient of the second equation (<code class="reqn">\gamma_1</code>) is set to one and the standard deviation is estimated under the assumption of normal distribution.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>include.suppl.gap</code></td>
+<td>
+<p>If <code>TRUE</code> data prior 1950 are used in the estimation of the gap model.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>my.e0.file</code></td>
+<td>
+<p>File name containing user-specified male time series for one or more countries. The function replaces the corresponding country data from the  WPP dataset by values in this file. Only columns are replaced that match column names of the WPP dataset.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>my.locations.file</code></td>
+<td>
+<p>File name containing user-specified locations if different from the default <code>UNlocations</code> dataset. It should be the same file as passed to <code>run.e0.mcmc</code> for female life expectancy.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>verbose</code></td>
+<td>
+<p>Logical switching log messages on and off. If <code>TRUE</code> summary results from the <code>tlm</code> function of both equations are shown.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The joint female-male life expectancy model is a model for estimating gaps <code class="reqn">G</code> between female and male life expectancy. It consists of two parts, see Equation (1) in Raftery et  al. (2012): <br>
+1. If <code class="reqn">l_{c,t} \leq M</code>, then 
+</p>
+<p style="text-align: center;"><code class="reqn">
+	G_{c,t} = \beta_0 + \beta_1 l_{c,1953} + \beta_2 G_{c,t-1} + \beta_3 l_{c,t} + \beta_4 (l_{c,t}-75)_+ + \epsilon_{c,t}
+</code>
+</p>
+
+<p>where <code class="reqn">\epsilon_{c,t}</code> is iid <code class="reqn">t(\mu=0, \sigma_1^2, \nu_1)</code>.
+</p>
+<p>2. If <code class="reqn">l_{c,t} &gt; M</code>, then 
+</p>
+<p style="text-align: center;"><code class="reqn">
+	G_{c,t} = \gamma_1 G_{c,t-1} + \epsilon_{c,t}
+</code>
+</p>
+
+<p>where <code class="reqn">\epsilon_{c,t}</code> is iid <code class="reqn">t(\mu=0, \sigma_2^2, \nu_2)</code>.
+</p>
+<p>Here, <code class="reqn">t</code> is the time and <code class="reqn">c</code> is the country index. <code class="reqn">G_{c,t}</code> is the gap for country <code class="reqn">c</code> at time <code class="reqn">t</code> and <code class="reqn">l_{c,t}</code> is the female life expectancy for country <code class="reqn">c</code> at time <code class="reqn">t</code>. <code class="reqn">M</code> can be set in the <code>max.e0.eq1</code> argument.
+</p>
+<p>Using the <code>tlm</code> function of the <span class="pkg">hett</span> package, the function  estimates the coefficients <code class="reqn">\beta_i</code> (<code class="reqn">i=1,\dots,4</code>) and <code class="reqn">\gamma_1</code>, as well as paramteres <code class="reqn">\sigma_j</code> (<code class="reqn">j=1,2</code>) and optionally the degrees of freedom <code class="reqn">\nu_j</code> (<code class="reqn">j=1,2</code>). If <code>constant.gap.eq2</code> is <code>TRUE</code>, <code class="reqn">\gamma_1</code> is set to 1 and <code class="reqn">\epsilon_{c,t}</code> is iid <code class="reqn">N(\mu=0, \sigma_2^2)</code>.
+</p>
+<p>The <code>mcmc.set</code> object should be a <code>bayesLife.mcmc.set</code> object obtained from a simulation of a female life expectancy. Note that since only the observed data and no MCMC results are used in this estimation, the <code>mcmc.set</code> object can be obtained from a toy simulation such as in the example below. The function extracts observed data from this object and treats them as <code class="reqn">l_{c,t}</code>. For the male historical time series, the function takes the male WPP dataset (<code>e0M</code>) from the same <span class="pkg">wpp</span> package as the female data, and possibly partly replaces the male dataset by any user-specified data given in <code>my.e0.file</code>. 
+</p>
+
+
+<h3>Value</h3>
+
+<p>List with the components, <code>eq1</code> and <code>eq2</code>, each containing estimation results from the first and second equation, respectively. These are:
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>coefficients</code></td>
+<td>
+<p>Estimated coefficients <code class="reqn">\beta_i</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>sigma</code></td>
+<td>
+<p>Parameter <code class="reqn">\sigma_j</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>dof</code></td>
+<td>
+<p>Degrees of freedom <code class="reqn">\nu_j</code>. If <code>estDof.eq1</code> (<code>estDof.eq2</code>) is <code>TRUE</code> this parameter is estimated, otherwise it is set to the value of <code>start.eq1$dof</code> (<code>start.eq2$dof</code>).</p>
+</td>
+</tr>
+</table>
+<h3>Author(s)</h3>
+
+<p>Hana Sevcikova
+</p>
+
+
+<h3>References</h3>
+
+<p>A. E. Raftery,  N. Lalic, P. Gerland (2014). Joint Probabilistic Projection of Female and Male Life Expectancy. Demographic Research, 30:795-822.
+</p>
+<p>A. E. Raftery,  N. Li, H. Sevcikova , P. Gerland, G. K. Heilig (2012). Bayesian probabilistic population projections for all countries. Proceedings of the National Academy of Sciences 109:13915-13921.	
+</p>
+<p>Lalic, N. (2011). Master's thesis at the Department of Statistics, University of Washington. 
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>e0.jmale.predict</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## Not run: 
+sim.dir &lt;- file.path(find.package("bayesLife"), "ex-data", "bayesLife.output")
+m &lt;- get.e0.mcmc(sim.dir)
+fit &lt;- e0.jmale.estimate(m, verbose = TRUE)
+
+## End(Not run)</code></pre>
+
+
+</div>

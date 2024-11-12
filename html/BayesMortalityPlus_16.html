@@ -1,0 +1,243 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>hp</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Bayesian Heligman-Pollard curve for mortality table graduation</h2>
+
+<h3>Description</h3>
+
+<p>This function fits the Heligman-Pollard (HP) model following a Bayesian framework using
+Markov chain Monte Carlo techniques to sample the posterior distribution.
+Three model options are available: The Binomial and the Poisson models consider nine parameters,
+whereas the Log-Normal model considers eight parameters for modelling the HP curve.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">hp(x, Ex, Dx, model = c("binomial", "lognormal", "poisson"),
+ M = NULL, bn = NULL, thin = 10, m = rep(NA, 8), v = rep(NA, 8),
+ inits = NULL, K = NULL, sigma2 = NULL, prop.control = NULL,
+ reduced_model = FALSE)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>Numeric vector of the ages.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Ex</code></td>
+<td>
+<p>Numeric vector with the exposure by age.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Dx</code></td>
+<td>
+<p>Numeric vector with the death counts by age.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>model</code></td>
+<td>
+<p>Character string specifying the model to be adopted. The options are: "binomial", "lognormal" or "poisson".</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>M</code></td>
+<td>
+<p>Positive integer indicating the number of iterations of the MCMC run. The default value is 50000 iterations. For the reduced model, the default is 30000 iterations.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>bn</code></td>
+<td>
+<p>Non-negative integer indicating the number of iteration to be discarded as the burn-in period. The default value is half of the M value, rounded.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>thin</code></td>
+<td>
+<p>Positive integer specifying the period for saving samples. The default value is 10.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>m</code></td>
+<td>
+<p>Numeric vector with the mean of the prior distributions for (A, B, C, D, E, F, G, H).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>v</code></td>
+<td>
+<p>Numeric vector with the variance of the prior distributions for (A, B, C, D, E, F, G, H).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>inits</code></td>
+<td>
+<p>Numeric vector with the initial values for the parameters (A, B, C, D, E, F, G, H).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>K</code></td>
+<td>
+<p>Number that specifies the extra parameter 'K' value for binomial and poisson models. It is considered only if model = "binomial" or model = "poisson". The default value is the optimal value.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>sigma2</code></td>
+<td>
+<p>Positive number that specifies initial value of sigma2 in lognormal model. It is considered only if model = "lognormal".</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>prop.control</code></td>
+<td>
+<p>Positive number that is considered for tuning the acceptance rate of MCMC.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>reduced_model</code></td>
+<td>
+<p>Logical value which determines if reduced model should be addressed. If 'TRUE' (default), the first term of the HP curve (infant mortality) is not considered.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The binomial model assumes that Dx, the death count for the age x, has a binomial distribution:
+Bin(Ex, qx), where qx is probability of death in age x. The poisson model assumes that Dx has a
+Poisson distribution: Po(Ex*qx). Both models consider the nine parameters
+HP curve, that was proposed by Heligman and Pollard (1980):
+</p>
+<p><code class="reqn">HP_x = A^{(x+B)^C} + De^{(-E(log(x/F))^2)} + GH^x/(1+KGH^x)</code>
+</p>
+<p><code class="reqn">qx = 1-e^{(-HP_x)}</code>
+</p>
+<p>This approximation ensures that qx, which is a probability, is in the correct range.
+</p>
+<p>The Log-Normal model assumes that the log odds of death qx/(1-qx) has Normal distribution
+with a constant variance for all the ages. This model was proposed by Dellaportas et al.(2001)
+and they consider the eighth parameters HP curve as follows:
+</p>
+<p><code class="reqn">log(qx/(1-qx)) = log(A^{(x+B)^C} + De^{-E(log(x/F))^2} + GH^x) + \epsilon_x</code>,
+</p>
+<p>where <code class="reqn">\epsilon_x</code> has independent distributions Normal(0, sigma2) for all ages. More details
+of this model are available in Dellaportas, Smith e Stavropoulos (2001).
+</p>
+<p>The reduced model does not consider the first term of the HP curve: <code class="reqn">A^{(x+B)^C}</code>. In this
+case, A, B and C are fixed as zero.
+</p>
+<p>All parameters, with the exception of the extra parameter K of the Binomial and the Poisson models
+that is the estimated optimal value, are estimated by the MCMC methods. Gibbs sampling for sigma2 and
+Metropolis-Hastings for parameters A, B, C, D, E, F, G and H. Informative prior distributions
+should help the method to converge quickly.
+</p>
+
+
+<h3>Value</h3>
+
+<p>A <code>HP</code> class object.
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>summary</code></td>
+<td>
+<p>A table with summaries measures of the parameters.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>post.samples</code></td>
+<td>
+<p>A list with the chains generated by MCMC.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+<p>A table with the data considered in fitted model.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>info</code></td>
+<td>
+<p>A list with some informations of the fitted model like prior distributions mean and variance, initial values.</p>
+</td>
+</tr>
+</table>
+<h3>References</h3>
+
+<p>Dellaportas, P., Smith, A. F., and Stavropoulos, P. (2001). “Bayesian Analysis of Mortality Data.” <em>Journal of the Royal Statistical Society: Series A (Statistics in Society)</em> 164 (2). Wiley Online Library: 275–291.
+</p>
+<p>Heligman, Larry, and John H Pollard. (1980). “The Age Pattern of Mortality.” <em>Journal of the Institute of Actuaries (1886-1994)</em> 107 (1). JSTOR: 49–80.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>fitted.HP()</code>, <code>plot.HP()</code>, <code>print.HP()</code> and <code>summary.HP()</code> for <code>HP</code> methods to native R functions <code>fitted()</code>,
+<code>plot()</code>, <code>print()</code> and <code>summary()</code>.
+</p>
+<p><code>expectancy.HP()</code> and <code>Heatmap.HP()</code> for <code>HP</code> methods to compute and visualise the truncated life expectancy
+via <code>expectancy()</code> and <code>Heatmap()</code> functions.
+</p>
+<p><code>hp_close()</code> for close methods to expand the life tables and <code>hp_mix()</code> for mixing life tables.
+</p>
+<p><code>plot_chain()</code> to visualise the markov chains, respectively.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## Importing mortality data from the USA available on the Human Mortality Database (HMD):
+data(USA)
+
+## Selecting the exposure and death count of the 2010 male population ranging from 0 to 90 years old
+USA2010 = USA[USA$Year == 2010,]
+x = 0:90
+Ex = USA2010$Ex.Male[x+1]
+Dx = USA2010$Dx.Male[x+1]
+
+## Fitting binomial model
+fit = hp(x = x, Ex = Ex, Dx = Dx)
+print(fit)
+fit$summary
+fit$info
+
+## Fitting lognormal model
+## Specifying number of iterations, burn-in, thinning and the initial value of sigma2
+fit = hp(x = x, Ex = Ex, Dx = Dx, model = "lognormal",
+         M = 1000, bn = 0, thin = 10, sigma2 = 0.1)
+summary(fit)
+
+## Fitting poisson model
+## Specifying the prior distribution parameters for B and E and fixing K as 0.
+fit = hp(x = x, Ex = Ex, Dx = Dx, model = "poisson",
+         m = c(NA, 0.08, NA, NA, 9, NA, NA, NA),
+         v = c(NA, 1e-4, NA, NA, 0.1, NA, NA, NA), K = 0)
+summary(fit)
+
+
+## Using other functions available in the package:
+## plotting (See "?plot.HP" in the BayesMortalityPlus package for more options):
+plot(fit)
+
+## qx estimation (See "?fitted.HP" in the BayesMortalityPlus package for more options):
+fitted(fit)
+
+## chain's plot (See "?plot_chain" for more options):
+plot_chain(fit)
+
+</code></pre>
+
+
+</div>

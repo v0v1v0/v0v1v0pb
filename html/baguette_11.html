@@ -1,0 +1,97 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>control_bag</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Controlling the bagging process</h2>
+
+<h3>Description</h3>
+
+<p><code>control_bag()</code> can set options for ancillary aspects of the bagging process.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">control_bag(
+  var_imp = TRUE,
+  allow_parallel = TRUE,
+  sampling = "none",
+  reduce = TRUE,
+  extract = NULL
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>var_imp</code></td>
+<td>
+<p>A single logical: should variable importance scores be calculated?</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>allow_parallel</code></td>
+<td>
+<p>A single logical: should the model fits be done in
+parallel (even if a parallel <code>plan()</code> has been created)?</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>sampling</code></td>
+<td>
+<p>Either "none" or "down". For classification only. The
+training data, after bootstrapping, will be sampled down within each class
+(with replacement) to the size of the smallest class.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>reduce</code></td>
+<td>
+<p>Should models be modified to reduce their size on disk?</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>extract</code></td>
+<td>
+<p>A function (or NULL) that can extract model-related aspects
+of each ensemble member. See Details and example below.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>Any arbitrary item can be saved from the model object (including the model
+object itself) using the <code>extract</code> argument, which should be a function with
+arguments <code>x</code> (for the model object), and <code>...</code>. The results of this
+function are saved into a list column called <code>extras</code> (see the example below).
+</p>
+
+
+<h3>Value</h3>
+
+<p>A list.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R"># Extracting model components
+
+num_term_nodes &lt;- function(x, ...) {
+  tibble::tibble(num_nodes = sum(x$frame$var == "&lt;leaf&gt;"))
+}
+
+set.seed(7687)
+with_extras &lt;- bagger(mpg ~ ., data = mtcars,
+                      base_model = "CART", times = 5,
+                      control = control_bag(extract = num_term_nodes))
+
+dplyr::bind_rows(with_extras$model_df$extras)
+</code></pre>
+
+
+</div>

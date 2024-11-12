@@ -1,0 +1,318 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>pop.aggregate</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>
+Aggregation of Population Projections
+</h2>
+
+<h3>Description</h3>
+
+<p>Aggregation of existing countries' population projections into projections of given regions, and accessing such aggregations.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">pop.aggregate(pop.pred, regions, 
+    input.type = c("country", "region"), name = input.type,
+    inputs = list(e0F.sim.dir = NULL, e0M.sim.dir = "joint_", tfr.sim.dir = NULL),
+    my.location.file = NULL, verbose = FALSE, ...)
+    
+get.pop.aggregation(sim.dir = NULL, pop.pred = NULL, name = NULL, 
+    write.to.cache = TRUE)
+    
+pop.aggregate.subnat(pop.pred, regions, locations, ..., verbose = FALSE)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>pop.pred</code></td>
+<td>
+<p>Object of class <code>bayesPop.prediction</code> containing country-specific population projections.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>regions</code></td>
+<td>
+<p>Vector of numerical codes of regions. It should correspond to values in the column “country_code” in the <code>UNlocations</code> dataset or in <code>my.location.file</code> (see below). For <code>pop.aggregate.subnat</code> it is a numerical code of a country over which subregions are aggregated.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>input.type</code></td>
+<td>
+<p>There are two methods for aggregating projections depending on the type of inputs, “country”- and “region”-based, see Details. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>name</code></td>
+<td>
+<p>Name of the aggregation. It becomes a part of a directory name where aggregation results are stored.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>inputs</code></td>
+<td>
+<p>This argument is only used when the “region”-based method is selected. It is a list of inputs of probabilistic components of the projection:
+</p>
+
+<dl>
+<dt>e0F.sim.dir</dt>
+<dd>
+<p>Simulation directory with projections of female life expectancy (generated using <span class="pkg">bayesLife</span>). It must contain projections for the given regions (see functions <code>run.e0.mcmc.extra</code>, <code>e0.predict.extra</code>). If it is not given, the same e0 directory is taken which was used for generating the <code>pop.pred</code> object, in which case the e0 projections  are re-loaded from disk.</p>
+</dd>
+<dt>e0M.sim.dir</dt>
+<dd>
+<p>Simulation directory with projections of male life expectancy. By default (value <code>NULL</code> or “joint_”) the function assumes a joint female-male projections of life expectancy and thus tries to load the male projections from the female projection object created using the <code>e0F.sim.dir</code> argument.</p>
+</dd>
+<dt>tfr.sim.dir</dt>
+<dd>
+<p>Simulation directory with projections of total fertility rate (generated using <span class="pkg">bayesTFR</span>). It must contain projections for the given regions (see functions <code>run.tfr.mcmc.extra</code>, <code>tfr.predict.extra</code>). If it is not given, the same TFR directory is taken which was used for generating the <code>pop.pred</code> object, in which case the TFR projections  are re-loaded from disk.</p>
+</dd>
+</dl>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>my.location.file</code></td>
+<td>
+<p>User-defined location file that can contain other agreggation groups than the default UN location file. It should have the same structure as the <code>UNlocations</code> dataset, see below.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>verbose</code></td>
+<td>
+<p>Logical switching log messages on and off.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>sim.dir</code></td>
+<td>
+<p>Simulation directory where aggregation is stored. It is the same directory used for creating the <code>pop.pred</code> object. Alternatively, <code>pop.pred</code> can be used. Either <code>sim.dir</code> or <code>pop.pred</code> must be given.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>write.to.cache</code></td>
+<td>
+<p>Logical controlling if functions operating on this object are allowed to write into its cache (see Details of <code>get.pop.prediction</code>).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>locations</code></td>
+<td>
+<p>Name of a tab-delimited file that contains definitions of the sub-regions. It should be the same file as used for the <code>locations</code> argument in <code>pop.predict.subnat</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Additional arguments. For a country-type aggregation, it can be logical <code>use.kannisto</code> which determines if the Kannisto method should be used for old ages when aggregating mortality rates. A logical argument <code>keep.vital.events</code> determines if vital events should be computed for aggregations. Argument <code>adjust</code> determines if country-level population numbers should be adjusted to the WPP values. </p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>Function <code>pop.aggregate</code> triggers an aggregations over countries while function <code>pop.aggregate.subnat</code> is used for aggregation over sub-regions to a country. The following details refer to the use of <code>pop.aggregate</code>. For sub-national aggregation see Example in <code>pop.predict.subnat</code>. 
+</p>
+<p>The dataset <code>UNlocations</code> or <code>my.location.file</code> is used to determine countries to be aggregated, in particular the field “location_type” of the entries with “country_code” given in the <code>regions</code> argument. One can aggregate over the following location types: Type 0 means aggregating all countries of the world (or in the file), type 2 is aggregating over continents, type 3 is aggregating over regions within continents, and any other integer (except 4) correponds to user-defined aggregations. Note that type 4 is reserved as a location type of countries and thus, all aggregations are performed over entries of this type. For type 2, countries are matched using the “area_code” column; for type 3 the matching is done using the “reg_code” column of the <code>UNlocations</code> dataset. E.g., if <code>regions=908</code> (Europe) which has location type 2 in the default <code>UNlocations</code> dataset, all countries are aggregated for which values of 908 are found in the “area_code” column. If the location type is other than 0, 2, 3 and 4, there must be a column in the file called “agcode_<code class="reqn">x</code>” with <code class="reqn">x</code> being the location type. This column is then used to match the countries to be aggregated. 
+</p>
+<p>Consider the following example. Say we want to pair four countries (Germany [DE], France [FR], Netherlands [NL], Italy [IT]) in two different ways, so we have two overlapping groupings, each of which has two groups (A,B): 
+</p>
+
+<ol>
+<li>
+<p>group A = (DE, FR), group B = (NL, IT)
+</p>
+</li>
+<li>
+<p>group A = (DE, NL), group B = (FR, IT)
+</p>
+</li>
+</ol>
+<p>Then,  <code>my.location.file</code> should have the following entries:
+</p>
+
+<table>
+<tr>
+<td style="text-align: right;">
+	country_code </td>
+<td style="text-align: left;"> name </td>
+<td style="text-align: right;"> location_type </td>
+<td style="text-align: right;"> agcode_98 </td>
+<td style="text-align: right;"> agcode_99 </td>
+</tr>
+<tr>
+<td style="text-align: right;">
+	1001  </td>
+<td style="text-align: left;">		grouping1_groupA </td>
+<td style="text-align: right;">	98	</td>
+<td style="text-align: right;">	-1 </td>
+<td style="text-align: right;"> -1 </td>
+</tr>
+<tr>
+<td style="text-align: right;">			
+	1002	  </td>
+<td style="text-align: left;">		grouping1_groupB </td>
+<td style="text-align: right;">	98	</td>
+<td style="text-align: right;">	-1 </td>
+<td style="text-align: right;"> -1 </td>
+</tr>
+<tr>
+<td style="text-align: right;">
+	1003	  </td>
+<td style="text-align: left;">		grouping2_groupA </td>
+<td style="text-align: right;">	99  </td>
+<td style="text-align: right;">	-1 </td>
+<td style="text-align: right;"> -1 </td>
+</tr>
+<tr>
+<td style="text-align: right;">
+	1004	 </td>
+<td style="text-align: left;">		grouping2_groupB </td>
+<td style="text-align: right;">	99 </td>
+<td style="text-align: right;">	-1 </td>
+<td style="text-align: right;"> -1 </td>
+</tr>
+<tr>
+<td style="text-align: right;">
+	276	</td>
+<td style="text-align: left;">	Germany	</td>
+<td style="text-align: right;">		4		</td>
+<td style="text-align: right;">	1001	 </td>
+<td style="text-align: right;"> 1003 </td>
+</tr>
+<tr>
+<td style="text-align: right;">
+	250	</td>
+<td style="text-align: left;">	France	</td>
+<td style="text-align: right;">		4	</td>
+<td style="text-align: right;">		1001	</td>
+<td style="text-align: right;"> 1004 </td>
+</tr>
+<tr>
+<td style="text-align: right;">
+	258	</td>
+<td style="text-align: left;">	Netherlands	 </td>
+<td style="text-align: right;">	4	</td>
+<td style="text-align: right;">	1002		</td>
+<td style="text-align: right;">	1003 </td>
+</tr>
+<tr>
+<td style="text-align: right;">
+	380	</td>
+<td style="text-align: left;">	Italy		</td>
+<td style="text-align: right;">		4	</td>
+<td style="text-align: right;">		1002	 </td>
+<td style="text-align: right;"> 1004 </td>
+</tr>
+<tr>
+<td style="text-align: right;">
+	1005 </td>
+<td style="text-align: left;">		all </td>
+<td style="text-align: right;"> 0 </td>
+<td style="text-align: right;">	-1 </td>
+<td style="text-align: right;"> -1 
+</td>
+</tr>
+</table>
+<p>The “country_code” of the groups is user-specific, but it must be unique within the file. Values of “country_code” for countries must match those in the prediction object. To run the aggregation for the four groups above we set <code>regions=1001:1004</code>. Having “location_type” being 98 and 99, it is expected the file to have columns  “agcode_98” and “agcode_99” containing assignements to each of the two groupings. Values in this columns corresponding to groups are not used and thus can have any value. For aggregating over all four countries, set <code>regions=1005</code> which has “location_type” equal 0 and thus, it is aggregated over all entries with “location_type” equals 4.
+</p>
+<p>There are two methods available for generating aggregations of population projection:
+</p>
+
+<dl>
+<dt>Country-based Method</dt>
+<dd>
+<p>Aggregations are created by summing trajectories over countries of the given region.
+</p>
+</dd>
+<dt>Region-based Method</dt>
+<dd>
+<p>The aggregation is generated using the same algorithm as population projections for single countries (function <code>pop.predict</code>), but it operates on aggregated input components. These are created as follows. Here <code class="reqn">c</code> denotes countries over which we aggregate a region <code class="reqn">R</code>, <code class="reqn">s \in \{m, f\}</code>, <code class="reqn">a</code>, and <code class="reqn">t</code> denote sex, age category and time, respectively. <code class="reqn">t=P</code> denotes the present year of the prediction. <code class="reqn">N_{s,a,t}^c</code> and <code class="reqn">M_{s,a,t}^c</code>, respectively, denotes the historical population count and the Bayesian predictive median of population, respectively, of sex <code class="reqn">s</code>, in age category <code class="reqn">a</code> at time <code class="reqn">t</code> for country <code class="reqn">c</code> (refer to the links in parentheses for description of the data):
+</p>
+
+<dl>
+<dt>Initial sex and age-specific population (popM, popF):</dt>
+<dd>
+<p><code class="reqn">N_{s,a,t=P}^R = \sum_c N_{s,a,t=P}^c</code></p>
+</dd>
+<dt>Sex and age-specific death rates (mxM, mxF):</dt>
+<dd>
+<p><code class="reqn">mx_{s,a,t}^R = \frac{\sum_c(mx_{s,a,t}^c \cdot N_{s,a,t})}{\sum_c N_{s,a,t}}</code></p>
+</dd>
+<dt>Sex ratio at birth (srb):</dt>
+<dd>
+<p><code class="reqn">SRB_t^R = \frac{\sum_c M_{s=m,a=1,t}^c}{\sum_c M_{s=f,a=1,t}^c}</code></p>
+</dd>
+<dt>Percentage age-specific fertility rate (pasfr):</dt>
+<dd>
+<p><code class="reqn">PASFR_{a,t}^R = \frac{\sum_c(PASFR_{a,t}^c \cdot M_{s=f,a,t})}{\sum_c M_{s=f,a,t}}</code></p>
+</dd>
+<dt>Migration code and start year (mig.type):</dt>
+<dd>
+<p>Aggregated migration code is the code of maximum counts over aggregated countries weighted by <code class="reqn">N_{t=P}^c</code>. Migration start year is the maximum of start years over aggregated countries.</p>
+</dd>
+<dt>Sex and age-specific migration (migM, migF):</dt>
+<dd>
+<p><code class="reqn">mig_{s,a,t}^R = \sum_c mig_{s,a,t}^c</code></p>
+</dd>
+<dt>Probabilistic projection of life expectancy:</dt>
+<dd>
+<p>We assume an aggregation of life expectancy for the given regions was generated prior to this call, using the <code>run.e0.mcmc.extra</code> and <code>e0.predict.extra</code> functions of the <span class="pkg">bayesLife</span> package.</p>
+</dd>
+<dt>Probabilistic projection of total fertility rate:</dt>
+<dd>
+<p>We assume an aggregation of total fertility for the given regions was generated prior to this call, using the <code>run.tfr.mcmc.extra</code> and <code>tfr.predict.extra</code> functions of the <span class="pkg">bayesTFR</span> package.</p>
+</dd>	
+</dl>
+</dd>
+</dl>
+<p>Results of the aggregations are stored in the same top directory as the <code>pop.pred</code> object, in a sudirectory called ‘<code>aggregations_</code><em>name</em>’. They can be accessed using the function <code>get.pop.aggregation</code>. Note that multiple runs of this function with the same name will overwrite previous aggregations results of the same name.
+</p>
+
+
+<h3>Value</h3>
+
+<p>Object of class <code>bayesPop.prediction</code> containing the aggregated results. In addition it contains elements <code>aggregation.method</code> giving the <code>input.type</code> used, and <code>aggregated.countries</code> which is a list of countries aggregated for each region. 
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Hana Sevcikova, Adrian Raftery
+</p>
+
+
+<h3>References</h3>
+
+<p>H. Sevcikova, A. E. Raftery (2016). bayesPop: Probabilistic
+Population Projections. Journal of Statistical Software, 75(5), 1-29.
+doi:10.18637/jss.v075.i05
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>pop.predict</code>, <code>tfr.predict.extra</code>, <code>e0.predict.extra</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## Not run: 
+sim.dir &lt;- tempfile()
+pred &lt;- pop.predict(countries=c(528,218,450), output.dir=sim.dir)
+aggr &lt;- pop.aggregate(pred, 900) # aggregating World (i.e. all countries available in pred)
+pop.trajectories.plot(aggr, 900, sum.over.ages=TRUE)
+# countries over which we aggregated:
+subset(UNlocations, country_code %in% aggr$aggregated.countries[["900"]])
+unlink(sim.dir, recursive=TRUE)
+## End(Not run)
+</code></pre>
+
+
+</div>

@@ -1,0 +1,106 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>plot.bspcov</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Plot Diagnostics of Posterior Samples and Cross-Validation</h2>
+
+<h3>Description</h3>
+
+<p>Provides a trace plot of posterior samples and a plot of a learning curve for cross-validation
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">## S3 method for class 'bspcov'
+plot(x, ..., cols, rows)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>an object from <strong>bmspcov</strong>, <strong>sbmspcov</strong>, <strong>cv.bandPPP</strong>, and <strong>cv.thresPPP</strong>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>additional arguments for ggplot2.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>cols</code></td>
+<td>
+<p>a scalar or a vector including specific column indices for the trace plot.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>rows</code></td>
+<td>
+<p>a scalar or a vector including specific row indices greater than or equal to columns indices for the trace plot.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<table><tr style="vertical-align: top;">
+<td><code>plot</code></td>
+<td>
+<p>a plot for diagnostics of posterior samples <strong>x</strong>.</p>
+</td>
+</tr></table>
+<h3>Author(s)</h3>
+
+<p>Seongil Jo
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+
+set.seed(1)
+n &lt;- 100
+p &lt;- 20
+
+# generate a sparse covariance matrix:
+True.Sigma &lt;- matrix(0, nrow = p, ncol = p)
+diag(True.Sigma) &lt;- 1
+Values &lt;- -runif(n = p*(p-1)/2, min = 0.2, max = 0.8)
+nonzeroIND &lt;- which(rbinom(n=p*(p-1)/2,1,prob=1/p)==1)
+zeroIND = (1:(p*(p-1)/2))[-nonzeroIND]
+Values[zeroIND] &lt;- 0
+True.Sigma[lower.tri(True.Sigma)] &lt;- Values
+True.Sigma[upper.tri(True.Sigma)] &lt;- t(True.Sigma)[upper.tri(True.Sigma)]
+if(min(eigen(True.Sigma)$values) &lt;= 0){
+  delta &lt;- -min(eigen(True.Sigma)$values) + 1.0e-5
+  True.Sigma &lt;- True.Sigma + delta*diag(p)
+}
+
+# generate a data
+X &lt;- MASS::mvrnorm(n = n, mu = rep(0, p), Sigma = True.Sigma)
+
+# compute sparse, positive covariance estimator:
+fout &lt;- bspcov::sbmspcov(X = X, Sigma = diag(diag(cov(X))))
+plot(fout, cols = c(1, 3, 4), rows = c(1, 3, 4))
+plot(fout, cols = 1, rows = 1:3)
+
+# Cross-Validation for Banded Structure
+Sigma0 &lt;- diag(1,50)
+X &lt;- mvtnorm::rmvnorm(25,sigma = Sigma0)
+kvec &lt;- 1:2
+epsvec &lt;- c(0.01,0.05)
+res &lt;- bspcov::cv.bandPPP(X,kvec,epsvec,nsample=10,ncores=4)
+plot(res)
+
+
+</code></pre>
+
+
+</div>

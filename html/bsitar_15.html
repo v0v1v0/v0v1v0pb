@@ -1,0 +1,843 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>growthparameters_comparison.bgmfit</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Compare growth parameters</h2>
+
+<h3>Description</h3>
+
+<p>The <strong>growthparameters_comparison()</strong> function estimates and
+compare growth parameters such as peak growth velocity and the age at peak
+growth velocity. This function is a wrapper around the
+<code>marginaleffects::comparisons()</code> and <code>marginaleffects::avg_comparisons()</code>.
+The <code>marginaleffects::comparisons()</code> computes unit-level (conditional)
+estimates whereas <code>marginaleffects::avg_comparisons()</code> return average
+(marginal) estimates. A detailed explanation is available
+<a href="https://marginaleffects.com">here</a>. Note that for the current use case,
+i.e., to estimate and compare growth parameters, the arguments
+<code>variables</code> and <code>comparion</code> of <code>marginaleffects::comparisons()</code>
+and <code>marginaleffects::avg_comparisons()</code> are modified (see below).
+Furthermore, comparison of growth parameters is performed via the
+<code>hypothesis</code> argument of the <code>marginaleffects::comparisons()</code> and
+<code>marginaleffects::avg_comparisons()</code> functions.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">## S3 method for class 'bgmfit'
+growthparameters_comparison(
+  model,
+  resp = NULL,
+  ndraws = NULL,
+  draw_ids = NULL,
+  newdata = NULL,
+  datagrid = NULL,
+  re_formula = NA,
+  allow_new_levels = FALSE,
+  sample_new_levels = "gaussian",
+  parameter = NULL,
+  xrange = 1,
+  acg_velocity = 0.1,
+  digits = 2,
+  numeric_cov_at = NULL,
+  aux_variables = NULL,
+  levels_id = NULL,
+  avg_reffects = NULL,
+  idata_method = NULL,
+  ipts = NULL,
+  seed = 123,
+  future = FALSE,
+  future_session = "multisession",
+  cores = NULL,
+  average = FALSE,
+  plot = FALSE,
+  showlegends = NULL,
+  variables = NULL,
+  deriv = NULL,
+  deriv_model = NULL,
+  comparison = "difference",
+  type = NULL,
+  by = FALSE,
+  conf_level = 0.95,
+  transform = NULL,
+  cross = FALSE,
+  wts = NULL,
+  hypothesis = NULL,
+  equivalence = NULL,
+  eps = NULL,
+  reformat = NULL,
+  estimate_center = NULL,
+  estimate_interval = NULL,
+  dummy_to_factor = NULL,
+  verbose = FALSE,
+  expose_function = FALSE,
+  usesavedfuns = NULL,
+  clearenvfuns = NULL,
+  envir = NULL,
+  ...
+)
+
+growthparameters_comparison(model, ...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>model</code></td>
+<td>
+<p>An object of class <code>bgmfit</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>resp</code></td>
+<td>
+<p>A character string (default <code>NULL</code>) to specify response
+variable when processing posterior draws for the <code>univariate_by</code> and
+<code>multivariate</code> models. See <code>bsitar()</code> for details on
+<code>univariate_by</code> and <code>multivariate</code> models</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ndraws</code></td>
+<td>
+<p>A positive integer indicating the number of posterior draws to
+be used in estimation. If <code>NULL</code> (default), all draws are used.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>draw_ids</code></td>
+<td>
+<p>An integer indicating the specific posterior draw(s)
+to be used in estimation (default <code>NULL</code>).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>newdata</code></td>
+<td>
+<p>An optional data frame to be used in estimation. If
+<code>NULL</code> (default), the <code>newdata</code> is retrieved from the
+<code>model</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>datagrid</code></td>
+<td>
+<p>Generate a grid of user-specified values for use in the
+<code>newdata</code> argument in various functions of the <span class="pkg">marginaleffects</span>
+package. This is useful to define where in the predictor space we want to
+evaluate the quantities of interest. See <code>marginaleffects::datagrid()</code> for
+details. The default value for the <code>datagrid</code> is <code>NULL</code> implying
+that no custom grid is constructed. To set a data grid, the argument should
+be a data.frame constructed by using the <code>marginaleffects::datagrid()</code>
+function, or else a named list which are internally used for setting up the
+grid. For the user convenience, we also allow setting an empty list
+<code>datagrid = list()</code> in which case essential arguments such as
+<code>model</code>, <code>newdata</code> are taken up from the respective arguments
+specified elsewhere. Further, the level 1 predictor (such as age) and any
+covariate included in the model fit (e.g., gender) are also automatically
+inferred from the <code>model</code> object.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>re_formula</code></td>
+<td>
+<p>Option to indicate whether or not to include the
+individual/group-level effects in the estimation. When <code>NA</code> (default),
+the individual-level effects are excluded and therefore population average
+growth parameters are computed. When <code>NULL</code>, individual-level effects
+are included in the computation and hence the growth parameters estimates
+returned are individual-specific. In both situations, (i.e,, <code>NA</code> or
+<code>NULL</code>), continuous and factor covariate(s) are appropriately included
+in the estimation. The continuous covariates by default are set to their
+means (see <code>numeric_cov_at</code> for details) whereas factor covariates are
+left unaltered thereby allowing estimation of covariate specific population
+average and individual-specific growth parameter.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>allow_new_levels</code></td>
+<td>
+<p>A flag indicating if new levels of group-level
+effects are allowed (defaults to <code>FALSE</code>). Only relevant if
+<code>newdata</code> is provided.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>sample_new_levels</code></td>
+<td>
+<p>Indicates how to sample new levels for grouping
+factors specified in <code>re_formula</code>. This argument is only relevant if
+<code>newdata</code> is provided and <code>allow_new_levels</code> is set to
+<code>TRUE</code>. If <code>"uncertainty"</code> (default), each posterior sample for a
+new level is drawn from the posterior draws of a randomly chosen existing
+level. Each posterior sample for a new level may be drawn from a different
+existing level such that the resulting set of new posterior draws
+represents the variation across existing levels. If <code>"gaussian"</code>,
+sample new levels from the (multivariate) normal distribution implied by the
+group-level standard deviations and correlations. This options may be useful
+for conducting Bayesian power analysis or predicting new levels in
+situations where relatively few levels where observed in the old_data. If
+<code>"old_levels"</code>, directly sample new levels from the existing levels,
+where a new level is assigned all of the posterior draws of the same
+(randomly chosen) existing level.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>parameter</code></td>
+<td>
+<p>A single character string, or a character vector specifying
+the growth parameter(s) to be estimated. Options are <code>'tgv'</code> (takeoff
+growth velocity), <code>'atgv'</code> (age at takeoff growth velocity),
+<code>'pgv'</code> (peak growth velocity), <code>'apgv'</code> (age at peak growth
+velocity), <code>'cgv'</code> (cessation growth velocity), and <code>'acgv'</code> (age
+at cessation growth velocity), and <code>'all'</code>. If <code>parameter = NULL</code>
+(default), age at peak growth velocity (<code>'apgv'</code>) is estimated where
+when <code>parameter = 'all'</code>, all six parameters are estimated. Note that
+option <code>'all'</code> can not be used when argument <code>by</code> is <code>TRUE</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>xrange</code></td>
+<td>
+<p>An integer to set the predictor range (i.e., age) when
+executing the interpolation via <code>ipts</code>. The default <code>NULL</code> sets
+the individual specific predictor range whereas code <code>xrange = 1</code> sets
+identical range for individuals within the same higher grouping variable
+(e.g., study). Code <code>xrange  = 2</code> sets the identical range across the
+entire sample. Lastly, a paired numeric values can be supplied e.g.,
+<code>xrange = c(6, 20)</code> to set the range within those values.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>acg_velocity</code></td>
+<td>
+<p>A real number to set the percentage of peak growth growth
+velocity as the cessation velocity when estimating the <code>cgv</code> and
+<code>acgv</code> growth parameters. The <code>acg_velocity</code> should be greater
+than <code>0</code> and less than <code>1</code>. The default <code>acg_velocity =
+  0.10</code> indicates that a 10 per cent of the peak growth velocity will be used
+to get the cessation velocity and the corresponding age at the cessation
+velocity. For example if peak growth velocity estimate is <code>10
+  mm/year</code>, then cessation growth velocity is <code>1 mm/year</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>digits</code></td>
+<td>
+<p>An integer (default <code>2</code>) to set the decimal places for the
+estimated growth parameters. The <code>digits</code> is passed on to the
+<code>base::round()</code> function.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>numeric_cov_at</code></td>
+<td>
+<p>An optional (named list) argument to specify the value
+of continuous covariate(s). The default <code>NULL</code> option set the
+continuous covariate(s) at their mean. Alternatively, a named list can be
+supplied to manually set these values. For example, <code>numeric_cov_at =
+  list(xx = 2)</code> will set the continuous covariate varibale 'xx' at 2. The
+argument <code>numeric_cov_at</code> is ignored when no continuous covariate is
+included in the model.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>aux_variables</code></td>
+<td>
+<p>An optional argument to specify the variable(s) that can
+be passed to the <code>ipts</code> argument (see below). This is useful when
+fitting location scale models and measurement error models. An
+indication to use <code>aux_variables</code> is when post processing functions
+throw an error such as <code>variable 'x' not found either 'data' or
+ 'data2'</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>levels_id</code></td>
+<td>
+<p>An optional argument to specify the <code>ids</code> for
+hierarchical model (default <code>NULL</code>). It is used only when model is
+applied to the data with 3 or more levels of hierarchy. For a two level
+model, the <code>levels_id</code> is automatically inferred from the model fit.
+Even for 3 or higher level model, the <code>levels_id</code> is inferred from the
+model fit but under the assumption that hierarchy is specified from lowest
+to upper most level i.e, <code>id</code> followed by <code>study</code> where <code>id</code>
+is nested within the <code>study</code> Note that it is not guaranteed that the
+<code>levels_id</code> is sorted correctly, and therefore it is better to set it
+manually when fitting a model with three or more levels of hierarchy.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>avg_reffects</code></td>
+<td>
+<p>An optional argument (default <code>NULL</code>) to calculate
+(marginal/average) curves and growth parameters such as APGV and PGV. If
+specified, it must be a named list indicating the <code>over</code> (typically
+level 1 predictor, such as age), <code>feby</code> (fixed effects, typically a
+factor variable), and  <code>reby</code> (typically <code>NULL</code> indicating that
+parameters are integrated over the random effects) such as
+<code>avg_reffects = list(feby = 'study', reby = NULL, over = 'age')</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>idata_method</code></td>
+<td>
+<p>A character string to indicate the interpolation method.
+The number of of interpolation points is set up the <code>ipts</code> argument.
+Options available for <code>idata_method</code> are <em>method 1</em> (specified as
+<code>'m1'</code>) and <em>method 2</em> (specified as <code>'m2'</code>). The
+<em>method 1</em> (<code>'m1'</code>) is adapted from the the <span class="pkg">iapvbs</span> package
+and is documented here
+<a href="https://rdrr.io/github/Zhiqiangcao/iapvbs/src/R/exdata.R">https://rdrr.io/github/Zhiqiangcao/iapvbs/src/R/exdata.R</a>
+whereas <em>method 2</em> (<code>'m2'</code>) is based on the <span class="pkg">JMbayes</span>
+package as documented here
+<a href="https://github.com/drizopoulos/JMbayes/blob/master/R/dynPred_lme.R">https://github.com/drizopoulos/JMbayes/blob/master/R/dynPred_lme.R</a>.
+The <code>'m1'</code> method works by internally constructing the data frame based
+on the model configuration whereas the method <code>'m2'</code> uses the exact
+data frame used in model fit and can be accessed via <code>fit$data</code>. If
+<code>idata_method = NULL, default</code>, then method <code>'m2'</code> is
+automatically set. Note that method <code>'m1'</code> might fail in some cases
+when model involves covariates particularly when model is fit as
+<code>univariate_by</code>. Therefore, it is advised to switch to method
+<code>'m2'</code> in case <code>'m1'</code> results in error.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ipts</code></td>
+<td>
+<p>An integer to set the length of the predictor variable to get a
+smooth velocity curve. The <code>NULL</code> will return original values whereas
+an integer such as <code>ipts = 10</code> (default) will interpolate the
+predictor. It is important to note that these interpolations do not alter
+the range of predictor when calculating population average and/or the
+individual specific growth curves.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>seed</code></td>
+<td>
+<p>An integer (default <code>123</code>) that is passed to the estimation
+method.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>future</code></td>
+<td>
+<p>A logical (default <code>FALSE</code>) to specify whether or not to
+perform parallel computations. If set to <code>TRUE</code>, the
+<code>future.apply::future_sapply()</code> function is used to summarize draws.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>future_session</code></td>
+<td>
+<p>A character string to set the session type when
+<code>future = TRUE</code>. The <code>'multisession'</code> (default) options sets the
+multisession whereas the <code>'multicore'</code> sets the multicore session.
+Note that option <code>'multicore'</code> is not supported on Windows systems.
+For more details, see <code>future.apply::future_sapply()</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>cores</code></td>
+<td>
+<p>Number of cores to be used when running the parallel
+computations (if <code>future = TRUE</code>). On non-Windows systems this
+argument can be set globally via the mc.cores option. For the default
+<code>NULL</code> option, the number of cores are set automatically by calling
+the <code>future::availableCores()</code>. The number of cores used are the maximum
+number of cores avaialble minus one, i.e., <code>future::availableCores() -
+  1</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>average</code></td>
+<td>
+<p>A logical to indicate whether to internally call the
+<code>marginaleffects::comparisons()</code> or the
+<code>marginaleffects::avg_comparisons()</code> function. If <code>FALSE</code> (default),
+<code>marginaleffects::comparisons()</code> is called otherwise
+<code>marginaleffects::avg_comparisons()</code> when <code>average = TRUE</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>plot</code></td>
+<td>
+<p>A logical to specify whether to plot comparisons by calling the
+<code>marginaleffects::plot_comparisons()</code> function (<code>FALSE</code>) or not
+(<code>FALSE</code>). If <code>FALSE</code> (default), then
+<code>marginaleffects::comparisons()</code> or <code>marginaleffects::avg_comparisons()</code>
+are called to compute predictions (see <code>average</code> for details).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>showlegends</code></td>
+<td>
+<p>An argument to specify whether to show legends
+(<code>TRUE</code>) or not (<code>FALSE</code>). If <code>NULL</code> (default), then
+<code>showlegends</code> is internally set to <code>TRUE</code> if <code>re_formula =
+  NA</code>, and <code>FALSE</code> if <code>re_formula = NULL</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>variables</code></td>
+<td>
+<p>For estimating growth parameters in the current use case,
+the <code>variables</code> is the level 1 predictor such as
+<code>age</code>/<code>time</code>. The <code>variables</code> is a named list where value is
+set via the <code>esp</code> argument (default 1e-6). If <code>NULL</code>, the
+<code>variables</code> is set internally by retrieving the relevant information
+from the <code>model</code>. Otherwise, user can define it as follows:
+<code>variables = list('x' = 1e-6)</code> where <code>'x'</code> is the level 1
+predictor. Note that <code>variables = list('age' = 1e-6)</code> is the default
+behavior for the <span class="pkg">marginaleffects</span> because velocity is typically
+calculated by differentiating the distance curve via <code>dydx</code> approach,
+and therefore argument <code>deriv</code> is automatically set as <code>0</code> and
+<code>deriv_model</code> as <code>FALSE</code>. If user want to estimate parameters
+based on the model based first derivative, then argument <code>deriv</code> must
+be set as <code>1</code> and internally argument <code>variables</code> is defined as
+<code>variables = list('age' = 0)</code> i.e, original level 1 predictor
+variable, <code>'x'</code>. It is important to consider that if default behavior
+is used i.e, <code>deriv = 0</code> and <code>variables = list('x' = 1e-6)</code>, then
+user can not pass additional arguments to the <code>variables</code> argument. On
+the other hand, alternative approach i.e, <code>deriv = 0</code> and
+<code>variables = list('x' = 0)</code>, additional options can be passed to the
+<code>marginaleffects::comparisons()</code> and <code>marginaleffects::avg_comparisons()</code>
+functions.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>deriv</code></td>
+<td>
+<p>A numeric to specify whether to estimate parameters based on the
+differentiation of the distance curve or the model based first derivative.
+Please see argument <code>variables</code> for more details.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>deriv_model</code></td>
+<td>
+<p>A logical to specify whether to estimate velocity curve
+from the derivative function, or the differentiation of the distance curve.
+The argument <code>deriv_model</code> is set to <code>TRUE</code> for those functions
+which need velocity curve such as <code>growthparameters()</code> and
+<code>plot_curves()</code>, and <code>NULL</code> for functions which explicitly use
+the distance curve (i.e., fitted values) such as <code>loo_validation()</code>
+and <code>plot_ppc()</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>comparison</code></td>
+<td>
+<p>For estimating growth parameters in the current use case,
+options allowed for the <code>comparison</code> are <code>'difference'</code> and
+<code>'differenceavg'</code>. Note that <code>comparison</code> is a placeholder and is
+only used to setup the the internal function that estimates
+<code>'parameter'</code> via <code>sitar::getPeak()</code>, <code>sitar::getTakeoff()</code> and
+<code>sitar::getTrough()</code> functions to estimate various growth parameters.
+Options <code>'difference'</code> and <code>'differenceavg'</code> are internally
+restructured according to the user specified <code>hypothesis</code> argument.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>type</code></td>
+<td>
+<p>string indicates the type (scale) of the predictions used to
+compute contrasts or slopes. This can differ based on the model
+type, but will typically be a string such as: "response", "link", "probs",
+or "zero". When an unsupported string is entered, the model-specific list of
+acceptable values is returned in an error message. When <code>type</code> is <code>NULL</code>, the
+first entry in the error message is used by default.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>by</code></td>
+<td>
+<p>Aggregate unit-level estimates (aka, marginalize, average over). Valid inputs:
+</p>
+
+<ul>
+<li> <p><code>FALSE</code>: return the original unit-level estimates.
+</p>
+</li>
+<li> <p><code>TRUE</code>: aggregate estimates for each term.
+</p>
+</li>
+<li>
+<p> Character vector of column names in <code>newdata</code> or in the data frame produced by calling the function without the <code>by</code> argument.
+</p>
+</li>
+<li>
+<p> Data frame with a <code>by</code> column of group labels, and merging columns shared by <code>newdata</code> or the data frame produced by calling the same function without the <code>by</code> argument.
+</p>
+</li>
+<li>
+<p> See examples below.
+</p>
+</li>
+<li>
+<p> For more complex aggregations, you can use the <code>FUN</code> argument of the <code>hypotheses()</code> function. See that function's documentation and the Hypothesis Test vignettes on the <code>marginaleffects</code> website.
+</p>
+</li>
+</ul>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>conf_level</code></td>
+<td>
+<p>numeric value between 0 and 1. Confidence level to use to build a confidence interval.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>transform</code></td>
+<td>
+<p>string or function. Transformation applied to unit-level estimates and confidence intervals just before the function returns results. Functions must accept a vector and return a vector of the same length. Support string shortcuts: "exp", "ln"</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>cross</code></td>
+<td>
+
+<ul>
+<li> <p><code>FALSE</code>: Contrasts represent the change in adjusted predictions when one predictor changes and all other variables are held constant.
+</p>
+</li>
+<li> <p><code>TRUE</code>: Contrasts represent the changes in adjusted predictions when all the predictors specified in the <code>variables</code> argument are manipulated simultaneously (a "cross-contrast").
+</p>
+</li>
+</ul>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>wts</code></td>
+<td>
+<p>string or numeric: weights to use when computing average contrasts or slopes. These weights only affect the averaging in <code style="white-space: pre;">⁠avg_*()⁠</code> or with the <code>by</code> argument, and not the unit-level estimates themselves. Internally, estimates and weights are passed to the <code>weighted.mean()</code> function.
+</p>
+
+<ul>
+<li>
+<p> string: column name of the weights variable in <code>newdata</code>. When supplying a column name to <code>wts</code>, it is recommended to supply the original data (including the weights variable) explicitly to <code>newdata</code>.
+</p>
+</li>
+<li>
+<p> numeric: vector of length equal to the number of rows in the original data or in <code>newdata</code> (if supplied).
+</p>
+</li>
+</ul>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>hypothesis</code></td>
+<td>
+<p>specify a hypothesis test or custom contrast using a numeric value, vector, or matrix, a string, or a string formula.
+</p>
+
+<ul>
+<li>
+<p> Numeric:
+</p>
+
+<ul>
+<li>
+<p> Single value: the null hypothesis used in the computation of Z and p (before applying <code>transform</code>).
+</p>
+</li>
+<li>
+<p> Vector: Weights to compute a linear combination of (custom contrast between) estimates. Length equal to the number of rows generated by the same function call, but without the <code>hypothesis</code> argument.
+</p>
+</li>
+<li>
+<p> Matrix: Each column is a vector of weights, as describe above, used to compute a distinct linear combination of (contrast between) estimates. The column names of the matrix are used as labels in the output.
+</p>
+</li>
+</ul>
+</li>
+<li>
+<p> String formula to specify linear or non-linear hypothesis tests. If the <code>term</code> column uniquely identifies rows, terms can be used in the formula. Otherwise, use <code>b1</code>, <code>b2</code>, etc. to identify the position of each parameter. The <code style="white-space: pre;">⁠b*⁠</code> wildcard can be used to test hypotheses on all estimates. Examples:
+</p>
+
+<ul>
+<li> <p><code>hp = drat</code>
+</p>
+</li>
+<li> <p><code>hp + drat = 12</code>
+</p>
+</li>
+<li> <p><code>b1 + b2 + b3 = 0</code>
+</p>
+</li>
+<li> <p><code style="white-space: pre;">⁠b* / b1 = 1⁠</code>
+</p>
+</li>
+</ul>
+</li>
+<li>
+<p> String:
+</p>
+
+<ul>
+<li>
+<p> "pairwise": pairwise differences between estimates in each row.
+</p>
+</li>
+<li>
+<p> "reference": differences between the estimates in each row and the estimate in the first row.
+</p>
+</li>
+<li>
+<p> "sequential": difference between an estimate and the estimate in the next row.
+</p>
+</li>
+<li>
+<p> "revpairwise", "revreference", "revsequential": inverse of the corresponding hypotheses, as described above.
+</p>
+</li>
+</ul>
+</li>
+<li>
+<p> See the Examples section below and the vignette: https://marginaleffects.com/vignettes/hypothesis.html
+</p>
+</li>
+</ul>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>equivalence</code></td>
+<td>
+<p>Numeric vector of length 2: bounds used for the two-one-sided test (TOST) of equivalence, and for the non-inferiority and non-superiority tests. See Details section below.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>eps</code></td>
+<td>
+<p>NULL or numeric value which determines the step size to use when
+calculating numerical derivatives: (f(x+eps)-f(x))/eps. When <code>eps</code> is
+<code>NULL</code>, the step size is 0.0001 multiplied by the difference between
+the maximum and minimum values of the variable with respect to which we
+are taking the derivative. Changing <code>eps</code> may be necessary to avoid
+numerical problems in certain models.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>reformat</code></td>
+<td>
+<p>A logical (default <code>TRUE</code>) to reformat the  output
+returned by the <code>marginaleffects</code> as a data.frame with column names
+re-defined as follows: <code>conf.low</code> as <code>Q2.5</code>, and <code>conf.high</code>
+as <code>Q97.5</code> (assuming that <code>conf_int = 0.95</code>). Also, following
+columns are dropped from the data frame: <code>term</code>, <code>contrast</code>,
+<code>tmp_idx</code>, <code>predicted_lo</code>, <code>predicted_hi</code>, <code>predicted</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>estimate_center</code></td>
+<td>
+<p>A character string (default <code>NULL</code>) to specify
+whether to center estimate as <code>'mean'</code> or as <code>'median'</code>. Note
+that <code>estimate_center</code> is used to set the global options as follows:
+<br><code> options("marginaleffects_posterior_center" = "mean")</code>, or <br><code>options("marginaleffects_posterior_center" = "median")</code> <br>
+The pre-specified global options are restored on exit via the
+<code>base::on.exit()</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>estimate_interval</code></td>
+<td>
+<p>A character string (default <code>NULL</code>) to specify
+whether to compute credible intervals as equal-tailed intervals,
+<code>'eti'</code> or highest density intervals, <code>'hdi'</code>. Note that
+<code>estimate_interval</code> is used to set the global options as follows: <br><code> options("marginaleffects_posterior_interval" = "eti")</code>, or <br><code> options("marginaleffects_posterior_interval" = "hdi")</code> <br>
+The pre-specified global options are restored on exit via the
+<code>base::on.exit()</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>dummy_to_factor</code></td>
+<td>
+<p>A named list (default <code>NULL</code>) that is used to
+convert dummy variables into a factor variable. The named elements are
+<code>factor.dummy</code>, <code>factor.name</code>, and <code>factor.level</code>. The
+<code>factor.dummy</code> is a vector of character strings that need to be
+converted to a factor variable whereas the <code>factor.name</code> is a single
+character string that is used to name the newly created factor variable.
+The <code>factor.level</code> is used to name the levels of newly created factor.
+When <code>factor.name</code> is <code>NULL</code>, then the factor name is internally
+set as <code>'factor.var'</code>. If <code>factor.level</code> is <code>NULL</code>, then
+names of factor levels are take from the <code>factor.dummy</code> i.e., the
+factor levels are assigned same name as <code>factor.dummy</code>. Note that when
+<code>factor.level</code> is not <code>NULL</code>, its length must be same as the
+length of the <code>factor.dummy</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>verbose</code></td>
+<td>
+<p>An optional argument (logical, default <code>FALSE</code>) to
+indicate whether to print information collected during setting up the
+object(s).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>expose_function</code></td>
+<td>
+<p>An optional logical argument to indicate whether to
+expose Stan functions (default <code>FALSE</code>). Note that if user has already
+exposed Stan functions during model fit by setting <code>expose_function =
+  TRUE</code> in the <code>bsitar()</code>, then those exposed functions are saved and can be
+used during post processing of the posterior draws and therefore
+<code>expose_function</code> is by default set as <code>FALSE</code> in all post
+processing functions except <code>optimize_model()</code>. For <code>optimize_model()</code>, the
+default setting is <code>expose_function = NULL</code>. The reason is that each
+optimized model has different Stan function and therefore it need to be re
+exposed and saved. The <code>expose_function = NULL</code> implies that the
+setting for <code>expose_function</code> is taken from the original <code>model</code>
+fit. Note that <code>expose_function</code> must be set to <code>TRUE</code> when
+adding <code>fit criteria</code> and/or <code>bayes_R2</code> during model
+optimization.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>usesavedfuns</code></td>
+<td>
+<p>A logical (default <code>NULL</code>) to indicate whether to
+use the already exposed and saved <code>Stan</code> functions. Depending on
+whether the user have exposed Stan functions within the <code>bsitar()</code> call via
+<code>expose_functions</code> argument in the <code>bsitar()</code>, the <code>usesavedfuns</code>
+is automatically set to <code>TRUE</code> (if <code>expose_functions = TRUE</code>) or
+<code>FALSE</code> (if <code>expose_functions = FALSE</code>). Therefore, manual
+setting of <code>usesavedfuns</code> as <code>TRUE</code>/<code>FALSE</code> is rarely
+needed. This is for internal purposes only and mainly used during the
+testing of the functions and therefore should not be used by users as it
+might lead to unreliable estimates.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>clearenvfuns</code></td>
+<td>
+<p>A logical to indicate whether to clear the exposed
+function from the environment (<code>TRUE</code>) or not (<code>FALSE</code>). If
+<code>NULL</code> (default), then <code>clearenvfuns</code> is set as <code>TRUE</code> when
+<code>usesavedfuns</code> is <code>TRUE</code>, and <code>FALSE</code> if <code>usesavedfuns</code>
+is <code>FALSE</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>envir</code></td>
+<td>
+<p>Environment used for function evaluation. The default is
+<code>NULL</code> which will set <code>parent.frame()</code> as default environment.
+Note that since most of post processing functions are based on <span class="pkg">brms</span>,
+the functions needed for evaluation should be in the <code>.GlobalEnv</code>.
+Therefore, it is strongly recommended to set <code> envir = globalenv()</code>
+(or <code>envir = .GlobalEnv</code>). This is particularly true for the
+derivatives such as velocity curve.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Further arguments passed to <code>brms::fitted.brmsfit()</code> and
+<code>brms::predict()</code> functions.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The <code>growthparameters_comparison</code> function estimates and
+returns the following growth parameters:
+</p>
+
+<ul>
+<li>
+<p> pgv  - peak growth velocity
+</p>
+</li>
+<li>
+<p> apgv - age at peak growth velocity
+</p>
+</li>
+<li>
+<p> tgv  - takeoff growth velocity
+</p>
+</li>
+<li>
+<p> atgv - age at takeoff growth velocity
+</p>
+</li>
+<li>
+<p> cgv  - cessation growth velocity
+</p>
+</li>
+<li>
+<p> acgv - age at cessation growth velocity
+</p>
+</li>
+</ul>
+<p>The takeoff growth velocity is the lowest velocity just before the peak
+starts and it indicates the beginning of the pubertal growth spurt. The
+cessation growth velocity indicates the end of the active pubertal growth
+spurt and is calculated as some percentage of the peak velocity (<code>pgv</code>).
+Typically, a 10 percent of the <code>pgv</code> is considered as a good indicator
+of the cessation of the active pubertal growth spurt
+(Hardin et al. 2022). The percentage is controlled via the
+<code>acg_velocity</code> argument which takes a positive real value bounded
+between 0 and 1 (default <code>0.1</code> implying 10 percent).
+</p>
+
+
+<h3>Value</h3>
+
+<p>A data frame objects with estimates and CIs for computed parameter(s)
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Satpal Sandhu  <a href="mailto:satpal.sandhu@bristol.ac.uk">satpal.sandhu@bristol.ac.uk</a>
+</p>
+
+
+<h3>References</h3>
+
+<p>Hardin AM, Knigge RP, Oh HS, Valiathan M, Duren DL, McNulty KP, Middleton KM, Sherwood RJ (2022).
+“Estimating Craniofacial Growth Cessation: Comparison of Asymptote- and Rate-Based Methods.”
+<em>The Cleft Palate Craniofacial Journal</em>, <b>59</b>(2), 230-238.
+<a href="https://doi.org/10.1177/10556656211002675">doi:10.1177/10556656211002675</a>, PMID: 33998905.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>marginaleffects::comparisons()</code>
+<code>marginaleffects::avg_comparisons()</code>
+<code>marginaleffects::plot_comparisons()</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+
+# Fit Bayesian SITAR model 
+
+# To avoid mode estimation which takes time, the Bayesian SITAR model fit to 
+# the 'berkeley_exdata' has been saved as an example fit ('berkeley_exfit').
+# See 'bsitar' function for details on 'berkeley_exdata' and 'berkeley_exfit'.
+
+# Check and confirm whether model fit object 'berkeley_exfit' exists
+ berkeley_exfit &lt;- getNsObject(berkeley_exfit)
+
+model &lt;- berkeley_exfit
+
+growthparameters_comparison(model, parameter = 'apgv', ndraws = 10)
+
+
+</code></pre>
+
+
+</div>

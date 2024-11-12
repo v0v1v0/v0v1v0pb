@@ -1,0 +1,317 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>cv_spatial</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Use spatial blocks to separate train and test folds</h2>
+
+<h3>Description</h3>
+
+<p>This function creates spatially separated folds based on a distance to number of row and/or column.
+It assigns blocks to the training and testing folds <strong>randomly</strong>, <strong>systematically</strong> or
+in a <strong>checkerboard pattern</strong>. The distance (<code>size</code>)
+should be in <strong>metres</strong>, regardless of the unit of the reference system of
+the input data (for more information see the details section). By default,
+the function creates blocks according to the extent and shape of the spatial sample data (<code>x</code> e.g.
+the species occurrence), Alternatively, blocks can be created based on <code>r</code> assuming that the
+user has considered the landscape for the given species and case study.
+Blocks can also be offset so the origin is not at the outer corner of the rasters.
+Instead of providing a distance, the blocks can also be created by specifying a number of rows and/or
+columns and divide the study area into vertical or horizontal bins, as presented in Wenger &amp; Olden (2012)
+and Bahn &amp; McGill (2012). Finally, the blocks can be specified by a user-defined spatial polygon layer.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">cv_spatial(
+  x,
+  column = NULL,
+  r = NULL,
+  k = 5L,
+  hexagon = TRUE,
+  flat_top = FALSE,
+  size = NULL,
+  rows_cols = c(10, 10),
+  selection = "random",
+  iteration = 100L,
+  user_blocks = NULL,
+  folds_column = NULL,
+  deg_to_metre = 111325,
+  biomod2 = TRUE,
+  offset = c(0, 0),
+  extend = 0,
+  seed = NULL,
+  progress = TRUE,
+  report = TRUE,
+  plot = TRUE,
+  ...
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>a simple features (sf) or SpatialPoints object of spatial sample data (e.g., species data or ground truth sample for image classification).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>column</code></td>
+<td>
+<p>character (optional). Indicating the name of the column in which response variable (e.g. species data as a binary
+response i.e. 0s and 1s) is stored to find balanced records in cross-validation folds. If <code>column = NULL</code>
+the response variable classes will be treated the same and only training and testing records will be counted.
+This is used for binary (e.g. presence-absence/background) or multi-class responses (e.g. land cover classes for
+remote sensing image classification), and <em>you can ignore it when the response variable is
+continuous or count data</em>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>r</code></td>
+<td>
+<p>a terra SpatRaster object (optional). If provided, its extent will be used to specify the blocks.
+It also supports <em>stars</em>, <em>raster</em>, or path to a raster file on disk.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>k</code></td>
+<td>
+<p>integer value. The number of desired folds for cross-validation. The default is <code>k = 5</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>hexagon</code></td>
+<td>
+<p>logical. Creates hexagonal (default) spatial blocks. If <code>FALSE</code>, square blocks is created.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>flat_top</code></td>
+<td>
+<p>logical. Creating hexagonal blocks with topped flat.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>size</code></td>
+<td>
+<p>numeric value of the specified range by which blocks are created and training/testing data are separated.
+This distance should be in <strong>metres</strong>. The range could be explored by <code>cv_spatial_autocor</code>
+and <code>cv_block_size</code> functions.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>rows_cols</code></td>
+<td>
+<p>integer vector. Two integers to define the blocks based on row and
+column e.g. <code>c(10, 10)</code> or <code>c(5, 1)</code>. Hexagonal blocks uses only the first one. This
+option is ignored when <code>size</code> is provided.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>selection</code></td>
+<td>
+<p>type of assignment of blocks into folds. Can be <strong>random</strong> (default), <strong>systematic</strong>, <strong>checkerboard</strong>, or <strong>predefined</strong>.
+The checkerboard does not work with hexagonal and user-defined spatial blocks. If the <code>selection = 'predefined'</code>, user-defined
+blocks and <code>folds_column</code> must be supplied.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>iteration</code></td>
+<td>
+<p>integer value. The number of attempts to create folds with balanced records. Only works when <code>selection = "random"</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>user_blocks</code></td>
+<td>
+<p>an sf or SpatialPolygons object to be used as the blocks (optional). This can be a user defined polygon and it must cover all
+the species (response) points. If <code>selection = 'predefined'</code>, this argument and <strong>folds_column</strong> must be supplied.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>folds_column</code></td>
+<td>
+<p>character. Indicating the name of the column (in <code>user_blocks</code>) in which the associated folds are stored.
+This argument is necessary if you choose the 'predefined' selection.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>deg_to_metre</code></td>
+<td>
+<p>integer. The conversion rate of metres to degree. See the details section for more information.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>biomod2</code></td>
+<td>
+<p>logical. Creates a matrix of folds that can be directly used in the <span class="pkg">biomod2</span> package as
+a <em>CV.user.table</em> for cross-validation.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>offset</code></td>
+<td>
+<p>two number between 0 and 1 to shift blocks by that proportion of block size.
+This option only works when <code>size</code> is provided.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>extend</code></td>
+<td>
+<p>numeric; This parameter specifies the percentage by which the map's extent is
+expanded to increase the size of the square spatial blocks, ensuring that all points fall
+within a block. The value should be a numeric between 0 and 5.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>seed</code></td>
+<td>
+<p>integer; a random seed for reproducibility (although an external seed
+should also work).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>progress</code></td>
+<td>
+<p>logical; whether to shows a progress bar for random fold selection.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>report</code></td>
+<td>
+<p>logical; whether to print the report of the records per fold.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>plot</code></td>
+<td>
+<p>logical; whether to plot the final blocks with fold numbers in ggplot.
+You can re-create this with <code>cv_plot</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>additional option for <code>cv_plot</code>.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>To maintain consistency, all functions in this package use <strong>meters</strong> as their unit of
+measurement. However, when the input map has a geographic coordinate system (in decimal degrees),
+the block size is calculated by dividing the <code>size</code> parameter by <code>deg_to_metre</code> (which
+defaults to 111325 meters, the standard distance of one degree of latitude on the Equator).
+In reality, this value varies by a factor of the cosine of the latitude. So, an alternative sensible
+value could be <code>cos(mean(sf::st_bbox(x)[c(2,4)]) * pi/180) * 111325</code>.
+</p>
+<p>The <code>offset</code> can be used to change the spatial position of the blocks. It can also be used to
+assess the sensitivity of analysis results to shifting in the blocking arrangements.
+These options are available when <code>size</code> is defined. By default the region is
+located in the middle of the blocks and by setting the offsets, the blocks will shift.
+</p>
+<p>Roberts et. al. (2017) suggest that blocks should be substantially bigger than the range of spatial
+autocorrelation (in model residual) to obtain realistic error estimates, while a buffer with the size of
+the spatial autocorrelation range would result in a good estimation of error. This is because of the so-called
+edge effect (O'Sullivan &amp; Unwin, 2014), whereby points located on the edges of the blocks of opposite sets are
+not separated spatially. Blocking with a buffering strategy overcomes this issue (see <code>cv_buffer</code>).
+</p>
+
+
+<h3>Value</h3>
+
+<p>An object of class S3. A list of objects including:
+</p>
+
+<ul>
+<li>
+<p>folds_list - a list containing the folds. Each fold has two vectors with the training (first) and testing (second) indices
+</p>
+</li>
+<li>
+<p>folds_ids - a vector of values indicating the number of the fold for each observation (each number corresponds to the same point in species data)
+</p>
+</li>
+<li>
+<p>biomod_table - a matrix with the folds to be used in <span class="pkg">biomod2</span> package
+</p>
+</li>
+<li>
+<p>k - number of the folds
+</p>
+</li>
+<li>
+<p>size - input size, if not null
+</p>
+</li>
+<li>
+<p>column - the name of the column if provided
+</p>
+</li>
+<li>
+<p>blocks - spatial polygon of the blocks
+</p>
+</li>
+<li>
+<p>records - a table with the number of points in each category of training and testing
+</p>
+</li>
+</ul>
+<h3>References</h3>
+
+<p>Bahn, V., &amp; McGill, B. J. (2012). Testing the predictive performance of distribution models. Oikos, 122(3), 321-331.
+</p>
+<p>O'Sullivan, D., Unwin, D.J., (2010). Geographic Information Analysis, 2nd ed. John Wiley &amp; Sons.
+</p>
+<p>Roberts et al., (2017). Cross-validation strategies for data with temporal, spatial, hierarchical,
+or phylogenetic structure. Ecography. 40: 913-929.
+</p>
+<p>Wenger, S.J., Olden, J.D., (2012). Assessing transferability of ecological models: an underappreciated aspect of statistical
+validation. Methods Ecol. Evol. 3, 260-267.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>cv_buffer</code> and <code>cv_cluster</code>; <code>cv_spatial_autocor</code> and <code>cv_block_size</code> for selecting block size
+</p>
+<p>For <em>CV.user.table</em> see <code>BIOMOD_Modeling</code> in <span class="pkg">biomod2</span> package
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+library(blockCV)
+
+# import presence-absence species data
+points &lt;- read.csv(system.file("extdata/", "species.csv", package = "blockCV"))
+# make an sf object from data.frame
+pa_data &lt;- sf::st_as_sf(points, coords = c("x", "y"), crs = 7845)
+
+# hexagonal spatial blocking by specified size and random assignment
+sb1 &lt;- cv_spatial(x = pa_data,
+                  column = "occ",
+                  size = 450000,
+                  k = 5,
+                  selection = "random",
+                  iteration = 50)
+
+# spatial blocking by row/column and systematic fold assignment
+sb2 &lt;- cv_spatial(x = pa_data,
+                  column = "occ",
+                  rows_cols = c(8, 10),
+                  k = 5,
+                  hexagon = FALSE,
+                  selection = "systematic")
+
+
+</code></pre>
+
+
+</div>

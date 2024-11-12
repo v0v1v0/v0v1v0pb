@@ -1,0 +1,363 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>EMMEANS</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Simple-effect analysis and post-hoc multiple comparison.</h2>
+
+<h3>Description</h3>
+
+<p>Perform (1) simple-effect (and simple-simple-effect) analyses,
+including both simple main effects and simple interaction effects,
+and (2) post-hoc multiple comparisons (e.g., pairwise, sequential, polynomial),
+with <em>p</em> values adjusted for factors with &gt;= 3 levels.
+</p>
+<p>This function is based on and extends
+(1) <code>emmeans::joint_tests()</code>,
+(2) <code>emmeans::emmeans()</code>, and
+(3) <code>emmeans::contrast()</code>.
+You only need to specify the model object, to-be-tested effect(s), and moderator(s).
+Almost all results you need will be displayed together,
+including effect sizes (partial <code class="reqn">\eta^2</code> and Cohen's <em>d</em>) and their confidence intervals (CIs).
+90% CIs for partial <code class="reqn">\eta^2</code> and 95% CIs for Cohen's <em>d</em> are reported.
+</p>
+<p>By default, the <em>root mean square error</em> (RMSE) is used to compute the pooled <em>SD</em> for Cohen's <em>d</em>.
+Specifically, it uses:
+</p>
+
+<ol>
+<li>
+<p> the square root of <em>mean square error</em> (MSE) for between-subjects designs;
+</p>
+</li>
+<li>
+<p> the square root of <em>mean variance of all paired differences of the residuals of repeated measures</em> for within-subjects and mixed designs.
+</p>
+</li>
+</ol>
+<p><strong><em>Disclaimer</em>:</strong>
+There is substantial disagreement on the appropriate pooled <em>SD</em> to use in computing the effect size.
+For alternative methods, see <code>emmeans::eff_size()</code> and <code>effectsize::t_to_d()</code>.
+Users should <em>not</em> take the default output as the only right results and are completely responsible for specifying <code>sd.pooled</code>.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">EMMEANS(
+  model,
+  effect = NULL,
+  by = NULL,
+  contrast = "pairwise",
+  reverse = TRUE,
+  p.adjust = "bonferroni",
+  sd.pooled = NULL,
+  model.type = "multivariate",
+  digits = 3,
+  file = NULL
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>model</code></td>
+<td>
+<p>The model object returned by <code>MANOVA</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>effect</code></td>
+<td>
+<p>Effect(s) you want to test.
+If set to a character string (e.g., <code>"A"</code>),
+it reports the results of omnibus test or simple main effect.
+If set to a character vector (e.g., <code>c("A", "B")</code>),
+it also reports the results of simple interaction effect.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>by</code></td>
+<td>
+<p>Moderator variable(s). Defaults to <code>NULL</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>contrast</code></td>
+<td>
+<p>Contrast method for multiple comparisons.
+Defaults to <code>"pairwise"</code>.
+</p>
+<p>Alternatives can be <code>"pairwise"</code> (<code>"revpairwise"</code>),
+<code>"seq"</code> (<code>"consec"</code>), <code>"poly"</code>, <code>"eff"</code>.
+For details, see <code>?emmeans::`contrast-methods`</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>reverse</code></td>
+<td>
+<p>The order of levels to be contrasted.
+Defaults to <code>TRUE</code> (higher level vs. lower level).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>p.adjust</code></td>
+<td>
+<p>Adjustment method of <em>p</em> values for multiple comparisons.
+Defaults to <code>"bonferroni"</code>.
+For polynomial contrasts, defaults to <code>"none"</code>.
+</p>
+<p>Alternatives can be <code>"none"</code>, <code>"fdr"</code>, <code>"hochberg"</code>,
+<code>"hommel"</code>, <code>"holm"</code>, <code>"tukey"</code>, <code>"mvt"</code>,
+<code>"dunnettx"</code>, <code>"sidak"</code>, <code>"scheffe"</code>, <code>"bonferroni"</code>.
+For details, see <code>stats::p.adjust()</code> and
+<code>emmeans::summary()</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>sd.pooled</code></td>
+<td>
+<p>By default, it uses <strong><code>sqrt(MSE)</code></strong> (root mean square error, RMSE)
+as the pooled <em>SD</em> to compute Cohen's <em>d</em>.
+Users may specify this argument as the <em>SD</em> of a reference group,
+or use <code>effectsize::sd_pooled()</code> to obtain a pooled <em>SD</em>.
+For an issue about the computation method of Cohen's <em>d</em>, see <em>Disclaimer</em> above.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>model.type</code></td>
+<td>
+<p><code>"multivariate"</code> returns the results of pairwise comparisons identical to SPSS,
+which uses the <code>lm</code> (rather than <code>aov</code>) object of the <code>model</code>
+for <code>emmeans::joint_tests()</code> and <code>emmeans::emmeans()</code>.
+</p>
+<p><code>"univariate"</code> requires also specifying <code>aov.include=TRUE</code> in <code>MANOVA</code>
+(not recommended by the <code>afex</code> package; for details, see <code>afex::aov_ez()</code>).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>digits</code></td>
+<td>
+<p>Number of decimal places of output. Defaults to <code>3</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>file</code></td>
+<td>
+<p>File name of MS Word (<code>.doc</code>).</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>The same model object as returned by
+<code>MANOVA</code> (for recursive use),
+along with a list of tables:
+<code>sim</code> (simple effects),
+<code>emm</code> (estimated marginal means),
+<code>con</code> (contrasts).
+</p>
+<p>Each <code>EMMEANS(...)</code> appends one list to the returned object.
+</p>
+
+
+<h3>Interaction Plot (See Examples Below)</h3>
+
+<p>You can save the returned object and use the <code>emmeans::emmip()</code> function
+to create an interaction plot (based on the fitted model and a formula).
+See examples below for the usage.
+</p>
+<p>Note: <code>emmeans::emmip()</code> returns a <code>ggplot</code> object,
+which can be modified and saved with <code>ggplot2</code> syntax.
+</p>
+
+
+<h3>Statistical Details</h3>
+
+<p>Some may confuse the statistical terms "simple effects", "post-hoc tests", and "multiple comparisons".
+Such a confusion is not uncommon. Here I explain what these terms actually refer to.
+</p>
+
+<dl>
+<dt><strong>1. Simple Effect</strong></dt>
+<dd>
+<p>When we speak of "simple effect", we are referring to ...
+</p>
+
+<ul>
+<li>
+<p> simple main effect
+</p>
+</li>
+<li>
+<p> simple interaction effect (only for designs with 3 or more factors)
+</p>
+</li>
+<li>
+<p> simple simple effect (only for designs with 3 or more factors)
+</p>
+</li>
+</ul>
+<p>When the interaction effect in ANOVA is significant,
+we should then perform a "simple-effect analysis".
+In regression, we call this "simple-slope analysis".
+They are identical in statistical principles.
+</p>
+<p>In a two-factors design, we only test <strong>"simple main effect"</strong>.
+That is, at different levels of a factor "B", the main effects of "A" would be different.
+However, in a three-factors (or more) design, we may also test <strong>"simple interaction effect"</strong> and <strong>"simple simple effect"</strong>.
+That is, at different combinations of levels of factors "B" and "C", the main effects of "A" would be different.
+</p>
+<p>To note, simple effects <em>per se</em> never require <em>p</em>-value adjustment, because what we test in simple-effect analyses are still "omnibus <em>F</em>-tests".
+</p>
+</dd>
+<dt><strong>2. Post-Hoc Test</strong></dt>
+<dd>
+<p>The term "post-hoc" means that the tests are performed after ANOVA. Given this, some may (wrongly) regard simple-effect analyses also as a kind of post-hoc tests.
+However, these two terms should be distinguished. In many situations,
+"post-hoc tests" only refer to <strong>"post-hoc comparisons"</strong> using <em>t</em>-tests and some <em>p</em>-value adjustment techniques.
+We need post-hoc comparisons <strong>only when there are factors with 3 or more levels</strong>.
+</p>
+<p>Post-hoc tests are totally <strong>independent of</strong> whether there is a significant interaction effect. <strong>It only deals with factors with multiple levels.</strong>
+In most cases, we use pairwise comparisons to do post-hoc tests. See the next part for details.
+</p>
+</dd>
+<dt><strong>3. Multiple Comparison</strong></dt>
+<dd>
+<p>As mentioned above, multiple comparisons are indeed post-hoc tests but have no relationship with simple-effect analyses.
+Post-hoc multiple comparisons are <strong>independent of</strong> interaction effects and simple effects.
+Furthermore, if a simple main effect contains 3 or more levels, we also need to do multiple comparisons <em>within</em> the simple-effect analysis.
+In this situation, we also need <em>p</em>-value adjustment with methods such as Bonferroni, Tukey's HSD (honest significant difference), FDR (false discovery rate), and so forth.
+</p>
+<p>Options for multiple comparison:
+</p>
+
+<ul>
+<li> <p><code>"pairwise"</code> - Pairwise comparisons (default is "higher level - lower level")
+</p>
+</li>
+<li> <p><code>"seq"</code> or <code>"consec"</code> - Consecutive (sequential) comparisons
+</p>
+</li>
+<li> <p><code>"poly"</code> - Polynomial contrasts (linear, quadratic, cubic, quartic, ...)
+</p>
+</li>
+<li> <p><code>"eff"</code> - Effect contrasts (vs. the grand mean)
+</p>
+</li>
+</ul>
+</dd>
+</dl>
+<h3>See Also</h3>
+
+<p><code>TTEST</code>, <code>MANOVA</code>, <code>bruceR-demodata</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">#### Between-Subjects Design ####
+
+between.1
+MANOVA(between.1, dv="SCORE", between="A") %&gt;%
+  EMMEANS("A")
+MANOVA(between.1, dv="SCORE", between="A") %&gt;%
+  EMMEANS("A", p.adjust="tukey")
+MANOVA(between.1, dv="SCORE", between="A") %&gt;%
+  EMMEANS("A", contrast="seq")
+MANOVA(between.1, dv="SCORE", between="A") %&gt;%
+  EMMEANS("A", contrast="poly")
+
+between.2
+MANOVA(between.2, dv="SCORE", between=c("A", "B")) %&gt;%
+  EMMEANS("A", by="B") %&gt;%
+  EMMEANS("B", by="A")
+## How to create an interaction plot using `emmeans::emmip()`?
+## See help page: ?emmeans::emmip()
+m = MANOVA(between.2, dv="SCORE", between=c("A", "B"))
+emmip(m, ~ A | B, CIs=TRUE)
+emmip(m, ~ B | A, CIs=TRUE)
+emmip(m, B ~ A, CIs=TRUE)
+emmip(m, A ~ B, CIs=TRUE)
+
+between.3
+MANOVA(between.3, dv="SCORE", between=c("A", "B", "C")) %&gt;%
+  EMMEANS("A", by="B") %&gt;%
+  EMMEANS(c("A", "B"), by="C") %&gt;%
+  EMMEANS("A", by=c("B", "C"))
+## Just to name a few...
+## You may test other combinations...
+
+
+#### Within-Subjects Design ####
+
+within.1
+MANOVA(within.1, dvs="A1:A4", dvs.pattern="A(.)",
+       within="A") %&gt;%
+  EMMEANS("A")
+
+within.2
+MANOVA(within.2, dvs="A1B1:A2B3", dvs.pattern="A(.)B(.)",
+       within=c("A", "B")) %&gt;%
+  EMMEANS("A", by="B") %&gt;%
+  EMMEANS("B", by="A")  # singular error matrix
+# :::::::::::::::::::::::::::::::::::::::
+# This would produce a WARNING because of
+# the linear dependence of A2B2 and A2B3.
+# See: Corr(within.2[c("A2B2", "A2B3")])
+
+within.3
+MANOVA(within.3, dvs="A1B1C1:A2B2C2", dvs.pattern="A(.)B(.)C(.)",
+       within=c("A", "B", "C")) %&gt;%
+  EMMEANS("A", by="B") %&gt;%
+  EMMEANS(c("A", "B"), by="C") %&gt;%
+  EMMEANS("A", by=c("B", "C"))
+## Just to name a few...
+## You may test other combinations...
+
+
+#### Mixed Design ####
+
+mixed.2_1b1w
+MANOVA(mixed.2_1b1w, dvs="B1:B3", dvs.pattern="B(.)",
+       between="A", within="B", sph.correction="GG") %&gt;%
+  EMMEANS("A", by="B") %&gt;%
+  EMMEANS("B", by="A")
+
+mixed.3_1b2w
+MANOVA(mixed.3_1b2w, dvs="B1C1:B2C2", dvs.pattern="B(.)C(.)",
+       between="A", within=c("B", "C")) %&gt;%
+  EMMEANS("A", by="B") %&gt;%
+  EMMEANS(c("A", "B"), by="C") %&gt;%
+  EMMEANS("A", by=c("B", "C"))
+## Just to name a few...
+## You may test other combinations...
+
+mixed.3_2b1w
+MANOVA(mixed.3_2b1w, dvs="B1:B2", dvs.pattern="B(.)",
+       between=c("A", "C"), within="B") %&gt;%
+  EMMEANS("A", by="B") %&gt;%
+  EMMEANS("A", by="C") %&gt;%
+  EMMEANS(c("A", "B"), by="C") %&gt;%
+  EMMEANS("B", by=c("A", "C"))
+## Just to name a few...
+## You may test other combinations...
+
+
+#### Other Examples ####
+
+air = airquality
+air$Day.1or2 = ifelse(air$Day %% 2 == 1, 1, 2) %&gt;%
+  factor(levels=1:2, labels=c("odd", "even"))
+MANOVA(air, dv="Temp", between=c("Month", "Day.1or2"),
+       covariate=c("Solar.R", "Wind")) %&gt;%
+  EMMEANS("Month", contrast="seq") %&gt;%
+  EMMEANS("Month", by="Day.1or2", contrast="poly")
+
+</code></pre>
+
+
+</div>

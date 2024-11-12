@@ -1,0 +1,164 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>compareRecords</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Creation of Comparison Data</h2>
+
+<h3>Description</h3>
+
+<p>Create comparison vectors for all pairs of records coming from 
+two datafiles to be linked.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">compareRecords(
+  df1,
+  df2,
+  flds = NULL,
+  flds1 = NULL,
+  flds2 = NULL,
+  types = NULL,
+  breaks = c(0, 0.25, 0.5)
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>df1, df2</code></td>
+<td>
+<p>two datasets to be linked, of class <code>data.frame</code>, with rows representing records and columns
+representing fields.  Without loss of generality, 
+<code>df1</code> is assumed to have no less records than <code>df2</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>flds</code></td>
+<td>
+<p>a vector indicating the fields to be used in the linkage.  Either a <code>character</code> vector, in which case
+all entries need to be names of columns of <code>df1</code> and <code>df2</code>, or a <code>numeric</code> vector
+indicating the columns in <code>df1</code> and <code>df2</code> to be used in the linkage.  If provided as a 
+<code>numeric</code> vector it is assumed that the columns of <code>df1</code> and <code>df2</code> are organized such that 
+it makes sense to compare the columns
+<code>df1[,flds]</code> and <code>df2[,flds]</code> in that order.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>flds1, flds2</code></td>
+<td>
+<p>vectors indicating the fields of <code>df1</code> and <code>df2</code> to be used in the linkage.
+Either <code>character</code> vectors, in which case  
+all entries need to be names of columns of <code>df1</code> and <code>df2</code>, respectively, or <code>numeric</code> vectors
+indicating the columns in <code>df1</code> and <code>df2</code> to be used in the linkage.  It is assumed that
+it makes sense to compare the columns
+<code>df1[,flds1]</code> and <code>df2[,flds2]</code> in that order.  These arguments are ignored if <code>flds</code> is specified.
+If none of <code>flds,flds1,flds2</code> are specified, the columns with the same names in <code>df1</code> and <code>df2</code> 
+are compared, if any.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>types</code></td>
+<td>
+<p>a vector of characters indicating the comparison type per comparison field.  The options
+are: <code>"lv"</code> for comparisons based on the Levenshtein edit distance normalized to <code class="reqn">[0,1]</code>, with <code class="reqn">0</code>  
+indicating no disagreement and <code class="reqn">1</code> indicating maximum disagreement;  
+<code>"bi"</code> for binary comparisons (agreement/disagreement); <code>"nu"</code> for numeric comparisons computed as 
+the absolute difference. 
+The default is <code>"lv"</code>.  Fields compared with the <code>"lv"</code> option are first transformed to <code>character</code>
+class.  Factors with different levels compared using the <code>"bi"</code> option are transformed to factors with the union 
+of the levels.  Fields compared with the <code>"nu"</code> option need to be of class <code>numeric</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>breaks</code></td>
+<td>
+<p>break points for the comparisons to obtain levels of disagreement.
+It can be a list of length equal to the number of comparison fields, containing one numeric vector with the break 
+points for each comparison field, where entries corresponding to comparison type <code>"bi"</code> are ignored.  
+It can also be a named list of length two with elements 'lv' and 'nu' 
+containing numeric vectors with the break 
+points for all Levenshtein-based and numeric comparisons, respectively.  
+Finally, it can be a numeric vector with the break points for all comparison fields of type <code>"lv"</code> and <code>"nu"</code>,
+which might be meaningful only if all the non-binary comparisons are of a single type, either <code>"lv"</code> or <code>"nu"</code>.  
+For comparisons based on the normalized Levenshtein distance, a vector of length <code class="reqn">L</code> of break 
+points for the interval <code class="reqn">[0,1]</code> leads to <code class="reqn">L+1</code> levels of disagreement.  Similarly, for comparisons based on the absolute 
+difference, the break points are for the interval <code class="reqn">[0,\infty)</code>.  
+The default is <code>breaks=c(0,.25,.5)</code>, which might be meaningful only for comparisons of type <code>"lv"</code>.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>a list containing: 
+</p>
+
+<dl>
+<dt><code>comparisons</code></dt>
+<dd>
+<p>matrix with <code>n1*n2</code> rows, where the comparison pattern for record pair <code class="reqn">(i,j)</code>
+appears in row <code>(j-1)*n1+i</code>, for <code class="reqn">i</code> in <code class="reqn">{1,\dots,n1}</code>, and <code class="reqn">j</code> in <code class="reqn">{1,\dots,n2}</code>.  
+A comparison field with <code class="reqn">L+1</code> levels of disagreement, 
+is represented by <code class="reqn">L+1</code> columns of TRUE/FALSE indicators.  Missing comparisons are coded as FALSE,
+which is justified under an assumption of ignorability of the missing comparisons, see Sadinle (2017).
+</p>
+</dd>
+<dt><code>n1,n2</code></dt>
+<dd>
+<p>the datafile sizes, <code>n1 = nrow(df1)</code> and <code>n2 = nrow(df2)</code>.</p>
+</dd>
+<dt><code>nDisagLevs</code></dt>
+<dd>
+<p>a vector containing the number of levels of
+disagreement per comparison field.</p>
+</dd>
+<dt><code>compFields</code></dt>
+<dd>
+<p>a data frame containing the names of the fields in the datafiles used in the comparisons 
+and the types of comparison.</p>
+</dd>
+</dl>
+<h3>References</h3>
+
+<p>Mauricio Sadinle (2017). Bayesian Estimation of Bipartite Matchings for Record Linkage. <em>Journal of the
+American Statistical Association</em> 112(518), 600-612. [<a href="https://doi.org/10.1080/01621459.2016.1148612">Published</a>] [<a href="https://arxiv.org/abs/1601.06630">arXiv</a>]
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">data(twoFiles)
+
+myCompData &lt;- compareRecords(df1, df2, 
+                             flds=c("gname", "fname", "age", "occup"),
+                             types=c("lv","lv","bi","bi"), 
+                             breaks=c(0,.25,.5))
+
+## same as 
+myCompData &lt;- compareRecords(df1, df2, types=c("lv","lv","bi","bi"))
+
+
+## let's transform 'occup' to numeric to illustrate how to obtain numeric comparisons 
+df1$occup &lt;- as.numeric(df1$occup)
+df2$occup &lt;- as.numeric(df2$occup)
+
+## using different break points for 'lv' and 'nu' comparisons 
+myCompData1 &lt;- compareRecords(df1, df2, 
+                              flds=c("gname", "fname", "age", "occup"),
+                              types=c("lv","lv","bi","nu"), 
+                              breaks=list(lv=c(0,.25,.5), nu=0:3))
+
+## using different break points for each comparison field
+myCompData2 &lt;- compareRecords(df1, df2, 
+                              flds=c("gname", "fname", "age", "occup"),
+                              types=c("lv","lv","bi","nu"), 
+                              breaks=list(c(0,.25,.5), c(0,.2,.4,.6), NULL, 0:3))
+</code></pre>
+
+
+</div>

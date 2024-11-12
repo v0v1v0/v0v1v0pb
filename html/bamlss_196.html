@@ -1,0 +1,304 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>simJM</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>
+Simulate longitudinal and survival data for joint models
+</h2>
+
+<h3>Description</h3>
+
+<p>Simulates longitudinal data with normal error and (Cox-type) survival times
+using the inversion method. The function <code>simJM()</code> is a wrapper specifying
+all predictors and the resulting data sets. The wrapper calls <code>rJM()</code> to sample
+the survival times, a modified version of <code>rSurvtime()</code> from the <span style="font-family: Courier New, Courier; color: #666666;"><b>R</b></span> package
+<span class="pkg">CoxFlexBoost</span>.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">simJM(nsub = 300, times = seq(0, 120, 1), probmiss = 0.75,
+  long_setting = "functional",
+  alpha_setting = if(nonlinear) "linear" else "nonlinear",
+  dalpha_setting = "zero", sigma = 0.3, long_df = 6, tmax = NULL,
+  seed = NULL, full = FALSE, file = NULL, nonlinear = FALSE,
+  fac = FALSE)
+  
+rJM(hazard, censoring, x, r, 
+  subdivisions = 1000, tmin = 0, tmax,
+  file = NULL, ...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>nsub</code></td>
+<td>
+<p>number of individuals for which longitudinal data and survival times should be simulated.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>times</code></td>
+<td>
+<p>vector of time points at which longitudinal measurements are "sampled".</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>probmiss</code></td>
+<td>
+<p>proportion of longitudinal measurements to be set to missing. Used to induce
+sparsity in the longitudinal measurements.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>long_setting</code></td>
+<td>
+<p>Specification of the longitudinal trajectories of the sampled subjects.
+Preset specifications are <code>"linear"</code>, <code>"nonlinear"</code> and <code>"functional"</code>. See Details.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>alpha_setting</code></td>
+<td>
+<p>specification of the association between survival and longitudinal. Preset
+specifications are <code>"simple"</code>, <code>"linear"</code>, <code>"nonlinear"</code> and
+<code>"nonlinear2"</code>. See Details.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>dalpha_setting</code></td>
+<td>
+<p>specification of the association between survival and the derivative of the
+longitudinal. Work in progress.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>sigma</code></td>
+<td>
+<p>standard deviation of the normal error around the true longitudinal measurements.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>long_df</code></td>
+<td>
+<p>number of basis functions from which functional random intercepts are sampled.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>tmax</code></td>
+<td>
+<p>For function <code>simJM()</code>, longest possible survival time, observations are censored
+after that timepoint. Defaults to <code>max(times)</code> and should not be specified longer than
+<code>max(times)</code> for longitudinal setting "functional". For function <code>rJM()</code>, latest
+time point to sample a survival time.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>seed</code></td>
+<td>
+<p>numeric scalar setting the random seed.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>full</code></td>
+<td>
+<p>logical indicating if only the longitudinal data set should be returned (<code>FALSE</code>)
+or additionally also the data for the survival part evaluated on a regular time grid and the
+longitudinal data set without longitudinal missings (<code>TRUE</code>). </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>file</code></td>
+<td>
+<p>name of the data file the generated data set should be stored into
+(e.g., "simdata.RData") or NULL if the dataset should directly be returned in <span style="font-family: Courier New, Courier; color: #666666;"><b>R</b></span>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nonlinear</code></td>
+<td>
+<p>If set to <code>TRUE</code>, a nonlinear interaction between <code>alpha</code> and
+<code>mu</code> is simulated.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>fac</code></td>
+<td>
+<p>If set to <code>TRUE</code>, a smooth interaction that varies by a factor is simulated.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>hazard</code></td>
+<td>
+<p>complete hazard function to specify the joint model. Time must be the
+first argument.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>censoring</code></td>
+<td>
+<p>function to compute (random) censoring. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>matrix of sampled covariate values.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>r</code></td>
+<td>
+<p>matrix of sampled random coefficients.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>subdivisions</code></td>
+<td>
+<p>the maximum number of subintervals for the integration.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>tmin</code></td>
+<td>
+<p>earliest time point to sample a survival time.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>further arguments to be passed to <code>hazard</code> or <code>censoring</code>.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The function simulates longitudinal data basing on the given specification at given <code>times</code>.
+The full hazard is built from all joint model predictors <code class="reqn">\eta_{\mu}</code>, <code class="reqn">\eta_{\sigma}</code>,
+<code class="reqn">\eta_{\lambda}</code>, <code class="reqn">\eta_{\gamma}</code>, <code class="reqn">\eta_{\alpha}</code> as presented in
+Koehler, Umlauf, and Greven (2016), see also <code>jm_bamlss</code>. Survival times are sampled using the inversion
+method (cf. Bender, Augustin, &amp; Blettner, 2005). Additional censoring and missingness is
+introduced. The longitudinal information is censored according to the survival information. The
+user can also specify own predictors and use only <code>rJM</code> to simulate survival times
+accordingly.  
+</p>
+<p>Pre-specified functions for <code class="reqn">\eta_{\mu}</code> in <code>long_setting</code> are for <code>linear</code>
+</p>
+<p style="text-align: center;"><code class="reqn">\eta_{\mu i}(t) = 1.25 + r_{1i} + 0.6 \sin(x_{2i}) + (-0.01) t + 0.02 r_{2i} t</code>
+</p>
+<p>,
+for <code>nonlinear</code> </p>
+<p style="text-align: center;"><code class="reqn">\eta_{\mu i}(t) = 0.5 + r_{1i} + 0.6 \sin(x_{2i}) + 0.1 (t+1) \exp(-0.075 t)</code>
+</p>
+
+<p>and for <code>functional</code>
+</p>
+<p style="text-align: center;"><code class="reqn">\eta_{\mu i}(t) = 0.5 + r_{1i} + 0.6 \sin(x_{2i}) + 0.1 (t+1) \exp(-0.075 t) + \sum_k \beta_{ki} B(t)</code>
+</p>
+<p>,
+where <code class="reqn">B(.)</code> denotes a B-spline basis function and <code class="reqn">\beta_{ki}</code> are the sampled penalized
+coefficients from <code>gen_b</code> per person. 
+</p>
+<p>Prespecified functions for <code class="reqn">\eta_{\alpha}</code> in <code>alpha_setting</code> are for <code>constant</code>
+</p>
+<p style="text-align: center;"><code class="reqn">\eta_{\alpha}(t) = 1</code>
+</p>
+<p>, for <code>linear</code> </p>
+<p style="text-align: center;"><code class="reqn">\eta_{\alpha}(t) = 1 - 0.015 t</code>
+</p>
+<p>, for
+<code>nonlinear</code> </p>
+<p style="text-align: center;"><code class="reqn">\eta_{\alpha}(t) = \cos((time-20)/20)</code>
+</p>
+<p>, and for <code>nonlinear</code>
+</p>
+<p style="text-align: center;"><code class="reqn">\eta_{\alpha}(t) = \cos((time-33)/33)</code>
+</p>
+<p>. 
+</p>
+<p>Additionally the fixed functions for <code class="reqn">\eta_{\lambda} = 0.1(t+2)\exp(-0.075t)</code> and
+<code class="reqn">\eta_{\lambda} = 0.1(t+2)\exp(-0.075t)</code> are employed.
+</p>
+
+
+<h3>Value</h3>
+
+<p>For <code>full = TRUE</code> a list of the three <code>data.frame</code>s is returned:
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+<p>Simulated dataset in long format including all longitudinal and survival covariates.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>data_grid</code></td>
+<td>
+<p>Dataset of the time-varying survival predictors which are not subject specific,
+evaluated at a grid of fixed time points.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>data_full</code></td>
+<td>
+<p>Simulated data set prior to generating longitudinal missings. Useful to
+assess the longitudinal fit.</p>
+</td>
+</tr>
+</table>
+<p>For <code>full = FALSE</code> only the first dataset is returned. 
+</p>
+<p>Covariates within these datasets include a subject identifier <code>id</code>, the sampled survival
+times <code>survtime</code>, the event indicator <code>event</code>, the time points of longitudinally
+"observed" measurements  <code>obstime</code>,   the longitudinal response <code>y</code>, the cumulative
+hazard at the survival time <code>cumhaz</code>, as well as covariates  <code>x1, x2</code>, random effects
+<code>r1, r2, b1, ...</code>,  and the true predictors <code>alpha, lambda, gamma, mu, sigma</code>. 
+</p>
+
+
+<h3>References</h3>
+
+<p>Hofner, B (2016). <span class="pkg">CoxFlexBoost</span>: Boosting Flexible Cox Models
+(with Time-Varying Effects). <span style="font-family: Courier New, Courier; color: #666666;"><b>R</b></span> package version 0.7-0.
+</p>
+<p>Bender, R., Augustin, T., and Blettner, M. (2005).
+Generating Survival Times to Simulate Cox Proportional Hazards Models.
+<em>Statistics in Medicine</em>, <b>24</b>, 1713-1723.
+</p>
+<p>Koehler N, Umlauf N, Beyerlein, A., Winkler, C., Ziegler, A., and Greven S (2016). Flexible Bayesian Additive Joint Models with an
+Application to Type 1 Diabetes Research. <em>(submitted)</em>
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>jm_bamlss</code>, <code>opt_JM</code>, <code>sam_JM</code>, <code>bamlss</code>.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## Not run: ## Simulate survival data
+## with functional random intercepts and a nonlinear effect 
+## of time, time-varying association alpha.
+d &lt;- simJM(nsub = 300)
+head(d)
+
+## Simulate survival data
+## with random intercepts/slopes and a linear effect of time,
+## constant association alpha.
+d &lt;- simJM(nsub = 200, long_setting = "linear", 
+  alpha_setting = "constant")
+head(d)
+
+## End(Not run)
+</code></pre>
+
+
+</div>

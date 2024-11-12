@@ -1,0 +1,241 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>rvmcos</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>The bivariate von Mises cosine model</h2>
+
+<h3>Description</h3>
+
+<p>The bivariate von Mises cosine model
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">rvmcos(
+  n,
+  kappa1 = 1,
+  kappa2 = 1,
+  kappa3 = 0,
+  mu1 = 0,
+  mu2 = 0,
+  method = "naive"
+)
+
+dvmcos(
+  x,
+  kappa1 = 1,
+  kappa2 = 1,
+  kappa3 = 0,
+  mu1 = 0,
+  mu2 = 0,
+  log = FALSE,
+  ...
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>n</code></td>
+<td>
+<p>number of observations. Ignored if at least one of the other parameters have length k &gt; 1, in which
+case, all the parameters are recycled to length k to produce k random variates.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>kappa1, kappa2, kappa3</code></td>
+<td>
+<p>vectors of concentration parameters; <code>kappa1, kappa2 &gt; 0</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>mu1, mu2</code></td>
+<td>
+<p>vectors of mean parameters.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>method</code></td>
+<td>
+<p>Rejection sampling method to be used. Available choices are <code>"naive"</code> (default) or <code>"vmprop"</code>. See details.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>bivariate vector  or a two-column matrix with each row being a bivariate vector of angles
+(in radians)  where the densities are to be evaluated.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>log</code></td>
+<td>
+<p>logical. Should the log density be returned instead?</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>additional arguments to be passed to dvmcos. See details.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The bivariate von Mises cosine model density at the point <code class="reqn">x = (x_1, x_2)</code> is given by
+</p>
+<p style="text-align: center;"><code class="reqn">f(x) = C_c (\kappa_1, \kappa_2, \kappa_3) \exp(\kappa_1 \cos(T_1) + \kappa_2 \cos(T_2) + \kappa_3 \cos(T_1 - T_2))</code>
+</p>
+
+<p>where
+</p>
+<p style="text-align: center;"><code class="reqn">T_1 = x_1 - \mu_1;  T_2 = x_2 - \mu_2</code>
+</p>
+
+<p>and <code class="reqn">C_c (\kappa_1, \kappa_2, \kappa_3)</code> denotes the normalizing constant for the cosine model.
+</p>
+<p>Because <code class="reqn">C_c</code> involves an infinite  alternating series with product of Bessel functions,
+if <code>kappa3 &lt; -5</code> or <code>max(kappa1, kappa2, abs(kappa3)) &gt; 50</code>, <code class="reqn">C_c</code> is evaluated
+numerically via (quasi) Monte carlo method for
+numerical stability. These (quasi) random numbers can be provided through the
+argument <code>qrnd</code>, which must be a two column matrix, with each element being
+a  (quasi) random number between 0 and 1. Alternatively, if <code>n_qrnd</code> is
+provided (and <code>qrnd</code> is missing), a two dimensional sobol sequence of size <code>n_qrnd</code> is
+generated via the function sobol from the R package <code>qrng</code>. If none of <code>qrnd</code>
+or <code>n_qrnd</code> is available, a two dimensional sobol sequence of size 1e4 is used. By default Monte
+Carlo approximation is used only if <code>kappa3 &lt; -5</code> or <code>max(kappa1, kappa2, abs(kappa3)) &gt; 50</code>.
+However, a forced Monte Carlo approximation can be made (irrespective of the choice of <code>kappa1, kappa2</code> and
+<code>kappa3</code>) by setting <code>force_approx_const = TRUE</code>. See examples.
+</p>
+
+
+<h3>Value</h3>
+
+<p><code>dvmcos</code> gives the density  and <code>rvmcos</code> generates random deviates.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">kappa1 &lt;- c(1, 2, 3)
+kappa2 &lt;- c(1, 6, 5)
+kappa3 &lt;- c(0, 1, 2)
+mu1 &lt;- c(1, 2, 5)
+mu2 &lt;- c(0, 1, 3)
+x &lt;- diag(2, 2)
+n &lt;- 10
+
+# when x is a bivariate vector and parameters are all scalars,
+# dvmcos returns single density
+dvmcos(x[1, ], kappa1[1], kappa2[1], kappa3[1], mu1[1], mu2[1])
+
+# when x is a two column matrix and parameters are all scalars,
+# dmvsin returns a vector of densities calculated at the rows of
+# x with the same parameters
+dvmcos(x, kappa1[1], kappa2[1], kappa3[1], mu1[1], mu2[1])
+
+# if x is a bivariate vector and at least one of the parameters is
+# a vector, all parameters are recycled to the same length, and
+# dvmcos returns a vector with ith element being the density
+# evaluated at x with parameter values kappa1[i], kappa2[i],
+# kappa3[i], mu1[i] and mu2[i]
+dvmcos(x[1, ], kappa1, kappa2, kappa3, mu1, mu2)
+
+# if x is a two column matrix and at least one of the parameters is
+# a vector, rows of x and the parameters are recycled to the same
+# length, and dvmcos returns a vector with ith element being the
+# density evaluated at ith row of x with parameter values kappa1[i],
+# kappa2[i], # kappa3[i], mu1[i] and mu2[i]
+dvmcos(x, kappa1, kappa2, kappa3, mu1, mu2)
+
+# when parameters are all scalars, number of observations generated
+# by rvmcos is n
+rvmcos(n, kappa1[1], kappa2[1], kappa3[1], mu1[1], mu2[1])
+
+# when at least one of the parameters is a vector, all parameters are
+# recycled to the same length, n is ignored, and the number of
+# observations generated by rvmcos is the same as the length of the
+# recycled vectors
+rvmcos(n, kappa1, kappa2, kappa3, mu1, mu2)
+
+
+
+## Visualizing (quasi) Monte Carlo based approximations of
+## the normalizing constant through density evaluations.
+
+# "good" setup, where the analytic formula for C_c can be
+# calculated without numerical issues
+# kappa1 = 1, kappa2 = 1, kappa3 = -2, mu1 = pi, mu2 = pi
+
+n_qrnd &lt;-  (1:500)*20
+# analytic
+good.a &lt;- dvmcos(c(3,3), 1, 1, -2, pi, pi, log=TRUE)
+# using quasi Monte Carlo
+good.q &lt;- sapply(n_qrnd,
+                 function(j)
+                   dvmcos(c(3,3), 1, 1, -2, pi, pi,
+                          log=TRUE, n_qrnd = j,
+                          force_approx_const = TRUE))
+# using ordinary Monte Carlo
+set.seed(1)
+good.r &lt;- sapply(n_qrnd,
+                 function(j)
+                   dvmcos(c(3,3), 1, 1, -2, pi, pi,
+                          log=TRUE,
+                          qrnd = matrix(runif(2*j), ncol = 2),
+                          force_approx_const = TRUE))
+
+
+plot(n_qrnd, good.q, ylim = range(good.a, good.q, good.r),
+     col = "orange", type = "l",
+     ylab = "",
+     main = "dvmcos(c(3,3), 1, 1, -2, pi, pi, log = TRUE)")
+points(n_qrnd, good.r, col = "skyblue", type = "l")
+abline(h = good.a, lty = 2, col = "grey")
+legend("topright",
+       legend = c("Sobol", "Random", "Analytic"),
+       col = c("orange", "skyblue", "grey"),
+       lty = c(1, 1, 2))
+
+
+# "bad" setup, where the calculating C_c
+# numerically using the analytic formula is problematic
+# kappa1 = 100, kappa2 = 100, kappa3 = -200, mu1 = pi, mu2 = pi
+
+n_qrnd &lt;-  (1:500)*20
+
+# using quasi Monte Carlo
+bad.q &lt;- sapply(n_qrnd,
+                function(j)
+                  dvmcos(c(3,3), 100, 100, -200, pi, pi,
+                         log=TRUE, n_qrnd = j,
+                         force_approx_const = TRUE))
+# using ordinary Monte Carlo
+set.seed(1)
+bad.r &lt;- sapply(n_qrnd,
+                function(j)
+                  dvmcos(c(3,3), 100, 100, -200, pi, pi,
+                         log=TRUE,
+                         qrnd = matrix(runif(2*j), ncol = 2),
+                         force_approx_const = TRUE))
+
+
+plot(n_qrnd, bad.q, ylim = range(bad.q, bad.r),
+     col = "orange", type = "l",
+     ylab = "",
+     main = "dvmcos(c(3,3), 100, 100, -200, pi, pi, log = TRUE)")
+points(n_qrnd, bad.r, col = "skyblue", type = "l")
+legend("topright",
+       legend = c("Sobol", "Random"),
+       col = c("orange", "skyblue"), lty = 1)
+
+
+</code></pre>
+
+
+</div>

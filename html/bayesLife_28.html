@@ -1,0 +1,152 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>e0.jmale.predict</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>
+Prediction of the Joint Female-Male Model
+</h2>
+
+<h3>Description</h3>
+
+<p>Prediction of the joint female-male model of life expectancy, as described in Raftery et al. (2014, 2012) and Lalic (2011).
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">e0.jmale.predict(e0.pred, estimates = NULL, gap.lim = c(0, 18), 
+    max.e0.eq1.pred = 86, my.e0.file = NULL, my.locations.file = NULL,
+    save.as.ascii = 1000, resample.outrange = TRUE, verbose = TRUE, ...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>e0.pred</code></td>
+<td>
+<p>Object of class <code>bayesLife.prediction</code> containing female projections of life expectancy.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>estimates</code></td>
+<td>
+<p>List of the same structure as returned by <code>e0.jmale.estimate</code>, containing the model estimation results. If it is not given, the <code>e0.jmale.estimate</code> function is invoked.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>gap.lim</code></td>
+<td>
+<p>Vector of length two giving the minimum and maximum bounds for the female-male life expectancy gaps. See argument <code>resample.outrange</code> for two ways of handling gaps that fall outside of this range.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>max.e0.eq1.pred</code></td>
+<td>
+<p>Maximum female life expectancy for male projections handled by the first equation (parameter <code class="reqn">M</code> in Equation (1) in Raftery et al. (2012)).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>my.e0.file</code></td>
+<td>
+<p>File name containing user-specified male time series for one or more countries. The function replaces the corresponding country data from the WPP dataset by values in this file. Only columns are replaced that match column names of the WPP dataset.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>my.locations.file</code></td>
+<td>
+<p>File name containing user-specified locations if different from the default <code>UNlocations</code> dataset. It should be the same file as passed to <code>run.e0.mcmc</code> for female life expectancy.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>save.as.ascii</code></td>
+<td>
+<p>Either a number determining how many trajectories should be converted into an ASCII file, or “all” in which case all trajectories are converted. It should be set to 0, if no conversion is desired.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>resample.outrange</code></td>
+<td>
+<p>Logical indicating if values outside of the allowed gap range given by <code>gap.lim</code> should be resampled. If set to <code>FALSE</code>, such values are truncated instead.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>verbose</code></td>
+<td>
+<p>Logical switching log messages on and off.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Further arguments passed to <code>e0.jmale.estimate</code>.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>If no <code>estimates</code> are given, the function invokes an estimation by calling <code>e0.jmale.estimate</code>. Using those estimates, the male life expectancy is projected forward in time (as a function of a female-male gap), using the female predictions from <code>e0.pred</code>. The initial male data point is extracted from the male WPP dataset (<code>e0M</code>) and possibly partly replaced by any user-specified data given in <code>my.e0.file</code>.
+</p>
+<p>The resulting trajectory files are stored in a subdirectory of the female prediction directory, called ‘joint_male’. Furthermore, an object of class <code>bayesLife.prediction</code> is created and added to <code>e0.pred</code> as a component called <code>joint.male</code>. 
+</p>
+<p>The predicted gaps can be viewed using the <code>e0.gap.plot</code> function.
+</p>
+
+
+<h3>Value</h3>
+
+<p>Updated <code>e0.pred</code> object where a new component was added, called <code>joint.male</code>. It is also an object of class <code>bayesLife.prediction</code> and it contains results from this prediction.
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Hana Sevcikova
+</p>
+
+
+<h3>References</h3>
+
+<p>A. E. Raftery,  N. Lalic, P. Gerland (2014). Joint Probabilistic Projection of Female and Male Life Expectancy. Demographic Research, 30:795-822.
+</p>
+<p>A. E. Raftery,  N. Li, H. Sevcikova , P. Gerland, G. K. Heilig (2012). Bayesian probabilistic population projections for all countries. Proceedings of the National Academy of Sciences 109:13915-13921.
+</p>
+<p>Lalic, N. (2011). Master's thesis at the Department of Statistics, University of Washington. 
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>e0.jmale.estimate</code>, <code>get.e0.jmale.prediction</code>, <code>e0.predict</code>, <code>e0.gap.plot</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## Not run: 
+sim.dir &lt;- tempfile()
+m &lt;- run.e0.mcmc(sex = 'F', nr.chains = 1, iter = 30, thin = 1, output.dir = sim.dir)
+pred &lt;- e0.predict(m, burnin = 15, verbose = FALSE, save.as.ascii = 0, 
+                    predict.jmale = FALSE)
+both.pred &lt;- e0.jmale.predict(pred)
+e0.trajectories.plot(both.pred, 'Guatemala') # Female
+e0.trajectories.plot(get.e0.jmale.prediction(both.pred), 'Guatemala') # Male
+
+# Marginal distribution of the sex-specific projections
+e0.trajectories.plot(both.pred, 'GTM', both.sexes = TRUE,  pi = 80)
+
+# Plotting the gaps
+e0.gap.plot(both.pred, 'GTM')
+
+# Joint distribution of the sex-specific projections
+e0.joint.plot(both.pred, 'Guatemala', pi = 80, years = c(2013, 2043, 2093))
+
+unlink(sim.dir, recursive = TRUE)
+
+## End(Not run)</code></pre>
+
+
+</div>

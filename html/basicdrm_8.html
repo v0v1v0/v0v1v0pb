@@ -1,0 +1,177 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>fitHillModel</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Fit a Hill dose response model to data</h2>
+
+<h3>Description</h3>
+
+<p>This function uses the R <code>stats</code> function <code>optim</code> to fit a Hill dose
+response model to a given set of dose and response values.  Four different
+model settings are allowed, in which the minimal and maximal effects are
+either fixed at a provided value or allowed to be fit to the data.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">fitHillModel(
+  formula,
+  data,
+  model,
+  weights = NULL,
+  start = NULL,
+  direction = 0,
+  lower = NULL,
+  upper = NULL
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>formula</code></td>
+<td>
+<p>Either an object of class <code>formula</code> such as would be provided
+to a modeling function like <code>lm()</code>, or a numeric vector of concentration
+values (including 0 or Inf)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+<p>If <code>forumula</code> is a symbolic formula, a data frame containing the
+specified values. If <code>formula</code> is a numeric vector of concentrations, a
+numeric vector of response values</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>model</code></td>
+<td>
+<p>A vector of values between 1 and 4, specifying the precise
+model to be fit. The values correspond to the four parameters of the Hill
+model: dose of median effect, Hill slope, minimal effect, and maximal effect
+(see <code>evalHillModel()</code>).  The first of these two are always fit, so <code>model</code>
+must contain at least <code>1</code> and <code>2</code>.  The presence of <code>3</code> or <code>4</code> will determine
+if those parameters are also fit, or fixed at the given starting value. So
+<code>c(1,2,4)</code> will fit the dose of median effect, the Hill slope, and the
+maximal effect, but will leave the minimal effect fixed at the starting
+value.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>weights</code></td>
+<td>
+<p>A vector of weights (between 0 and 1) the same length as
+<code>conc</code> and <code>act</code> which determines the weight with which each measurement
+will impact the the sum of squared errors.  Weights will be multiplied by
+errors <em>before</em> squaring.  If <code>NULL</code> (the default) all weights will be set
+to 1. Can be a numeric vector, or the name of a column in <code>data</code> if <code>formula</code>
+is a symbolic formula</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>start</code></td>
+<td>
+<p>A vector of four starting values for the Hill model to be fit.
+Any values not being fit will be fixed at these starting values.  If left as
+<code>NULL</code>, a starting vector will be estimated from the data, but it will almost
+always be better to provide an explicit staring model.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>direction</code></td>
+<td>
+<p>Determines the possible directionality of the dose response
+model.  If 0 (the default) no additional constraints are placed on the
+parameters.  If greater than 0, the fitting will require that the maximal
+effect is <em>greater</em> than the minimal effect.  If less than 0, the fitting
+wll require tha the maximal effect is <em>less</em> than the minimal effect.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>lower</code></td>
+<td>
+<p>A vector of lower bounds on the Hill parameter values.  Can be
+the same length as <code>model</code> (in which case the bounds will be applied to the
+corresponding fit parameters) or the full length of 4.  Any parameters for
+which you do not wish to specify a bound can be set to <code>NA</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>upper</code></td>
+<td>
+<p>A vector of upper bounds on the Hill parameter values.  Works
+the same as parameter <code>lower</code>.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>An object of class <code>hillrm</code>, containing the following values:
+</p>
+
+<ul>
+<li> <p><code>conc</code>: the given vector of concentraitons
+</p>
+</li>
+<li> <p><code>act</code>: the given vector of responses
+</p>
+</li>
+<li> <p><code>weights</code>: the vector of measurement weights used in minimizing the sum
+of squared errors
+</p>
+</li>
+<li> <p><code>coefficients</code>: the full four-parameter Hill parameter vector (accessible
+by the function <code>coef()</code>)
+</p>
+</li>
+<li> <p><code>par</code>: the vector of paramters that were actually fit
+</p>
+</li>
+<li> <p><code>fitted.values</code>: the predicted responses of the best fit model (accessible
+by the functoin <code>fitted()</code>)
+</p>
+</li>
+<li> <p><code>residuals</code>: the difference between the actual responses and the predicted
+responses (accessible by the function <code>residuals()</code>)
+</p>
+</li>
+<li> <p><code>model</code>: the vector of values between 1 and 4 specifying the precise model
+that was fit
+</p>
+</li>
+<li> <p><code>mname</code>: a character string naming the precise model that was fit. One of
+"m2p", "m3plc", "m3puc", or "m4p"
+</p>
+</li>
+<li> <p><code>start</code>: a four-value parameter vector used as the starting value for the
+model fit
+</p>
+</li>
+<li> <p><code>direction</code>: the direction constraint used in the fit
+</p>
+</li>
+<li> <p><code>pbounds</code>: a two-by-four matrix of values specifying the lower and upper
+bounds used in the fit
+</p>
+</li>
+</ul>
+<h3>Examples</h3>
+
+<pre><code class="language-R">conc &lt;- c(0,2^(-6:3),Inf)
+hpar &lt;- c(1,3,0,75)
+response &lt;- evalHillModel(conc, hpar) + rnorm(length(conc),sd=7.5)
+data &lt;- data.frame(conc=conc,response=response,weight=c(0.5,rep(1,10),0.1))
+
+hfit &lt;- fitHillModel(conc,response,c(1,2,3,4),start=c(0.5,1,0,100))
+hfit2 &lt;- fitHillModel(response~conc,data,c(1,2,4),weight,start=c(0.5,1,0,100),
+                      direction=0,lower=c(NA,NA,0,0))
+</code></pre>
+
+
+</div>

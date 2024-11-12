@@ -1,0 +1,140 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>bp_sleep_metrics</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Nocturnal Blood Pressure Metrics</h2>
+
+<h3>Description</h3>
+
+<p>The <code>bp_sleep_metrics</code> function serves to calculate nocturnal metrics
+from relevant medical literature.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">bp_sleep_metrics(data, subj = NULL)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+<p>User-supplied data set containing blood pressure data. Must
+contain a Systolic blood pressure (<code>SBP</code>), Diastolic blood pressure (<code>DBP</code>)
+as well as <code>ID</code>, <code>WAKE</code>, and <code>DATE_TIME</code> columns.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>subj</code></td>
+<td>
+<p>Optional argument. Allows the user to specify and subset specific subjects
+from the <code>ID</code> column of the supplied data set. The <code>subj</code> argument can be a single
+value or a vector of elements. The input type should be character, but the function will
+comply with integers so long as they are all present in the <code>ID</code> column of the data.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>NOTE: Any reference to "sleep" in the bp package refers to an individual's nocturnal period;
+"sleep" is used in an informal sense for intuitive purposes. Technically, from a clinical perspective,
+indication of sleep is currently obtained through means of EEG or other highly specialized equipment.
+For all intents and purposes, sleep in the context of this package refers to actigraphy-inferred
+nocturnal periods of rest.
+</p>
+<p>The calculation of BP metrics related to sleep is based on averages of BP readings from four periods as identified in Kairo et al. (2003):
+presleep or evening (2 hours before sleep start),
+prewake (2 hours before wake),
+postwake or morning (2 hours after wake),
+lowest (3 measurements centered at the minimal BP reading over sleep).
+The function uses <code>WAKE</code> column to automatically allocate BP measurements to various periods. The following metrics are defined as a
+function of the period averages (separately for SBP and DBP)
+</p>
+<p><code>dip_calc</code> = 1 - mean_sleep_BP/mean_wake_BP (dip proportion)
+</p>
+<p><code>noct_fall</code> = mean_presleep_BP - mean_lowest_BP (nocturnal fall)
+</p>
+<p><code>ST_mbps</code> = mean_postwake_BP - mean_lowest_BP (sleep through morning blood pressure surge)
+</p>
+<p><code>PW_mbps</code> = mean_postwake_BP - mean_prewake_BP (prewake morning blood pressure surge)
+</p>
+<p><code>ME_avg</code> = (mean_presleep_BP + mean_postwake_BP)/2 (morning-evening average)
+</p>
+<p><code>ME_diff</code> = mean_postwake_BP - mean_presleep_BP (morning-evening difference)
+</p>
+<p><code>wSD</code> = ( (wake_SD x HRS_wake) + (sleep_SD x HRS_sleep) ) / (HRS_wake + HRS_sleep) (weighted standard deviation)
+</p>
+
+
+<h3>Value</h3>
+
+<p>The function outputs a list containing 4 tibble objects corresponding to the following tables:
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>[[1]]</code></td>
+<td>
+<p>Counts of how many BP measurements were observed overall (<code>N_total</code>),
+total number of readings during sleep (<code>N_sleep</code>),
+total number of readings during wake (<code>N_wake</code>),
+number of unique hours recorded during the sleep period (<code>HRS_sleep</code>), and
+number of unique hours recorded during the wake period (<code>HRS_wake</code>) for each subject ID and grouping variable</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>[[2]]</code></td>
+<td>
+<p>Summary statistics for systolic BP measurements (SBP): mean SBP value over Sleep and Wake, sd SBP value
+over Sleep and Wake, mean SBP value over presleep period (evening in Kario et al. (2003)), mean SBP value over prewake period,
+mean SBP value over postwake period (morning in Kario et al. (2003)), mean SBP value over 3 reading centered at the lowest SBP
+value during sleep</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>[[3]]</code></td>
+<td>
+<p>Summary statistics for diastolic BP measurements (DBP), same as for SBP</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>[[4]]</code></td>
+<td>
+<p>BP metrics associated with sleep as defined above, separately for SBP and DBP</p>
+</td>
+</tr>
+</table>
+<h3>References</h3>
+
+<p>Kario, K., Pickering, T. G., Umeda, Y., Hoshide, S., Hoshide, Y., Morinari, M., ... &amp; Shimada, K. (2003). Morning surge in blood
+pressure as a predictor of silent and clinical cerebrovascular disease in elderly hypertensives: a prospective study. Circulation,
+107(10), 1401-1406.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">hypnos_proc &lt;- process_data(bp_hypnos,
+                           sbp = "syst",
+                           dbp = "DIAST",
+                           date_time = "date.time",
+                           id = "id",
+                           wake = "wake",
+                           visit = "visit",
+                           hr = "hr",
+                           map = "map",
+                           rpp = "rpp",
+                           pp = "pp",
+                           bp_type = "abpm")
+
+bp_sleep_metrics(hypnos_proc)
+
+</code></pre>
+
+
+</div>

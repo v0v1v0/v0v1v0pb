@@ -1,0 +1,130 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>vazquez.example</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2> Examples for some analyses </h2>
+
+<h3>Description</h3>
+
+<p>Describes how to use bipartite to calculate the statistics presented in Vázquez et al. (2009). Some of these functions are available in bipartite or other packages, and this help page will show how to use them in line with the publication.
+</p>
+
+
+<h3>Details</h3>
+
+<p>The functions used are:
+</p>
+
+<dl>
+<dt>confint:</dt>
+<dd>
+<p> Is the same as <code>quantile</code></p>
+</dd>
+<dt>intasymm:</dt>
+<dd>
+<p> Can be extracted using <code>specieslevel</code></p>
+</dd>
+<dt>intereven:</dt>
+<dd>
+<p> Is similar to interaction evenness in <code>networklevel</code>, but only for a specific option</p>
+</dd>
+</dl>
+<dl>
+<dt>mlik:</dt>
+<dd>
+<p>A specific call to <code>dmultinom</code> and the calculation of the AIC; the number of parameters entering the AIC-calculation is not obvious; this depends on the constraints used by the null model. In the case of <code>r2dtable</code>, column and row totals are constrained, i.e. ncol+nrow parameters must be given. In the case of <code>swap.web</code>, connectance is also constrained, but how many parameters does that imply? One? In <code>shuffle.web</code>, we constrain the dimensionality and connectance, i.e. 3 (?) parameters. Vázquez et al. (2009) argue that they constrain only 2 parameters when producing the probability matrix given as pweb in the example below. We tend to disagree: the marginal probabilities of all columns and rows are given, hence k = (ncol(web) + nrow(web)). To our knowledge, there is no mathematical/statistical treatise of this problem.</p>
+</dd>
+<dt>netstats:</dt>
+<dd>
+<p>A wrapper calling the other functions, in that sense similar to <code>networklevel</code>, but also calling some output from <code>specieslevel</code>.</p>
+</dd>
+<dt>plotmat:</dt>
+<dd>
+<p>Now part of <code>visweb</code>, using the right options.</p>
+</dd>
+<dt>quant2bin:</dt>
+<dd>
+<p>A dedicated function to do a simple thing: <code>(web&gt;0)*1</code>.</p>
+</dd>
+<dt>sortmatr:</dt>
+<dd>
+<p>newly defined function: <code>sortweb</code></p>
+</dd>
+<dt>sortmatrext:</dt>
+<dd>
+<p>sort matrix by some given sequence; also part of <code>sortweb</code></p>
+</dd>
+</dl>
+<p>In the example below, we use the <span class="pkg">bipartite</span>/standard R functions whenever possible. 
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p> Carsten F. Dormann &lt;carsten.dormann@biom.uni-freiburg.de&gt; based on code and ideas of Diego Vázquez, Natacha P. Chacoff and Luciano Cagnolo</p>
+
+
+<h3>References</h3>
+
+<p>Vázquez, P.D., Chacoff, N.,P. and  Cagnolo, L. (2009) Evaluating multiple determinants of the structure of plant-animal mutualistic networks. <em>Ecology</em> <b>90</b>, 2039–2046.
+</p>
+
+
+<h3>See Also</h3>
+
+<p> See also <code>networklevel</code>. </p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## Not run: 
+	data(Safariland)
+	
+	# confint:
+	N100 &lt;- sapply(swap.web(100, Safariland), networklevel, index="nestedness")
+	quantile(unlist(N100), c(0.025, 0.975))
+	# intasymm: extract values for the asymmetry of interactions and the 
+	# dependency matrix for pollinators:
+	specieslevel(Safariland)$"higher trophic level"$"interaction push/pull"
+	specieslevel(Safariland)$"higher trophic level"$"dependence"
+	# for plants:
+	specieslevel(Safariland)$"lower trophic level"$"interaction push/pull"
+	specieslevel(Safariland)$"lower trophic level"$"dependence"
+	
+	#intereven
+	networklevel(Safariland, index="interaction evenness", intereven="sum")[2]
+	# or, as we recommend (see help on networklevel):
+	networklevel(Safariland, index="interaction evenness", intereven="prod")[2]
+		
+	# mlik:
+	# calculates the log-likelihood of observing a network, given a probability  
+	# matrix of the same size (pweb):
+	dmultinom(Safariland&gt;0, prob=pweb, log=TRUE)
+	# AIC (the number of parameters is given by how many constraints are put onto the 
+	# null model; here, we constrain 9 rows and 27 columns, i.e. sum(dim(binweb))):
+	-2*dmultinom(Safariland&gt;0, prob=pweb, log=TRUE) + 2*(sum(dim(binweb)))
+	
+	# netstats:
+	networklevel(Safariland, 
+	  index=c("connectance", "interaction evenness", "nestedness", "ISA"))
+	mean(specieslevel(Safariland)$"higher trophic level"$"interaction push/pull")
+	mean(specieslevel(Safariland)$"lower trophic level"$"interaction push/pull")
+	
+	#plotmat:
+	visweb(t(unname(Safariland)), circles=TRUE, boxes=FALSE)
+	
+	#sortmatr/sortmatrext:
+	sortweb(Safariland, sort.order="inc") #rares species first
+	plotweb(sortweb(Safariland, sort.order="dec"), method="normal")
+	plotweb(sortweb(web=Safariland, sort.order="seq", 
+	  sequence=list(seq.higher=sample(colnames(Safariland)), 
+	  seq.lower=sample(rownames(Safariland)))), 
+	  method="normal")
+	
+## End(Not run)
+</code></pre>
+
+
+</div>

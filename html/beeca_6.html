@@ -1,0 +1,169 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>get_marginal_effect</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Estimate marginal treatment effects using a GLM working model</h2>
+
+<h3>Description</h3>
+
+<p>Estimates the marginal treatment effect from a logistic regression working model
+using a specified choice of variance estimator and contrast.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">get_marginal_effect(
+  object,
+  trt,
+  strata = NULL,
+  method = "Ge",
+  type = "HC0",
+  contrast = "diff",
+  reference,
+  mod = FALSE
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>object</code></td>
+<td>
+<p>a fitted glm object.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>trt</code></td>
+<td>
+<p>a string specifying the name of the treatment variable
+in the model formula. It must be one of the linear predictor variables used
+in fitting the <code>object</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>strata</code></td>
+<td>
+<p>an optional string or vector of strings specifying the names
+of stratification variables. Relevant only for Ye's method and used to
+adjust the variance-covariance estimation for stratification.
+If provided, each specified variable must be present in the model.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>method</code></td>
+<td>
+<p>a string indicating the chosen method for variance estimation.
+Supported methods are <code>Ge</code> and <code>Ye</code>. The default method is <code>Ge</code> based on Ge
+et al (2011) which is suitable for the variance estimation of conditional
+average treatment effect. The method <code>Ye</code> is based on Ye et al (2023) and is
+suitable for the variance estimation of population average treatment effect.
+For more details, see <a href="https://osf.io/9mp58/">Magirr et al. (2024)</a>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>type</code></td>
+<td>
+<p>a string indicating the type of
+variance estimator to use (only applicable for Ge's method). Supported types include HC0 (default),
+model-based, HC3, HC, HC1, HC2, HC4, HC4m, and HC5. See vcovHC for heteroscedasticity-consistent estimators.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>contrast</code></td>
+<td>
+<p>a string indicating choice of contrast. Defaults to 'diff' for a risk difference. See apply_contrast.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>reference</code></td>
+<td>
+<p>a string indicating which treatment group should be considered as
+the reference level. Accepted values are one of the levels in the treatment
+variable. Default to the first level used in the <code>glm</code> object. This parameter influences the calculation of treatment effects
+relative to the chosen reference group.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>mod</code></td>
+<td>
+<p>for Ye's method, the implementation of open-source RobinCar package
+has an additional variance decomposition step when estimating the robust variance,
+which then utilizes different counterfactual outcomes than the original reference.
+Set <code>mod = TRUE</code> to use exactly the implementation method described in
+Ye et al (2022), default to <code>FALSE</code> to use the modified implementation in
+RobinCar and Bannick et al (2023) which improves stability.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The <code>get_marginal_effect</code> function is a wrapper that facilitates
+advanced variance estimation techniques for GLM models with covariate adjustment
+targeting a population average treatment effect. It is particularly useful in clinical trial analysis
+and other fields requiring robust statistical inference.
+It allows researchers to account for complex study designs,
+including stratification and treatment contrasts, by providing a flexible
+interface for variance-covariance estimation.
+</p>
+
+
+<h3>Value</h3>
+
+<p>an updated <code>glm</code> object appended with marginal estimate components:
+counterfactual.predictions (see predict_counterfactuals),
+counterfactual.means (see average_predictions),
+robust_varcov (see estimate_varcov),
+marginal_est, marginal_se (see apply_contrast) and marginal_results. A summary is shown below
+</p>
+
+<table>
+<tr>
+<td style="text-align: left;">
+counterfactual.predictions </td>
+<td style="text-align: left;"> Counterfactual predictions based on the working model. For each subject in the input glm data, the potential outcomes are obtained by assigning subjects to each of the possible treatment variable levels. Each prediction is associated with a descriptive label explaining the counterfactual scenario. </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+counterfactual.means       </td>
+<td style="text-align: left;"> Average of the counterfactual predictions for each level of the treatment variable. </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+robust_varcov              </td>
+<td style="text-align: left;"> Variance-covariance matrix of the marginal effect estimate for each level of treatment variable, with estimation method indicated in the attributes.</td>
+</tr>
+<tr>
+<td style="text-align: left;">
+marginal_est               </td>
+<td style="text-align: left;"> Marginal treatment effect estimate for a given contrast.</td>
+</tr>
+<tr>
+<td style="text-align: left;">
+marginal_se                </td>
+<td style="text-align: left;"> Standard error estimate of the marginal treatment effect estimate. </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+marginal_results           </td>
+<td style="text-align: left;"> Analysis results data (ARD) containing a summary of the analysis for subsequent reporting. </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+</td>
+</tr>
+</table>
+<h3>Examples</h3>
+
+<pre><code class="language-R">trial01$trtp &lt;- factor(trial01$trtp)
+fit1 &lt;- glm(aval ~ trtp + bl_cov, family = "binomial", data = trial01) |&gt;
+  get_marginal_effect(trt = "trtp", method = "Ye", contrast = "diff", reference = "0")
+fit1$marginal_results
+</code></pre>
+
+
+</div>

@@ -1,0 +1,123 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>update.brmsfit</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Update <span class="pkg">brms</span> models</h2>
+
+<h3>Description</h3>
+
+<p>This method allows to update an existing <code>brmsfit</code> object.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">## S3 method for class 'brmsfit'
+update(object, formula., newdata = NULL, recompile = NULL, ...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>object</code></td>
+<td>
+<p>An object of class <code>brmsfit</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>formula.</code></td>
+<td>
+<p>Changes to the formula; for details see
+<code>update.formula</code> and <code>brmsformula</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>newdata</code></td>
+<td>
+<p>Optional <code>data.frame</code> to update the model with new data.
+Data-dependent default priors will not be updated automatically.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>recompile</code></td>
+<td>
+<p>Logical, indicating whether the Stan model should
+be recompiled. If <code>NULL</code> (the default), <code>update</code> tries
+to figure out internally, if recompilation is necessary.
+Setting it to <code>FALSE</code> will cause all Stan code changing
+arguments to be ignored.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Other arguments passed to <code>brm</code>.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>When updating a <code>brmsfit</code> created with the <span class="pkg">cmdstanr</span>
+backend in a different <span style="font-family: Courier New, Courier; color: #666666;"><b>R</b></span> session, a recompilation will be triggered
+because by default, <span class="pkg">cmdstanr</span> writes the model executable to a
+temporary directory. To avoid that, set option
+<code>"cmdstanr_write_stan_file_dir"</code> to a nontemporary path of your choice
+before creating the original <code>brmsfit</code> (see section 'Examples' below).
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## Not run: 
+fit1 &lt;- brm(time | cens(censored) ~ age * sex + disease + (1|patient),
+            data = kidney, family = gaussian("log"))
+summary(fit1)
+
+## remove effects of 'disease'
+fit2 &lt;- update(fit1, formula. = ~ . - disease)
+summary(fit2)
+
+## remove the group specific term of 'patient' and
+## change the data (just take a subset in this example)
+fit3 &lt;- update(fit1, formula. = ~ . - (1|patient),
+               newdata = kidney[1:38, ])
+summary(fit3)
+
+## use another family and add population-level priors
+fit4 &lt;- update(fit1, family = weibull(), init = "0",
+               prior = set_prior("normal(0,5)"))
+summary(fit4)
+
+## to avoid a recompilation when updating a 'cmdstanr'-backend fit in a fresh
+## R session, set option 'cmdstanr_write_stan_file_dir' before creating the
+## initial 'brmsfit'
+## CAUTION: the following code creates some files in the current working
+## directory: two 'model_&lt;hash&gt;.stan' files, one 'model_&lt;hash&gt;(.exe)'
+## executable, and one 'fit_cmdstanr_&lt;some_number&gt;.rds' file
+set.seed(7)
+fname &lt;- paste0("fit_cmdstanr_", sample.int(.Machine$integer.max, 1))
+options(cmdstanr_write_stan_file_dir = getwd())
+fit_cmdstanr &lt;- brm(rate ~ conc + state,
+                    data = Puromycin,
+                    backend = "cmdstanr",
+                    file = fname)
+# now restart the R session and run the following (after attaching 'brms')
+set.seed(7)
+fname &lt;- paste0("fit_cmdstanr_", sample.int(.Machine$integer.max, 1))
+fit_cmdstanr &lt;- brm(rate ~ conc + state,
+                    data = Puromycin,
+                    backend = "cmdstanr",
+                    file = fname)
+upd_cmdstanr &lt;- update(fit_cmdstanr,
+                       formula. = rate ~ conc)
+
+## End(Not run)
+
+</code></pre>
+
+
+</div>

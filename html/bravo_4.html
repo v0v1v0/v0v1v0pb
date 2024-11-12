@@ -1,0 +1,299 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>sven</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Selection of variables with embedded screening using Bayesian methods (SVEN) 
+in Gaussian linear models (ultra-high, high or low dimensional).</h2>
+
+<h3>Description</h3>
+
+<p>SVEN is an approach to selecting variables with embedded screening 
+using a Bayesian hierarchical model. It is also a variable selection method in the spirit of 
+the stochastic shotgun search algorithm. However, by embedding a unique model 
+based screening and using fast Cholesky updates, SVEN produces a highly scalable 
+algorithm to explore gigantic model spaces and rapidly identify the regions of 
+high posterior probabilities. It outputs the log (unnormalized) posterior 
+probability of a set of best (highest probability) models. 
+For more details, see Li et al. (2023, https://doi.org/10.1080/10618600.2022.2074428)
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">sven(
+  X,
+  y,
+  w = NULL,
+  lam = NULL,
+  Ntemp = 10,
+  Tmax = NULL,
+  Miter = 50,
+  wam.threshold = 0.5,
+  log.eps = -16,
+  L = 20,
+  verbose = FALSE
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>X</code></td>
+<td>
+<p>The <code class="reqn">n\times p</code> covariate matrix or list of two matrices without intercept. 
+The following classes are supported: <code>matrix</code> and <code>dgCMatrix</code>. Every care is taken not to make copies of these (typically)
+giant matrices. No need to center or scale these matrices manually. Scaling is performed implicitly and 
+regression coefficient are returned on the original scale. Typically, in a combined GWAS-TWAS type 
+analysis, <code>X[[1]]</code> should be a sparse matrix and <code>X[[2]]</code> should be a dense matrix.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>y</code></td>
+<td>
+<p>The response vector of length <code class="reqn">n</code>. No need to center or scale.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>w</code></td>
+<td>
+<p>The prior inclusion probability of each variable. Default: NULL, whence it is set as
+<code class="reqn">\sqrt{n}/p</code> if <code class="reqn">X</code> is a matrix. Or <code class="reqn">(\sqrt{n}/p_1,\sqrt{n}/p_2)</code> if $X$ is a list of 
+two matrices with <code class="reqn">p_1</code> and <code class="reqn">p_2</code> columns.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>lam</code></td>
+<td>
+<p>The slab precision parameter. Default: NULL, whence it is set as <code class="reqn">n/p^2</code> for 
+as suggested by the theory of Li et al. (2023). Similarly, it's a vector of length two with values
+<code class="reqn">\sqrt{n}/P_1^2</code> and <code class="reqn">\sqrt{n}/p_2^2</code> when <code>X</code> is a list.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Ntemp</code></td>
+<td>
+<p>The number of temperatures. Default: 10.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Tmax</code></td>
+<td>
+<p>The maximum temperature. Default: <code class="reqn">\log\log p+\log p</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Miter</code></td>
+<td>
+<p>The number of iterations per temperature. Default: <code>50</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>wam.threshold</code></td>
+<td>
+<p>The threshold probability to select the covariates for WAM.
+A covariate will be included in WAM if its corresponding marginal inclusion
+probability is greater than the threshold. Default: 0.5.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>log.eps</code></td>
+<td>
+<p>The tolerance to choose the number of top models. See detail. Default: -16.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>L</code></td>
+<td>
+<p>The minimum number of neighboring models screened. Default: 20.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>verbose</code></td>
+<td>
+<p>If <code>FALSE</code>, the function prints the current temperature SVEN is at; the default is TRUE.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>SVEN is developed based on a hierarchical Gaussian linear model with priors placed 
+on the regression coefficients as well as on the model space as follows:
+</p>
+<p style="text-align: center;"><code class="reqn">y | X, \beta_0,\beta,\gamma,\sigma^2,w,\lambda \sim N(\beta_01 + X_\gamma\beta_\gamma,\sigma^2I_n)</code>
+</p>
+
+<p style="text-align: center;"><code class="reqn">\beta_i|\beta_0,\gamma,\sigma^2,w,\lambda \stackrel{indep.}{\sim} N(0, \gamma_i\sigma^2/\lambda),~i=1,\ldots,p,</code>
+</p>
+
+<p style="text-align: center;"><code class="reqn">(\beta_0,\sigma^2)|\gamma,w,p \sim p(\beta_0,\sigma^2) \propto 1/\sigma^2</code>
+</p>
+
+<p style="text-align: center;"><code class="reqn">\gamma_i|w,\lambda \stackrel{iid}{\sim} Bernoulli(w)</code>
+</p>
+
+<p>where <code class="reqn">X_\gamma</code> is the <code class="reqn">n \times |\gamma|</code> submatrix of <code class="reqn">X</code> consisting of 
+those columns of <code class="reqn">X</code> for which <code class="reqn">\gamma_i=1</code> and similarly, <code class="reqn">\beta_\gamma</code> is the 
+<code class="reqn">|\gamma|</code> subvector of <code class="reqn">\beta</code> corresponding to <code class="reqn">\gamma</code>.
+Degenerate spike priors on inactive variables and Gaussian slab priors on active 
+covariates makes the posterior 
+probability (up to a normalizing constant) of a model <code class="reqn">P(\gamma|y)</code> available in 
+explicit form (Li et al., 2020).
+</p>
+<p>The variable selection starts from an empty model and updates the model 
+according to the posterior probability of its neighboring models for some pre-specified 
+number of iterations. In each iteration, the models with small probabilities are screened 
+out in order to quickly identify the regions of high posterior probabilities. A temperature 
+schedule is used to facilitate exploration of models separated by valleys in the posterior 
+probability function, thus mitigate posterior multimodality associated with variable selection models.
+The default maximum temperature is guided by the asymptotic posterior model selection consistency results
+in Li et al. (2020).
+</p>
+<p>SVEN provides the maximum a posteriori (MAP) model as well as the weighted average model 
+(WAM). WAM is obtained in the following way: (1) keep the best (highest probability) <code class="reqn">K</code> 
+distinct models <code class="reqn">\gamma^{(1)},\ldots,\gamma^{(K)}</code> with 
+</p>
+<p style="text-align: center;"><code class="reqn">\log P\left(\gamma^{(1)}|y\right) \ge \cdots \ge \log P\left(\gamma^{(K)}|y\right)</code>
+</p>
+
+<p>where <code class="reqn">K</code> is chosen so that 
+<code class="reqn">\log \left\{P\left(\gamma^{(K)}|y\right)/P\left(\gamma^{(1)}|y\right)\right\} &gt; \code{log.eps}</code>;
+(2) assign the weights </p>
+<p style="text-align: center;"><code class="reqn">w_i = P(\gamma^{(i)}|y)/\sum_{k=1}^K P(\gamma^{(k)}|y)</code>
+</p>
+
+<p>to the model <code class="reqn">\gamma^{(i)}</code>; (3) define the approximate marginal inclusion probabilities 
+for the <code class="reqn">j</code>th variable as </p>
+<p style="text-align: center;"><code class="reqn">\hat\pi_j = \sum_{k=1}^K w_k I(\gamma^{(k)}_j = 1).</code>
+</p>
+ 
+<p>Then, the WAM is defined as the model containing variables <code class="reqn">j</code> with 
+<code class="reqn">\hat\pi_j &gt; \code{wam.threshold}</code>. SVEN also provides all the top <code class="reqn">K</code> models which
+are stored in an <code class="reqn">p \times K</code> sparse matrix, along with their corresponding log (unnormalized) 
+posterior probabilities. 
+</p>
+<p>When <code>X</code> is a list with two matrices, say, <code>W</code> and <code>Z</code>, the above method is extended 
+to <code>ncol(W)+ncol(Z)</code> dimensional regression. However, the hyperparameters <code>lam</code> and <code>w</code>
+are chosen separately for the two matrices, the default values being  <code>nrow(W)/ncol(W)^2</code>
+and <code>nrow(Z)/ncol(Z)^2</code> for <code>lam</code> and <code>sqrt(nrow(W))/ncol(W)</code> and
+<code>sqrt(nrow(Z))/ncol(Z)</code> for <code>w</code>.
+</p>
+<p>The marginal inclusion probabities can be extracted by using the function <code>mip</code>.
+</p>
+
+
+<h3>Value</h3>
+
+<p>A list with components
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>model.map</code></td>
+<td>
+<p>A vector of indices corresponding to the selected variables
+in the MAP model.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>model.wam</code></td>
+<td>
+<p>A vector of indices corresponding to the selected variables
+in the WAM.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>model.top</code></td>
+<td>
+<p>A sparse matrix storing the top models.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>beta.map</code></td>
+<td>
+<p>The ridge estimator of regression coefficients in the MAP model.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>beta.wam</code></td>
+<td>
+<p>The ridge estimator of regression coefficients in the WAM.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>mip.map</code></td>
+<td>
+<p>The marginal inclusion probabilities of the variables in the MAP model.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>mip.wam</code></td>
+<td>
+<p>The marginal inclusion probabilities of the variables in the WAM.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>pprob.map</code></td>
+<td>
+<p>The log (unnormalized) posterior probability corresponding
+to the MAP model.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>pprob.top</code></td>
+<td>
+<p>A vector of the log (unnormalized) posterior probabilities
+corresponding to the top models.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>stats</code></td>
+<td>
+<p>Additional statistics.</p>
+</td>
+</tr>
+</table>
+<h3>Author(s)</h3>
+
+<p>Dongjin Li, Debarshi Chakraborty, and Somak Dutta<br> Maintainer:
+Dongjin Li &lt;liyangxiaobei@gmail.com&gt;
+</p>
+
+
+<h3>References</h3>
+
+<p>Li, D., Dutta, S., and Roy, V. (2023). Model based screening embedded Bayesian variable 
+selection for ultra-high dimensional settings. Journal of Computational and Graphical Statistics, 
+32(1), 61-73.
+</p>
+
+
+<h3>See Also</h3>
+
+<p>[mip.sven()] for marginal inclusion probabilities, [predict.sven()](via [predict()]) for prediction for .
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+n &lt;- 50; p &lt;- 100; nonzero &lt;- 3
+trueidx &lt;- 1:3
+truebeta &lt;- c(4,5,6)
+X &lt;- matrix(rnorm(n*p), n, p) # n x p covariate matrix
+y &lt;- 0.5 + X[,trueidx] %*% truebeta + rnorm(n)
+res &lt;- sven(X=X, y=y)
+res$model.map # the MAP model
+
+
+Z &lt;- matrix(rnorm(n*p), n, p) # another covariate matrix
+y2 = 0.5 + X[,trueidx] %*% truebeta  + Z[,1:2] %*% c(-2,-2) + rnorm(n)
+res2 &lt;- sven(X=list(X,Z), y=y2)
+
+
+</code></pre>
+
+
+</div>

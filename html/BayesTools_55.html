@@ -1,0 +1,174 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>JAGS_bridgesampling</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Compute marginal likelihood of a 'JAGS' model</h2>
+
+<h3>Description</h3>
+
+<p>A wrapper around
+bridge_sampler that automatically
+computes likelihood part dependent on the prior distribution
+and prepares parameter samples. <code>log_posterior</code> must
+specify a function that takes two arguments - a named list
+of samples from the prior distributions and the data, and returns
+log likelihood of the model part.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">JAGS_bridgesampling(
+  fit,
+  log_posterior,
+  data = NULL,
+  prior_list = NULL,
+  formula_list = NULL,
+  formula_data_list = NULL,
+  formula_prior_list = NULL,
+  add_parameters = NULL,
+  add_bounds = NULL,
+  maxiter = 10000,
+  silent = TRUE,
+  ...
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>fit</code></td>
+<td>
+<p>model fitted with either runjags posterior
+samples obtained with rjags-package</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>log_posterior</code></td>
+<td>
+<p>function that takes a named list of samples, the data,
+and additional list of parameters passed as <code>...</code> as input and
+returns the log of the unnormalized posterior density of the model part</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+<p>list containing data to fit the model (not including data for the formulas)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>prior_list</code></td>
+<td>
+<p>named list of prior distribution
+(names correspond to the parameter names) of parameters not specified within the
+<code>formula_list</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>formula_list</code></td>
+<td>
+<p>named list of formulas to be added to the model
+(names correspond to the parameter name created by each of the formula)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>formula_data_list</code></td>
+<td>
+<p>named list of data frames containing data for each formula
+(names of the lists correspond to the parameter name created by each of the formula)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>formula_prior_list</code></td>
+<td>
+<p>named list of named lists of prior distributions
+(names of the lists correspond to the parameter name created by each of the formula and
+the names of the prior distribution correspond to the parameter names) of parameters specified
+within the <code>formula</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>add_parameters</code></td>
+<td>
+<p>vector of additional parameter names that should be used
+in bridgesampling but were not specified in the <code>prior_list</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>add_bounds</code></td>
+<td>
+<p>list with two name vectors (<code>"lb"</code> and <code>"up"</code>)
+containing lower and upper bounds of the additional parameters that were not
+specified in the <code>prior_list</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>maxiter</code></td>
+<td>
+<p>maximum number of iterations for the
+bridge_sampler</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>silent</code></td>
+<td>
+<p>whether the progress should be printed, defaults to <code>TRUE</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>additional argument to the bridge_sampler
+and <code>log_posterior</code> function</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p><code>JAGS_bridgesampling</code> returns an object of class 'bridge'.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## Not run: 
+# simulate data
+set.seed(1)
+data &lt;- list(
+  x = rnorm(10),
+  N = 10
+)
+data$x
+
+# define priors
+priors_list &lt;- list(mu = prior("normal", list(0, 1)))
+
+# define likelihood for the data
+model_syntax &lt;-
+  "model{
+    for(i in 1:N){
+      x[i] ~ dnorm(mu, 1)
+    }
+  }"
+
+# fit the models
+fit &lt;- JAGS_fit(model_syntax, data, priors_list)
+
+# define log posterior for bridge sampling
+log_posterior &lt;- function(parameters, data){
+  sum(dnorm(data$x, parameters$mu, 1, log = TRUE))
+}
+
+# get marginal likelihoods
+marglik &lt;- JAGS_bridgesampling(fit, log_posterior, data, priors_list)
+
+## End(Not run)
+</code></pre>
+
+
+</div>

@@ -1,0 +1,214 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>bumbl</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Estimate colony growth, switch point, and decay parameters</h2>
+
+<h3>Description</h3>
+
+<p>Fits generalized linear models that assume bumblebee colonies will switch
+from growth to gyne production at some point, <code class="reqn">\tau</code>. This allows for a
+different switchpoint (<code class="reqn">\tau</code>) for each colony, chosen by maximum
+likelihood methods.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">bumbl(
+  data,
+  t,
+  formula,
+  family = gaussian(link = "log"),
+  colonyID = NULL,
+  augment = FALSE,
+  keep.model = FALSE,
+  tau_optim_maxit = 100,
+  ...
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+<p>a dataframe or tibble with a column for colony ID (as a
+<code>character</code> or <code>factor</code>), a column for some measure of time (<code>numeric</code>),
+and a column for some measure of colony growth (<code>numeric</code>), at minimum.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>t</code></td>
+<td>
+<p>the unquoted column name of the time variable.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>formula</code></td>
+<td>
+<p>a formula with the form <code>response ~ time + covariates</code> where
+response is your measure of colony growth, time is whatever measure of time
+you have (date, number of weeks, etc.) and covariates are any optional
+co-variates you want to fit at the colony level.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>family</code></td>
+<td>
+<p>a description of the error distribution and link function.
+This is passed to <code>glm()</code> except in the case of <code>family = "negbin"</code>, which
+causes <code>MASS::glm.nb()</code> to be used to fit a negative binomial GLM.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>colonyID</code></td>
+<td>
+<p>the unquoted column name of the colony ID variable. This is
+required, so to run <code>bumbl()</code> on a single colony, you must create a dummy
+column with a colony ID.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>augment</code></td>
+<td>
+<p>when FALSE, <code>bumbl</code> returns a summary dataframe with one row
+for each colonyID.  When TRUE, it returns the original data with additional
+columns containing model coefficients. Cannot be used in conjunction with
+<code>keep.model = TRUE</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>keep.model</code></td>
+<td>
+<p>If TRUE, then the output will contain a list-column with
+the models for each colony. This may be useful for extracting statistics
+and performing model diagnostics not provided by <code>bumbl()</code>. Learn more
+about working with list columns with <code>vignette("nest", package = "tidyr")</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>tau_optim_maxit</code></td>
+<td>
+<p>passed to <code>optim()</code> which is used to find the optimal
+change point, tau.  Mostly used for testing purposes (to force convergence
+errors), but could be increased if optimal switchpoint doesn't converge.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>additional arguments passed to <code>glm()</code> or <code>MASS::glm.nb()</code>.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>Colony growth is modeled as increasing exponentially until the
+colony switches from producing workers to producing reproductive
+individuals (drones and gynes), at which time the workers die and gynes
+leave the colony, causing the colony to decline. The switch point,
+<code class="reqn">\tau</code>, may vary among colonies. <code>bumbl()</code> finds the value of
+<code class="reqn">\tau</code> that maximizes likelihood and this "winning" model is used to
+calculate statistics returned in the output. This function works by fitting
+generalized linear models (GLMs) to modified colony growth data. Because of
+this, the assumptions for GLMs apply, namely independence and homogeneity
+of variance. See <code>vignette("bumbl", package = "bumbl")</code> for more details on
+the underlying math of the model.
+</p>
+
+
+<h3>Value</h3>
+
+<p>A <code>data.frame</code> with the additional class <code>bumbldf</code> containing a
+summary of the data with a row for every colony and the following columns:
+</p>
+
+<ul>
+<li>
+<p><code>converged</code> indicates whether the winning model converged.
+</p>
+</li>
+<li>
+<p><code>tau</code> is the switchpoint, in the same units as <code>t</code>, for
+each <code>colonyID</code>.  The colony grows for <code class="reqn">\tau</code> weeks, then begins to
+decline in week <code class="reqn">\tau + 1</code>.
+</p>
+</li>
+<li>
+<p><code>logN0</code> is the intercept of the
+growth function.  It reflects actual initial colony size, if the colony
+initially grows exponentially.  It would also be lower if there were a few
+weeks lag before growth started in the field.
+</p>
+</li>
+<li>
+<p><code>logLam</code> is the
+average (log-scale) colony growth rate (i.e., rate of weight gain per unit
+<code>t</code>) during the growth period.
+</p>
+</li>
+<li>
+<p><code>decay</code> reflects the rate of decline during the decline period.
+Equivalent to ln(<code class="reqn">\delta</code>) - ln(<code class="reqn">\lambda</code>) (see vignette for more
+in-depth explanation).
+</p>
+</li>
+<li>
+<p><code>logNmax</code> is the maximum weight reached by each colony.  It is a
+function of <code>tau</code>, <code>logN0</code> and <code>logLam</code>
+</p>
+</li>
+<li>
+<p>Additional columns are
+coefficients for any covariates supplied in the <code>formula</code>
+</p>
+</li>
+</ul>
+<p>When <code>augment = TRUE</code>, the original data are returned with these columns as
+well as fitted values (<code>.fitted</code>) residuals (<code>.resid</code>) and standard error
+(<code>.se.fit</code>).  When <code>keep.model = TRUE</code> a list-column with the <code>glm</code> models
+for each colony is returned as well.
+</p>
+
+
+<h3>Note</h3>
+
+<p>This function <em>assumes</em> there is a switchpoint and does not test
+whether the switchpoint model is significantly better than a log-linear
+model. As a result, it may estimate a switchpoint even if the data do not
+represent a true switchpoint. See the vignette for an example of how to
+extract the GLMs—you could compare them to a simpler log-linear model
+without the switchpoint by AIC or a likelihood ratio test to test the
+significance of the switchpoint.
+</p>
+
+
+<h3>References</h3>
+
+<p>Crone EE, Williams NM (2016) Bumble bee colony dynamics:
+quantifying the importance of land use and floral resources for colony
+growth and queen production. Ecology Letters 19:460–468.
+https://doi.org/10.1111/ele.12581
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>plot.bumbldf()</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+bumbl(bombus, colonyID = colony, t = week, formula = d.mass ~ week)
+
+</code></pre>
+
+
+</div>

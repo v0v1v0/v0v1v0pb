@@ -1,0 +1,125 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>SFBM-class</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Class SFBM</h2>
+
+<h3>Description</h3>
+
+<p>A reference class for storing and accessing sparse matrix-like data stored
+in files on disk.
+</p>
+<p>Convert a 'dgCMatrix' or 'dsCMatrix' to an SFBM.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">as_SFBM(spmat, backingfile = tempfile(), compact = FALSE)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>spmat</code></td>
+<td>
+<p>A 'dgCMatrix' (non-symmetric sparse matrix of type 'double')
+or 'dsCMatrix' (symmetric sparse matrix of type 'double').</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>backingfile</code></td>
+<td>
+<p>Path to file where to store data. Extension <code>.sbk</code> is
+automatically added.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>compact</code></td>
+<td>
+<p>Whether to use a compact format? Default is <code>FALSE</code>.
+This is useful when non-zero values in columns are contiguous (or almost).</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>An object of class SFBM has many fields:
+</p>
+
+<ul>
+<li> <p><code style="white-space: pre;">⁠$address⁠</code>: address of the external pointer containing the underlying
+C++ object to be used as a <code style="white-space: pre;">⁠XPtr&lt;SFBM&gt;⁠</code> in C++ code
+</p>
+</li>
+<li> <p><code style="white-space: pre;">⁠$extptr⁠</code>: (internal) use <code style="white-space: pre;">⁠$address⁠</code> instead
+</p>
+</li>
+<li> <p><code style="white-space: pre;">⁠$nrow⁠</code>: number of rows
+</p>
+</li>
+<li> <p><code style="white-space: pre;">⁠$ncol⁠</code>: number of columns
+</p>
+</li>
+<li> <p><code style="white-space: pre;">⁠$nval⁠</code>: number of non-zero values
+</p>
+</li>
+<li> <p><code style="white-space: pre;">⁠$p⁠</code>: vector of column positions
+</p>
+</li>
+<li> <p><code style="white-space: pre;">⁠$backingfile⁠</code> or <code style="white-space: pre;">⁠$sbk⁠</code>: File with extension 'sbk' that stores the
+data of the SFBM
+</p>
+</li>
+<li> <p><code style="white-space: pre;">⁠$rds⁠</code>: 'rds' file (that may not exist) corresponding to the 'sbk' file
+</p>
+</li>
+<li> <p><code style="white-space: pre;">⁠$is_saved⁠</code>: whether this object is stored in <code style="white-space: pre;">⁠$rds⁠</code>?
+</p>
+</li>
+</ul>
+<p>And some methods:
+</p>
+
+<ul>
+<li> <p><code style="white-space: pre;">⁠$save()⁠</code>: Save the SFBM object in <code style="white-space: pre;">⁠$rds⁠</code>. Returns the SFBM.
+</p>
+</li>
+<li> <p><code style="white-space: pre;">⁠$add_columns()⁠</code>: Add new columns from a 'dgCMatrix' or a 'dsCMatrix'.
+</p>
+</li>
+<li> <p><code style="white-space: pre;">⁠$dense_acc()⁠</code>: Equivalent to <code>as.matrix(.[ind_row, ind_col])</code>. Use with
+caution; <code>ind_row</code> and <code>ind_col</code> must be positive indices within range.
+</p>
+</li>
+</ul>
+<h3>Value</h3>
+
+<p>The new SFBM.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">spmat2 &lt;- Matrix::Diagonal(4, 0:3)
+spmat2[4, 2] &lt;- 5
+spmat2[1, 4] &lt;- 6
+spmat2[3, 4] &lt;- 7
+spmat2
+
+# Stores all (i, x) for x != 0
+(X2 &lt;- as_SFBM(spmat2))
+matrix(readBin(X2$sbk, what = double(), n = 100), 2)
+
+# Stores only x, but all (even the zero ones) from first to last being not 0
+(X3 &lt;- as_SFBM(spmat2, compact = TRUE))
+X3$first_i
+readBin(X3$sbk, what = double(), n = 100)
+</code></pre>
+
+
+</div>

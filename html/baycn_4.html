@@ -1,0 +1,245 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>mhEdge</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>mhEdge</h2>
+
+<h3>Description</h3>
+
+<p>The main function for the Metropolis-Hastings algorithm. It returns the
+posterior distribution of the edge directions.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">mhEdge(
+  data,
+  adjMatrix,
+  prior = c(0.05, 0.05, 0.9),
+  nCPh = 0,
+  nGV = 0,
+  pmr = FALSE,
+  burnIn = 0.2,
+  iterations = 1000,
+  thinTo = 200,
+  progress = TRUE
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+<p>A matrix with the variables across the columns and the
+observations down the rows. If there are genetic variants in the data these
+variables must come before the remaining variables. If there are clinical
+phenotypes in the data these variables must come after all other variables.
+For example, if there is a data set with one genetic variant variable, three
+gene expression variables, and one clinical phenotype variable the first
+column in the data matrix must contain the genetic variant data, the next
+three columns will contain the gene expression data, and the last column will
+contain the clinical phenotype data.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>adjMatrix</code></td>
+<td>
+<p>An adjacency matrix indicating the edges that will be
+considered by the Metropolis-Hastings algorithm. An adjacency matrix is a
+matrix of zeros and ones. The ones represent an edge and its direction
+between two nodes.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>prior</code></td>
+<td>
+<p>A vector containing the prior probability for the three edge
+states.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nCPh</code></td>
+<td>
+<p>The number of clinical phenotypes in the graph.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nGV</code></td>
+<td>
+<p>The number of genetic variants in the graph.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>pmr</code></td>
+<td>
+<p>Logical. If true the Metropolis-Hastings algorithm will use the
+Principle of Mendelian Randomization (PMR). This prevents the direction of an
+edge pointing from a gene expression or a clinical phenotype node to a
+genetic variant node.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>burnIn</code></td>
+<td>
+<p>A number between 0 and 1 indicating the percentage of the
+sample that will be discarded.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>iterations</code></td>
+<td>
+<p>An integer for the number of iterations to run the MH
+algorithm.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>thinTo</code></td>
+<td>
+<p>An integer indicating the number of observations the chain
+should be thinned to.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>progress</code></td>
+<td>
+<p>Logical. If TRUE the runtime in seconds for the cycle finder
+and log likelihood functions and a progress bar will be printed.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>An object of class baycn containing 9 elements:
+</p>
+
+<ul>
+<li>
+<p> burnIn – The percentage of MCMC iterations that will be discarded from
+the beginning of the chain.
+</p>
+</li>
+<li>
+<p> chain – A matrix where each row contains the vector of edge states for
+the accepted graph.
+</p>
+</li>
+<li>
+<p> decimal – A vector of decimal numbers. Each element in the vector is
+the decimal of the accepted graph.
+</p>
+</li>
+<li>
+<p> iterations – The number of iterations for which the
+Metropolis-Hastings algorithm is run.
+</p>
+</li>
+<li>
+<p> posteriorES – A matrix of posterior probabilities for all three edge
+states for each edge in the network.
+</p>
+</li>
+<li>
+<p> posteriorPM – A posterior probability adjacency matrix.
+</p>
+</li>
+<li>
+<p> likelihood – A vector of log likelihood values. Each element in the
+vector is the log likelihood of the accepted graph.
+</p>
+</li>
+<li>
+<p> stepSize – The number of MCMC iterations discarded between each
+accepted graph.
+</p>
+</li>
+<li>
+<p> time – The runtime of the Metropolis-Hastings algorithm in seconds.
+</p>
+</li>
+</ul>
+<h3>References</h3>
+
+<p>Martin, E. A. and Fu, A. Q. (2019). A Bayesian approach to
+directed acyclic graphs with a candidate graph. <em>arXiv preprint
+arXiv:1909.10678</em>.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R"># Generate data under topology m1_gv.
+# Use ?simdata for a description and graph of m1_gv.
+data_m1 &lt;- simdata(b0 = 0,
+                   N = 200,
+                   s = 1,
+                   graph = 'm1_gv',
+                   ss = 1,
+                   q = 0.27)
+
+# Create an adjacency matrix with the true edges.
+am_m1 &lt;- matrix(c(0, 1, 0,
+                  0, 0, 1,
+                  0, 0, 0),
+                byrow = TRUE,
+                nrow = 3)
+
+# Run the Metropolis-Hastings algorithm on the data from m1_gv using the
+# Principle of Mendelian Randomization (PMR) and the true edges as the input.
+mh_m1_pmr &lt;- mhEdge(data = data_m1,
+                    adjMatrix = am_m1,
+                    prior = c(0.05,
+                              0.05,
+                              0.9),
+                    nCPh = 0,
+                    nGV = 1,
+                    pmr = TRUE,
+                    burnIn = 0.2,
+                    iterations = 1000,
+                    thinTo = 200,
+                    progress = FALSE)
+
+summary(mh_m1_pmr)
+
+# Generate data under topology gn4.
+# Use ?simdata for a description and graph of gn4.
+data_gn4 &lt;- simdata(b0 = 0,
+                    N = 200,
+                    s = 1,
+                    graph = 'gn4',
+                    ss = 1)
+
+# Create an adjacency matrix with the true edges.
+am_gn4 &lt;- matrix(c(0, 1, 1, 0,
+                   0, 0, 0, 1,
+                   0, 0, 0, 0,
+                   0, 0, 1, 0),
+                 byrow = TRUE,
+                 nrow = 4)
+
+# Run the Metropolis-Hastings algorithm on the data from gn4 with the true
+# edges as the input.
+mh_gn4 &lt;- mhEdge(data = data_gn4,
+                 adjMatrix = am_gn4,
+                 prior = c(0.05,
+                           0.05,
+                           0.9),
+                 nCPh = 0,
+                 nGV = 0,
+                 pmr = FALSE,
+                 burnIn = 0.2,
+                 iterations = 1000,
+                 thinTo = 200,
+                 progress = FALSE)
+
+summary(mh_gn4)
+
+</code></pre>
+
+
+</div>

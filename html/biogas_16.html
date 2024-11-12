@@ -1,0 +1,419 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>predBg</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>
+Predict Biogas Production
+</h2>
+
+<h3>Description</h3>
+
+<p><code>predBg</code> predicts biogas and methane production based on composition and other, optional, details.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">predBg(form = NULL, mass = 1, mol = NULL, fs = 0, fd = 1, 
+       mcomp = NULL, COD = NULL, conc.sub = NULL, pH = NULL, 
+       temp = NULL, mu = 0.1, shortform = NULL, value = "CH4")
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>form</code></td>
+<td>
+
+<p>(optional) a chemical formula for the substrate, as a character vector of length one, e.g., <code>"C6H12O6"</code> for glucose or <code>"CH3COOH"</code> for acetic acid.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>mass</code></td>
+<td>
+
+<p>mass of substrate present, in g.
+A numeric vector.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>mol</code></td>
+<td>
+
+<p>(optional) moles of substrate present.
+A numeric vector.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>fs</code></td>
+<td>
+
+<p>fraction of substrate used for microbial biomass production (<code>0&lt;=fs&lt;=1</code>).
+See "Details".
+A numeric vector.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>fd</code></td>
+<td>
+
+<p>fraction of substrate that is degradable (<code>0&lt;=fd&lt;=1</code>).
+See "Details".
+A numeric vector.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>mcomp</code></td>
+<td>
+
+<p>(optional) “macromolecule”-based composition of the substrate.
+A named numeric vector with relative masses of macromolecular groups or any chemical. 
+Options for macromolecular groups include: <code>VFA</code> (volatile fatty acids, VFAs), <code>protein</code>, <code>carbohydrate</code>, <code>lipid</code>, and <code>lignin</code>.
+An empirical <code>form</code> will be calculated from fixed chemical formulas.
+To see the available options, use <code>biogas:::std.forms</code>.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>COD</code></td>
+<td>
+
+<p>(optional) chemical oxygen demand (COD) of the substrate (g oxygen).
+If provided, <code>mass</code> will be ignored.
+A numeric vector. 
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>conc.sub</code></td>
+<td>
+
+<p>(optional) concentration of the substrate relative to water, as g substrate per kg water.
+Used only for carbon dioxide partitioning.
+A numeric vector.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>pH</code></td>
+<td>
+
+<p>(optional) pH of the solution.
+Used only for carbon dioxide partitioning.
+A numeric vector.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>temp</code></td>
+<td>
+
+<p>(optional) temperature of the system in degrees C.
+Used only for carbon dioxide partitioning.
+A numeric vector.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>mu</code></td>
+<td>
+
+<p>(optional) ionic strength of the solution.
+Used only for carbon dioxide partitioning.
+A numeric vector.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>shortform</code></td>
+<td>
+
+<p>should formula from <code>form</code> or <code>mcomp</code> arguments be shortened?
+Default is <code>FALSE</code> if <code>form</code> is used, <code>TRUE</code> if <code>mcomp</code> is used.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>value</code></td>
+<td>
+
+<p>what should be returned?
+Four options are currently available.
+<code>"CH4"</code> (default) returns standardised methane volume only.
+<code>"all"</code> returns all available additional results.
+<code>"reactionn"</code> returns a numeric reaction (names are chemical species).
+<code>"reactionc"</code> returns a text reaction.
+Length-one character vector.
+</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p><code>predBg</code> is a flexible function that returns different details depending on the data provided. 
+Calculations can be based on <code>form</code>, <code>COD</code>, or <code>mcomp</code> (at least one of these is required).
+See ‘Examples’ for more information.
+</p>
+<p>In its simplest usage, <code>predBg</code> calculates theoretical biochemical methane potential (theoretical BMP).
+
+With more parameters, it can also predict carbon dioxide partitioning, total biogas production and composition, as well as microbial biomass production and nitrogen requirement.
+Stoichiometry is based on Eq. 13.5 in Rittmann and McCarty (2001).
+Partitioning of carbon dioxide is based on an equilibrium speciation model using temperature-dependent parameters (Henry's law constant and dissociation constants) based on Hafner et al. (2012).
+<code>predBg</code> is vectorized for all arguments except <code>mcomp</code>, and will recycle argument elements as needed.
+</p>
+
+
+<h3>Value</h3>
+
+<p>Standardised volume (at 0 degrees C and 1 atmosphere) of methane produced in mL (for <code>value = "CH4"</code>), or a data frame with some of these columns (depending on provided arguments):
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>form</code></td>
+<td>
+<p>empirical chemical formula of substrate, typically from the input argument</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>mass</code></td>
+<td>
+<p>substrate mass in g, typically from the input argument</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>mol.mass</code></td>
+<td>
+<p>substrate molar mass in g/mol</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>moles</code></td>
+<td>
+<p>moles of subtrate</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>COD</code></td>
+<td>
+<p>total calculated oxygen demand (COD') based on <code>form</code> (or echoed chemical oxygen demand (COD)) of substrate in g oxygen</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>fs</code></td>
+<td>
+<p><code>fs</code> argument echoed</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>fe</code></td>
+<td>
+<p>Rittmann and McCarty's fe (<code>fe = 1 - fs</code>)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>fd</code></td>
+<td>
+<p><code>fd</code> argument echoed</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>conc.sub</code></td>
+<td>
+<p><code>conc.sub</code> argument echoed</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>temp</code></td>
+<td>
+<p><code>temp</code> argument echoed</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>pH</code></td>
+<td>
+<p><code>pH</code> argument echoed</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>hydro</code></td>
+<td>
+<p>hydrolytic water consumption (g water)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>fCH4</code></td>
+<td>
+<p>moles methane producted divided by the sum of methane and carbon dioxide moles. Equal to <code>xCH4</code> in biogas if carbon dioxide (and related aqueous species) in solution are negligible</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>xCH4</code></td>
+<td>
+<p>mole fraction of methane in dry biogas</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>vCH4</code></td>
+<td>
+<p>standardised volume (dry, 0 degrees C, 1.0 atm) of methane produced in mL</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>mCH4</code></td>
+<td>
+<p>mass of methane produced in g</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>mCO2</code></td>
+<td>
+<p>mass of carbon dioxide produced in g (including both biogas and inorganic carbon in solution)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>mCO2Bg</code></td>
+<td>
+<p>mass of carbon dioxide in biogas in g</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>mCO2.sol</code></td>
+<td>
+<p>mass of inorganic carbon in solution in g</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>cTIC</code></td>
+<td>
+<p>concentration of inorganic carbon in solution in mol/kg (per kg water)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>m.bio</code></td>
+<td>
+<p>mass of microbial biomass produced, VS only, in g</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>N.req</code></td>
+<td>
+<p>nitrogen required for production of required microbial biomass in g of N. Negative value indicates mineralization</p>
+</td>
+</tr>
+</table>
+<h3>Note</h3>
+
+<p>Predictions will only be as good as the parameter values provided, and maybe not even that good.
+<code>fs</code> should be interpreted as $f_s$ in Ritttmann and McCarty (2001), i.e., the effective value after decay of microbial biomass, and not $f_s^0$.
+The original reference (Section 2.3 and Eq. (3.33) in Rittmann and McCarty (2001)) and the <code>predBg</code> vignette provide more details.
+Partitioning of carbon dioxide is based on equilibrium between all biogas produced and the solution, and represents a continuous reactor running at steady-state.
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Sasha D. Hafner and Charlotte Rennuit
+</p>
+
+
+<h3>References</h3>
+
+<p>Hafner, S.D. 2007 <em>Ammonia Speciation in Anaerobic Digesters</em>. PhD dissertation, Cornell University.
+</p>
+<p>Hafner, S.D., Montes, F., Rotz, C.A. 2012 The role of carbon dioxide in emission of ammonia from manure. <em>Atmospheric Environment</em> <b>66</b>, 63-71.
+</p>
+<p>Moller, H.B., Sommer, S.G., Ahring, B.K. 2004 Methane productivity of manure, straw and solid fractions of manure. <em>Biomass and Bioenergy</em> <b>26</b>, 485-495.  
+</p>
+<p>Rittmann, B., McCarty, P. 2001 <em>Environmental Biotechnology</em>. McGraw-Hill.
+</p>
+<p>Triolo, J.M., Sommer, S.G., Moller, H.B., Weisbjerg, M.R., Jiang, X.Y. 2011 A new algorithm to characterize biodegradability of biomass during anaerobic digestion: Influence of lignin concentration on methane production potential. <em>Bioresource Technology</em> <b>102</b>, 9395-9402.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>calcCOD</code>,
+<code>molMass</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">  # BMP of cellulose in mL CH4/g
+  predBg("C6H10O5")
+
+  # How much is produced in a real reactor? Assume 10% goes to 
+  # biomass production
+  predBg("C6H10O5", fs = 0.1)
+
+  # And substrate is 80% degradable
+  predBg("C6H10O5", fs = 0.1, fd = 0.8)
+
+  # More detailed results
+  predBg("C6H10O5", value = "all")
+
+  # Given a substrate with a COD of 1.4 g
+  predBg(COD = 1.4)
+
+  # But CH4 production is reduced if substrate is 80% degradable 
+  # and 10% goes to cell synthesis
+  predBg(COD = 1.4, fd = 0.8, fs = 0.1)
+
+  # Can use macromolecule composition, e.g., for pig manure
+  predBg(mcomp = c(vfa = 0.2, protein = 0.25, carbohydrate = 0.32, 
+                   lipid = 0.15, lignin = 0.08), 
+         value = "all")
+
+  # Function expects sum(mcomp) == 1 but this is not required
+  # But unless mass is set, mass is taken as sum(mcomp)
+  predBg(mcomp = c(vfa = 20, protein = 25, carbohydrate = 32, 
+                   lipid = 15, lignin = 8), 
+         value = "all")
+
+  # Specify mass if this is not the case
+  predBg(mcomp = c(vfa = 20, protein = 25, carbohydrate = 32, 
+                   lipid = 15, lignin = 8), 
+         mass = 1, value = "all")
+
+  # Can mix formulas and macromolecular groups in mcomp
+  predBg(mcomp = c(C6H12O6 = 0.5, protein = 0.5))
+
+  # For CO2 partitioning, must provide conc.sub, pH, and temp 
+  # cattle manure example from Hafner (2007)
+  predBg("C13H20O11N", mass = 1, fs = 0.1, fd = 0.56, 
+         conc.sub = 85, pH = 7.7, temp = 35, value = "all")
+
+  # Or, mix of waste paper and waste vegetable oil from vignette
+  predBg(mcomp = c(C6H10O5 = 5/6, C54H100O7 = 1/6), mass = 1, 
+	 fd = 0.8, fs = 0.1, conc.sub = 50, pH = 7.5, temp = 35, 
+	 value = "all")
+
+  # Note that form can also be used for mixtures, but here it is 
+  # molar ratios that are specified
+  predBg('(C6H10O5)5(C54H100O7)1)', mass = 1, 
+	 fd = 0.8, fs = 0.1, conc.sub = 50, pH = 7.5, temp = 35, 
+	 value = "all")
+  
+  # Function is vectorized for everything except mcomp, e.g., 
+  # fs
+  predBg("C6H10O5", fs = c(0, 0.05, 0.1), value = "all")
+
+  # form
+  predBg(c("C6H10O5", "C10H19O3N", "CH3CH2OH"), value = "all")
+  
+  # pH
+  predBg("C13H20O11N", conc.sub = 85, fs = 0.1, fd = 0.56, 
+         pH = 7+0:10/10, temp = 35, value = "all")
+</code></pre>
+
+
+</div>

@@ -1,0 +1,133 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>as.nlmixr2</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Convert an object to a nlmixr2 fit object</h2>
+
+<h3>Description</h3>
+
+<p>Convert an object to a nlmixr2 fit object
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">as.nlmixr2(
+  x,
+  ...,
+  table = nlmixr2est::tableControl(),
+  rxControl = rxode2::rxControl()
+)
+
+as.nlmixr(
+  x,
+  ...,
+  table = nlmixr2est::tableControl(),
+  rxControl = rxode2::rxControl()
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>Object to convert</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Other arguments</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>table</code></td>
+<td>
+<p>is the <code>nlmixr2est::tableControl()</code> options</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>rxControl</code></td>
+<td>
+<p>is the <code>rxode2::rxControl()</code> options, which is
+generally needed for how <code>addl</code> doses are handled in the
+translation</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>nlmixr2 fit object
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Matthew L. Fidler
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+
+
+# First read in the model (but without residuals)
+mod &lt;- nonmem2rx(system.file("mods/cpt/runODE032.ctl", package="nonmem2rx"),
+                 determineError=FALSE, lst=".res", save=FALSE)
+
+# define the model with residuals (and change the name of the
+# parameters) In this step you need to be careful to not change the
+# estimates and make sure the residual estimates are correct (could
+# have to change var to sd).
+
+ mod2 &lt;-function() {
+   ini({
+     lcl &lt;- 1.37034036528946
+     lvc &lt;- 4.19814911033061
+     lq &lt;- 1.38003493562413
+     lvp &lt;- 3.87657341967489
+     RSV &lt;- c(0, 0.196446108190896, 1)
+     eta.cl ~ 0.101251418415006
+     eta.v ~ 0.0993872449483344
+     eta.q ~ 0.101302674763154
+     eta.v2 ~ 0.0730497519364148
+   })
+   model({
+     cmt(CENTRAL)
+     cmt(PERI)
+     cl &lt;- exp(lcl + eta.cl)
+     v &lt;- exp(lvc + eta.v)
+     q &lt;- exp(lq + eta.q)
+     v2 &lt;- exp(lvp + eta.v2)
+     v1 &lt;- v
+     scale1 &lt;- v
+     k21 &lt;- q/v2
+     k12 &lt;- q/v
+     d/dt(CENTRAL) &lt;- k21 * PERI - k12 * CENTRAL - cl * CENTRAL/v1
+     d/dt(PERI) &lt;- -k21 * PERI + k12 * CENTRAL
+     f &lt;- CENTRAL/scale1
+     f ~ prop(RSV)
+   })
+ }
+
+# now we create another nonmem2rx object that validates the model above:
+
+new &lt;- as.nonmem2rx(mod2, mod)
+
+# once that is done, you can translate to a full nlmixr2 fit (if you wish)
+
+fit &lt;- as.nlmixr2(new)
+
+print(fit)
+
+
+</code></pre>
+
+
+</div>

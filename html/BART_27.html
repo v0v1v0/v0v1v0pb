@@ -1,0 +1,307 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>mc.crisk.pwbart</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Predicting new observations with a previously fitted BART model</h2>
+
+<h3>Description</h3>
+
+<p>BART is a Bayesian “sum-of-trees” model.<br>
+For a numeric response <code class="reqn">y</code>, we have
+<code class="reqn">y = f(x) + \epsilon</code>,
+where <code class="reqn">\epsilon \sim N(0,\sigma^2)</code>.<br></p>
+<p><code class="reqn">f</code> is the sum of many tree models.
+The goal is to have very flexible inference for the uknown
+function <code class="reqn">f</code>.
+</p>
+<p>In the spirit of “ensemble models”,
+each tree is constrained by a prior to be a weak learner
+so that it contributes a
+small amount to the overall fit.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">mc.crisk.pwbart( x.test, x.test2,
+                 treedraws, treedraws2,
+                 binaryOffset=0, binaryOffset2=0,
+                 mc.cores=2L, type='pbart',
+                 transposed=FALSE, nice=19L
+               )
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>x.test</code></td>
+<td>
+
+<p>Matrix of covariates to predict <code class="reqn">y</code> for cause 1.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>x.test2</code></td>
+<td>
+
+<p>Matrix of covariates to predict <code class="reqn">y</code> for cause 2.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>treedraws</code></td>
+<td>
+
+<p><code>$treedraws</code> for cause 1.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>treedraws2</code></td>
+<td>
+
+<p><code>$treedraws</code> for cause 2.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>binaryOffset</code></td>
+<td>
+
+<p>Mean to add on to <code class="reqn">y</code> prediction for cause 1.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>binaryOffset2</code></td>
+<td>
+
+<p>Mean to add on to <code class="reqn">y</code> prediction for cause 2.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>mc.cores</code></td>
+<td>
+
+<p>Number of threads to utilize.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>type</code></td>
+<td>
+<p> Whether to employ Albert-Chib, <code>'pbart'</code>, or
+Holmes-Held, <code>'lbart'</code>. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>transposed</code></td>
+<td>
+
+<p>When running <code>pwbart</code> or <code>mc.pwbart</code> in parallel, it is more memory-efficient
+to transpose <code>x.test</code> prior to calling the internal versions of these functions.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nice</code></td>
+<td>
+
+<p>Set the job niceness.  The default
+niceness is 19: niceness goes from 0 (highest) to 19 (lowest).
+</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>BART is an Bayesian MCMC method.
+At each MCMC interation, we produce a draw from the joint posterior
+<code class="reqn">(f,\sigma) | (x,y)</code> in the numeric <code class="reqn">y</code> case
+and just <code class="reqn">f</code> in the binary <code class="reqn">y</code> case.
+</p>
+<p>Thus, unlike a lot of other modelling methods in R, we do not produce a single model object
+from which fits and summaries may be extracted.  The output consists of values
+<code class="reqn">f^*(x)</code> (and <code class="reqn">\sigma^*</code> in the numeric case) where * denotes a particular draw.
+The <code class="reqn">x</code> is either a row from the training data (x.train) or the test data (x.test).
+</p>
+
+
+<h3>Value</h3>
+
+<p>Returns an object of type <code>criskbart</code> which is essentially a list with components:
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>yhat.test</code></td>
+<td>
+
+<p>A matrix with ndpost rows and nrow(x.test) columns.
+Each row corresponds to a draw <code class="reqn">f^*</code> from the posterior of <code class="reqn">f</code>
+and each column corresponds to a row of x.train.
+The <code class="reqn">(i,j)</code> value is <code class="reqn">f^*(x)</code> for the <code class="reqn">i^{th}</code> kept draw of <code class="reqn">f</code>
+and the <code class="reqn">j^{th}</code> row of x.train.<br>
+Burn-in is dropped.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>surv.test</code></td>
+<td>
+<p>test data fits for survival probability.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>surv.test.mean</code></td>
+<td>
+<p>mean of <code>surv.test</code> over the posterior samples.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>prob.test</code></td>
+<td>
+<p>The probability of suffering cause 1 which is
+occasionally useful, e.g., in calculating the concordance.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>prob.test2</code></td>
+<td>
+<p>The probability of suffering cause 2 which is
+occasionally useful, e.g., in calculating the concordance.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>cif.test</code></td>
+<td>
+<p>The cumulative incidence function of cause 1,
+<code class="reqn">F_1(t, x)</code>, where x's are the rows of the test data.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>cif.test2</code></td>
+<td>
+<p>The cumulative incidence function of cause 2,
+<code class="reqn">F_2(t, x)</code>, where x's are the rows of the test data.</p>
+</td>
+</tr>
+</table>
+<table>
+<tr style="vertical-align: top;">
+<td><code>yhat.test.mean</code></td>
+<td>
+<p>test data fits = mean of yhat.test columns.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>cif.test.mean</code></td>
+<td>
+<p>mean of <code>cif.test</code> columns for cause 1.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>cif.test2.mean</code></td>
+<td>
+<p>mean of <code>cif.test2</code> columns for cause 2.</p>
+</td>
+</tr>
+</table>
+<h3>See Also</h3>
+
+<p><code>pwbart</code>, <code>crisk.bart</code>, <code>mc.crisk.bart</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+data(transplant)
+
+delta &lt;- (as.numeric(transplant$event)-1)
+## recode so that delta=1 is cause of interest; delta=2 otherwise
+delta[delta==1] &lt;- 4
+delta[delta==2] &lt;- 1
+delta[delta&gt;1] &lt;- 2
+table(delta, transplant$event)
+
+times &lt;- pmax(1, ceiling(transplant$futime/7)) ## weeks
+##times &lt;- pmax(1, ceiling(transplant$futime/30.5)) ## months
+table(times)
+
+typeO &lt;- 1*(transplant$abo=='O')
+typeA &lt;- 1*(transplant$abo=='A')
+typeB &lt;- 1*(transplant$abo=='B')
+typeAB &lt;- 1*(transplant$abo=='AB')
+table(typeA, typeO)
+
+x.train &lt;- cbind(typeO, typeA, typeB, typeAB)
+
+x.test &lt;- cbind(1, 0, 0, 0)
+dimnames(x.test)[[2]] &lt;- dimnames(x.train)[[2]]
+
+## parallel::mcparallel/mccollect do not exist on windows
+if(.Platform$OS.type=='unix') {
+##test BART with token run to ensure installation works
+        post &lt;- mc.crisk.bart(x.train=x.train, times=times, delta=delta,
+                               seed=99, mc.cores=2, nskip=5, ndpost=5,
+                               keepevery=1)
+
+        pre &lt;- surv.pre.bart(x.train=x.train, x.test=x.test,
+                             times=times, delta=delta)
+
+        K &lt;- post$K
+
+        pred &lt;- mc.crisk.pwbart(pre$tx.test, pre$tx.test,
+                                post$treedraws, post$treedraws2,
+                                post$binaryOffset, post$binaryOffset2)
+}
+
+## Not run: 
+
+## run one long MCMC chain in one process
+## set.seed(99)
+## post &lt;- crisk.bart(x.train=x.train, times=times, delta=delta, x.test=x.test)
+
+## in the interest of time, consider speeding it up by parallel processing
+## run "mc.cores" number of shorter MCMC chains in parallel processes
+post &lt;- mc.crisk.bart(x.train=x.train,
+                       times=times, delta=delta,
+                       x.test=x.test, seed=99, mc.cores=8)
+
+check &lt;- mc.crisk.pwbart(post$tx.test, post$tx.test,
+                          post$treedraws, post$treedraws2,
+                          post$binaryOffset,
+                          post$binaryOffset2, mc.cores=8)
+## check &lt;- predict(post, newdata=post$tx.test, newdata2=post$tx.test2,
+##                  mc.cores=8)
+
+print(c(post$surv.test.mean[1], check$surv.test.mean[1],
+        post$surv.test.mean[1]-check$surv.test.mean[1]), digits=22)
+
+print(all(round(post$surv.test.mean, digits=9)==
+    round(check$surv.test.mean, digits=9)))
+
+print(c(post$cif.test.mean[1], check$cif.test.mean[1],
+        post$cif.test.mean[1]-check$cif.test.mean[1]), digits=22)
+
+print(all(round(post$cif.test.mean, digits=9)==
+    round(check$cif.test.mean, digits=9)))
+
+print(c(post$cif.test2.mean[1], check$cif.test2.mean[1],
+        post$cif.test2.mean[1]-check$cif.test2.mean[1]), digits=22)
+
+print(all(round(post$cif.test2.mean, digits=9)==
+    round(check$cif.test2.mean, digits=9)))
+
+
+## End(Not run)
+</code></pre>
+
+
+</div>

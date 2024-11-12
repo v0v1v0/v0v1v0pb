@@ -1,0 +1,167 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>dip_calc</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Nocturnal Blood Pressure Dipping Calculation</h2>
+
+<h3>Description</h3>
+
+<p>Calculate the percent and average decline (or potentially reverse) in nocturnal blood pressure.
+This function is typically used with ABPM data, or at minimum, data with a corresponding a
+<code>WAKE</code> column available to indicate awake vs asleep.
+</p>
+<p>Nocturnal blood pressure decline is an indicator of an individual's natural circadian rhythm. Studies
+have shown that individuals with diminished circadian rhythms are more likely to exhibit target organ damage.
+There is a "U-shaped" relationship that exists among the magnitude of nocturnal blood pressure decline; the
+extreme dippers and the non-dippers (including reverse dippers) are both more prone to mortality risk than normal dippers.
+</p>
+<p>NOTE: Any reference to "sleep" in the bp package refers to an individual's nocturnal period;
+"sleep" is used in an informal sense for intuitive purposes. Technically, from a clinical perspective,
+indication of sleep is currently obtained through means of EEG or other highly specialized equipment.
+For all intents and purposes, sleep in the context of this package refers to actigraphy-inferred
+nocturnal periods of rest.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">dip_calc(
+  data,
+  sleep_start_end = NULL,
+  dip_thresh = 0.1,
+  extreme_thresh = 0.2,
+  inc_date = FALSE,
+  subj = NULL
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+<p>User-supplied data set that must contain <code>SBP</code>, <code>DBP</code>, and either <code>DATE_TIME</code> or <code>WAKE</code>
+columns in order to distinguish between sleep and awake
+</p>
+<p>In the event of non-ABPM data (i.e. a data set without a corresponding <code>WAKE</code> column), then a
+<code>DATE_TIME</code> column <strong>must</strong> be present in order to denote which times correspond to sleep and which
+times correspond to awake.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>sleep_start_end</code></td>
+<td>
+<p>(optional) User-supplied manual override to adjust sleep interval indicating indicate start and end time
+corresponding to the sleep interval of interest. Must only contain 2 values and must be 24-hour denoted integers
+</p>
+<p>Example: <code>sleep_start_end = c(22,5)</code> indicates a sleep period from 10pm - 5am.
+</p>
+<p><strong>NOTE:</strong> If the <code>sleep_start_end</code> function argument is specified, and no <code>WAKE</code> column
+exists, then awake/asleep indicators will be assigned according the the <code>DATE_TIME</code>
+column (which must exist). Otherwise, if <code>sleep_int</code> is not supplied, then the
+WAKE column will default to a sleep period between 11PM - 6AM as specified in the
+literature (see reference).
+</p>
+<p>Furthermore, the <code>sleep_int</code> argument
+will override the <code>WAKE</code> column, which may cause unintended consequences in the event that the
+data set already contains a <code>WAKE</code> column.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>dip_thresh</code></td>
+<td>
+<p>Default threshold for normal "Dipping" set to 0.10 (i.e. 10%). This value represents the maximum
+percentage that BP can fall during sleep and be characterized as "Normal" nocturnal decline (dipping).
+Specifically, this category includes all dips between 0% and this value.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>extreme_thresh</code></td>
+<td>
+<p>Default threshold for "Extreme Dipping" set to 0.20 (i.e. 20%). This value represents the maximum
+percentage that BP can fall during sleep and be characterized as "Extreme" nocturnal decline (dipping).
+Specifically, this category includes all dips between the Normal dipping threshold and this value.
+NOTE: dip_thresh cannot exceed extreme_thresh.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>inc_date</code></td>
+<td>
+<p>Default to FALSE. Indicates whether or not to include the date in the grouping of
+the final output</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>subj</code></td>
+<td>
+<p>Optional argument. Allows the user to specify and subset specific subjects
+from the <code>ID</code> column of the supplied data set. The <code>subj</code> argument can be a single
+value or a vector of elements. The input type should be character, but the function will
+comply with integers so long as they are all present in the <code>ID</code> column of the data.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>A list containing 2 tibble objects. The first tibble object lists grouped average values for SBP and DBP
+for awake and asleep periods. The second <code>dip_pct</code> tibble object lists the dipping percentage and
+classification according to the results from the first <code>dip</code> tibble. If inc_date = TRUE these two
+tibbles will be broken down further by date. There are 4 classifications a subject can have (assuming a
+default dipping threshold of 10% and extreme dipping threshold of 20% according to the original source):
+</p>
+
+<ul>
+<li>
+<p>Reverse Dipper - no nocturnal decline (greater or equal to 0%)
+</p>
+</li>
+<li>
+<p>Non-Dipper - a nocturnal decline between 0 - 10%
+</p>
+</li>
+<li>
+<p>Dipper - a nocturnal decline between 10% and the extreme dipping % (20%)
+</p>
+</li>
+<li>
+<p>Extreme Dipper - a nocturnal decline exceeding 20%
+</p>
+</li>
+</ul>
+<h3>References</h3>
+
+<p>Okhubo, T., Imai, Y., Tsuji, K., Nagai, K., Watanabe, N., Minami, J., Kato, J., Kikuchi, N., Nishiyama, A.,
+Aihara, A., Sekino, M., Satoh, H., and Hisamichi, S. (1997). Relation Between Nocturnal Decline in Blood
+Pressure and Mortality: The Ohasama Study,
+<em>American Journal of Hypertension</em> <strong>10(11)</strong>, 1201–1207,
+doi: <a href="https://doi.org/10.1016/S0895-7061(97)00274-4">10.1016/S0895-7061(97)00274-4</a>.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## Load bp_hypnos
+data(bp_hypnos)
+
+## Process bp_hypnos
+hypnos_proc &lt;- process_data(bp_hypnos,
+                     sbp = 'syst',
+                     dbp = 'diast',
+                     date_time = 'date.time',
+                     hr = 'hr',
+                     pp = 'PP',
+                     map = 'MaP',
+                     rpp = 'Rpp',
+                     id = 'id',
+                     visit = 'Visit',
+                     wake = 'wake')
+
+dip_calc(hypnos_proc)
+</code></pre>
+
+
+</div>

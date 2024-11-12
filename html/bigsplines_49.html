@@ -1,0 +1,233 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>predict.bigspline</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>
+Predicts for "bigspline" Objects
+</h2>
+
+<h3>Description</h3>
+
+<p>Get fitted values and standard error estimates for cubic smoothing splines.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">## S3 method for class 'bigspline'
+predict(object,newdata=NULL,se.fit=FALSE,
+        effect=c("all","0","lin","non"),
+        design=FALSE,smoothMatrix=FALSE,...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>object</code></td>
+<td>
+
+<p>Object of class "bigspline", which is output from <code>bigspline</code>.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>newdata</code></td>
+<td>
+
+<p>Vector containing new data points for prediction. See Details and Example. Default of <code>newdata=NULL</code> uses original data in <code>object</code> input.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>se.fit</code></td>
+<td>
+
+<p>Logical indicating whether the standard errors of the fitted values should be estimated. Default is <code>se.fit=FALSE</code>.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>effect</code></td>
+<td>
+
+<p>Which effect to estimate: <code>effect="all"</code> gives full <code class="reqn">\hat{y}</code>, <code>effect="0"</code> gives the intercept (constant) portion of <code class="reqn">\hat{y}</code>,  <code>effect="lin"</code> gives linear portion of <code class="reqn">\hat{y}</code>, and <code>effect="non"</code> gives nonlinear portion of <code class="reqn">\hat{y}</code>. 
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>design</code></td>
+<td>
+
+<p>Logical indicating whether the design matrix should be returned.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>smoothMatrix</code></td>
+<td>
+
+<p>Logical indicating whether the smoothing matrix should be returned.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+
+<p>Ignored.
+</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>Uses the coefficient and smoothing parameter estimates from a fit cubic smoothing spline (estimated by <code>bigspline</code>) to predict for new data.
+</p>
+
+
+<h3>Value</h3>
+
+<p>If <code>se.fit=FALSE</code>, <code>design=FALSE</code>, and <code>smoothMatrix=FALSE</code>, returns vector of fitted values.
+</p>
+<p>Otherwise returns list with elements:
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>fit</code></td>
+<td>
+<p>Vector of fitted values</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>se.fit</code></td>
+<td>
+<p>Vector of standard errors of fitted values (if <code>se.fit=TRUE</code>)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>X</code></td>
+<td>
+<p>Design matrix used to create fitted values (if <code>design=TRUE</code>)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ix</code></td>
+<td>
+<p>Index vector such that <code>fit=X%*%object$coef[ix]</code> (if <code>design=TRUE</code>)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>S</code></td>
+<td>
+<p>Smoothing matrix corresponding to fitted values (if <code>smoothMatrix=TRUE</code>)</p>
+</td>
+</tr>
+</table>
+<h3>Author(s)</h3>
+
+<p>Nathaniel E. Helwig &lt;helwig@umn.edu&gt;
+</p>
+
+
+<h3>References</h3>
+
+<p>Gu, C. (2013). <em>Smoothing spline ANOVA models, 2nd edition</em>. New York: Springer.
+</p>
+<p>Helwig, N. E. (2013). <em>Fast and stable smoothing spline analysis of variance models for large samples with applications to electroencephalography data analysis</em>. Unpublished doctoral dissertation. University of Illinois at Urbana-Champaign.
+</p>
+<p>Helwig, N. E. (2017). <a href="http://dx.doi.org/10.3389/fams.2017.00015">Regression with ordered predictors via ordinal smoothing splines</a>. Frontiers in Applied Mathematics and Statistics, 3(15), 1-13.
+</p>
+<p>Helwig, N. E. and Ma, P. (2015). Fast and stable multiple smoothing parameter selection in smoothing spline analysis of variance models with large samples. <em>Journal of Computational and Graphical Statistics, 24</em>, 715-732.
+</p>
+<p>Helwig, N. E. and Ma, P. (2016). Smoothing spline ANOVA for super-large samples: Scalable computation via rounding parameters. <em>Statistics and Its Interface, 9</em>, 433-444.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+##########   EXAMPLE 1   ##########
+
+# define univariate function and data
+set.seed(773)
+myfun &lt;- function(x){ 2 + x + sin(2*pi*x) }
+x &lt;- runif(10^4)
+y &lt;- myfun(x) + rnorm(10^4)
+
+# fit cubic spline model
+cubmod &lt;- bigspline(x,y)
+crossprod( predict(cubmod) - myfun(x) )/10^4
+
+# define new data for prediction
+newdata &lt;- data.frame(x=seq(0,1,length.out=100))
+
+# get fitted values and standard errors for new data
+yc &lt;- predict(cubmod,newdata,se.fit=TRUE)
+
+# plot results with 95% Bayesian confidence interval
+plot(newdata$x,yc$fit,type="l")
+lines(newdata$x,yc$fit+qnorm(.975)*yc$se.fit,lty=3)
+lines(newdata$x,yc$fit-qnorm(.975)*yc$se.fit,lty=3)
+
+# predict constant, linear, and nonlinear effects
+yc0 &lt;- predict(cubmod,newdata,se.fit=TRUE,effect="0")
+ycl &lt;- predict(cubmod,newdata,se.fit=TRUE,effect="lin")
+ycn &lt;- predict(cubmod,newdata,se.fit=TRUE,effect="non")
+crossprod( yc$fit - (yc0$fit + ycl$fit + ycn$fit) )
+
+# plot results with 95% Bayesian confidence intervals
+par(mfrow=c(1,2))
+plot(newdata$x,ycl$fit,type="l",main="Linear effect")
+lines(newdata$x,ycl$fit+qnorm(.975)*ycl$se.fit,lty=3)
+lines(newdata$x,ycl$fit-qnorm(.975)*ycl$se.fit,lty=3)
+plot(newdata$x,ycn$fit,type="l",main="Nonlinear effect")
+lines(newdata$x,ycn$fit+qnorm(.975)*ycn$se.fit,lty=3)
+lines(newdata$x,ycn$fit-qnorm(.975)*ycn$se.fit,lty=3)
+
+
+##########   EXAMPLE 2   ##########
+
+# define (same) univariate function and data
+set.seed(773)
+myfun &lt;- function(x){ 2 + x + sin(2*pi*x) }
+x &lt;- runif(10^4)
+y &lt;- myfun(x) + rnorm(10^4)
+
+# fit a different cubic spline model
+cubamod &lt;- bigspline(x,y,type="cub0")
+crossprod( predict(cubamod) - myfun(x) )/10^4
+
+# define (same) new data for prediction
+newdata &lt;- data.frame(x=seq(0,1,length.out=100))
+
+# get fitted values and standard errors for new data
+ya &lt;- predict(cubamod,newdata,se.fit=TRUE)
+
+# plot results with 95% Bayesian confidence interval
+plot(newdata$x,ya$fit,type="l")
+lines(newdata$x,ya$fit+qnorm(.975)*ya$se.fit,lty=3)
+lines(newdata$x,ya$fit-qnorm(.975)*ya$se.fit,lty=3)
+
+# predict constant, linear, and nonlinear effects
+ya0 &lt;- predict(cubamod,newdata,se.fit=TRUE,effect="0")
+yal &lt;- predict(cubamod,newdata,se.fit=TRUE,effect="lin")
+yan &lt;- predict(cubamod,newdata,se.fit=TRUE,effect="non")
+crossprod( ya$fit - (ya0$fit + yal$fit + yan$fit) )
+
+# plot results with 95% Bayesian confidence intervals
+par(mfrow=c(1,2))
+plot(newdata$x,yal$fit,type="l",main="Linear effect")
+lines(newdata$x,yal$fit+qnorm(.975)*yal$se.fit,lty=3)
+lines(newdata$x,yal$fit-qnorm(.975)*yal$se.fit,lty=3)
+plot(newdata$x,yan$fit,type="l",main="Nonlinear effect")
+lines(newdata$x,yan$fit+qnorm(.975)*yan$se.fit,lty=3)
+lines(newdata$x,yan$fit-qnorm(.975)*yan$se.fit,lty=3)
+
+</code></pre>
+
+
+</div>

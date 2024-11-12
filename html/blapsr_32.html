@@ -1,0 +1,155 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>snmatch</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Fit a skew-normal distribution to a target density.</h2>
+
+<h3>Description</h3>
+
+<p>The routine fits a skew-normal univariate distribution to a target density.
+Parameters of the resulting skew-normal fit are estimated by the method
+of moments.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">snmatch(x, y, p = c(0.025, 0.5, 0.975))
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>A numeric vector on the domain of the target density.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>y</code></td>
+<td>
+<p>The y-coordinates of the target density on grid x.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>p</code></td>
+<td>
+<p>Vector of probabilities at which to compute quantiles of the
+skew-normal fit.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The skew-normal density is parameterized by a location parameter
+<code class="reqn">\mu</code>, a scale parameter <code class="reqn">\omega</code> and a shape parameter
+<code class="reqn">\rho</code> that regulates skewness. The probability density function at any
+x on the real line is:
+</p>
+<p style="text-align: center;"><code class="reqn">p(x) = (2/\omega) \phi((x-\mu)/\omega) \psi(\rho (x-\mu)/\omega),</code>
+</p>
+
+<p>where <code class="reqn">\phi()</code> and <code class="reqn">\psi()</code> denote the standard Gaussian density and
+cumulative distribution function respectively (see Azzalini 2018).
+The first moment and second and third central moments of the target density
+are computed based on the x, y coordinates using the trapezoidal rule
+and matched against the theoretical moments of a skew-normal distribution.
+The solution to this system of equations is the method of moment estimate of
+the location, scale and shape parameters of a skew-normal density.
+</p>
+
+
+<h3>Value</h3>
+
+<p>A list with the following components:
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>location</code></td>
+<td>
+<p>Estimated location parameter.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>scale</code></td>
+<td>
+<p>Estimated scale parameter.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>shape</code></td>
+<td>
+<p>Estimated shape parameter.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>snfit</code></td>
+<td>
+<p>Fitted values of the skew-normal density
+computed on an equally spaced grid between min(x)
+and max(x).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>quant</code></td>
+<td>
+<p>Vector of quantiles of the skew-normal fit
+computed on the input vector of probabilities p.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>xgrid</code></td>
+<td>
+<p>Equidistant grid on which the skew-normal fitted
+density is computed.</p>
+</td>
+</tr>
+</table>
+<h3>Author(s)</h3>
+
+<p>Oswaldo Gressani <a href="mailto:oswaldo_gressani@hotmail.fr">oswaldo_gressani@hotmail.fr</a>.
+</p>
+
+
+<h3>References</h3>
+
+<p>Azzalini, A. (2018). The Skew-Normal and Related families.
+<em>Cambridge University Press</em>.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R"># Pdf of skew-normal density
+sn.target &lt;- function(x, location, scale, shape){
+               val &lt;- 2 * stats::dnorm(x, mean = location, sd = scale) *
+               pnorm(shape * (x - location) / scale)
+               return(val)
+              }
+
+# Extract x and y coordinates from target
+x.grid &lt;- seq(-2, 6, length = 200)
+y.grid &lt;- sapply(x.grid, sn.target, location = 0, scale = 2, shape = 3)
+
+# Computation of the fit and graphical illustration
+fit &lt;- snmatch(x.grid, y.grid)
+domx &lt;- seq(-2, 6, length = 1000)
+plot(domx, sapply(domx, sn.target, location = 0, scale = 2, shape = 3),
+     type = "l", ylab = "f(x)", xlab = "x", lwd= 2)
+lines(fit$xgrid, fit$snfit, type="l", col = "red", lwd = 2, lty = 2)
+legend("topright", lty = c(1,2), col = c("black", "red"), lwd = c(2, 2),
+       c("Target","SN fit"), bty="n")
+
+# Extract estimated parameters
+fit$location # Estimated location parameter
+fit$scale    # Estimated scale parameter
+fit$shape    # Estimated shape parameter
+
+</code></pre>
+
+
+</div>

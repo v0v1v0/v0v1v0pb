@@ -1,0 +1,79 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>tree_layout</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>tree layout</h2>
+
+<h3>Description</h3>
+
+<p>Compute x,y coordinates for graphing a tree.</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">tree_layout(node.dt, 
+    space = 0.5)</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>node.dt</code></td>
+<td>
+<p>node.dt </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>space</code></td>
+<td>
+<p>space </p>
+</td>
+</tr>
+</table>
+<h3>Author(s)</h3>
+
+<p>Toby Dylan Hocking</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+N.data &lt;- 29L
+min.seg.len &lt;- 3L
+max.segments &lt;- 5L
+cost.dt &lt;- binsegRcpp::get_complexity_best_optimal_cost(
+  N.data, min.seg.len, max.segments)
+set.seed(1)
+data.vec &lt;- rnorm(N.data)
+fit &lt;- binsegRcpp::binseg_normal(data.vec, max.segments)
+tree.list &lt;- list(
+  best=binsegRcpp::get_complexity_best_optimal_tree(cost.dt),
+  empirical=binsegRcpp::get_tree_empirical(fit))
+library(data.table)
+tree.dt &lt;- data.table(type=names(tree.list))[, {
+  binsegRcpp::tree_layout(tree.list[[type]])
+}, by=type]
+total.dt &lt;- tree.dt[, .(
+  candidate.splits=sum(binsegRcpp::size_to_splits(size, min.seg.len))
+), by=type]
+join.dt &lt;- total.dt[tree.dt, on="type"]
+if(require(ggplot2)){
+  ggplot()+
+    facet_grid(. ~ type + candidate.splits, labeller=label_both)+
+    geom_segment(aes(
+      x, depth, 
+      xend=parent.x, yend=parent.depth),
+      data=join.dt)+
+    geom_label(aes(
+      x, depth, label=size),
+      data=join.dt)+
+    scale_y_reverse()
+}
+
+</code></pre>
+
+
+</div>

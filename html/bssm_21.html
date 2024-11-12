@@ -1,0 +1,71 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>check_diagnostics</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Quick Diagnostics Checks for <code>run_mcmc</code> Output</h2>
+
+<h3>Description</h3>
+
+<p>Prints out the acceptance rate, smallest effective sample sizes (ESS) and
+largest Rhat values for a quick first check that the sampling worked. For
+further checks, see e.g. <code>bayesplot</code> and <code>coda</code> packages.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">check_diagnostics(x)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table><tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>Results object of class <code>mcmc_output</code> from
+<code>run_mcmc</code>.</p>
+</td>
+</tr></table>
+<h3>Details</h3>
+
+<p>For methods other than IS-MCMC, the estimates are based on the improved
+diagnostics from the <code>posterior</code> package.For IS-MCMC, these Rhat,
+bulk-ESS, and tail-ESS estimates are based on the approximate posterior
+which should look reasonable, otherwise the IS-correction does not make much
+sense. For IS-MCMC, ESS estimates based on a weighted posterior are also
+computed.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">set.seed(1)
+n &lt;- 30
+phi &lt;- 2
+rho &lt;- 0.9
+sigma &lt;- 0.1
+beta &lt;- 0.5
+u &lt;- rexp(n, 0.1)
+x &lt;- rnorm(n)
+z &lt;- y &lt;- numeric(n)
+z[1] &lt;- rnorm(1, 0, sigma / sqrt(1 - rho^2))
+y[1] &lt;- rnbinom(1, mu = u * exp(beta * x[1] + z[1]), size = phi)
+for(i in 2:n) {
+  z[i] &lt;- rnorm(1, rho * z[i - 1], sigma)
+  y[i] &lt;- rnbinom(1, mu = u * exp(beta * x[i] + z[i]), size = phi)
+}
+
+model &lt;- ar1_ng(y, rho = uniform_prior(0.9, 0, 1), 
+  sigma = gamma_prior(0.1, 2, 10), mu = 0., 
+  phi = gamma_prior(2, 2, 1), distribution = "negative binomial",
+  xreg = x, beta = normal_prior(0.5, 0, 1), u = u)
+  
+out &lt;- run_mcmc(model, iter = 1000, particles = 10)
+check_diagnostics(out)
+</code></pre>
+
+
+</div>

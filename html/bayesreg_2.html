@@ -1,0 +1,455 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>bayesreg</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Fitting Bayesian Regression Models with Continuous Shrinkage Priors</h2>
+
+<h3>Description</h3>
+
+<p>Fit a linear or logistic regression model using Bayesian continuous shrinkage prior distributions. Handles ridge, lasso, horseshoe and horseshoe+ regression with logistic,
+Gaussian, Laplace, Student-t, Poisson or geometric distributed targets. See <code>bayesreg-package</code> for more details on the features available in this package.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">bayesreg(
+  formula,
+  data,
+  model = "normal",
+  prior = "ridge",
+  n.samples = 1000,
+  burnin = 1000,
+  thin = 5,
+  t.dof = 5,
+  n.cores = Inf
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>formula</code></td>
+<td>
+<p>An object of class "<code>formula</code>": a symbolic description of the model to be fitted using the standard R formula notation.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+<p>A data frame containing the variables in the model.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>model</code></td>
+<td>
+<p>The distribution of the target (y) variable. Continuous or numeric variables can be distributed as per a Gaussian distribution (<code>model="gaussian"</code> 
+or <code>model="normal"</code>), Laplace distribution (<code>model = "laplace"</code> or <code>model = "l1"</code>) or Student-t distribution (<code>"model" = "studentt"</code> or <code>"model" = "t"</code>). 
+Integer or count data can be distributed as per a Poisson distribution (<code>model="poisson"</code>) or geometric distribution (<code>model="geometric"</code>).
+For binary targets (factors with two levels) either <code>model="logistic"</code> or <code>"model"="binomial"</code> should be used.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>prior</code></td>
+<td>
+<p>Which continuous shrinkage prior distribution over the regression coefficients to use. Options include ridge regression 
+(<code>prior="rr"</code> or <code>prior="ridge"</code>), lasso regression (<code>prior="lasso"</code>), horseshoe regression (<code>prior="hs"</code> or <code>prior="horseshoe"</code>) and 
+horseshoe+ regression (<code>prior="hs+"</code> or <code>prior="horseshoe+"</code>)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>n.samples</code></td>
+<td>
+<p>Number of posterior samples to generate.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>burnin</code></td>
+<td>
+<p>Number of burn-in samples.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>thin</code></td>
+<td>
+<p>Desired level of thinning.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>t.dof</code></td>
+<td>
+<p>Degrees of freedom for the Student-t distribution.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>n.cores</code></td>
+<td>
+<p>Maximum number of cores to use; if <code>n.cores=Inf</code> then Bayesreg automatically sets this to one less than the maximum number of available cores. If <code>n.cores=1</code> then no parallelization occurs.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>An object with S3 class <code>"bayesreg"</code> containing the results of the sampling process, plus some additional information.
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>beta</code></td>
+<td>
+<p>Posterior samples the regression model coefficients.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>beta0</code></td>
+<td>
+<p>Posterior samples of the intercept parameter.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>sigma2</code></td>
+<td>
+<p>Posterior samples of the square of the scale parameter; for Gaussian distributed targets this is equal to the variance. For binary targets this is empty.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>mu.beta</code></td>
+<td>
+<p>The mean of the posterior samples for the regression coefficients.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>mu.beta0</code></td>
+<td>
+<p>The mean of the posterior samples for the intercept parameter.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>mu.sigma2</code></td>
+<td>
+<p>The mean of the posterior samples for squared scale parameter.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>tau2</code></td>
+<td>
+<p>Posterior samples of the global shrinkage parameter.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>t.stat</code></td>
+<td>
+<p>Posterior t-statistics for each regression coefficient.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>var.ranks</code></td>
+<td>
+<p>Ranking of the covariates by their importance, with "1" denoting the most important covariate.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>log.l</code></td>
+<td>
+<p>The log-likelihood at the posterior means of the model parameters</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>waic</code></td>
+<td>
+<p>The Widely Applicable Information Criterion (WAIC) score for the model</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>waic.dof</code></td>
+<td>
+<p>The effective degrees-of-freedom of the model, as estimated by the WAIC.</p>
+</td>
+</tr>
+</table>
+<p>The returned object also stores the parameters/options used to run <code>bayesreg</code>:
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>formula</code></td>
+<td>
+<p>The object of type "<code>formula</code>" describing the fitted model.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>model</code></td>
+<td>
+<p>The distribution of the target (y) variable.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>prior</code></td>
+<td>
+<p>The shrinkage prior used to fit the model.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>n.samples</code></td>
+<td>
+<p>The number of samples generated from the posterior distribution.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>burnin</code></td>
+<td>
+<p>The number of burnin samples that were generated.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>thin</code></td>
+<td>
+<p>The level of thinning.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>n</code></td>
+<td>
+<p>The sample size of the data used to fit the model.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>p</code></td>
+<td>
+<p>The number of covariates in the fitted model.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>n.cores</code></td>
+<td>
+<p>The number of cores actually used during sampling.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>Draws a series of samples from the posterior distribution of a linear (Gaussian, Laplace or Student-t) or generalized linear (logistic binary, Poisson, geometric) regression model with specified continuous 
+shrinkage prior distribution (ridge regression, lasso, horseshoe and horseshoe+) using Gibbs sampling. The intercept parameter is always included, and is never penalised.
+</p>
+<p>While only <code>n.samples</code> are returned, the total number of samples generated is equal to <code>burnin</code>+<code>n.samples</code>*<code>thin</code>. To generate the samples 
+of the regression coefficients, the code will use either Rue's algorithm (when the number of samples is twice the number of covariates) or the algorithm of 
+Bhattacharya et al. as appropriate. Factor variables are automatically grouped together and 
+additional shrinkage is applied to the set of indicator variables to which they expand.
+</p>
+<p>If <code>n.cores &gt; 1</code> then Bayesreg will divide the total sampling process between a number of independent sampling chains, with each chain being run on
+a seperate core. If <code>n.cores=Inf</code> then Bayesreg will use one less than the total number of available cores.
+If <code>n.cores</code> is a positive integer, then this is the maximum number of cores Bayesreg will use, though Bayesreg will cap this at the total number of available cores minus one. 
+The total number of samples are split evenly between the number of cores being utilised, and after sampling
+the different chains are recombined into a single body of samples. Each chain will perform
+<code>burnin</code> burn-in sampling iterations before collecting samples, so the improvement in speed from
+using from multiple cores will be greater if <code>n.samples*thin</code> is substantially greater than <code>burnin</code>.
+</p>
+
+
+<h3>Note</h3>
+
+<p>To cite this toolbox please reference: 
+</p>
+<p>Makalic, E. &amp; Schmidt, D. F.
+High-Dimensional Bayesian Regularised Regression with the BayesReg Package
+arXiv:1611.06649 [stat.CO], 2016 <a href="http://arxiv.org/pdf/1611.06649">http://arxiv.org/pdf/1611.06649</a>
+</p>
+<p>A MATLAB implementation of the bayesreg function is also available from:
+</p>
+<p><a href="https://au.mathworks.com/matlabcentral/fileexchange/60823-flexible-bayesian-penalized-regression-modelling">https://au.mathworks.com/matlabcentral/fileexchange/60823-flexible-bayesian-penalized-regression-modelling</a>
+</p>
+<p>Copyright (C) Daniel F. Schmidt and Enes Makalic, 2016-2021
+</p>
+
+
+<h3>References</h3>
+
+<p>Makalic, E. &amp; Schmidt, D. F.
+High-Dimensional Bayesian Regularised Regression with the BayesReg Package
+arXiv:1611.06649 [stat.CO], 2016 <a href="http://arxiv.org/pdf/1611.06649">http://arxiv.org/pdf/1611.06649</a>
+</p>
+<p>Park, T. &amp; Casella, G. 
+The Bayesian Lasso 
+Journal of the American Statistical Association, Vol. 103, pp. 681-686, 2008
+</p>
+<p>Carvalho, C. M.; Polson, N. G. &amp; Scott, J. G. 
+The horseshoe estimator for sparse signals 
+Biometrika, Vol. 97, 465-480, 2010
+</p>
+<p>Makalic, E. &amp; Schmidt, D. F. 
+A Simple Sampler for the Horseshoe Estimator 
+IEEE Signal Processing Letters, Vol. 23, pp. 179-182, 2016 <a href="http://arxiv.org/pdf/1508.03884v4">http://arxiv.org/pdf/1508.03884v4</a>
+</p>
+<p>Bhadra, A.; Datta, J.; Polson, N. G. &amp; Willard, B. 
+The Horseshoe+ Estimator of Ultra-Sparse Signals 
+Bayesian Analysis, 2016
+</p>
+<p>Polson, N. G.; Scott, J. G. &amp; Windle, J. 
+Bayesian inference for logistic models using Polya-Gamma latent variables 
+Journal of the American Statistical Association, Vol. 108, 1339-1349, 2013
+</p>
+<p>Rue, H. 
+Fast sampling of Gaussian Markov random fields 
+Journal of the Royal Statistical Society (Series B), Vol. 63, 325-338, 2001
+</p>
+<p>Bhattacharya, A.; Chakraborty, A. &amp; Mallick, B. K. 
+Fast sampling with Gaussian scale-mixture priors in high-dimensional regression 
+arXiv:1506.04778, 2016
+</p>
+<p>Schmidt, D.F. &amp; Makalic, E.
+Bayesian Generalized Horseshoe Estimation of Generalized Linear Models
+ECML PKDD 2019: Machine Learning and Knowledge Discovery in Databases. pp 598-613, 2019
+</p>
+<p>Stan Development Team, Stan Reference Manual (Version 2.26), Section 15.4, "Effective Sample Size",
+<a href="https://mc-stan.org/docs/2_18/reference-manual/effective-sample-size-section.html">https://mc-stan.org/docs/2_18/reference-manual/effective-sample-size-section.html</a>
+</p>
+
+
+<h3>See Also</h3>
+
+<p>The prediction function <code>predict.bayesreg</code> and summary function <code>summary.bayesreg</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R"># -----------------------------------------------------------------
+# By default Bayesreg now utilizes multiple cores if you have them
+# available. If you do not want to use multiple cores you can set 
+# n.cores=1 when calling Bayesreg.
+#
+# In most realistic/practical settings, i.e., when a 
+# even a moderate number of samples is being requested, parallelization 
+# will usually result in substantial speedups, and can dramatically reduce
+# run-time for large numbers of samples.
+#
+# However, if your design matrix and desired number of samples 
+# are small (i.e, small nrow(X), ncol(X) and n.samples) 
+# then sometimes no parallelization, or parallelization with a small
+# number of cores, can be quicker due to the overhead of setting up 
+# multiple threads. This is likely only relevant if you are calling Bayesreg
+# hundreds/thousands of times with *small* numbers of samples being requested
+# for each call, e.g., if you are doing some sort of one-at-a-time testing
+# across many predictors such as a genome-wide association test, or similar.
+# In this case you may be better off parallelizing the calls to 
+# Bayesreg across the tests and disabling parallelization when calling 
+# Bayesreg (i.e., n.cores=1).
+#
+# -----------------------------------------------------------------
+# Example 1: Gaussian regression
+X = matrix(rnorm(100*20),100,20)
+b = matrix(0,20,1)
+b[1:5] = c(5,4,3,2,1)
+y = X %*% b + rnorm(100, 0, 1)
+
+df &lt;- data.frame(X,y)
+rv.lm &lt;- lm(y~.,df)                        # Regular least-squares
+summary(rv.lm)
+
+# Horseshoe regression -- here we show how to explicitly control the maximum
+# number of cores being used for sampling to 4
+rv.hs &lt;- bayesreg(y~., df, prior="hs", n.cores=4)       
+rv.hs$n.cores  # actual number of cores used (will be &lt;= 4, depending on machine)
+rv.hs.s &lt;- summary(rv.hs)
+
+# Expected squared prediction error for least-squares
+coef_ls = coef(rv.lm)
+as.numeric(sum( (as.matrix(coef_ls[-1]) - b)^2 ) + coef_ls[1]^2)
+
+# Expected squared prediction error for horseshoe
+as.numeric(sum( (rv.hs$mu.beta - b)^2 ) + rv.hs$mu.beta0^2)
+
+
+# -----------------------------------------------------------------
+# Example 2: Gaussian v Student-t robust regression
+X = 1:10;
+y = c(-0.6867, 1.7258, 1.9117, 6.1832, 5.3636, 7.1139, 9.5668, 10.0593, 11.4044, 6.1677);
+df = data.frame(X,y)
+
+# Gaussian ridge
+rv.G &lt;- bayesreg(y~., df, model = "gaussian", prior = "ridge", n.samples = 1e3)
+
+# Student-t ridge
+rv.t &lt;- bayesreg(y~., df, model = "t", prior = "ridge", t.dof = 5, n.samples = 1e3)
+
+# Plot the different estimates with credible intervals
+plot(df$X, df$y, xlab="x", ylab="y")
+
+yhat_G &lt;- predict(rv.G, df, bayes.avg=TRUE)
+lines(df$X, yhat_G[,1], col="blue", lwd=2.5)
+lines(df$X, yhat_G[,3], col="blue", lwd=1, lty="dashed")
+lines(df$X, yhat_G[,4], col="blue", lwd=1, lty="dashed")
+
+yhat_t &lt;- predict(rv.t, df, bayes.avg=TRUE)
+lines(df$X, yhat_t[,1], col="darkred", lwd=2.5)
+lines(df$X, yhat_t[,3], col="darkred", lwd=1, lty="dashed")
+lines(df$X, yhat_t[,4], col="darkred", lwd=1, lty="dashed")
+
+legend(1,11,c("Gaussian","Student-t (dof=5)"),lty=c(1,1),col=c("blue","darkred"),
+       lwd=c(2.5,2.5), cex=0.7)
+
+## Not run: 
+# -----------------------------------------------------------------
+# Example 3: Poisson/geometric regression example
+
+X  = matrix(rnorm(100*5),100,5)
+b  = c(0.5,-1,0,0,1)
+nu = X%*%b + 1
+y  = rpois(lambda=exp(nu),n=length(nu))
+
+df &lt;- data.frame(X,y)
+
+# Fit a Poisson regression
+rv.pois=bayesreg(y~.,data=df,model="poisson",prior="hs", burnin=1e4, n.samples=5e4)
+summary(rv.pois)
+
+# Fit a geometric regression
+rv.geo=bayesreg(y~.,data=df,model="geometric",prior="hs", burnin=1e4, n.samples=5e4)
+summary(rv.geo)
+
+# Compare the two models in terms of their WAIC scores
+cat(sprintf("Poisson regression WAIC=%g vs geometric regression WAIC=%g", 
+            rv.pois$waic, rv.geo$waic))
+# Poisson is clearly preferred to geometric, which is good as data is generated from a Poisson!
+ 
+ 
+# -----------------------------------------------------------------
+# Example 4: Logistic regression on spambase
+data(spambase)
+  
+# bayesreg expects binary targets to be factors
+spambase$is.spam &lt;- factor(spambase$is.spam)
+
+# First take a subset of the data (1/10th) for training, reserve the rest for testing
+spambase.tr  = spambase[seq(1,nrow(spambase),10),]
+spambase.tst = spambase[-seq(1,nrow(spambase),10),]
+  
+# Fit a model using logistic horseshoe for 2,000 samples
+# In practice, &gt; 10,000 samples would be a more realistic amount to draw
+rv &lt;- bayesreg(is.spam ~ ., spambase.tr, model = "logistic", prior = "horseshoe", n.samples = 2e3)
+  
+# Summarise, sorting variables by their ranking importance
+rv.s &lt;- summary(rv,sort.rank=TRUE)
+  
+# Make predictions about testing data -- get class predictions and class probabilities
+y_pred &lt;- predict(rv, spambase.tst, type='class')
+  
+# Check how well did our predictions did by generating confusion matrix
+table(y_pred, spambase.tst$is.spam)
+  
+# Calculate logarithmic loss on test data
+y_prob &lt;- predict(rv, spambase.tst, type='prob')
+cat('Neg Log-Like for no Bayes average, posterior mean estimates: ', sum(-log(y_prob[,1])), '\n')
+y_prob &lt;- predict(rv, spambase.tst, type='prob', sum.stat="median")
+cat('Neg Log-Like for no Bayes average, posterior median estimates: ', sum(-log(y_prob[,1])), '\n')
+y_prob &lt;- predict(rv, spambase.tst, type='prob', bayes.avg=TRUE)
+cat('Neg Log-Like for Bayes average: ', sum(-log(y_prob[,1])), '\n')
+
+## End(Not run)
+
+</code></pre>
+
+
+</div>

@@ -1,0 +1,101 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>bd_collect</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Collects the results of a remote table called via <code>bdplyr()</code>
+</h2>
+
+<h3>Description</h3>
+
+<p>After <code>bdplyr()</code> is used to create the remote connection, this function
+allows you to collect the result of the manipulations carried out with
+the dplyr's verbs and thus use it in local memory completely.
+</p>
+<p>Alternatively, you can also save to disk directly using <code>bd_write()</code>
+function or its derivatives: <code>bd_write_csv()</code> or <code>bd_write_rds()</code>.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">bd_collect(
+  .lazy_tbl,
+  billing_project_id = basedosdados::get_billing_id(),
+  show_query = FALSE
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>.lazy_tbl</code></td>
+<td>
+<p>A variable that contains a database that was previously
+connected through the <code>bdplyr()</code> function. Tipically, it will be called
+after performing the desired operations with the <code>{dplyr}</code> verbs.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>billing_project_id</code></td>
+<td>
+<p>a string containing your billing project id.
+If you've run <code>set_billing_id()</code> then feel free to leave this empty.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>show_query</code></td>
+<td>
+<p>If TRUE will show the SQL query calling <code>dplyr::show_query()</code>.
+Is useful for diagnosing performance problems.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>A tibble.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## Not run: 
+
+# setup billing
+ basedosdados::set_billing_id("billing-project-id")
+
+ # select a cool database at Base dos Dados
+bd_table &lt;- basedosdados::bdplyr(
+  "basedosdados.br_sp_gov_ssp.ocorrencias_registradas")
+
+# quick look
+bd_table %&gt;%
+  dplyr::glimpse()
+
+ # filter, select and group the remote data
+bd_ssp &lt;-  bd_table %&gt;%
+  dplyr::filter(ano &gt;= 2019) %&gt;%
+  dplyr::select(ano, mes, homicidio_doloso) %&gt;%
+  dplyr::group_by(ano, mes)
+
+ # make some plots
+library(ggplot2)
+
+bd_ssp %&gt;%
+ # collect the data to continue the analisis
+ basedosdados::bd_collect() %&gt;%
+  dplyr::summarise(homicidios_sum = sum(homicidio_doloso,
+                                         na.rm = TRUE)) %&gt;%
+  ggplot(aes(x = mes, y = homicidios_sum, fill = ano)) +
+  geom_col(position = "dodge")
+
+
+
+## End(Not run)
+</code></pre>
+
+
+</div>

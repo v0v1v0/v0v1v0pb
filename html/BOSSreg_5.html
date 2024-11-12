@@ -1,0 +1,178 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>cv.boss</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Cross-validation for Best Orthogonalized Subset Selection (BOSS) and Forward Stepwise Selection (FS).</h2>
+
+<h3>Description</h3>
+
+<p>Cross-validation for Best Orthogonalized Subset Selection (BOSS) and Forward Stepwise Selection (FS).
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">cv.boss(
+  x,
+  y,
+  maxstep = min(nrow(x) - intercept - 1, ncol(x)),
+  intercept = TRUE,
+  n.folds = 10,
+  n.rep = 1,
+  show.warning = TRUE,
+  ...
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>A matrix of predictors, see <code>boss</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>y</code></td>
+<td>
+<p>A vector of response variable, see <code>boss</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>maxstep</code></td>
+<td>
+<p>Maximum number of steps performed. Default is <code>min(n-1,p)</code> if <code>intercept=FALSE</code>,
+and it is <code>min(n-2, p)</code> otherwise.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>intercept</code></td>
+<td>
+<p>Logical, whether to fit an intercept term. Default is TRUE.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>n.folds</code></td>
+<td>
+<p>The number of cross validation folds. Default is 10.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>n.rep</code></td>
+<td>
+<p>The number of replications of cross validation. Default is 1.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>show.warning</code></td>
+<td>
+<p>Whether to display a warning if CV is only performed for a subset of candidates.
+e.g. when n&lt;p and 10-fold. Default is TRUE.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Arguments to <code>boss</code>, such as <code>hdf.ic.boss</code>.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>This function fits BOSS and FS (<code>boss</code>) on the full dataset, and performs <code>n.folds</code>
+cross-validation. The cross-validation process can be repeated <code>n.rep</code> times to evaluate the
+out-of-sample (OOS) performance for the candidate subsets given by both methods.
+</p>
+
+
+<h3>Value</h3>
+
+
+<ul>
+<li>
+<p> boss: An object <code>boss</code> that fits on the full dataset.
+</p>
+</li>
+<li>
+<p> n.folds: The number of cross validation folds.
+</p>
+</li>
+<li>
+<p> cvm.fs: Mean OOS deviance for each candidate given by FS.
+</p>
+</li>
+<li>
+<p> cvm.boss: Mean OSS deviance for each candidate given by BOSS.
+</p>
+</li>
+<li>
+<p> i.min.fs: The index of minimum cvm.fs.
+</p>
+</li>
+<li>
+<p> i.min.boss: The index of minimum cvm.boss.
+</p>
+</li>
+</ul>
+<h3>Author(s)</h3>
+
+<p>Sen Tian
+</p>
+
+
+<h3>References</h3>
+
+
+<ul>
+<li>
+<p> Tian, S., Hurvich, C. and Simonoff, J. (2021), On the Use of Information Criteria
+for Subset Selection in Least Squares Regression. https://arxiv.org/abs/1911.10191
+</p>
+</li>
+<li>
+<p> BOSSreg Vignette https://github.com/sentian/BOSSreg/blob/master/r-package/vignettes/BOSSreg.pdf
+</p>
+</li>
+</ul>
+<h3>See Also</h3>
+
+<p><code>predict</code> and <code>coef</code> methods for <code>cv.boss</code> object, and the <code>boss</code> function
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## Generate a trivial dataset, X has mean 0 and norm 1, y has mean 0
+set.seed(11)
+n = 20
+p = 5
+x = matrix(rnorm(n*p), nrow=n, ncol=p)
+x = scale(x, center = colMeans(x))
+x = scale(x, scale = sqrt(colSums(x^2)))
+beta = c(1, 1, 0, 0, 0)
+y = x%*%beta + scale(rnorm(20, sd=0.01), center = TRUE, scale = FALSE)
+
+## Perform 10-fold CV without replication
+boss_cv_result = cv.boss(x, y)
+## Get the coefficient vector of BOSS that gives minimum CV OSS score (S3 method for cv.boss)
+beta_boss_cv = coef(boss_cv_result)
+# the above is equivalent to
+boss_result = boss_cv_result$boss
+beta_boss_cv = boss_result$beta_boss[, boss_cv_result$i.min.boss, drop=FALSE]
+## Get the fitted values of BOSS-CV (S3 method for cv.boss)
+mu_boss_cv = predict(boss_cv_result, newx=x)
+# the above is equivalent to
+mu_boss_cv = cbind(1,x) %*% beta_boss_cv
+
+## Get the coefficient vector of FS that gives minimum CV OSS score (S3 method for cv.boss)
+beta_fs_cv = coef(boss_cv_result, method='fs')
+## Get the fitted values of FS-CV (S3 method for cv.boss)
+mu_fs_cv = predict(boss_cv_result, newx=x, method='fs')
+</code></pre>
+
+
+</div>

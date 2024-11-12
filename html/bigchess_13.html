@@ -1,0 +1,139 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>read.pgn</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Reads PGN files into data frame</h2>
+
+<h3>Description</h3>
+
+<p>Reads PGN files into data frame
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">read.pgn(
+  con,
+  add.tags = NULL,
+  n.moves = T,
+  extract.moves = 10,
+  last.move = T,
+  stat.moves = T,
+  big.mode = F,
+  quiet = F,
+  ignore.other.games = F,
+  source.movetext = F
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>con</code></td>
+<td>
+<p>connection argument passed directly to readLines() function. String - the name of the file which the data are to be read from or connection object or URL.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>add.tags</code></td>
+<td>
+<p>string vector containing additional tags to be parsed.
+According to Seven Tag Roster rule:
+http://www.saremba.de/chessgml/standards/pgn/pgn-complete.htm#c8.1.1
+The STR tag pairs appear before any other tag pairs: "Event", "Site", "Date", "Round", "White", "Black" and "Result".
+Using this argument you can specify supplemental tag names, such as: Player related information, Event related information, Opening information (locale specific), Opening information (third party vendors), Time and date related information, Time control, Alternative starting positions, Game conclusion and Miscellaneous.
+Most popular: "WhiteElo", "BlackElo","ECO","SetUp" or "FEN". Case sensitive.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>n.moves</code></td>
+<td>
+<p>boolean (default TRUE), compute number of moves?</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>extract.moves</code></td>
+<td>
+<p>integer (default 10) passed to extract_moves function. Additionaly value -1 will extract all moves from movetext (not recommended for big files). Value 0 means that moves will not be extracted.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>last.move</code></td>
+<td>
+<p>boolean (default TRUE) passed to extract_moves, ignored when extract.moves = 0</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>stat.moves</code></td>
+<td>
+<p>boolean (default TRUE), compute moves count statistics? Could take a long time for big file.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>big.mode</code></td>
+<td>
+<p>boolean (default FALSE) used in read.pgn.ff function</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>quiet</code></td>
+<td>
+<p>boolean (default FALSE), indicating if messages should appear.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ignore.other.games</code></td>
+<td>
+<p>boolean (default FALSE) if TRUE result is subset of original dataset without games with result marked as "*", i.e. ongoing games</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>source.movetext</code></td>
+<td>
+<p>boolean (default FALSE, experimental!) if TRUE column with original movetext will be added</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>Data frame containg STR, additional tags (conditionally), Movetext, NMoves (conditionally), extracted moves (conditionally) with complete.movetext flag, figure moves count statistics (conditionally).
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">f &lt;- system.file("extdata", "2016_Candidates.pgn", package = "bigchess")
+df &lt;- read.pgn(f)
+# ...successfully imported 56 games...
+
+# Example downloaded from https://www.pgnmentor.com/files.html#players and gzipped:
+f &lt;- system.file("extdata", "Carlsen.gz", package = "bigchess")
+con &lt;- gzfile(f,encoding = "latin1")
+df &lt;- read.pgn(con,quiet = TRUE)
+# Fastest mode:
+con &lt;- gzfile(f,encoding = "latin1")
+df &lt;- read.pgn(con,quiet = TRUE,n.moves = FALSE,extract.moves = FALSE,
+stat.moves = FALSE, ignore.other.games = FALSE)
+# Parse additional tags and extract all moves:
+con &lt;- gzfile(f,encoding = "latin1")
+df &lt;- read.pgn(con,add.tags = c("WhiteElo", "BlackElo", "ECO"),extract.moves = -1)
+# Example of direct downloading data from chess.com using API:
+df &lt;- read.pgn("https://api.chess.com/pub/player/fabianocaruana/games/2013/03/pgn")
+# Warning of incomplete line could appear
+
+# Example of scraping all of games given user:
+user &lt;- "fabianocaruana"
+library("rjson")
+json_file &lt;- paste0("https://api.chess.com/pub/player/",user,"/games/archives")
+json_data &lt;- fromJSON(paste(readLines(json_file), collapse=""))
+result &lt;- data.frame()
+for(i in json_data$archives)
+result &lt;- rbind(result,read.pgn(paste0(i,"/pgn")))
+</code></pre>
+
+
+</div>

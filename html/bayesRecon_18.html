@@ -1,0 +1,256 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>reconc_MixCond</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Probabilistic forecast reconciliation of mixed hierarchies via conditioning</h2>
+
+<h3>Description</h3>
+
+<p>Uses importance sampling to draw samples from the reconciled
+forecast distribution, obtained via conditioning, in the case of a mixed hierarchy.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">reconc_MixCond(
+  A,
+  fc_bottom,
+  fc_upper,
+  bottom_in_type = "pmf",
+  distr = NULL,
+  num_samples = 20000,
+  return_type = "pmf",
+  suppress_warnings = FALSE,
+  seed = NULL
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>A</code></td>
+<td>
+<p>Aggregation matrix (n_upper x n_bottom).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>fc_bottom</code></td>
+<td>
+<p>A list containing the bottom base forecasts, see details.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>fc_upper</code></td>
+<td>
+<p>A list containing the upper base forecasts, see details.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>bottom_in_type</code></td>
+<td>
+<p>A string with three possible values:
+</p>
+
+<ul>
+<li>
+<p> 'pmf' if the bottom base forecasts are in the form of pmf, see details;
+</p>
+</li>
+<li>
+<p> 'samples' if the bottom base forecasts are in the form of samples;
+</p>
+</li>
+<li>
+<p> 'params'  if the bottom base forecasts are in the form of estimated parameters.
+</p>
+</li>
+</ul>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>distr</code></td>
+<td>
+<p>A string describing the type of bottom base forecasts ('poisson' or 'nbinom').
+</p>
+<p>This is only used if <code>bottom_in_type='params'</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>num_samples</code></td>
+<td>
+<p>Number of samples drawn from the reconciled distribution.
+This is ignored if <code>bottom_in_type='samples'</code>; in this case, the number of
+reconciled samples is equal to the number of samples of the base forecasts.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>return_type</code></td>
+<td>
+<p>The return type of the reconciled distributions.
+A string with three possible values:
+</p>
+
+<ul>
+<li>
+<p> 'pmf' returns a list containing the reconciled marginal pmf objects;
+</p>
+</li>
+<li>
+<p> 'samples' returns a list containing the reconciled multivariate samples;
+</p>
+</li>
+<li>
+<p> 'all' returns a list with both pmf objects and samples.
+</p>
+</li>
+</ul>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>suppress_warnings</code></td>
+<td>
+<p>Logical. If <code>TRUE</code>, no warnings about samples
+are triggered. If <code>FALSE</code>, warnings are generated. Default is <code>FALSE</code>. See Details.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>seed</code></td>
+<td>
+<p>Seed for reproducibility.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The base bottom forecasts <code>fc_bottom</code> must be a list of length n_bottom, where each element is either
+</p>
+
+<ul>
+<li>
+<p> a PMF object (see details below), if <code>bottom_in_type='pmf'</code>;
+</p>
+</li>
+<li>
+<p> a vector of samples, if <code>bottom_in_type='samples'</code>;
+</p>
+</li>
+<li>
+<p> a list of parameters, if <code>bottom_in_type='params'</code>:
+</p>
+
+<ul>
+<li>
+<p> lambda for the Poisson base forecast if <code>distr</code>='poisson', see Poisson;
+</p>
+</li>
+<li>
+<p> size and prob (or mu) for the negative binomial base forecast if <code>distr</code>='nbinom',
+see NegBinomial.
+</p>
+</li>
+</ul>
+</li>
+</ul>
+<p>The base upper forecasts <code>fc_upper</code> must be a list containing the parameters of
+the multivariate Gaussian distribution of the upper forecasts.
+The list must contain only the named elements <code>mu</code> (vector of length n_upper)
+and <code>Sigma</code> (n_upper x n_upper matrix).
+</p>
+<p>The order of the upper and bottom base forecasts must match the order of (respectively) the rows and the columns of A.
+</p>
+<p>A PMF object is a numerical vector containing the probability mass function of a discrete distribution.
+Each element corresponds to the probability of the integers from 0 to the last value of the support.
+See also PMF.get_mean, PMF.get_var, PMF.sample, PMF.get_quantile,
+PMF.summary for functions that handle PMF objects.
+</p>
+<p>Warnings are triggered from the Importance Sampling step if:
+</p>
+
+<ul>
+<li>
+<p> weights are all zeros, then the upper forecast is ignored during reconciliation;
+</p>
+</li>
+<li>
+<p> the effective sample size is &lt; 200;
+</p>
+</li>
+<li>
+<p> the effective sample size is &lt; 1% of the sample size.
+</p>
+</li>
+</ul>
+<p>Note that warnings are an indication that the base forecasts might have issues.
+Please check the base forecasts in case of warnings.
+</p>
+
+
+<h3>Value</h3>
+
+<p>A list containing the reconciled forecasts. The list has the following named elements:
+</p>
+
+<ul>
+<li> <p><code>bottom_reconciled</code>: a list containing the pmf, the samples (matrix n_bottom x <code>num_samples</code>) or both,
+depending on the value of <code>return_type</code>;
+</p>
+</li>
+<li> <p><code>upper_reconciled</code>: a list containing the pmf, the samples (matrix n_upper x <code>num_samples</code>) or both,
+depending on the value of <code>return_type</code>.
+</p>
+</li>
+</ul>
+<h3>References</h3>
+
+<p>Zambon, L., Azzimonti, D., Rubattu, N., Corani, G. (2024).
+<em>Probabilistic reconciliation of mixed-type hierarchical time series</em>.
+The 40th Conference on Uncertainty in Artificial Intelligence, accepted.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>reconc_TDcond()</code>, <code>reconc_BUIS()</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+library(bayesRecon)
+
+# Consider a simple hierarchy with two bottom and one upper
+A &lt;- matrix(c(1,1),nrow=1)
+# The bottom forecasts are Poisson with lambda=15
+lambda &lt;- 15
+n_tot &lt;- 60
+fc_bottom &lt;- list()
+fc_bottom[[1]] &lt;- apply(matrix(seq(0,n_tot)),MARGIN=1,FUN=function(x) dpois(x,lambda=lambda))
+fc_bottom[[2]] &lt;- apply(matrix(seq(0,n_tot)),MARGIN=1,FUN=function(x) dpois(x,lambda=lambda))
+
+# The upper forecast is a Normal with mean 40 and std 5
+fc_upper&lt;- list(mu=40, Sigma=matrix(5^2))
+
+# We can reconcile with reconc_MixCond
+res.mixCond &lt;- reconc_MixCond(A, fc_bottom, fc_upper)
+
+# Note that the bottom distributions are slightly shifted to the right
+PMF.summary(res.mixCond$bottom_reconciled$pmf[[1]])
+PMF.summary(fc_bottom[[1]])
+
+PMF.summary(res.mixCond$bottom_reconciled$pmf[[2]])
+PMF.summary(fc_bottom[[2]])
+
+# The upper distribution is slightly shifted to the left
+PMF.summary(res.mixCond$upper_reconciled$pmf[[1]])
+PMF.get_var(res.mixCond$upper_reconciled$pmf[[1]])
+
+</code></pre>
+
+
+</div>

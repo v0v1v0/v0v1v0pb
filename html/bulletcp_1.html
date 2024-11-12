@@ -1,0 +1,167 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>detect_cp</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Impute data and estimate groove locations.</h2>
+
+<h3>Description</h3>
+
+<p>This function is mostly just a wrapper function which calls the functions necessary
+to impute missing data, run the changepoint Gibbs algorithms, and select MAP estimates
+of the changepoint locations. Much less output is given for this function than for the
+functions called by this function. If all goes well, one should only need to explicitly
+use this function to estimate groove locations. Note that because this function calls the
+functions which do the Gibbs sampling, all of the input required for those functions is
+required by this function.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">detect_cp(data, iter = 5000, start.vals = NA, prop_var = NA,
+  cp_prop_var = NA, tol_edge = 50, tol_cp = 1000, warmup = 200,
+  verbose = FALSE, prior_numcp = rep(1/4, times = 4),
+  est_impute_par = FALSE, impute_par = c(0.8, 15))
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+<p>Data frame with columns "x" and "y." "x" is a column of the locations of the
+observed residual values, y.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>iter</code></td>
+<td>
+<p>Number of iterations after warmup.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>start.vals</code></td>
+<td>
+<p>Starting values for the changepoint algorithm. Either NA valued or a named list
+of lists. If list, the names of the lists should be "cp2","cp1", and "cp0". Each list posessing
+one of those aforementioned names is a list of starting values identical to what would be given
+if the changepoint algorithm were to be run with the corresponding number of specified changepoints.
+List with elements "sigma", "l", "cp", "beta", and "intercept." "sigma" and "l"
+are 3 element vectors where the first element is for the data on the left groove.
+The second element is for the land engraved area, and the third element is for the right groove.
+"cp" is the vector of changepoint starting values. "beta" and "intercept" are two element vectors
+of the slope and intercept for the left and right groove engraved area respectively. If NA,
+default starting values will be used. Note that the changepoint starting values should always be
+near the edges of the data.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>prop_var</code></td>
+<td>
+<p>Either NA valued or a list of named lists. If list, the names of the lists should be "cp2","cp1", and "cp0".
+Each list posessing
+one of those aforementioned names is a list of proposal covariance matrices identical to what would be given
+if the changepoint algorithm were to be run with the corresponding number of specified changepoints.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>cp_prop_var</code></td>
+<td>
+<p>The proposal variance-covariance matrix for the changepoints. Can either be
+NA or a named list. If list, the names of the list items should be "cp2", "cp1" where each is the appropriate
+proposal variance/covariance matrix for the number of changepoints.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>tol_edge</code></td>
+<td>
+<p>This parameter controls how close changepoint proposals can be to the edge of the data
+before getting automatically rejected. For example, a value of 10 means that the changepoint will be
+automatically rejected if either of the proposal changepoints is within a distance of 10 x-values from either edge.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>tol_cp</code></td>
+<td>
+<p>This parameter controls how close changepoint proposals can be to each other
+before getting automatically rejected. For example, a value of 10 means that the changepoint will be
+automatically rejected if either of the proposal changepoints is within a distance of 10 x-values from either each other.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>warmup</code></td>
+<td>
+<p>The number of warmup iterations. This should be set to a very small number of iterations,
+as using too many iterations as warmup risks moving past the changepoints and getting stuck in a local mode.
+Default is set to 500.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>verbose</code></td>
+<td>
+<p>Logical value indicating whether to print the iteration number and the parameter proposals.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>prior_numcp</code></td>
+<td>
+<p>This is a vector with four elements giving the prior probabilities for the zero changepoint model,
+the one changepoint on the left model, the one changepoint on the right model, and the two changepoint model, in that order.
+Note that, practically, because the likelihood values are so large, only very strong priors will influence the results.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>est_impute_par</code></td>
+<td>
+<p>Logical value indicating whether parameters for the Gaussian process
+imputation should be estimated before actually doing the imputation. Default is FALSE, in which case
+the default imputation standard deviation is 0.8 and the length scale is 15. The covariance function
+is a squared exponential. These values have worked well in testing.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>impute_par</code></td>
+<td>
+<p>A two element vector containing the standard deviation and length scale (in that order)
+to use for the Gaussian process imputation. These values will not be used if the est_impute_par
+argument is set to TRUE.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>A named list containing the output from variable_cp_gibbs function, the range of
+data that was actually used for the changepoint algorithm (since it doesn't impute values
+past the outermost non-missing values), and the estimated groove locations.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R"># Fake data
+sim_groove &lt;- function(beta = c(-0.28,0.28), a = 125)
+{
+    x &lt;- seq(from = 0, to = 2158, by = 20)
+    med &lt;- median(x)
+    y &lt;- 1*(x &lt;= a)*(beta[1]*(x - med) - beta[1]*(a - med)) +
+    1*(x &gt;= 2158 - a)*(beta[2]*(x - med) - beta[2]*(2158 - a - med))
+    return(data.frame("x" = x, "y" = y))
+}
+
+fake_groove &lt;- sim_groove()
+cp_gibbs2 &lt;- detect_cp(data = fake_groove,
+                    verbose = FALSE,
+                    tol_edge = 50,
+                    tol_cp = 1000,
+                    iter = 300,
+                    warmup = 100,
+                    est_impute_par = FALSE)
+
+</code></pre>
+
+
+</div>

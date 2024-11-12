@@ -1,0 +1,156 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>snp_fastImpute</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Fast imputation</h2>
+
+<h3>Description</h3>
+
+<p>Fast imputation algorithm based on local XGBoost models.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">snp_fastImpute(
+  Gna,
+  infos.chr,
+  alpha = 1e-04,
+  size = 200,
+  p.train = 0.8,
+  n.cor = nrow(Gna),
+  seed = NA,
+  ncores = 1
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>Gna</code></td>
+<td>
+<p>A FBM.code256
+(typically <code style="white-space: pre;">⁠&lt;bigSNP&gt;$genotypes⁠</code>).<br>
+You can have missing values in these data.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>infos.chr</code></td>
+<td>
+<p>Vector of integers specifying each SNP's chromosome.<br>
+Typically <code style="white-space: pre;">⁠&lt;bigSNP&gt;$map$chromosome⁠</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>alpha</code></td>
+<td>
+<p>Type-I error for testing correlations. Default is <code>1e-4</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>size</code></td>
+<td>
+<p>Number of neighbor SNPs to be possibly included in the model
+imputing this particular SNP. Default is <code>200</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>p.train</code></td>
+<td>
+<p>Proportion of non missing genotypes that are used for training
+the imputation model while the rest is used to assess the accuracy of
+this imputation model. Default is <code>0.8</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>n.cor</code></td>
+<td>
+<p>Number of rows that are used to estimate correlations.
+Default uses them all.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>seed</code></td>
+<td>
+<p>An integer, for reproducibility. Default doesn't use seeds.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ncores</code></td>
+<td>
+<p>Number of cores used. Default doesn't use parallelism.
+You may use <code>bigstatsr::nb_cores()</code>.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>An FBM with
+</p>
+
+<ul>
+<li>
+<p> the proportion of missing values by SNP (first row),
+</p>
+</li>
+<li>
+<p> the estimated proportion of imputation errors by SNP (second row).
+</p>
+</li>
+</ul>
+<h3>See Also</h3>
+
+<p><code>snp_fastImputeSimple()</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## Not run: 
+
+fake &lt;- snp_attachExtdata("example-missing.bed")
+G &lt;- fake$genotypes
+CHR &lt;- fake$map$chromosome
+infos &lt;- snp_fastImpute(G, CHR)
+infos[, 1:5]
+
+# Still missing values
+big_counts(G, ind.col = 1:10)
+# You need to change the code of G
+# To make this permanent, you need to save (modify) the file on disk
+fake$genotypes$code256 &lt;- CODE_IMPUTE_PRED
+fake &lt;- snp_save(fake)
+big_counts(fake$genotypes, ind.col = 1:10)
+
+# Plot for post-checking
+## Here there is no SNP with more than 1% error (estimated)
+pvals &lt;- c(0.01, 0.005, 0.002, 0.001); colvals &lt;- 2:5
+df &lt;- data.frame(pNA = infos[1, ], pError = infos[2, ])
+
+# base R
+plot(subset(df, pNA &gt; 0.001), pch = 20)
+idc &lt;- lapply(seq_along(pvals), function(i) {
+  curve(pvals[i] / x, from = 0, lwd = 2,
+        col = colvals[i], add = TRUE)
+})
+legend("topright", legend = pvals, title = "p(NA &amp; Error)",
+       col = colvals, lty = 1, lwd = 2)
+
+# ggplot2
+library(ggplot2)
+Reduce(function(p, i) {
+  p + stat_function(fun = function(x) pvals[i] / x, color = colvals[i])
+}, x = seq_along(pvals), init = ggplot(df, aes(pNA, pError))) +
+  geom_point() +
+  coord_cartesian(ylim = range(df$pError, na.rm = TRUE)) +
+  theme_bigstatsr()
+
+## End(Not run)
+</code></pre>
+
+
+</div>

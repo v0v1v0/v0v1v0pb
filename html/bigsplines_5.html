@@ -1,0 +1,514 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>bigssg</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>
+Fits Generalized Smoothing Spline ANOVA Models
+</h2>
+
+<h3>Description</h3>
+
+<p>Given an exponential family response vector <code class="reqn">\mathbf{y}=\{y_{i}\}_{n\times1}</code>, a Generalized Smoothing Spline Anova (GSSA) has the form </p>
+<p style="text-align: center;"><code class="reqn">g(\mu_{i}) = \eta(\mathbf{x}_{i})</code>
+</p>
+<p> where <code class="reqn">\mu_{i}</code> is the expected value of the <code class="reqn">i</code>-th observation's respone, <code class="reqn">g(\cdot)</code> is some invertible link function, <code class="reqn">\mathbf{x}_{i}=(x_{i1},\ldots,x_{ip})</code> is the <code class="reqn">i</code>-th observation's nonparametric predictor vector, and <code class="reqn">\eta</code> is an unknown smooth function relating the response and nonparametric predictors. Function can fit additive models, and also allows for 2-way and 3-way interactions between any number of predictors. Response can be one of five non-Gaussian distributions: Binomial, Poisson, Gamma, Inverse Gaussian, or Negative Binomial (see Details and Examples).
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">bigssg(formula,family,data=NULL,type=NULL,nknots=NULL,rparm=NA,
+       lambdas=NULL,skip.iter=TRUE,se.lp=FALSE,rseed=1234,
+       gcvopts=NULL,knotcheck=TRUE,gammas=NULL,weights=NULL,
+       gcvtype=c("acv","gacv","gacv.old"))
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>formula</code></td>
+<td>
+
+<p>An object of class "<code>formula</code>": a symbolic description of the model to be fitted (see Details and Examples for more information).
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>family</code></td>
+<td>
+
+<p>Distribution for response. One of five options: <code>"binomial"</code>, <code>"poisson"</code>, <code>"Gamma"</code>, <code>"inverse.gaussian"</code>, or <code>"negbin"</code>. See Response section.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+
+<p>Optional data frame, list, or environment containing the variables in <code>formula</code>. Or an object of class "makessg", which is output from <code>makessg</code>.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>type</code></td>
+<td>
+
+<p>List of smoothing spline types for predictors in <code>formula</code> (see Details). Options include <code>type="cub"</code> for cubic, <code>type="cub0"</code> for another cubic, <code>type="per"</code> for cubic periodic, <code>type="tps"</code> for cubic thin-plate, <code>type="ord"</code> for ordinal, and <code>type="nom"</code> for nominal.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nknots</code></td>
+<td>
+
+<p>Two possible options: (a) scalar giving total number of random knots to sample, or (b) vector indexing which rows of <code>data</code> to use as knots.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>rparm</code></td>
+<td>
+
+<p>List of rounding parameters for each predictor. See Details. 
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>lambdas</code></td>
+<td>
+
+<p>Vector of global smoothing parameters to try. Default <code>lambdas=10^-c(9:0)</code>.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>skip.iter</code></td>
+<td>
+
+<p>Logical indicating whether to skip the iterative smoothing parameter update. Using <code>skip.iter=FALSE</code> should provide a more optimal solution, but the fitting time may be substantially longer. See Skip Iteration section.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>se.lp</code></td>
+<td>
+
+<p>Logical indicating if the standard errors of the linear predictors (<code class="reqn">\eta</code>) should be estimated.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>rseed</code></td>
+<td>
+
+<p>Random seed for knot sampling. Input is ignored if <code>nknots</code> is an input vector of knot indices. Set <code>rseed=NULL</code> to obtain a different knot sample each time, or set <code>rseed</code> to any positive integer to use a different seed than the default.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>gcvopts</code></td>
+<td>
+
+<p>Control parameters for optimization. List with 6 elements: (i) <code>maxit</code>: maximum number of outer iterations, (ii) <code>gcvtol</code>: covergence tolerance for iterative GACV update, (iii) <code>alpha</code>: tuning parameter for GACV minimization, (iv) <code>inmaxit</code>: maximum number of inner iterations for iteratively reweighted fitting, (v) <code>intol</code>: inner convergence tolerance for iteratively reweighted fitting, and (vi) <code>insub</code>: number of data points to subsample when checking inner convergence. <code>gcvopts=list(maxit=5,gcvtol=10^-5,alpha=1,inmaxit=100,intol=10^-5,insub=10^4)</code>
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>knotcheck</code></td>
+<td>
+
+<p>If <code>TRUE</code>, only unique knots are used (for stability).  
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>gammas</code></td>
+<td>
+
+<p>List of initial smoothing parameters for each predictor. See Details. 
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>weights</code></td>
+<td>
+
+<p>Vector of positive weights for fitting (default is vector of ones).  
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>gcvtype</code></td>
+<td>
+
+<p>Cross-validation criterion for selecting smoothing parameters (see Details).
+</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The <code>formula</code> syntax is similar to that used in <code>lm</code> and many other R regression functions. Use <code>y~x</code> to predict the response <code>y</code> from the predictor <code>x</code>. Use <code>y~x1+x2</code> to fit an additive model of the predictors <code>x1</code> and <code>x2</code>, and use <code>y~x1*x2</code> to fit an interaction model. The syntax <code>y~x1*x2</code> includes the interaction and main effects, whereas the syntax <code>y~x1:x2</code> is not supported. See Computational Details for specifics about how nonparametric effects are estimated.
+</p>
+<p>See <code>bigspline</code> for definitions of <code>type="cub"</code>, <code>type="cub0"</code>, and <code>type="per"</code> splines, which can handle one-dimensional predictors. See Appendix of Helwig and Ma (2015) for information about <code>type="tps"</code> and <code>type="nom"</code> splines. Note that <code>type="tps"</code> can handle one-, two-, or three-dimensional predictors. I recommend using <code>type="cub"</code> if the predictor scores have no extreme outliers; when outliers are present, <code>type="tps"</code> may produce a better result. 
+</p>
+<p>Using the rounding parameter input <code>rparm</code> can greatly speed-up and stabilize the fitting for large samples. For typical cases, I recommend using <code>rparm=0.01</code> for cubic and periodic splines, but smaller rounding parameters may be needed for particularly jagged functions. For thin-plate splines, the data are NOT transformed to the interval [0,1] before fitting, so rounding parameter should be on raw data scale. Also, for <code>type="tps"</code> you can enter one rounding parameter for each predictor dimension. Use <code>rparm=1</code> for ordinal and nominal splines.
+</p>
+
+
+<h3>Value</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>fitted.values</code></td>
+<td>
+<p>Vector of fitted values (data scale) corresponding to the original data points in <code>xvars</code> (if <code>rparm=NA</code>) or the rounded data points in <code>xunique</code> (if <code>rparm</code> is used).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>linear.predictors</code></td>
+<td>
+<p>Vector of fitted values (link scale) corresponding to the original data points in <code>xvars</code> (if <code>rparm=NA</code>) or the rounded data points in <code>xunique</code> (if <code>rparm</code> is used).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>se.lp</code></td>
+<td>
+<p>Vector of standard errors of <code>linear.predictors</code> (if input <code>se.lp=TRUE)</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>yvar</code></td>
+<td>
+<p>Response vector.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>xvars</code></td>
+<td>
+<p>List of predictors.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>type</code></td>
+<td>
+<p>Type of smoothing spline that was used for each predictor.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>yunique</code></td>
+<td>
+<p>Mean of <code>yvar</code> for unique points after rounding (if <code>rparm</code> is used).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>xunique</code></td>
+<td>
+<p>Unique rows of <code>xvars</code> after rounding (if <code>rparm</code> is used).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>dispersion</code></td>
+<td>
+<p>Estimated dispersion parameter (see Response section).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ndf</code></td>
+<td>
+<p>Data frame with two elements: <code>n</code> is total sample size, and <code>df</code> is effective degrees of freedom of fit model (trace of smoothing matrix).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>info</code></td>
+<td>
+<p>Model fit information: vector containing the GCV, multiple R-squared, AIC, and BIC of fit model.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>modelspec</code></td>
+<td>
+<p>List containing specifics of fit model (needed for prediction).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>converged</code></td>
+<td>
+<p>Convergence status: <code>converged=TRUE</code> if iterative update converged, <code>converged=FALSE</code> if iterative update failed to converge, and <code>converged=NA</code> if option <code>skip.iter=TRUE</code> was used.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>tnames</code></td>
+<td>
+<p>Names of the terms in model.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>family</code></td>
+<td>
+<p>Distribution family (same as input).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>call</code></td>
+<td>
+<p>Called model in input <code>formula</code>.</p>
+</td>
+</tr>
+</table>
+<h3>Warnings </h3>
+
+<p>Cubic and cubic periodic splines transform the predictor to the interval [0,1] before fitting.
+</p>
+<p>When using rounding parameters, output <code>fitted.values</code> corresponds to unique rounded predictor scores in output <code>xunique</code>. Use <code>predict.bigssg</code> function to get fitted values for full <code>yvar</code> vector.
+</p>
+
+
+<h3>Response</h3>
+
+<p>Only one link is permitted for each family:
+</p>
+<p><code>family="binomial"</code>
+Logit link. Response should be vector of proportions in the interval [0,1]. If response is a sample proportion, the total count should be input through <code>weights</code> argument.
+</p>
+<p><code>family="poisson"</code>
+Log link. Response should be vector of counts (non-negative integers).
+</p>
+<p><code>family="Gamma"</code>
+Inverse link. Response should be vector of positive real-valued data. Estimated <code>dispersion</code> parameter is the inverse of the <code>shape</code> parameter, so that the variance of the response increases as <code>dispersion</code> increases.
+</p>
+<p><code>family="inverse.gaussian"</code>
+Inverse-square link. Response should be vector of positive real-valued data. Estimated <code>dispersion</code> parameter is the inverse of the <code>shape</code> parameter, so that the variance of the response increases as <code>dispersion</code> increases.
+</p>
+<p><code>family="negbin"</code>
+Log link. Response should be vector of counts (non-negative integers). Estimated <code>dispersion</code> parameter is the inverse of the <code>size</code> parameter, so that the variance of the response increases as <code>dispersion</code> increases. 
+</p>
+<p><code>family=list("negbin",2)</code>
+Log link. Response should be vector of counts (non-negative integers). Second element is the known (common) <code>dispersion</code> parameter (2 in this case). The input <code>dispersion</code> parameter should be the inverse of the <code>size</code> parameter, so that the variance of the response increases as <code>dispersion</code> increases.
+</p>
+
+
+<h3>Computational Details </h3>
+
+<p>To estimate <code class="reqn">\eta</code> I minimize the (negative of the) penalized log likelihood </p>
+<p style="text-align: center;"><code class="reqn">-\frac{1}{n}\sum_{i=1}^{n}\left\{y_{i}\eta(\mathbf{x}_{i}) - b(\eta(\mathbf{x}_{i})) \right\} + \frac{\lambda}{2} J(\eta)</code>
+</p>
+<p> where <code class="reqn">J(\cdot)</code> is a nonnegative penalty functional quantifying the roughness of <code class="reqn">\eta</code> and <code class="reqn">\lambda&gt;0</code> is a smoothing parameter controlling the trade-off between fitting and smoothing the data. Note that for <code class="reqn">p&gt;1</code> nonparametric predictors, there are additional <code class="reqn">\theta_{k}</code> smoothing parameters embedded in <code class="reqn">J</code>. 
+</p>
+<p>Following standard exponential family theory, <code class="reqn">\mu_{i} = \dot{b}(\eta(\mathbf{x}_{i}))</code> and <code class="reqn">v_{i} = \ddot{b}(\eta(\mathbf{x}_{i}))a(\xi)</code>, where <code class="reqn">\dot{b}(\cdot)</code> and <code class="reqn">\ddot{b}(\cdot)</code> denote the first and second derivatives of <code class="reqn">b(\cdot)</code>, <code class="reqn">v_{i}</code> is the variance of <code class="reqn">y_{i}</code>,and <code class="reqn">\xi</code> is the dispersion parameter. Given fixed smoothing parameters, the optimal <code class="reqn">\eta</code> can be estimated by iteratively minimizing the penalized reweighted least-squares functional </p>
+<p style="text-align: center;"><code class="reqn">\frac{1}{n}\sum_{i=1}^{n}v_{i}^{*}\left(y_{i}^{*} - \eta(\mathbf{x}_{i}) \right)^{2} + \lambda J(\eta)</code>
+</p>
+<p> where <code class="reqn">v_{i}^{*}=v_{i}/a(\xi)</code> is the weight, <code class="reqn">y_{i}^{*}=\hat{\eta}(\mathbf{x}_{i})+(y_{i}-\hat{\mu}_{i})/v_{i}^{*}</code> is the adjusted dependent variable, and <code class="reqn">\hat{\eta}(\mathbf{x}_{i})</code> is the current estimate of <code class="reqn">\eta</code>.
+</p>
+<p>The optimal smoothing parameters are chosen via direct cross-validation (see Gu &amp; Xiang, 2001). 
+</p>
+<p>Setting <code>gcvtype="acv"</code> uses the Approximate Cross-Validation (ACV) score: </p>
+<p style="text-align: center;"><code class="reqn">-\frac{1}{n}\sum_{i=1}^{n}\{y_{i}\hat{\eta}(\mathbf{x}_{i}) - b(\hat{\eta}(\mathbf{x}_{i}))\} + \frac{1}{n}\sum_{i=1}^{n}\frac{s_{ii}}{(1-s_{ii})v_{i}^{*}}y_{i}(y_{i}-\hat{\mu}_{i}) </code>
+</p>
+<p> where <code class="reqn">s_{ii}</code> is the i-th diagonal of the smoothing matrix <code class="reqn">\mathbf{S}_{\boldsymbol\lambda}</code>.
+</p>
+<p>Setting <code>gcvtype="gacv"</code> uses the Generalized ACV (GACV) score: </p>
+<p style="text-align: center;"><code class="reqn">-\frac{1}{n}\sum_{i=1}^{n}\{y_{i}\hat{\eta}(\mathbf{x}_{i}) - b(\hat{\eta}(\mathbf{x}_{i}))\} + \frac{\mathrm{tr}(\mathbf{S}_{\boldsymbol\lambda}\mathbf{V}^{-1})}{n-\mathrm{tr}(\mathbf{S}_{\boldsymbol\lambda})}\frac{1}{n}\sum_{i=1}^{n}y_{i}(y_{i}-\hat{\mu}_{i}) </code>
+</p>
+<p> where <code class="reqn">\mathbf{S}_{\boldsymbol\lambda}</code> is the smoothing matrix, and <code class="reqn">\mathbf{V}=\mathrm{diag}(v_{1}^{*},\ldots,v_{n}^{*})</code>. 
+</p>
+<p>Setting <code>gcvtype="gacv.old"</code> uses an approximation of the GACV where <code class="reqn">\frac{1}{n}\mathrm{tr}(\mathbf{S}_{\boldsymbol\lambda}\mathbf{V}^{-1})</code> is approximated using <code class="reqn">\frac{1}{n^2}\mathrm{tr}(\mathbf{S}_{\boldsymbol\lambda})\mathrm{tr}(\mathbf{V}^{-1})</code>. This option is included for back-compatibility (ver 1.0-4 and earlier), and is not recommended because the ACV or GACV often perform better.
+</p>
+<p>Note that this function uses the efficient SSA reparameterization described in Helwig (2013) and Helwig and Ma (2015); using is parameterization, there is one unique smoothing parameter per predictor (<code class="reqn">\gamma_{j}</code>), and these <code class="reqn">\gamma_{j}</code> parameters determine the structure of the <code class="reqn">\theta_{k}</code> parameters in the tensor product space. To evaluate the ACV/GACV score, this function uses the improved (scalable) GSSA algorithm discussed in Helwig (in preparation).
+</p>
+
+
+<h3>Skip Iteration </h3>
+
+<p>For <code class="reqn">p&gt;1</code> predictors, initial values for the <code class="reqn">\gamma_{j}</code> parameters (that determine the structure of the <code class="reqn">\theta_{k}</code> parameters) are estimated using an extension of the smart starting algorithm described in Helwig (2013) and Helwig and Ma (2015). 
+</p>
+<p>Default use of this function (<code>skip.iter=TRUE</code>) fixes the <code class="reqn">\gamma_{j}</code> parameters afer the smart start, and then finds the global smoothing parameter <code class="reqn">\lambda</code> (among the input <code>lambdas</code>) that minimizes the GCV score. This approach typically produces a solution very similar to the more optimal solution using <code>skip.iter=FALSE</code>.
+</p>
+<p>Setting <code>skip.iter=FALSE</code> uses the same smart starting algorithm as setting <code>skip.iter=TRUE</code>. However, instead of fixing the <code class="reqn">\gamma_{j}</code> parameters afer the smart start, using <code>skip.iter=FALSE</code> iterates between estimating the optimal <code class="reqn">\lambda</code> and the optimal <code class="reqn">\gamma_{j}</code> parameters. The R function <code>nlm</code> is used to minimize the approximate GACV score with respect to the <code class="reqn">\gamma_{j}</code> parameters, which can be time consuming for models with many predictors and/or a large number of knots.
+</p>
+
+
+<h3>Note</h3>
+
+<p>The spline is estimated using penalized likelihood estimation. Standard errors of the linear predictors are formed using Bayesian confidence intervals.
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Nathaniel E. Helwig &lt;helwig@umn.edu&gt;
+</p>
+
+
+<h3>References</h3>
+
+<p>Gu, C. (2013). <em>Smoothing spline ANOVA models, 2nd edition</em>. New York: Springer.
+</p>
+<p>Gu, C. and Xiang, D. (2001). Cross-validating non-Gaussian data: Generalized approximate cross-validation revisited. <em>Journal of Computational and Graphical Statistics, 10</em>, 581-591.
+</p>
+<p>Helwig, N. E. (2017). <a href="http://dx.doi.org/10.3389/fams.2017.00015">Regression with ordered predictors via ordinal smoothing splines</a>. Frontiers in Applied Mathematics and Statistics, 3(15), 1-13.
+</p>
+<p>Helwig, N. E. and Ma, P. (2015). Fast and stable multiple smoothing parameter selection in smoothing spline analysis of variance models with large samples. <em>Journal of Computational and Graphical Statistics, 24</em>, 715-732.
+</p>
+<p>Helwig, N. E. and Ma, P. (2016). Smoothing spline ANOVA for super-large samples: Scalable computation via rounding parameters. <em>Statistics and Its Interface, 9</em>, 433-444.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+##########   EXAMPLE 1 (1-way GSSA)   ##########
+
+# define univariate function and data
+set.seed(1)
+myfun &lt;- function(x){ sin(2*pi*x) }
+ndpts &lt;- 1000
+x &lt;- runif(ndpts)
+
+# binomial response (no weights)
+set.seed(773)
+lp &lt;- myfun(x)
+p &lt;- 1/(1+exp(-lp))
+y &lt;- rbinom(n=ndpts,size=1,p=p)     ## y is binary data
+gmod &lt;- bigssg(y~x,family="binomial",type="cub",nknots=20)
+crossprod( lp - gmod$linear.predictor )/length(lp)
+
+# binomial response (with weights)
+set.seed(773)
+lp &lt;- myfun(x)
+p &lt;- 1/(1+exp(-lp))
+w &lt;- sample(c(10,20,30,40,50),length(p),replace=TRUE)
+y &lt;- rbinom(n=ndpts,size=w,p=p)/w   ## y is proportion correct
+gmod &lt;- bigssg(y~x,family="binomial",type="cub",nknots=20,weights=w)
+crossprod( lp - gmod$linear.predictor )/length(lp)
+
+# poisson response
+set.seed(773)
+lp &lt;- myfun(x)
+mu &lt;- exp(lp)
+y &lt;- rpois(n=ndpts,lambda=mu)
+gmod &lt;- bigssg(y~x,family="poisson",type="cub",nknots=20)
+crossprod( lp - gmod$linear.predictor )/length(lp)
+
+# Gamma response
+set.seed(773)
+lp &lt;- myfun(x) + 2
+mu &lt;- 1/lp
+y &lt;- rgamma(n=ndpts,shape=4,scale=mu/4)
+gmod &lt;- bigssg(y~x,family="Gamma",type="cub",nknots=20)
+1/gmod$dispersion   ## dispersion = 1/shape
+crossprod( lp - gmod$linear.predictor )/length(lp)
+
+# inverse gaussian response (not run: requires statmod package)
+# require(statmod)
+# set.seed(773)
+# lp &lt;- myfun(x) + 2
+# mu &lt;- sqrt(1/lp)
+# y &lt;- rinvgauss(n=ndpts,mean=mu,shape=2)
+# gmod &lt;- bigssg(y~x,family="inverse.gaussian",type="cub",nknots=20)
+# 1/gmod$dispersion   ## dispersion = 1/shape
+# crossprod( lp - gmod$linear.predictor )/length(lp)
+
+# negative binomial response (known dispersion)
+set.seed(773)
+lp &lt;- myfun(x)
+mu &lt;- exp(lp)
+y &lt;- rnbinom(n=ndpts,size=.5,mu=mu)
+gmod &lt;- bigssg(y~x,family=list("negbin",2),type="cub",nknots=20)
+1/gmod$dispersion   ## dispersion = 1/size
+crossprod( lp - gmod$linear.predictor )/length(lp)
+
+# negative binomial response (unknown dispersion)
+set.seed(773)
+lp &lt;- myfun(x)
+mu &lt;- exp(lp)
+y &lt;- rnbinom(n=ndpts,size=.5,mu=mu)
+gmod &lt;- bigssg(y~x,family="negbin",type="cub",nknots=20)
+1/gmod$dispersion   ## dispersion = 1/size
+crossprod( lp - gmod$linear.predictor )/length(lp)
+
+## Not run: 
+
+##########   EXAMPLE 2 (2-way GSSA)   ##########
+
+# function with two continuous predictors
+set.seed(1)
+myfun &lt;- function(x1v,x2v){
+  sin(2*pi*x1v) + log(x2v+.1) + cos(pi*(x1v-x2v))
+}
+ndpts &lt;- 1000
+x1v &lt;- runif(ndpts)
+x2v &lt;- runif(ndpts)
+
+# binomial response (no weights)
+set.seed(773)
+lp &lt;- myfun(x1v,x2v)
+p &lt;- 1/(1+exp(-lp))
+y &lt;- rbinom(n=ndpts,size=1,p=p)     ## y is binary data
+gmod &lt;- bigssg(y~x1v*x2v,family="binomial",type=list(x1v="cub",x2v="cub"),nknots=50)
+crossprod( lp - gmod$linear.predictor )/length(lp)
+
+# binomial response (with weights)
+set.seed(773)
+lp &lt;- myfun(x1v,x2v)
+p &lt;- 1/(1+exp(-lp))
+w &lt;- sample(c(10,20,30,40,50),length(p),replace=TRUE)
+y &lt;- rbinom(n=ndpts,size=w,p=p)/w   ## y is proportion correct
+gmod &lt;- bigssg(y~x1v*x2v,family="binomial",type=list(x1v="cub",x2v="cub"),nknots=50,weights=w)
+crossprod( lp - gmod$linear.predictor )/length(lp)
+
+# poisson response
+set.seed(773)
+lp &lt;- myfun(x1v,x2v)
+mu &lt;- exp(lp)
+y &lt;- rpois(n=ndpts,lambda=mu)
+gmod &lt;- bigssg(y~x1v*x2v,family="poisson",type=list(x1v="cub",x2v="cub"),nknots=50)
+crossprod( lp - gmod$linear.predictor )/length(lp)
+
+# Gamma response
+set.seed(773)
+lp &lt;- myfun(x1v,x2v)+6
+mu &lt;- 1/lp
+y &lt;- rgamma(n=ndpts,shape=4,scale=mu/4)
+gmod &lt;- bigssg(y~x1v*x2v,family="Gamma",type=list(x1v="cub",x2v="cub"),nknots=50)
+1/gmod$dispersion   ## dispersion = 1/shape
+crossprod( lp - gmod$linear.predictor )/length(lp)
+
+# inverse gaussian response (not run: requires 'statmod' package)
+# require(statmod)
+# set.seed(773)
+# lp &lt;- myfun(x1v,x2v)+6
+# mu &lt;- sqrt(1/lp)
+# y &lt;- rinvgauss(n=ndpts,mean=mu,shape=2)
+# gmod &lt;- bigssg(y~x1v*x2v,family="inverse.gaussian",type=list(x1v="cub",x2v="cub"),nknots=50)
+# 1/gmod$dispersion   ## dispersion = 1/shape
+# crossprod( lp - gmod$linear.predictor )/length(lp)
+
+# negative binomial response (known dispersion)
+set.seed(773)
+lp &lt;- myfun(x1v,x2v)
+mu &lt;- exp(lp)
+y &lt;- rnbinom(n=ndpts,size=.5,mu=mu)
+gmod &lt;- bigssg(y~x1v*x2v,family=list("negbin",2),type=list(x1v="cub",x2v="cub"),nknots=50)
+1/gmod$dispersion   ## dispersion = 1/size
+crossprod( lp - gmod$linear.predictor )/length(lp)
+
+# negative binomial response (unknown dispersion)
+set.seed(773)
+lp &lt;- myfun(x1v,x2v)
+mu &lt;- exp(lp)
+y &lt;- rnbinom(n=ndpts,size=.5,mu=mu)
+gmod &lt;- bigssg(y~x1v*x2v,family="negbin",type=list(x1v="cub",x2v="cub"),nknots=50)
+1/gmod$dispersion   ## dispersion = 1/size
+crossprod( lp - gmod$linear.predictor )/length(lp)
+
+## End(Not run)
+
+</code></pre>
+
+
+</div>

@@ -1,0 +1,118 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>batchMap</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Map Operation for Batch Systems</h2>
+
+<h3>Description</h3>
+
+<p>A parallel and asynchronous <code>Map</code>/<code>mapply</code> for batch systems.
+Note that this function only defines the computational jobs.
+The actual computation is started with <code>submitJobs</code>.
+Results and partial results can be collected with <code>reduceResultsList</code>, <code>reduceResults</code> or
+<code>loadResult</code>.
+</p>
+<p>For a synchronous <code>Map</code>-like execution, see <code>btmapply</code>.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">batchMap(
+  fun,
+  ...,
+  args = list(),
+  more.args = list(),
+  reg = getDefaultRegistry()
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>fun</code></td>
+<td>
+<p>[<code>function</code>]<br>
+Function to map over arguments provided via <code>...</code>.
+Parameters given via <code>args</code> or <code>...</code> are passed as-is, in the respective order and possibly named.
+If the function has the named formal argument “.job”, the <code>Job</code> is passed to the function
+on the slave.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>[ANY]<br>
+Arguments to vectorize over (list or vector).
+Shorter vectors will be recycled (possibly with a warning any length is not a multiple of the longest length).
+Mutually exclusive with <code>args</code>.
+Note that although it is possible to iterate over large objects (e.g., lists of data frames or matrices), this usually
+hurts the overall performance and thus is discouraged.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>args</code></td>
+<td>
+<p>[<code>list</code> | <code>data.frame</code>]<br>
+Arguments to vectorize over as (named) list or data frame.
+Shorter vectors will be recycled (possibly with a warning any length is not a multiple of the longest length).
+Mutually exclusive with <code>...</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>more.args</code></td>
+<td>
+<p>[<code>list</code>]<br>
+A list of further arguments passed to <code>fun</code>.
+Default is an empty list.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>reg</code></td>
+<td>
+<p>[<code>Registry</code>]<br>
+Registry. If not explicitly passed, uses the default registry (see <code>setDefaultRegistry</code>).</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>[<code>data.table</code>] with ids of added jobs stored in column “job.id”.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>batchReduce</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+# example using "..." and more.args
+tmp = makeRegistry(file.dir = NA, make.default = FALSE)
+f = function(x, y) x^2 + y
+ids = batchMap(f, x = 1:10, more.args = list(y = 100), reg = tmp)
+getJobPars(reg = tmp)
+testJob(6, reg = tmp) # 100 + 6^2 = 136
+
+# vector recycling
+tmp = makeRegistry(file.dir = NA, make.default = FALSE)
+f = function(...) list(...)
+ids = batchMap(f, x = 1:3, y = 1:6, reg = tmp)
+getJobPars(reg = tmp)
+
+# example for an expand.grid()-like operation on parameters
+tmp = makeRegistry(file.dir = NA, make.default = FALSE)
+ids = batchMap(paste, args = data.table::CJ(x = letters[1:3], y = 1:3), reg = tmp)
+getJobPars(reg = tmp)
+testJob(6, reg = tmp)
+</code></pre>
+
+
+</div>

@@ -1,0 +1,662 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>brglm</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Bias reduction in Binomial-response GLMs</h2>
+
+<h3>Description</h3>
+
+<p>Fits binomial-response GLMs using the bias-reduction method developed in
+Firth (1993) for the removal of the leading (<code class="reqn">\mathop{\rm
+O}(n^{-1})</code>) term from the asymptotic expansion of the bias
+of the maximum likelihood estimator. Fitting is performed using
+pseudo-data representations, as described in Kosmidis (2007, Chapter 5). For
+estimation in binomial-response GLMs, the bias-reduction method is an
+improvement over traditional maximum likelihood because:
+</p>
+
+<ul>
+<li>
+<p> the bias-reduced estimator is second-order unbiased and has smaller
+variance than the maximum likelihood estimator and
+</p>
+</li>
+<li>
+<p> the resulting estimates and their corresponding standard errors
+are <b>always</b> finite while the maximum likelihood estimates
+can be infinite (in situations where complete or quasi separation
+occurs); see Kosmidis &amp; Firth (2021) for the proof of finiteness in
+logistic regression models.
+</p>
+</li>
+</ul>
+<h3>Usage</h3>
+
+<pre><code class="language-R">brglm(formula, family = binomial, data, weights, subset, na.action,
+      start = NULL, etastart, mustart, offset,
+      control.glm = glm.control1(...), model = TRUE, method = "brglm.fit",
+      pl = FALSE, x = FALSE, y = TRUE, contrasts = NULL,
+      control.brglm = brglm.control(...), ...)
+
+brglm.fit(x, y, weights = rep(1, nobs), start = NULL, etastart = NULL,
+          mustart = NULL, offset = rep(0, nobs), family = binomial(),
+          control = glm.control(), control.brglm = brglm.control(),
+          intercept = TRUE, pl = FALSE)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>formula</code></td>
+<td>
+<p>as in <code>glm</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>family</code></td>
+<td>
+<p>as in <code>glm</code>. <code>brglm</code> currently
+supports only the <code>"binomial"</code> family with links
+<code>"logit"</code>, <code>"probit"</code>, <code>"cloglog"</code>, <code>"cauchit"</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+<p>as in <code>glm</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>weights</code></td>
+<td>
+<p>as in <code>glm</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>subset</code></td>
+<td>
+<p>as in <code>glm</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>na.action</code></td>
+<td>
+<p>as in <code>glm</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>start</code></td>
+<td>
+<p>as in <code>glm</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>etastart</code></td>
+<td>
+<p>as in <code>glm</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>mustart</code></td>
+<td>
+<p>as in <code>glm</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>offset</code></td>
+<td>
+<p>as in <code>glm</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>control.glm</code></td>
+<td>
+<p><code>control.glm</code> replaces the <code>control</code>
+argument in <code>glm</code> but essentially does the same job. It
+is a list  of parameters to control <code>glm.fit</code>. See the
+documentation of  <code>glm.control1</code> for details.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>control</code></td>
+<td>
+<p>same as in <code>glm</code>. Only available to
+<code>brglm.fit</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>intercept</code></td>
+<td>
+<p>as in <code>glm</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>model</code></td>
+<td>
+<p>as in <code>glm</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>method</code></td>
+<td>
+<p>the method to be used for fitting the model. The default
+method is <code>"brglm.fit"</code>, which uses either the modified-scores
+approach to  estimation or maximum penalized likelihood (see
+the  <code>pl</code> argument below).  The standard
+<code>glm</code> methods <code>"glm.fit"</code> for maximum likelihood and
+<code>"model.frame"</code> for returning the model frame without any
+fitting, are also accepted.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>pl</code></td>
+<td>
+<p>a logical value indicating whether the
+model should be fitted using maximum penalized likelihood, where the
+penalization is done using Jeffreys invariant prior, or using the
+bias-reducing modified scores. It is only used when
+<code>method = "brglm.fit"</code>. The default value is <code>FALSE</code> (see also the
+Details section).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>as in <code>glm</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>y</code></td>
+<td>
+<p>as in <code>glm</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>contrasts</code></td>
+<td>
+<p>as in <code>glm</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>control.brglm</code></td>
+<td>
+<p>a list of parameters for controlling the fitting
+process when <code>method = "brglm.fit"</code>. See documentation of
+<code>brglm.control</code> for details.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>further arguments passed to or from other methods.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p><code>brglm.fit</code> is the workhorse function for fitting the model using
+either the bias-reduction method or maximum penalized likelihood. If
+<code>method = "glm.fit"</code>, usual maximum likelihood is used via
+<code>glm.fit</code>.
+</p>
+<p>The main iteration of <code>brglm.fit</code> consists of the following
+steps:
+</p>
+
+<ol>
+<li>
+<p>  Calculate the diagonal components of the hat matrix (see
+<code>gethats</code> and <code>hatvalues</code>).
+</p>
+</li>
+<li>
+<p> Obtain the pseudo-data representation at the current value of the
+parameters (see <code>modifications</code> for more information).
+</p>
+</li>
+<li>
+<p> Fit a local GLM, using <code>glm.fit</code> on the pseudo data.
+</p>
+</li>
+<li>
+<p> Adjust the quadratic weights to agree with the original
+binomial totals.
+</p>
+</li>
+</ol>
+<p>Iteration is repeated until either the iteration limit has been reached
+or the sum of the absolute values of the modified scores is less than
+some specified positive constant (see the <code>br.maxit</code> and
+<code>br.epsilon</code> arguments in <code>brglm.control</code>).
+</p>
+<p>The default value (<code>FALSE</code>) of <code>pl</code>, when <code>method = "brglm.fit"</code>,
+results in estimates that are free of any <code class="reqn">\mathop{\rm
+O}(n^{-1})</code> terms in the asymptotic expansion of their bias. When
+<code>pl = TRUE</code> bias-reduction is again achieved but generally not at
+such order of magnitude. In the case of logistic regression the value of
+<code>pl</code> is irrelevant since maximum penalized likelihood and the
+modified-scores approach coincide for natural exponential families (see
+Firth, 1993).
+</p>
+<p>For other language related details see the details section in
+<code>glm</code>.
+</p>
+
+
+<h3>Value</h3>
+
+<p><code>brglm</code> returns an object of class <code>"brglm"</code>. A
+<code>"brglm"</code> object inherits first from <code>"glm"</code> and then from
+<code>"lm"</code> and is a list containing the following components:
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>coefficients</code></td>
+<td>
+<p>as in <code>glm</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>residuals</code></td>
+<td>
+<p>as in <code>glm</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>fitted.values</code></td>
+<td>
+<p>as in <code>glm</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>effects</code></td>
+<td>
+<p>as in <code>glm</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>R</code></td>
+<td>
+<p>as in <code>glm</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>rank</code></td>
+<td>
+<p>as in <code>glm</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>qr</code></td>
+<td>
+<p>as in <code>glm</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>family</code></td>
+<td>
+<p>as in <code>glm</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>linear.predictors</code></td>
+<td>
+<p>as in <code>glm</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>deviance</code></td>
+<td>
+<p>as in <code>glm</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>aic</code></td>
+<td>
+<p>as in <code>glm</code> (see Details).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>null.deviance</code></td>
+<td>
+<p>as in <code>glm</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>iter</code></td>
+<td>
+<p>as in <code>glm</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>weights</code></td>
+<td>
+<p>as in <code>glm</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>prior.weights</code></td>
+<td>
+<p>as in <code>glm</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>df.residual</code></td>
+<td>
+<p>as in <code>glm</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>df.null</code></td>
+<td>
+<p>as in <code>glm</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>y</code></td>
+<td>
+<p>as in <code>glm</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>converged</code></td>
+<td>
+<p>as in <code>glm</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>boundary</code></td>
+<td>
+<p>as in <code>glm</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ModifiedScores</code></td>
+<td>
+<p>the vector of the modified scores for the
+parameters at the final iteration. If <code>pl = TRUE</code> they are the
+derivatives of the penalized likelihood at the final iteration.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>FisherInfo</code></td>
+<td>
+<p>the Fisher information matrix evaluated at the
+resulting estimates. Only available when <code>method = "brglm.fit"</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>hats</code></td>
+<td>
+<p>the diagonal elements of the hat matrix. Only available
+when <code>method = "brglm.fit"</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nIter</code></td>
+<td>
+<p>the number of iterations that were required until
+convergence. Only available when <code>method = "brglm.fit"</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>cur.model</code></td>
+<td>
+<p>a list with components <code>ar</code> and <code>at</code> which
+contains the values of the additive modifications to the responses
+(<code>y</code>) and to the binomial totals (<code>prior.weights</code>) at
+the resulting estimates (see <code>modifications</code> for more
+information). Only available  when <code>method = "brglm.fit"</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>model</code></td>
+<td>
+<p>as in <code>glm</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>call</code></td>
+<td>
+<p>as in <code>glm</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>formula</code></td>
+<td>
+<p>as in <code>glm</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>terms</code></td>
+<td>
+<p>as in <code>glm</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+<p>as in <code>glm</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>offset</code></td>
+<td>
+<p>as in <code>glm</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>control.glm</code></td>
+<td>
+<p>as <code>control</code> in the result of
+<code>glm</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>control.brglm</code></td>
+<td>
+<p>the <code>control.brglm</code> argument that was passed to
+<code>brglm</code>. Only available when <code>method = "brglm.fit"</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>method</code></td>
+<td>
+<p>the method used for fitting the model.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>contrasts</code></td>
+<td>
+<p>as in <code>glm</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>xlevels</code></td>
+<td>
+<p>as in <code>glm</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>pl</code></td>
+<td>
+<p>logical having the same value with the <code>pl</code>
+argument passed to <code>brglm</code>. Only available when <code>method =
+      "brglm.fit"</code>.</p>
+</td>
+</tr>
+</table>
+<h3>Warnings</h3>
+
+<p>1. It is not advised to use methods associated with model comparison
+(<code>add1</code>, <code>drop1</code>,
+<code>anova</code>, etc.) on objects of class
+<code>"brglm"</code>. Model comparison when estimation is performed using
+the modified scores or the penalized likelihood is an on-going
+research topic and will be implemented as soon as it is concluded.
+</p>
+<p>2. The use of Akaike's information criterion (AIC) for model selection
+when <code>method = "brglm.fit"</code> is asymptotically valid, because
+the log-likelihood derivatives dominate the modification (in terms
+of asymptotic order). 
+</p>
+
+
+<h3>Note</h3>
+
+<p>1. Supported methods for objects of class <code>"brglm"</code> are:
+</p>
+
+<ul>
+<li>
+<p><code>print</code>through <code>print.brglm</code>.
+</p>
+</li>
+<li>
+<p><code>summary</code>through <code>summary.brglm</code>.
+</p>
+</li>
+<li>
+<p><code>coefficients</code>inherited from the
+<code>"glm"</code> class.
+</p>
+</li>
+<li>
+<p><code>vcov</code>inherited from the<code>"glm"</code>
+class.
+</p>
+</li>
+<li>
+<p><code>predict</code>inherited from the<code>"glm"</code>
+class.
+</p>
+</li>
+<li>
+<p><code>residuals</code>inherited from the<code>"glm"</code>
+class.
+</p>
+</li>
+<li>
+<p>and other methods that apply to objects of class
+<code>"glm"</code>
+</p>
+</li>
+</ul>
+<p>2. A similar implementation of the bias-reduction method could be done
+for every GLM, following Kosmidis (2007) (see also Kosmidis and Firth,
+2009). The full set of families and links will be available in a
+future version. However, bias-reduction is not generally beneficial
+as it is in the binomial family and it could cause inflation of the
+variance (see Firth,  1993).
+</p>
+<p>3. Basically, the differences between maximum likelihood, maximum
+penalized likelihood and the modified scores approach are more
+apparent in small sample sizes, in sparse data sets and in cases
+where complete or quasi-complete separation occurs. Asymptotically
+(as <code class="reqn">n</code> goes to infinity), the three different approaches are
+equivalent to first order.
+</p>
+<p>4. When an offset is not present in the model, the modified-scores based
+estimates are usually smaller in magnitude than the corresponding
+maximum likelihood estimates, shrinking towards the origin of the
+scale imposed by the link function. Thus, the corresponding
+estimated asymptotic standard errors are also smaller.
+</p>
+<p>The same is true for the maximum penalized likelihood estimates when
+for example, the logit (where the maximum penalized likelihood and
+modified-scores approaches coincide) or the probit links are
+used. However, generally the maximum penalized likelihood estimates do
+not shrink towards the origin. In terms of mean-value
+parameterization, in the case of maximum penalized likelihood the
+fitted probabilities would shrink towards the point where the Jeffreys
+prior is maximized or equivalently where the  quadratic weights are
+simultaneously maximized (see Kosmidis, 2007).
+</p>
+<p>5. Implementations of the bias-reduction method for logistic
+regressions can also be found in the <span class="pkg">logistf</span> package. In
+addition to the obvious advantage of <code>brglm</code> in the range of
+link functions that can be used (<code>"logit"</code>, <code>"probit"</code>,
+<code>"cloglog"</code> and <code>"cauchit"</code>), <code>brglm</code> is also more
+efficient computationally. Furthermore, for any user-specified link
+function (see the Example section of <code>family</code>), the
+user can specify the corresponding pseudo-data representation to be
+used within <code>brglm</code> (see <code>modifications</code> for
+details).  </p>
+
+
+<h3>Author(s)</h3>
+
+<p>Ioannis Kosmidis, <a href="mailto:ioannis.kosmidis@warwick.ac.uk">ioannis.kosmidis@warwick.ac.uk</a></p>
+
+
+<h3>References</h3>
+
+<p>Kosmidis I. and Firth D. (2021). Jeffreys-prior penalty, finiteness
+and shrinkage in binomial-response generalized linear
+models. <em>Biometrika</em>, <b>108</b>, 71–82.
+</p>
+<p>Bull, S. B., Lewinger, J. B. and Lee, S. S. F. (2007). Confidence
+intervals for multinomial logistic regression in sparse
+data. <em>Statistics in Medicine</em> <b>26</b>, 903–918.
+</p>
+<p>Firth, D. (1992) Bias reduction, the Jeffreys prior and GLIM. In
+<em>Advances in GLIM and statistical modelling: Proceedings of the
+GLIM 92 conference, Munich</em>, Eds. L.~Fahrmeir, B.~Francis,
+R.~Gilchrist and G.Tutz, pp. 91–100. New York: Springer.
+</p>
+<p>Firth, D. (1992) Generalized linear models and Jeffreys priors: An
+iterative generalized least-squares approach. In <em>Computational
+Statistics I</em>, Eds. Y. Dodge and J. Whittaker. Heidelberg: Physica-Verlag.
+</p>
+<p>Firth, D. (1993). Bias reduction of maximum likelihood
+estimates. <em>Biometrika</em> <b>80</b>, 27–38.
+</p>
+<p>Heinze, G. and Schemper, M. (2002). A solution to the problem of
+separation in logistic regression. <em>Statistics in Medicine</em>
+<b>21</b>, 2409–2419.
+</p>
+<p>Kosmidis, I. (2007). Bias reduction in exponential family nonlinear
+models. <em>PhD Thesis</em>, Department of Statistics, University of
+Warwick.
+</p>
+<p>Kosmidis, I. and Firth, D. (2009). Bias reduction in exponential
+family nonlinear models. <em>Biometrika</em>
+<b>96</b>, 793–804.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>glm</code>, <code>glm.fit</code></p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## Begin Example
+data(lizards)
+# Fit the GLM using maximum likelihood
+lizards.glm &lt;- brglm(cbind(grahami, opalinus) ~ height + diameter +
+                  light + time, family = binomial(logit), data=lizards,
+                  method = "glm.fit")
+# Now the bias-reduced fit:
+lizards.brglm &lt;- brglm(cbind(grahami, opalinus) ~ height + diameter +
+                  light + time, family = binomial(logit), data=lizards,
+                  method = "brglm.fit")
+lizards.glm
+lizards.brglm
+# Other links
+update(lizards.brglm, family = binomial(probit))
+update(lizards.brglm, family = binomial(cloglog))
+update(lizards.brglm, family = binomial(cauchit))
+# Using penalized maximum likelihood
+update(lizards.brglm, family = binomial(probit), pl = TRUE)
+update(lizards.brglm, family = binomial(cloglog), pl = TRUE)
+update(lizards.brglm, family = binomial(cauchit), pl = TRUE)
+</code></pre>
+
+
+</div>

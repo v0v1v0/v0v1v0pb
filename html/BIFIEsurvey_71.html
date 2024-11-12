@@ -1,0 +1,267 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>BIFIE.linreg</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>
+Linear Regression
+</h2>
+
+<h3>Description</h3>
+
+<p>Computes linear regression.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">BIFIE.linreg(BIFIEobj, dep=NULL, pre=NULL, formula=NULL,
+    group=NULL, group_values=NULL, se=TRUE)
+
+## S3 method for class 'BIFIE.linreg'
+summary(object,digits=4,...)
+
+## S3 method for class 'BIFIE.linreg'
+coef(object,...)
+
+## S3 method for class 'BIFIE.linreg'
+vcov(object,...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>BIFIEobj</code></td>
+<td>
+
+<p>Object of class <code>BIFIEdata</code>
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>dep</code></td>
+<td>
+<p>String for the dependent variable in the regression model</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>pre</code></td>
+<td>
+
+<p>Vector of predictor variables. If the intercept should be included,
+then use the variable <code>one</code> for specifying it (see Examples).
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>formula</code></td>
+<td>
+<p>An <span style="font-family: Courier New, Courier; color: #666666;"><b>R</b></span> formula object which can be applied instead of
+providing <code>dep</code> and <code>pre</code>. Note that there is
+additional computation time needed for model matrix creation.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>group</code></td>
+<td>
+
+<p>Optional grouping variable(s)
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>group_values</code></td>
+<td>
+
+<p>Optional vector of grouping values. This can be omitted and grouping
+values will be determined automatically.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>se</code></td>
+<td>
+<p>Optional logical indicating whether statistical inference
+based on replication should be employed.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>object</code></td>
+<td>
+<p>Object of class <code>BIFIE.linreg</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>digits</code></td>
+<td>
+<p>Number of digits for rounding output</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Further arguments to be passed</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>A list with following entries
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>stat</code></td>
+<td>
+<p>Data frame with unstandardized and standardized regression
+coefficients, residual standard deviation and <code class="reqn">R^2</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>output</code></td>
+<td>
+<p>Extensive output with all replicated statistics</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>More values</p>
+</td>
+</tr>
+</table>
+<h3>See Also</h3>
+
+<p>Alternative implementations: <code>survey::svyglm</code>,
+<code>intsvy::timss.reg</code>,
+<code>intsvy::timss.reg.pv</code>,
+<code>stats::lm</code>
+</p>
+<p>See <code>BIFIE.logistreg</code> for logistic regression.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">#############################################################################
+# EXAMPLE 1: Imputed TIMSS dataset
+#############################################################################
+
+data(data.timss1)
+data(data.timssrep)
+
+# create BIFIE.dat object
+bdat &lt;- BIFIEsurvey::BIFIE.data( data.list=data.timss1, wgt=data.timss1[[1]]$TOTWGT,
+             wgtrep=data.timssrep[, -1 ] )
+
+#**** Model 1: Linear regression for mathematics score
+mod1 &lt;- BIFIEsurvey::BIFIE.linreg( bdat, dep="ASMMAT", pre=c("one","books","migrant"),
+              group="female" )
+summary(mod1)
+
+## Not run: 
+# same model but specified with R formulas
+mod1a &lt;- BIFIEsurvey::BIFIE.linreg( bdat, formula=ASMMAT ~ books + migrant,
+               group="female", group_values=0:1 )
+summary(mod1a)
+
+# compare result with lm function and first imputed dataset
+dat1 &lt;- data.timss1[[1]]
+mod1b &lt;- stats::lm( ASMMAT ~ 0 + as.factor(female) + as.factor(female):books +
+                              as.factor(female):migrant,
+                         data=dat1,  weights=dat1$TOTWGT )
+summary(mod1b)
+
+#**** Model 2: Like Model 1, but books is now treated as a factor
+mod2 &lt;- BIFIEsurvey::BIFIE.linreg( bdat, formula=ASMMAT ~ as.factor(books) + migrant)
+summary(mod2)
+
+#############################################################################
+# EXAMPLE 2: PISA data | Nonlinear regression models
+#############################################################################
+
+data(data.pisaNLD)
+data &lt;- data.pisaNLD
+
+#--- Create BIFIEdata object immediately using BIFIE.data.jack function
+bdat &lt;- BIFIEsurvey::BIFIE.data.jack( data.pisaNLD, jktype="RW_PISA", cdata=TRUE)
+summary(bdat)
+
+#****************************************************
+#*** Model 1: linear regression
+mod1 &lt;- BIFIEsurvey::BIFIE.linreg( bdat, formula=MATH ~ HISEI )
+summary(mod1)
+
+#****************************************************
+#*** Model 2: Cubic regression
+mod2 &lt;- BIFIEsurvey::BIFIE.linreg( bdat, formula=MATH ~ HISEI + I(HISEI^2) + I(HISEI^3) )
+summary(mod2)
+
+#****************************************************
+#*** Model 3: B-spline regression
+
+# test with design of HISEI values
+dfr &lt;- data.frame("HISEI"=16:90 )
+des &lt;- stats::model.frame( ~ splines::bs( HISEI, df=5 ), dfr )
+des &lt;- des$splines
+plot( dfr$HISEI, des[,1], type="l", pch=1, lwd=2, ylim=c(0,1) )
+for (vv in 2:ncol(des) ){
+    lines( dfr$HISEI, des[,vv], lty=vv, col=vv, lwd=2)
+}
+
+# apply B-spline regression in BIFIEsurvey::BIFIE.linreg
+mod3 &lt;- BIFIEsurvey::BIFIE.linreg( bdat, formula=MATH ~ splines::bs(HISEI,df=5) )
+summary(mod3)
+
+#*** include transformed HISEI values for B-spline matrix in bdat
+bdat2 &lt;- BIFIEsurvey::BIFIE.data.transform( bdat, ~ 0 + splines::bs( HISEI, df=5 ))
+bdat2$varnames[ bdat2$varsindex.added ] &lt;- paste0("HISEI_bsdes",
+            seq( 1, length( bdat2$varsindex.added ) ) )
+
+#****************************************************
+#*** Model 4: Nonparametric regression using BIFIE.by
+
+?BIFIE.by
+
+#---- (1) test function with one dataset
+dat1 &lt;- bdat$dat1
+vars &lt;- c("MATH", "HISEI")
+X &lt;- dat1[,vars]
+w &lt;- bdat$wgt
+X &lt;- as.data.frame(X)
+# estimate model
+mod &lt;- stats::loess( MATH ~ HISEI, weights=w, data=X )
+
+# predict HISEI values
+hisei_val &lt;- data.frame( "HISEI"=seq(16,90) )
+y_pred &lt;- stats::predict( mod, hisei_val )
+graphics::plot( hisei_val$HISEI, y_pred, type="l")
+
+#--- (2) define loess function
+loess_fct &lt;- function(X,w){
+    X1 &lt;- data.frame( X, w )
+    colnames(X1) &lt;- c( vars, "wgt")
+    X1 &lt;- stats::na.omit(X1)
+#    mod &lt;- stats::lm( MATH ~ HISEI, weights=X1$wgt, data=X1 )
+    mod &lt;- stats::loess( MATH ~ HISEI, weights=X1$wgt, data=X1 )
+    y_pred &lt;- stats::predict( mod, hisei_val )
+    return(y_pred)
+}
+
+#--- (3) estimate model
+mod4 &lt;-  BIFIEsurvey::BIFIE.by( bdat, vars, userfct=loess_fct )
+summary(mod4)
+
+# plot linear function pointwise and confidence intervals
+graphics::plot( hisei_val$HISEI, mod4$stat$est, type="l", lwd=2,
+        xlab="HISEI", ylab="PVMATH", ylim=c(430,670) )
+graphics::lines( hisei_val$HISEI, mod4$stat$est - 1.96* mod4$stat$SE, lty=3 )
+graphics::lines( hisei_val$HISEI, mod4$stat$est + 1.96* mod4$stat$SE, lty=3 )
+
+## End(Not run)
+</code></pre>
+
+
+</div>

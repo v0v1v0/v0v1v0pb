@@ -1,0 +1,121 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>broken.default</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Model Agnostic Approach to Breaking Down of Model Predictions</h2>
+
+<h3>Description</h3>
+
+<p>This function implements two greedy strategies for decompositions of model predictions (see the <code>direction</code> parameter).
+Both stategies are model agnostic, they are greedy but in most cases they give very similar results.
+Find more information about these strategies in <a href="https://arxiv.org/abs/1804.01955">https://arxiv.org/abs/1804.01955</a>.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">## Default S3 method:
+broken(
+  model,
+  new_observation,
+  data,
+  direction = "up",
+  ...,
+  baseline = 0,
+  keep_distributions = FALSE,
+  predict.function = predict
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>model</code></td>
+<td>
+<p>a model, it can be any predictive model, find examples for most popular frameworks in vigniettes</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>new_observation</code></td>
+<td>
+<p>a new observation with columns that corresponds to variables used in the model</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+<p>the original data used for model fitting, should have same collumns as the 'new_observation'.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>direction</code></td>
+<td>
+<p>either 'up' or 'down' determined the exploration strategy</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>other parameters</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>baseline</code></td>
+<td>
+<p>the orgin/baseline for the breakDown plots, where the rectangles start. It may be a number or a character "Intercept". In the latter case the orgin will be set to model intercept.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>keep_distributions</code></td>
+<td>
+<p>if TRUE, then the distribution of partial predictions is stored in addition to the average.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>predict.function</code></td>
+<td>
+<p>function that will calculate predictions out of model. It shall return a single numeric value per observation. For classification it may be a probability of the default class.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>an object of the broken class
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## Not run: 
+library("breakDown")
+library("randomForest")
+library("ggplot2")
+set.seed(1313)
+model &lt;- randomForest(factor(left)~., data = HR_data, family = "binomial", maxnodes = 5)
+predict.function &lt;- function(model, new_observation)
+      predict(model, new_observation, type="prob")[,2]
+predict.function(model, HR_data[11,-7])
+explain_1 &lt;- broken(model, HR_data[11,-7], data = HR_data[,-7],
+predict.function = predict.function, direction = "down")
+explain_1
+plot(explain_1) + ggtitle("breakDown plot (direction=down) for randomForest model")
+
+explain_2 &lt;- broken(model, HR_data[11,-7], data = HR_data[,-7],
+predict.function = predict.function, direction = "down", keep_distributions = TRUE)
+plot(explain_2, plot_distributions = TRUE) +
+         ggtitle("breakDown distributions (direction=down) for randomForest model")
+
+explain_3 &lt;- broken(model, HR_data[11,-7], data = HR_data[,-7],
+predict.function = predict.function, direction = "up", keep_distributions = TRUE)
+plot(explain_3, plot_distributions = TRUE) +
+         ggtitle("breakDown distributions (direction=up) for randomForest model")
+
+## End(Not run)
+</code></pre>
+
+
+</div>

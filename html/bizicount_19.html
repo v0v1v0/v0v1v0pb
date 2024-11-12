@@ -1,0 +1,329 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>zic.reg</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Univariate zero-inflated Poisson and negative binomial regression models</h2>
+
+<h3>Description</h3>
+
+<p>This function from the <code>bizicount</code> package estimates
+univariate zero-inflated Poisson and negative binomial regression models
+via maximum likelihood using either the <code>nlm</code> or
+<code>optim</code> optimization functions.  It's class has
+associated <code>simulate</code> methods for post-estimation
+diagnostics using the <code>DHARMa</code> package, as well as an
+<code>extract</code> method for printing professional tables using
+<code>texreg</code>. Visit the 'See Also' section for links to these
+methods for <code>zicreg</code> objects.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">zic.reg(
+  fmla = NULL,
+  data,
+  dist = "pois",
+  link.ct = "log",
+  link.zi = "logit",
+  optimizer = "nlm",
+  starts = NULL,
+  subset,
+  na.action,
+  weights = rep(1, length(y)),
+  X = NULL,
+  z = NULL,
+  y = NULL,
+  offset.ct = NULL,
+  offset.zi = NULL,
+  warn.parent = T,
+  keep = F,
+  ...
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>fmla</code></td>
+<td>
+<p>A <code>formula</code> of the form <code style="white-space: pre;">⁠y ~ x_1 + x_2 + ... + x_n + offset(count_var) | z_1  + ... z_n + offset(zi_var)⁠</code>, where the <code>x</code>
+values are covariates in the count portion of the model, and <code>z</code> are in the
+zero-inflation portion. The <code>z</code> and <code>x</code> variables can be the same. If <code>NULL</code>,
+design matrices, the response vector, and offsets can be entered directly; see
+<code>X</code>, <code>z</code>, <code>y</code>, <code>offset.ct</code>, and <code>offset.zi</code> below.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+<p>A <code>data.frame</code> containing all variables
+appearing in <code>fmla</code>, including offsets. If not specified, variables are
+searched for in parent environment.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>dist</code></td>
+<td>
+<p>The distribution used for the count portion of the zero-inflated
+mixture. One of <code>c("pois", "nbinom")</code>, partial matching supported.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>link.ct</code></td>
+<td>
+<p>String specifying the link function used for the count portion
+of the mixture distribution. One of <code>c("log", "identity", "sqrt")</code>.
+See <code>family</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>link.zi</code></td>
+<td>
+<p>Character string specifying the link function used for the
+zero-inflation portion of the mixture distribution. One of <code>c("logit", "probit", "cauchit", "log", "cloglog")</code>. See <code>family</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>optimizer</code></td>
+<td>
+<p>String specifying the optimizer to be used for fitting, one
+of <code>c("nlm", "optim")</code>. If <code>"optim"</code>, defaults to <code>method="BFGS"</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>starts</code></td>
+<td>
+<p>Optional vector of starting values used for the numerical
+optimization procedure. Should have count parameters first (with intercept
+first, if applicable), followed by zero-inflated parameters (with intercept
+first, if applicable), and the inverse dispersion parameter last (if
+applicable).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>subset</code></td>
+<td>
+<p>Vector indicating the subset of observations on which to
+estimate the model</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>na.action</code></td>
+<td>
+<p>A function which indicates what should happen when the data
+contain NAs. Default is <code>na.omit</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>weights</code></td>
+<td>
+<p>An optional numeric vector of weights for each observation.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>X, z</code></td>
+<td>
+<p>If <code>fmla = NULL</code>, these are the design matrices of covariates for
+the count and zero-inflation portions, respectively. Both require no
+missingness. Similar in spirit to <code>glm.fit</code> in that it
+can be faster for larger datasets because it bypasses model matrix
+creation.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>y</code></td>
+<td>
+<p>If <code>fmla = NULL</code>, a vector containing the response variable.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>offset.ct, offset.zi</code></td>
+<td>
+<p>If <code>fmla = NULL</code>, vectors containing the
+(constant) offset for the count and zero-inflated portions, respectively.
+Must be equal in length to <code>y</code>, and row-dim of <code>X</code>, <code>z</code>. If left <code>NULL</code>,
+defaults to <code>rep(0, length(y))</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>warn.parent</code></td>
+<td>
+<p>Logical indicating whether to warn about <code>data</code> not
+being supplied.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>keep</code></td>
+<td>
+<p>Logical indicating whether to keep the model matrices in the
+returned model object. Must be <code>TRUE</code> to use <code>DHARMa</code>
+and <code>texreg</code> with the model object, e.g., via
+<code>simulate.zicreg</code> and <code>extract.zicreg</code>, as well as
+base generics like <code>fitted</code> and
+<code>predict</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Additional arguments to pass on to the chosen optimizer, either
+<code>nlm</code> or <code>optim</code>. See 'Examples'.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>An S3 <code>zicreg-class</code> object, which is a list containing:
+</p>
+
+<ul>
+<li>  <p><code>call</code> – The original function call
+</p>
+</li>
+<li>  <p><code>obj</code> – The class of the object
+</p>
+</li>
+<li>  <p><code>coef</code> – Vector of coefficients, with count, then zi, then dispersion.
+</p>
+</li>
+<li>  <p><code>se</code> – Vector of asymptotic standard errors
+</p>
+</li>
+<li>  <p><code>grad</code> – Gradient vector at convergence
+</p>
+</li>
+<li>  <p><code>link.ct</code> – Name of link used for count portion
+</p>
+</li>
+<li>  <p><code>link.zi</code> – Name of link used for zero-inflated portion
+</p>
+</li>
+<li>  <p><code>dist</code> – Name of distribution used for count portion
+</p>
+</li>
+<li>  <p><code>optimizer</code> – Name of optimization package used in fitting
+</p>
+</li>
+<li>  <p><code>coefmat.ct</code> – Coefficient matrix for count portion
+</p>
+</li>
+<li>  <p><code>coefmat.zi</code> – Coefficient matrix for zero-inflated portion
+</p>
+</li>
+<li>  <p><code>convergence</code> – Convergence code from optimization routine.
+</p>
+</li>
+<li>  <p><code>coefmat.all</code> – Coefficient matrix for both parts of the model
+</p>
+</li>
+<li>  <p><code>theta</code> – Coefficient matrix for dispersion, if applicable.
+</p>
+</li>
+<li>  <p><code>covmat</code> – Asymptotic covariance matrix
+</p>
+</li>
+<li>  <p><code>nobs</code> – Number of observations
+</p>
+</li>
+<li>  <p><code>aic</code> – Akaike information
+</p>
+</li>
+<li>  <p><code>bic</code> – Bayes information
+</p>
+</li>
+<li>  <p><code>loglik</code> – Log-likelihood at convergence
+</p>
+</li>
+<li>  <p><code>model</code> – List containing model matrices if <code>keep = TRUE</code>
+</p>
+</li>
+</ul>
+<h3>Author(s)</h3>
+
+<p>John Niehaus
+</p>
+
+
+<h3>References</h3>
+
+<p>Lambert, Diane. "Zero-inflated Poisson regression, with an
+application to defects in manufacturing." Technometrics 34.1 (1992): 1-14.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>simulate.zicreg</code>, <code>extract.zicreg</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## ZIP example
+# Simulate some zip data
+n=1000
+x = cbind(1, rnorm(n))
+z = cbind(1, rbeta(n, 4, 8))
+b = c(1, 2.2)
+g = c(-1, 1.7)
+lam = exp(x %*% b)
+psi = plogis(z %*% g)
+
+y = bizicount::rzip(n, lambda = lam, psi=psi)
+dat = cbind.data.frame(x = x[,-1], z = z[,-1], y = y)
+
+# estimate zip model using NLM, no data.frame
+
+mod = zic.reg(y ~ x[,-1] | z[,-1])
+
+# same model, with dataframe
+
+mod = zic.reg(y ~ x | z, data = dat)
+
+
+# estimate zip using NLM, adjust stepmax via ... param
+
+mod = zic.reg(y ~ x[,-1] | z[,-1], stepmax = .5)
+
+
+# estimate zip using optim
+
+mod = zic.reg(y ~ x[,-1] | z[,-1], optimizer = "optim")
+
+
+# pass different method, reltol to optim using ... param
+
+mod = zic.reg(y ~ x[,-1] | z[,-1],
+        optimizer = "optim",
+        method = "Nelder-Mead",
+        control = list(reltol = 1e-10)
+        )
+
+# No formula, specify design matrices and offsets.
+zic.reg(y=y, X=x, z=z)
+
+
+
+## ZINB example
+# simulate zinb data
+
+disp = .5
+y = bizicount::rzinb(n, psi = psi, size = disp, mu=lam)
+
+
+# zinb model, use keep = TRUE for post-estimation methods
+
+mod = zic.reg(y ~ x[,-1] | z[,-1], dist = "n", keep = TRUE)
+
+print(mod)
+summary(mod)
+
+</code></pre>
+
+
+</div>

@@ -1,0 +1,181 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>filter.dccm</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2> Filter for Cross-correlation Matrices (Cij) </h2>
+
+<h3>Description</h3>
+
+<p>This function builds various cij matrix for correlation network analysis
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">  filter.dccm(x, cutoff.cij = NULL, cmap = NULL, xyz = NULL, fac = NULL, 
+      cutoff.sims = NULL, collapse = TRUE, extra.filter = NULL, ...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p> A matrix (nXn), a numeric array with 3 dimensions (nXnXm), 
+a list with m cells each containing nXn matrix, or a list with
+‘all.dccm’ component, containing atomic correlation values, 
+where "n" is the number of residues and "m" the number of calculations. 
+The matrix elements should be in between -1 and 1. See ‘dccm’ 
+function in bio3d package for further details. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>cutoff.cij</code></td>
+<td>
+<p> Threshold for each individual correlation value. 
+If NULL, a guessed value will be used. See below for details. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>cmap</code></td>
+<td>
+<p> logical or numerical matrix indicating the contact map.
+If logical and TRUE, contact map will be calculated with input
+<code>xyz</code>. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>xyz</code></td>
+<td>
+<p> XYZ coordinates, or a ‘pdbs’ object obtained from 
+<code>pdbaln</code> or <code>read.fasta.pdb</code>, for contact map calculations. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>fac</code></td>
+<td>
+<p> factor indicating distinct categories of input correlation matrices. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>cutoff.sims</code></td>
+<td>
+<p> Threshold for the number of simulations with observed correlation
+value above <code>cutoff.cij</code> for the same residue/atomic pairs. See below for details. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>collapse</code></td>
+<td>
+<p> logical, if TRUE the mean matrix will be returned. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>extra.filter</code></td>
+<td>
+<p> Filter to apply in addition to the model chosen. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p> extra arguments passed to function <code>cmap</code>. </p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+ 
+<p>If cmap is TRUE or provided a numerical matrix, the function inspects
+a set of cross-correlation matrices, or DCCM, and decides edges for 
+correlation network analysis based on:
+</p>
+<p>1. min(abs(cij)) &gt;= cutoff.cij, or
+2. max(abs(cij)) &gt;= cutoff.cij &amp;&amp; residues contact each other 
+based on results from <code>cmap</code>.
+</p>
+<p>Otherwise, the function filters DCCMs with <code>cutoff.cij</code> and 
+return the mean of correlations present in at least 
+<code>cutoff.sims</code> calculated matrices.
+</p>
+<p>An internally guessed <code>cuoff.cij</code> is used if <code>cutoff.cij=NULL</code> is provided. 
+By default, the cutoff is determined by keeping 5% of all residue pairs connected. 
+</p>
+
+
+<h3>Value</h3>
+
+<p>Returns a matrix of class "dccm" or a 3D array of filtered cross-correlations.
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p> Xin-Qiu Yao, Guido Scarabelli &amp; Barry Grant </p>
+
+
+<h3>References</h3>
+
+<p>Grant, B.J. et al. (2006) <em>Bioinformatics</em> <b>22</b>, 2695–2696.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>cna</code>, <code>dccm</code>, <code>dccm.nma</code>, <code>dccm.xyz</code>,
+<code>cmap</code>, <code>plot.dccm</code> 
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+## Not run: 
+
+# Example of transducin
+attach(transducin)
+
+gaps.pos &lt;- gap.inspect(pdbs$xyz)
+modes &lt;- nma.pdbs(pdbs, ncore=NULL)
+dccms &lt;- dccm.enma(modes, ncore=NULL)
+
+cij &lt;- filter.dccm(dccms, xyz=pdbs)
+
+# Example protein kinase
+# Select Protein Kinase PDB IDs
+ids &lt;- c("4b7t_A", "2exm_A", "1opj_A", "4jaj_A", "1a9u_A",
+                 "1tki_A", "1csn_A", "1lp4_A")
+
+# Download and split by chain ID
+files &lt;- get.pdb(ids, path = "raw_pdbs", split=TRUE)
+
+# Alignment of structures
+pdbs &lt;- pdbaln(files) # Sequence identity
+summary(c(seqidentity(pdbs)))
+
+# NMA on all structures
+modes &lt;- nma.pdbs(pdbs, ncore=NULL)
+
+# Calculate correlation matrices for each structure
+cij &lt;- dccm(modes)
+
+# Set DCCM plot panel names for combined figure
+dimnames(cij$all.dccm) = list(NULL, NULL, ids)
+plot.dccm(cij$all.dccm)
+
+# Filter to display only correlations present in all structures
+cij.all &lt;- filter.dccm(cij, cutoff.sims = 8, cutoff.cij = 0)
+plot.dccm(cij.all, main = "Consensus Residue Cross Correlation")
+
+detach(transducin)
+
+## End(Not run)
+
+</code></pre>
+
+
+</div>

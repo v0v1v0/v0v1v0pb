@@ -1,0 +1,342 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>pr_eoi</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Calculate Probability of Meeting Effect of Interest</h2>
+
+<h3>Description</h3>
+
+<p>Calculate a posterior quantity such as
+Pr(trt_arm1 - trt_arm2 &gt; eoi)
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">pr_eoi(
+  x,
+  eoi,
+  doses = attr(x, "doses"),
+  reference_dose = NULL,
+  new_data = NULL,
+  contrast = NULL,
+  reference_type = c("difference", "ratio"),
+  direction = c("greater", "less")
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>an object output from <code>beaver_mcmc()</code> or (internal function)
+<code>run_mcmc()</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>eoi</code></td>
+<td>
+<p>effects of interest in the probability equation.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>doses</code></td>
+<td>
+<p>doses at which to obtain the posterior.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>reference_dose</code></td>
+<td>
+<p>dose to which to compare as either a difference or
+ratio.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>new_data</code></td>
+<td>
+<p>a dataframe for which the posterior will be calculated for
+each observation's covariate values.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>contrast</code></td>
+<td>
+<p>a matrix containing where each row contains a contrast for
+which the posterior will be calculated.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>reference_type</code></td>
+<td>
+<p>whether to provide the posterior of the difference or
+the ratio between each dose and the reference dose.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>direction</code></td>
+<td>
+<p>calculate whether the posterior quantity is greater or less
+than the eoi</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>A dataframe or tibble with the posterior quantities.
+</p>
+
+
+<h3>See Also</h3>
+
+<p>Other posterior calculations: 
+<code>beaver_mcmc()</code>,
+<code>posterior.beaver_mcmc_bma()</code>,
+<code>posterior.beaver_mcmc()</code>,
+<code>posterior_g_comp()</code>,
+<code>pr_eoi_g_comp()</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+# The {beaver} package, by definition, performs MCMC for multiple models.
+# Even with a small number of chains/burn-ins/samples, a minimally illustrative
+# example requires &gt;5s to run.
+
+library(dplyr)
+
+# No covariates----
+
+set.seed(100)
+
+df &lt;- data_negbin_emax(
+  n_per_arm = 10,
+  doses = 0:3,
+  b1 = 0,
+  b2 = 2.5,
+  b3 = 0.5,
+  ps = 0.75
+)
+
+df %&gt;%
+  group_by(dose) %&gt;%
+  summarize(
+    mean = mean(response),
+    se = sd(response) / sqrt(n()),
+    .groups = "drop"
+  )
+
+mcmc &lt;- beaver_mcmc(
+  emax = model_negbin_emax(
+    mu_b1 = 0,
+    sigma_b1 = 10,
+    mu_b2 = 0,
+    sigma_b2 = 10,
+    mu_b3 = 1.5,
+    sigma_b3 = 3,
+    w_prior = 1 / 4
+  ),
+  linear = model_negbin_linear(
+    mu_b1 = 0,
+    sigma_b1 = 10,
+    mu_b2 = 0,
+    sigma_b2 = 10,
+    w_prior = 1 / 4
+  ),
+  quad = model_negbin_quad(
+    mu_b1 = 0,
+    sigma_b1 = 10,
+    mu_b2 = 0,
+    sigma_b2 = 10,
+    mu_b3 = 1.5,
+    sigma_b3 = 3,
+    w_prior = 1 / 4
+  ),
+  exp = model_negbin_exp(
+    mu_b1 = 0,
+    sigma_b1 = 10,
+    mu_b2 = 0,
+    sigma_b2 = 10,
+    mu_b3 = 0,
+    sigma_b3 = 3,
+    w_prior = 1 / 4
+  ),
+  formula = ~ 1,
+  data = df,
+  n_iter = 1e2,
+  n_chains = 1,
+  quiet = TRUE
+)
+
+mcmc$w_post
+
+draws &lt;- try(draws(mcmc)) #draws() is intended for single model fits only
+draws_emax &lt;- draws(mcmc$models$emax$mcmc)
+draws_linear &lt;- draws(mcmc$models$linear$mcmc)
+draws_quad &lt;- draws(mcmc$models$quad$mcmc)
+draws_exp &lt;- draws(mcmc$models$exp$mcmc)
+
+post &lt;- posterior(
+  mcmc,
+  contrast = matrix(1, 1, 1),
+  doses = 0:3,
+  reference_dose = 0,
+  reference_type = "difference"
+)
+
+pr_eoi(
+  mcmc,
+  eoi = c(5, 8),
+  contrast = matrix(1, 1, 1),
+  reference_dose = 0,
+  reference_type = "difference"
+)
+
+post_g_comp &lt;- posterior_g_comp(
+  mcmc,
+  new_data = df,
+  reference_dose = 0,
+  reference_type = "difference"
+)
+
+pr_eoi_g_comp(
+  mcmc,
+  eoi = c(5, 8),
+  new_data = df,
+  reference_dose = 0,
+  reference_type = "difference"
+)
+
+plot(mcmc, contrast = matrix(1, 1, 1))
+
+# With covariates----
+
+set.seed(1000)
+
+x &lt;-
+  data.frame(
+    gender = factor(sample(c("F", "M"), 40, replace = TRUE))
+  ) %&gt;%
+  model.matrix(~ gender, data = .)
+
+df_cov &lt;-
+  data_negbin_emax(
+    n_per_arm = 10,
+    doses = 0:3,
+    b1 = c(0, 0.5),
+    b2 = 2.5,
+    b3 = 0.5,
+    ps = 0.75,
+    x = x
+  ) %&gt;%
+  mutate(
+    gender = case_when(
+      genderM == 1 ~ "M",
+      TRUE ~ "F"
+    ),
+    gender = factor(gender)
+  ) %&gt;%
+  select(subject, dose, gender, response)
+
+df_cov %&gt;%
+  group_by(dose, gender) %&gt;%
+  summarize(
+    mean = mean(response),
+    se = sd(response) / sqrt(n()),
+    .groups = "drop"
+  )
+
+mcmc_cov &lt;- beaver_mcmc(
+  emax = model_negbin_emax(
+    mu_b1 = 0,
+    sigma_b1 = 10,
+    mu_b2 = 0,
+    sigma_b2 = 10,
+    mu_b3 = 1.5,
+    sigma_b3 = 3,
+    w_prior = 1 / 4
+  ),
+  linear = model_negbin_linear(
+    mu_b1 = 0,
+    sigma_b1 = 10,
+    mu_b2 = 0,
+    sigma_b2 = 10,
+    w_prior = 1 / 4
+  ),
+  quad = model_negbin_quad(
+    mu_b1 = 0,
+    sigma_b1 = 10,
+    mu_b2 = 0,
+    sigma_b2 = 10,
+    mu_b3 = 1.5,
+    sigma_b3 = 3,
+    w_prior = 1 / 4
+  ),
+  exp = model_negbin_exp(
+    mu_b1 = 0,
+    sigma_b1 = 10,
+    mu_b2 = 0,
+    sigma_b2 = 10,
+    mu_b3 = 0,
+    sigma_b3 = 3,
+    w_prior = 1 / 4
+  ),
+  formula = ~ gender,
+  data = df_cov,
+  n_iter = 1e2,
+  n_chains = 1,
+  quiet = TRUE
+)
+
+mcmc_cov$w_post
+
+draws_cov &lt;- try(draws(mcmc_cov)) #draws() is intended for single model fits only
+draws_cov_emax &lt;- draws(mcmc_cov$models$emax$mcmc)
+draws_cov_linear &lt;- draws(mcmc_cov$models$linear$mcmc)
+draws_cov_quad &lt;- draws(mcmc_cov$models$quad$mcmc)
+draws_cov_exp &lt;- draws(mcmc_cov$models$exp$mcmc)
+
+post_cov &lt;- posterior(
+  mcmc_cov,
+  contrast = matrix(c(1, 1, 0, 1), 2, 2),
+  doses = 0:3,
+  reference_dose = 0,
+  reference_type = "difference"
+)
+
+pr_eoi(
+  mcmc_cov,
+  eoi = c(5, 8),
+  contrast = matrix(c(1, 1, 0, 1), 2, 2),
+  reference_dose = 0,
+  reference_type = "difference"
+)
+
+post_g_comp_cov &lt;- posterior_g_comp(
+  mcmc_cov,
+  new_data = df_cov,
+  reference_dose = 0,
+  reference_type = "difference"
+)
+
+pr_eoi_g_comp(
+  mcmc_cov,
+  eoi = c(5, 8),
+  new_data = df_cov,
+  reference_dose = 0,
+  reference_type = "difference"
+)
+
+plot(mcmc_cov, new_data = df_cov, type = "g-comp")
+
+</code></pre>
+
+
+</div>

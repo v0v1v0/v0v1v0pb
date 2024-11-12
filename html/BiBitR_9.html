@@ -1,0 +1,183 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>ClusterRowCoverage</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Row Coverage Plots</h2>
+
+<h3>Description</h3>
+
+<p>Plotting function to be used with the <code>BiBitWorkflow</code> output. It plots the number of clusters (of the hierarchical tree) versus the number/percentage of row coverage and number of final biclusters (see Details for more information).
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">ClusterRowCoverage(result, matrix, maxCluster = 20, noise = 0.1,
+  noise_select = 0, plots = c(1:3), verbose = TRUE,
+  plot.type = "device", filename = "RowCoverage")
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>result</code></td>
+<td>
+<p>A BiBitWorkflow Object.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>matrix</code></td>
+<td>
+<p>Accompanying binary data matrix which was used to obtain <code>result</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>maxCluster</code></td>
+<td>
+<p>Maximum number of clusters to cut the tree at (default=20).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>noise</code></td>
+<td>
+<p>The allowed noise level when growing the rows on the merged patterns after cutting the tree. (default=<code>0.1</code>, namely allow 10% noise.)
+</p>
+
+<ul>
+<li> <p><code>noise=0</code>: No noise allowed.
+</p>
+</li>
+<li> <p><code>0&lt;noise&lt;1</code>: The <code>noise</code> parameter will be a noise percentage. The number of allowed 0's in a row in the bicluster will depend on the column size of the bicluster.
+More specifically <code>zeros_allowed = ceiling(noise * columnsize)</code>. For example for <code>noise=0.10</code> and a bicluster column size of <code>5</code>, the number of allowed 0's would be <code>1</code>.
+</p>
+</li>
+<li> <p><code>noise&gt;=1</code>: The <code>noise</code> parameter will be the number of allowed 0's in a row in the bicluster independent from the column size of the bicluster. In this noise option, the noise parameter should be an integer.
+</p>
+</li>
+</ul>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>noise_select</code></td>
+<td>
+<p>Should the allowed noise level be automatically selected for each pattern? (Using ad hoc method to find the elbow/kink in the Noise Scree plots)
+</p>
+
+<ul>
+<li> <p><code>noise_select=0</code>: Do <em>NOT</em> automatically select the noise levels. Use the the noise level given in the <code>noise</code> parameter (default)
+</p>
+</li>
+<li> <p><code>noise_select=1</code>: Using the Noise Scree plot (with 'Added Rows' on the y-axis), find the noise level where the current number of added rows at this noise level is larger than the mean of 'added rows' at the lower noise levels. 
+After locating this noise level, lower the noise level by 1. This is your automatically selected elbow/kink and therefore your noise level.
+</p>
+</li>
+<li> <p><code>noise_select=2</code>: Applies the same steps as for <code>noise_select=1</code>, but instead of decreasing the noise level by only 1, keep decreasing the noise level until the number of added rows isn't decreasing anymore either.
+</p>
+</li>
+</ul>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>plots</code></td>
+<td>
+<p>Vector for which plots to draw:
+</p>
+
+<ol>
+<li>
+<p> Number of Clusters versus Row Coverage Percentage
+</p>
+</li>
+<li>
+<p> Number of Clusters versus Number of Row Coverage
+</p>
+</li>
+<li>
+<p> Number of Clusters versus Final Number of Biclusters
+</p>
+</li>
+</ol>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>verbose</code></td>
+<td>
+<p>Logical value if the progress bar of merging/growing the biclusters should be shown. (default=<code>TRUE</code>)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>plot.type</code></td>
+<td>
+<p>Output Type
+</p>
+
+<ul>
+<li> <p><code>"device"</code>: All plots are outputted to new R graphics devices (default).
+</p>
+</li>
+<li> <p><code>"file"</code>: All plots are saved in external files. Plots are joint together in a single <code>.pdf</code> file.
+</p>
+</li>
+<li> <p><code>"other"</code>: All plots are outputted to the current graphics device, but will overwrite each other. Use this if you want to include one or more plots in a sweave/knitr file or if you want to export a single plot by your own chosen format.
+</p>
+</li>
+</ul>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>filename</code></td>
+<td>
+<p>Base filename (with/without directory) for the plots if <code>plot.type="file"</code> (default=<code>"RowCoverage"</code>).</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The graph of number of chosen tree clusters versus the final row coverage can help you to make a decision on how many clusters to choose in the hierarchical tree. 
+The more clusters you choose, the smaller (albeit more similar) the patterns are and the more rows will fit your patterns (i.e. more row coverage).
+</p>
+
+
+<h3>Value</h3>
+
+<p>A data frame containing the number of clusters and the corresponding number of row coverage, percentage of row coverage and the number of final biclusters.
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Ewoud De Troyer
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## Not run: 
+## Prepare some data ##
+set.seed(254)
+mat &lt;- matrix(sample(c(0,1),5000*50,replace=TRUE,prob=c(1-0.15,0.15)),
+              nrow=5000,ncol=50)
+mat[1:200,1:10] &lt;- matrix(sample(c(0,1),200*10,replace=TRUE,prob=c(1-0.9,0.9)),
+                          nrow=200,ncol=10)
+mat[300:399,6:15] &lt;- matrix(sample(c(0,1),100*10,replace=TRUE,prob=c(1-0.9,0.9)),
+                            nrow=100,ncol=10)
+mat[400:599,21:30] &lt;- matrix(sample(c(0,1),200*10,replace=TRUE,prob=c(1-0.9,0.9)),
+                             nrow=200,ncol=10)
+mat[700:799,29:38] &lt;- matrix(sample(c(0,1),100*10,replace=TRUE,prob=c(1-0.9,0.9)),
+                             nrow=100,ncol=10)
+mat &lt;- mat[sample(1:5000,5000,replace=FALSE),sample(1:50,50,replace=FALSE)]
+
+## Apply BiBitWorkflow ##
+out &lt;- BiBitWorkflow(matrix=mat,minr=50,minc=5,noise=0.2,cut_type="number",cut_pm=10)
+# Make ClusterRowCoverage Plots
+ClusterRowCoverage(result=out,matrix=mat,maxCluster=20,noise=0.2)
+
+## End(Not run)
+</code></pre>
+
+
+</div>

@@ -1,0 +1,305 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>binaryGP_fit</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Binary Gaussian Process (with/without time-series)</h2>
+
+<h3>Description</h3>
+
+<p>The function fits Gaussian process models with binary response. The models can also include time-series term if a time-series binary response is observed. The estimation methods are based on PQL/PQPL and REML (for mean function and correlation parameter, respectively).
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">binaryGP_fit(X, Y, R = 0, L = 0, corr = list(type = "exponential", power =
+  2), nugget = 1e-10, constantMean = FALSE, orthogonalGP = FALSE,
+  converge.tol = 1e-10, maxit = 15, maxit.PQPL = 20, maxit.REML = 100,
+  xtol_rel = 1e-10, standardize = FALSE, verbose = TRUE)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>X</code></td>
+<td>
+<p>a design matrix with dimension <code>n</code> by <code>d</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Y</code></td>
+<td>
+<p>a response matrix with dimension <code>n</code> by <code>T</code>. The values in the matrix are 0 or 1. If no time-series, <code>T = 1</code>. If time-series is included, i.e., <code>T &gt; 1</code>, the first column is the response vector of time 1, and second column is the response vector of time 2, and so on.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>R</code></td>
+<td>
+<p>a positive integer specifying the order of autoregression only if time-series is included. The default is 1.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>L</code></td>
+<td>
+<p>a positive integer specifying the order of interaction between <code>X</code> and previous <code>Y</code> only if time-series is included. The value couldn't nbe larger than R. The default is 1.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>corr</code></td>
+<td>
+<p>a list of parameters for the specifing the correlation to be used. Either exponential correlation function or Matern correlation function can be used. See <code>corr_matrix</code> for details.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nugget</code></td>
+<td>
+<p>a positive value to use for the nugget. If <code>NULL</code>, a nugget will be estimated. The default is 1e-10.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>constantMean</code></td>
+<td>
+<p>logical. <code>TRUE</code> indicates that the Gaussian process will have a constant mean, plus time-series structure if <code>R</code> or <code>T</code> is greater than one; otherwise the mean function will be a linear regression in X, plus an intercept term and time-series structure.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>orthogonalGP</code></td>
+<td>
+<p>logical. <code>TRUE</code> indicates that the orthogonal Gaussian process will be used. Only available when <code>corr</code> is <code>list(type = "exponential", power = 2)</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>converge.tol</code></td>
+<td>
+<p>convergence tolerance. It converges when relative difference with respect to <code class="reqn">\eta_t</code> is smaller than the tolerance. The default is 1e-10.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>maxit</code></td>
+<td>
+<p>a positive integer specifying the maximum number of iterations for estimation to be performed before the estimates are convergent. The default is 15.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>maxit.PQPL</code></td>
+<td>
+<p>a positive integer specifying the maximum number of iterations for PQL/PQPL estimation to be performed before the estimates are convergent. The default is 20.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>maxit.REML</code></td>
+<td>
+<p>a positive integer specifying the maximum number of iterations in <code>lbfgs</code> for REML estimation to be performed before the estimates are convergent. The default is 100.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>xtol_rel</code></td>
+<td>
+<p>a postive value specifying the convergence tolerance for <code>lbfgs</code>. The default is 1e-10.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>standardize</code></td>
+<td>
+<p>logical. If <code>TRUE</code>, each column of X will be standardized into <code>[0,1]</code>. The default is <code>FALSE</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>verbose</code></td>
+<td>
+<p>logical. If <code>TRUE</code>, additional diagnostics are printed. The default is <code>TRUE</code>.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>Consider the model </p>
+<p style="text-align: center;"><code class="reqn">logit(p_t(x))=\eta_t(x)=\sum^R_{r=1}\varphi_ry_{t-r}(\mathbf{x})+\alpha_0+\mathbf{x}'\boldsymbol{\alpha}+\sum^L_{l=1}\boldsymbol{\gamma}_l\textbf{x}y_{t-l}(\mathbf{x})+Z_t(\mathbf{x}),</code>
+</p>
+<p> where <code class="reqn">p_t(x)=Pr(y_t(x)=1)</code> and <code class="reqn">Z_t(\cdot)</code> is a Gaussian process with zero mean, variance <code class="reqn">\sigma^2</code>, and correlation function <code class="reqn">R_{\boldsymbol{\theta}}(\cdot,\cdot)</code> with unknown correlation parameters <code class="reqn">\boldsymbol{\theta}</code>. The power exponential correlation function is used and defined by </p>
+<p style="text-align: center;"><code class="reqn">R_{\boldsymbol{\theta}}(\mathbf{x}_i,\mathbf{x}_j)=\exp\{-\sum^{d}_{l=1}\frac{(x_{il}-x_{jl})^p}{\theta_l} \},</code>
+</p>
+<p> where <code class="reqn">p</code> is given by <code>power</code>. The parameters in the mean functions including <code class="reqn">\varphi_r,\alpha_0,\boldsymbol{\alpha},\boldsymbol{\gamma}_l</code> are estimated by PQL/PQPL, depending on whether the mean function has the time-series structure. The parameters in the Gaussian process including <code class="reqn">\boldsymbol{\theta}</code> and <code class="reqn">\sigma^2</code> are estimated by REML. If <code>orthogonalGP</code> is <code>TRUE</code>, then orthogonal covariance function (Plumlee and Joseph, 2016) is employed. More details can be seen in Sung et al. (unpublished).
+</p>
+
+
+<h3>Value</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>alpha_hat</code></td>
+<td>
+<p>a vector of coefficient estimates for the linear relationship with X.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>varphi_hat</code></td>
+<td>
+<p>a vector of autoregression coefficient estimates.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>gamma_hat</code></td>
+<td>
+<p>a vector of the interaction effect estimates.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>theta_hat</code></td>
+<td>
+<p>a vector of correlation parameters.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>sigma_hat</code></td>
+<td>
+<p>a value of sigma estimate (standard deviation).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nugget_hat</code></td>
+<td>
+<p>if <code>nugget</code> is <code>NULL</code>, then return a nugget estimate, otherwise return <code>nugget</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>orthogonalGP</code></td>
+<td>
+<p><code>orthogonalGP</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>X</code></td>
+<td>
+<p>data <code>X</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Y</code></td>
+<td>
+<p>data <code>Y</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>R</code></td>
+<td>
+<p>order of autoregression.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>L</code></td>
+<td>
+<p>order of interaction between X and previous Y.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>corr</code></td>
+<td>
+<p>a list of parameters for the specifing the correlation to be used.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Model.mat</code></td>
+<td>
+<p>model matrix.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>eta_hat</code></td>
+<td>
+<p>eta_hat.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>standardize</code></td>
+<td>
+<p><code>standardize</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>mean.x</code></td>
+<td>
+<p>mean of each column of <code>X</code>. Only available when <code>standardize=TRUE</code>, otherwise <code>mean.x=NULL</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>scale.x</code></td>
+<td>
+<p><code>max(x)-min(x)</code> of each column of <code>X</code>. Only available when <code>standardize=TRUE</code>, otherwise <code>scale.x=NULL</code>.</p>
+</td>
+</tr>
+</table>
+<h3>Author(s)</h3>
+
+<p>Chih-Li Sung &lt;iamdfchile@gmail.com&gt;
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>predict.binaryGP</code> for prediction of the binary Gaussian process, <code>print.binaryGP</code> for the list of estimation results, and <code>summary.binaryGP</code> for summary of significance results.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">library(binaryGP)
+
+#####      Testing function: cos(x1 + x2) * exp(x1*x2) with TT sequences      #####
+#####   Thanks to Sonja Surjanovic and Derek Bingham, Simon Fraser University #####
+test_function &lt;- function(X, TT)
+{
+  x1 &lt;- X[,1]
+  x2 &lt;- X[,2]
+
+  eta_1 &lt;- cos(x1 + x2) * exp(x1*x2)
+
+  p_1 &lt;- exp(eta_1)/(1+exp(eta_1))
+  y_1 &lt;- rep(NA, length(p_1))
+  for(i in 1:length(p_1)) y_1[i] &lt;- rbinom(1,1,p_1[i])
+  Y &lt;- y_1
+  P &lt;- p_1
+  if(TT &gt; 1){
+    for(tt in 2:TT){
+      eta_2 &lt;- 0.3 * y_1 + eta_1
+      p_2 &lt;- exp(eta_2)/(1+exp(eta_2))
+      y_2 &lt;- rep(NA, length(p_2))
+      for(i in 1:length(p_2)) y_2[i] &lt;- rbinom(1,1,p_2[i])
+      Y &lt;- cbind(Y, y_2)
+      P &lt;- cbind(P, p_2)
+      y_1 &lt;- y_2
+    }
+  }
+
+  return(list(Y = Y, P = P))
+}
+
+set.seed(1)
+n &lt;- 30
+n.test &lt;- 10
+d &lt;- 2
+X &lt;- matrix(runif(d * n), ncol = d)
+
+##### without time-series #####
+Y &lt;- test_function(X, 1)$Y  ## Y is a vector
+
+binaryGP.model &lt;- binaryGP_fit(X = X, Y = Y)
+print(binaryGP.model)   # print estimation results
+summary(binaryGP.model) # significance results
+
+##### with time-series, lag 1 #####
+Y &lt;- test_function(X, 10)$Y  ## Y is a matrix with 10 columns
+
+binaryGP.model &lt;- binaryGP_fit(X = X, Y = Y, R = 1)
+print(binaryGP.model)   # print estimation results
+summary(binaryGP.model) # significance results
+
+
+</code></pre>
+
+
+</div>

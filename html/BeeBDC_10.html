@@ -1,0 +1,130 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>continentOutlieRs</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Flag continent-level outliers with a provided checklist.</h2>
+
+<h3>Description</h3>
+
+<p>This function flags continent-level outliers using the checklist provided with this package.
+For additional context and column names, see <code>beesChecklist()</code>.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">continentOutlieRs(
+  checklist = NULL,
+  data = NULL,
+  keepAdjacentContinent = FALSE,
+  pointBuffer = NULL,
+  scale = 50,
+  stepSize = 1e+06,
+  mc.cores = 1
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>checklist</code></td>
+<td>
+<p>A data frame or tibble. The formatted checklist which was built based on the Discover Life website.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+<p>A data frame or tibble. The a Darwin Core occurrence dataset.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>keepAdjacentContinent</code></td>
+<td>
+<p>Logical. If TRUE, occurrences in continents that are adjacent to checklist continents will be
+kept. If FALSE, they will be flagged. Defualt = FALSE.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>pointBuffer</code></td>
+<td>
+<p>Numeric. A buffer around points to help them align with a continent or coastline.
+This provides a good way to retain points that occur right along the coast or borders of the
+maps in rnaturalearth</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>scale</code></td>
+<td>
+<p>Numeric. The value fed into the map scale parameter for
+<code>rnaturalearth::ne_countries()</code>'s scale parameter:
+Scale of map to return, one of 110, 50, 10 or 'small', 'medium', 'large', where smaller numbers
+are higher resolution. WARNING: This function is tested on 110 and 50.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>stepSize</code></td>
+<td>
+<p>Numeric. The number of occurrences to process in each chunk. Default = 1000000.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>mc.cores</code></td>
+<td>
+<p>Numeric. If &gt; 1, the function will run in parallel
+using mclapply using the number of cores specified. If = 1 then it will be run using a serial
+loop. NOTE: Windows machines must use a value of 1 (see ?parallel::mclapply). Additionally,
+be aware that each thread can use large chunks of memory. If the cores throw issues, consider
+setting mc.cores to 1.
+Default = 1.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>The input data with two new columns, .continentOutlier or .sea. There are three possible
+values for
+the new column: TRUE == passed, FALSE == failed (not in continent or in the ocean),
+NA == did not overlap with rnaturalearth map.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>countryOutlieRs()</code> for implementation at the country level. Country-level
+implementation will be more data-hungry and, where data do not yet exist, difficult to implement.
+Additionally, see <code>beesChecklist()</code> for input data. Note, not all columns are
+necessary if you are building your own dataset. At a minimum you will need <em>validName</em> and
+<em>continent</em>.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">if(requireNamespace("rnaturalearthdata")){
+library(magrittr)
+  # Load in the test dataset
+beesRaw &lt;- BeeBDC::beesRaw
+  # For the sake of this example, use the testChecklist
+system.file("extdata", "testChecklist.rda", package="BeeBDC") |&gt; load()
+  # For real examples, you might download the beesChecklist from FigShare using 
+  #  [BeeBDC::beesChecklist()]
+
+beesRaw_out &lt;- continentOutlieRs(checklist = testChecklist,
+                               data = beesRaw %&gt;%
+                               dplyr::filter(dplyr::row_number() %in% 1:50),
+                               keepAdjacentContinent = FALSE,
+                               pointBuffer = 1,
+                               scale = 50,
+                               stepSize = 1000000,
+                               mc.cores = 1)
+table(beesRaw_out$.continentOutlier, useNA = "always")
+} # END if require
+</code></pre>
+
+
+</div>

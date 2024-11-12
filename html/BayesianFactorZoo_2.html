@@ -1,0 +1,310 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>BayesianSDF</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Bayesian estimation of Linear SDF (B-SDF)</h2>
+
+<h3>Description</h3>
+
+<p>This function provides the Bayesian estimates of factors' risk prices.
+The estimates with the flat prior are given by Definitions 1 and 2 in
+Bryzgalova et al. (2023).
+The estimates with the normal prior are used in Table I (see the footnote of Table I).
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">BayesianSDF(
+  f,
+  R,
+  sim_length = 10000,
+  intercept = TRUE,
+  type = "OLS",
+  prior = "Flat",
+  psi0 = 5,
+  d = 0.5
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>f</code></td>
+<td>
+<p>A <code class="reqn">t \times k</code> matrix of factors, where <code class="reqn">k</code> is the number of factors
+and <code class="reqn">t</code> is the number of periods</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>R</code></td>
+<td>
+<p>A <code class="reqn">t \times N</code> matrix of test assets, where <code class="reqn">t</code> is the number of periods
+and <code class="reqn">N</code> is the number of test assets</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>sim_length</code></td>
+<td>
+<p>The length of MCMCs</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>intercept</code></td>
+<td>
+<p>If <code>intercept = TRUE</code> (<code>intercept = FALSE</code>), the model includes (does not include) the intercept.
+The default is <code>intercept = TRUE</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>type</code></td>
+<td>
+<p>If <code>type = 'OLS'</code> (<code>type = 'GLS'</code>), the function returns Bayesian OLS (GLS) estimates of risk prices <code class="reqn">\lambda</code>. The default is 'OLS'</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>prior</code></td>
+<td>
+<p>If <code>type = 'Flat'</code> (<code>type = 'Normal'</code>), the function executes the Bayesian estimation with the flat prior (normal prior).
+The default is 'Flat'</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>psi0</code></td>
+<td>
+<p>The hyper-parameter of the prior distribution of risk prices <code class="reqn">\lambda</code> used in the normal prior (see <b>Details</b>).
+This parameter is needed only when the user chooses  the normal prior. The default value is 5</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>d</code></td>
+<td>
+<p>The hyper-parameter of the prior distribution of risk prices <code class="reqn">\lambda</code> used in the normal prior (see <b>Details</b>). The default value is 0.5</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p><strong>Intercept</strong>
+</p>
+<p>Consider the cross-sectional step. If one includes the intercept, the model is
+</p>
+<p style="text-align: center;"><code class="reqn">\mu_R = \lambda_c 1_N + C_f \lambda_f = C \lambda,</code>
+</p>
+
+<p>where <code class="reqn">C = (1_N, C_f)</code> and <code class="reqn">\lambda^\top = (\lambda_c^\top, \lambda_f^\top)^\top </code>.
+If one doesn't include the intercept, the model is
+</p>
+<p style="text-align: center;"><code class="reqn">\mu_R = C_f \lambda_f = C \lambda,</code>
+</p>
+
+<p>where <code class="reqn">C = C_f</code> and <code class="reqn">\lambda = \lambda_f</code>.
+</p>
+<p><strong>Bayesian Estimation</strong>
+</p>
+<p>Let <code class="reqn">Y_t = f_t \cup R_t</code>. Conditional on the data <code class="reqn">Y = \{Y_t\}_{t=1}^T</code>, we can draw <code class="reqn">\mu_{Y}</code> and <code class="reqn">\Sigma_{Y}</code> from the Normal-inverse-Wishart system
+</p>
+<p style="text-align: center;"><code class="reqn">\mu_Y | \Sigma_Y, Y \sim N (\hat{\mu}_Y , \Sigma_Y / T) , </code>
+</p>
+
+<p style="text-align: center;"><code class="reqn">\Sigma_Y | Y \sim W^{-1} (T-1, \Sigma_{t=1}^{T} (Y_t - \hat{\mu}_Y ) ( Y_t - \hat{\mu}_Y )^\top   ) , </code>
+</p>
+
+<p>where <code class="reqn">W^{-1}</code> is the inverse-Wishart distribution.
+We do not standardize <code class="reqn">Y_t</code> in the time-series regression.
+In the empirical implementation, after obtaining posterior draws for <code class="reqn">\mu_{Y}</code> and <code class="reqn">\Sigma_{Y}</code>,
+we calculate <code class="reqn">\mu_R</code> and <code class="reqn">C_f</code> as the standardized expected returns of test assets and correlation
+between test assets and factors. It follows that <code class="reqn">C</code> is a matrix containing a vector of ones and <code class="reqn">C_f</code>.
+</p>
+<p>The prior distribution of risk prices is either the flat prior or the normal prior.
+</p>
+<p>With <code>prior = 'Flat'</code> and <code>type = 'OLS'</code>, for each draw, the risk price estimate is
+</p>
+<p style="text-align: center;"><code class="reqn">\hat{\lambda} = (C^{\top} C)^{-1}C^{T} \mu_{R}  .</code>
+</p>
+
+<p>With <code>prior = 'Flat'</code> and <code>type = 'GLS'</code>, for each draw, the risk price estimate is
+</p>
+<p style="text-align: center;"><code class="reqn">\hat{\lambda} = (C^{\top} \Sigma^{-1}_{R} C)^{-1} C^{\top} \Sigma^{-1}_{R} \mu_{R} </code>
+</p>
+
+<p>If one chooses <code>prior = 'Normal'</code>, the prior of factor <code class="reqn">j</code>'s risk price is
+</p>
+<p style="text-align: center;"><code class="reqn"> \lambda_j | \sigma^2 \sim N(0, \sigma^2 \psi \tilde{\rho}_j^\top \tilde{\rho}_j  T^d  ) ,</code>
+</p>
+
+<p>where <code class="reqn"> \tilde{\rho}_j = \rho_j - (\frac{1}{N} \Sigma_{i=1}^{N} \rho_{j,i}  ) \times 1_N </code> is the cross-sectionally
+demeaned vector of factor <code class="reqn">j</code>'s correlations with asset returns. Equivalently,
+</p>
+<p style="text-align: center;"><code class="reqn"> \lambda | \sigma^2 \sim N(0, \sigma^2 D^{-1}) ,</code>
+</p>
+
+<p style="text-align: center;"><code class="reqn">D = diag \{ (\psi \tilde{\rho}_1^\top \tilde{\rho}_1  T^d)^{-1}, ..., (\psi \tilde{\rho}_k^\top \tilde{\rho}_k  T^d)^{-1} \} \ \ without \ intercept;</code>
+</p>
+
+<p style="text-align: center;"><code class="reqn">D = diag \{ c, (\psi \tilde{\rho}_1^\top \tilde{\rho}_1  T^d)^{-1}, ..., (\psi \tilde{\rho}_k^\top \tilde{\rho}_k  T^d)^{-1} \} \ \ with \ intercept;</code>
+</p>
+
+<p>where <code class="reqn">c</code> is a small positive number corresponding to the common cross-sectional intercept (<code class="reqn">\lambda_c</code>).
+Default values for <code class="reqn">\psi</code> (<code>psi0</code>) and <code class="reqn">d</code> (<code>d</code>) are 5 and 0.5, respectively.
+</p>
+<p>With <code>prior = 'Normal'</code> and <code>type = 'OLS'</code>, for each draw, the risk price estimate is
+</p>
+<p style="text-align: center;"><code class="reqn"> \hat{\lambda} = ( C^{\top} C +D )^{-1} C^{\top} \mu_R .</code>
+</p>
+
+<p>With <code>prior = 'Normal'</code> and <code>type = 'GLS'</code>, for each draw, the risk price estimate is
+</p>
+<p style="text-align: center;"><code class="reqn"> \hat{\lambda} = ( C^{\top} \Sigma_R^{-1} C +D )^{-1} C^{\top} \Sigma_R^{-1} \mu_R .</code>
+</p>
+
+
+
+<h3>Value</h3>
+
+<p>The return of <code>BayesianSDF</code> is a list that contains the following elements:
+</p>
+
+<ul>
+<li> <p><code>lambda_path</code>: A <code>sim_length</code><code class="reqn">\times (k+1)</code> matrix if the intercept is included.
+NOTE: the first column <code class="reqn">\lambda_c</code> corresponds to the intercept. The next <code class="reqn">k</code> columns (i.e., the 2th – <code class="reqn">(k+1)</code>-th columns)
+are the risk prices of <code class="reqn">k</code> factors. If the intercept is excluded, the dimension of <code>lambda_path</code> is <code>sim_length</code><code class="reqn">\times k</code>.
+</p>
+</li>
+<li> <p><code>R2_path</code>: A <code>sim_length</code><code class="reqn">\times 1</code> matrix, which contains the posterior draws of the OLS or GLS <code class="reqn">R^2</code>.
+</p>
+</li>
+</ul>
+<h3>References</h3>
+
+<p>Bryzgalova S, Huang J, Julliard C (2023).
+“Bayesian solutions for the factor zoo: We just ran two quadrillion models &lt;https://doi.org/10.1111/jofi.13197&gt;.”
+<em>Journal of Finance</em>, <b>78</b>(1), 487–557.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## &lt;--------------------------------------------------------------------------------&gt;
+## Example: Bayesian estimates of risk prices and R2
+## This example is from the paper (see Section III. Simulation)
+## &lt;--------------------------------------------------------------------------------&gt;
+
+library(reshape2)
+library(ggplot2)
+
+# Load the example data
+data("BFactor_zoo_example")
+HML &lt;- BFactor_zoo_example$HML
+lambda_ols &lt;- BFactor_zoo_example$lambda_ols
+R2.ols.true &lt;- BFactor_zoo_example$R2.ols.true
+sim_f &lt;- BFactor_zoo_example$sim_f
+sim_R &lt;- BFactor_zoo_example$sim_R
+uf &lt;- BFactor_zoo_example$uf
+W_ols &lt;- BFactor_zoo_example$W_ols
+
+cat("Load the simulated example \n")
+
+cat("Cross-section: Fama-French 25 size and value portfolios \n")
+cat("True pricing factor in simulations: HML \n")
+cat("Pseudo-true cross-sectional R-squared:", R2.ols.true, "\n")
+cat("Pseudo-true (monthly) risk price:", lambda_ols[2], "\n")
+
+cat("----------------------------- Bayesian SDF ----------------------------\n")
+cat("------------------------ See definitions 1 and 2 ----------------------\n")
+
+cat("--------------------- Bayesian SDF: Strong factor ---------------------\n")
+
+sim_result &lt;- SDF_gmm(sim_R, sim_f, W_ols)   # GMM estimation
+# sim_result$lambda_gmm
+# sqrt(sim_result$Avar_hat[2,2])
+# sim_result$R2_adj
+
+## Now estimate the model using Bayesian method
+two_step &lt;- BayesianSDF(sim_f, sim_R, sim_length =  2000, psi0 = 5, d = 0.5)
+# apply(X = two_step$lambda_path, FUN = quantile, MARGIN = 2, probs = c(0.05, 0.95))
+# quantile(two_step$R2_path, probs = c(0.05, 0.5, 0.95))
+
+# Note that the first element correspond to lambda of the constant term
+# So we choose k=2 to get lambda of the strong factor
+k &lt;- 2
+m1 &lt;- sim_result$lambda_gmm[k]
+sd1 &lt;- sqrt(sim_result$Avar_hat[k,k])
+
+bfm&lt;-two_step$lambda_path[1001:2000, k]
+fm&lt;-rnorm(5000,mean = m1, sd=sd1)
+data&lt;-data.frame(cbind(fm, bfm))
+colnames(data)&lt;-c("GMM-OLS", "BSDF-OLS")
+data.long&lt;-melt(data)
+
+#
+### Figure 1(c)
+#
+p &lt;- ggplot(aes(x=value, colour=variable, linetype=variable), data=data.long)
+p+
+ stat_density(aes(x=value, colour=variable),
+              geom="line",position="identity", size = 2, adjust=1) +
+ geom_vline(xintercept = lambda_ols[2], linetype="dotted", color = "#8c8c8c", size=1.5)+
+ guides(colour = guide_legend(override.aes=list(size=2), title.position = "top",
+ title.hjust = 0.5, nrow=1,byrow=TRUE))+
+ theme_bw()+
+ labs(color=element_blank()) +
+ labs(linetype=element_blank()) +
+ theme(legend.key.width=unit(4,"line")) +
+ theme(legend.position="bottom")+
+ theme(text = element_text(size = 26))+
+ xlab(bquote("Risk price ("~lambda[strong]~")")) +
+ ylab("Density" )
+
+
+cat("--------------------- Bayesian SDF: Useless factor --------------------\n")
+
+sim_result &lt;- SDF_gmm(sim_R, uf, W_ols)
+# sim_result$lambda_gmm
+# sqrt(sim_result$Avar_hat[2,2])
+# sim_result$R2_adj
+
+two_step &lt;- BayesianSDF(uf, sim_R, sim_length =  2000, psi0 = 5, d = 0.5)
+#apply(X = two_step$lambda_path, FUN = quantile, MARGIN = 2, probs = c(0.05, 0.95))
+
+
+## Posterior (Asymptotic) Distribution of lambda
+k &lt;- 2
+m1 &lt;- sim_result$lambda[k]
+sd1 &lt;- sqrt(sim_result$Avar_hat[k,k])
+
+bfm&lt;-two_step$lambda_path[1001:2000, k]
+fm&lt;-rnorm(5000,mean = m1, sd=sd1)
+data&lt;-data.frame(cbind(fm, bfm))
+colnames(data)&lt;-c("GMM-OLS", "BSDF-OLS")
+data.long&lt;-melt(data)
+
+#
+### Figure 1(a)
+#
+p &lt;- ggplot(aes(x=value, colour=variable, linetype=variable), data=data.long)
+p+
+ stat_density(aes(x=value, colour=variable),
+              geom="line",position="identity", size = 2, adjust=2) +
+ geom_vline(xintercept = 0, linetype="dotted", color = "#8c8c8c", size=1.5)+
+ guides(colour = guide_legend(override.aes=list(size=2),
+ title.position = "top", title.hjust = 0.5, nrow=1,byrow=TRUE))+
+ theme_bw()+
+ labs(color=element_blank()) +
+ labs(linetype=element_blank()) +
+ theme(legend.key.width=unit(4,"line")) +
+ theme(legend.position="bottom")+
+ theme(text = element_text(size = 26))+
+ xlab(bquote("Risk price ("~lambda[spurious]~")")) +
+ ylab("Density" )
+
+
+
+</code></pre>
+
+
+</div>

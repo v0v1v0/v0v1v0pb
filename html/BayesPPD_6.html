@@ -1,0 +1,204 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>normalizing.constant</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Function for approximating the normalizing constant for generalized linear models with random a0</h2>
+
+<h3>Description</h3>
+
+<p>This function returns a vector of coefficients that defines a function <code class="reqn">f(a_0)</code> that approximates the normalizing constant for generalized linear models with random <code class="reqn">a_0</code>.
+The user should input the values returned to <code>glm.random.a0</code> or <code>power.glm.random.a0</code>.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">normalizing.constant(
+  grid,
+  historical,
+  data.type,
+  data.link,
+  prior.beta.var = rep(10, 50),
+  lower.limits = rep(-100, 50),
+  upper.limits = rep(100, 50),
+  slice.widths = rep(1, 50),
+  nMC = 10000,
+  nBI = 250
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>grid</code></td>
+<td>
+<p>Matrix of potential values for <code class="reqn">a_0</code>, where the number of columns should equal the number of historial datasets. Note that the algorithm may fail if some grid values are close to zero. See <em>Details</em> below.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>historical</code></td>
+<td>
+<p>List of historical dataset(s). East historical dataset is stored in a list which constains two <em>named</em> elements: <code>y0</code> and <code>x0</code>.
+</p>
+
+<ul>
+<li> <p><code>y0</code> is a vector of responses.
+</p>
+</li>
+<li> <p><code>x0</code> is a matrix of covariates.
+</p>
+</li>
+</ul>
+<p>For binomial data, an additional element <code>n0</code> is required.
+</p>
+
+<ul><li> <p><code>n0</code> is vector of integers specifying the number of subjects who have a particular value of the covariate vector.
+</p>
+</li></ul>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>data.type</code></td>
+<td>
+<p>Character string specifying the type of response. The options are "Bernoulli", "Binomial", "Poisson" and "Exponential".</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>data.link</code></td>
+<td>
+<p>Character string specifying the link function. The options are "Logistic", "Probit", "Log", "Identity-Positive", "Identity-Probability" and "Complementary Log-Log". Does not apply if <code>data.type</code> is "Normal".</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>prior.beta.var</code></td>
+<td>
+<p>Vector of variances of the independent normal initial priors on <code class="reqn">\beta</code> with mean zero. The length of the vector should be equal to the length of <code class="reqn">\beta</code>. The default variance is 10.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>lower.limits</code></td>
+<td>
+<p>Vector of lower limits for parameters to be used by the slice sampler. The length of the vector should be equal to the total number of parameters, i.e. P+1 where P is the number of covariates. The default is -100 for all parameters (may not be appropriate for all situations). Does not apply if <code>data.type</code> is "Normal".</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>upper.limits</code></td>
+<td>
+<p>Vector of upper limits for parameters to be used by the slice sampler. The length of the vector should be equal to the total number of parameters, i.e. P+1 where P is the number of covariates. The default is 100 for all parameters (may not be appropriate for all situations). Does not apply if <code>data.type</code> is "Normal".</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>slice.widths</code></td>
+<td>
+<p>Vector of initial slice widths for parameters to be used by the slice sampler. The length of the vector should be equal to the total number of parameters, i.e. P+1 where P is the number of covariates. The default is 1 for all parameter (may not be appropriate for all situations). Does not apply if <code>data.type</code> is "Normal".</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nMC</code></td>
+<td>
+<p>Number of iterations (excluding burn-in samples) for the slice sampler or Gibbs sampler. The default is 10,000.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nBI</code></td>
+<td>
+<p>Number of burn-in samples for the slice sampler or Gibbs sampler. The default is 250.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>This function performs the following steps:
+</p>
+
+<ol>
+<li>
+<p>	Suppose there are K historical datasets. The user inputs a grid of M rows and K columns of potential values for <code class="reqn">a_0</code>. For example, one can choose the vector <code>v = c(0.1, 0.25, 0.5, 0.75, 1)</code>
+and use <code>expand.grid(a0_1=v, a0_2=v, a0_3=v)</code> when <code class="reqn">K=3</code> to get a grid with <code class="reqn">M=5^3=125</code> rows and 3 columns. If there are more than three historical datasets, the dimension of <code>v</code> can be reduced
+to limit the size of the grid. A large grid will increase runtime.
+</p>
+</li>
+<li>
+<p>	For each row of <code class="reqn">a_0</code> values in the grid, obtain <code class="reqn">M</code> samples for <code class="reqn">\beta</code> from the power prior associated with the current values of <code class="reqn">a_0</code> using the slice sampler.
+</p>
+</li>
+<li>
+<p>	For each of the M sets of posterior samples, execute the PWK algorithm (Wang et al., 2018) to estimate the log of normalizing constant <code class="reqn">d_1,...,d_M</code> for the normalized power prior.
+</p>
+</li>
+<li>
+<p>	At this point, one has a dataset with outcomes <code class="reqn">d_1,...,d_M</code> and predictors corresponding to the rows of the <code class="reqn">a_0</code> grid matrix. A polynomial regression is applied to estimate a function <code class="reqn">d=f(a0)</code>.
+The degree of the polynomial regression is determined by the algorithm to ensure <code class="reqn">R^2 &gt; 0.99</code>.
+</p>
+</li>
+<li>
+<p>	The vector of coefficients from the polynomial regression model is returned by the function, which the user must input into <code>glm.random.a0</code> or <code>power.glm.random.a0</code>.
+</p>
+</li>
+</ol>
+<p>When a row of the <code>grid</code> contains elements that are close to zero, the resulting power prior will be flat and estimates of normalizing constants may be inaccurate.
+Therefore, it is recommended that <code>grid</code> values should be at least 0.05.
+</p>
+<p>If one encounters the error message "some coefficients are not defined because of singularities",
+it could be due to the following factors: number of <code>grid</code> rows too large or too small, insufficient sample size of the historical data, insufficient number of iterations for the slice sampler,
+or near-zero <code>grid</code> values.
+</p>
+<p>Note that due to computational intensity, the <code>normalizing.constant</code> function has not been evaluated for accuracy for high dimensional <code class="reqn">\beta</code> (e.g., dimension &gt; 10) or high dimensional <code class="reqn">a_0</code> (e.g., dimension &gt; 5).
+</p>
+
+
+<h3>Value</h3>
+
+<p>Vector of coefficients for <code class="reqn">a_0</code> that defines a function <code class="reqn">f(a_0)</code> that approximates the normalizing constant, necessary for functions <code>glm.random.a0</code> and <code>power.glm.random.a0</code>.
+The length of the vector is equal to 1+K*L where K is the number of historical datasets and L is the degree of the polynomial regression determined by the algorithm.
+</p>
+
+
+<h3>References</h3>
+
+<p>Wang, Yu-Bo; Chen, Ming-Hui; Kuo, Lynn; Lewis, Paul O. A New Monte Carlo Method for Estimating Marginal Likelihoods. Bayesian Anal. 13 (2018), no. 2, 311–333.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>glm.random.a0</code> and <code>power.glm.random.a0</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+data.type &lt;- "Bernoulli"
+data.link &lt;- "Logistic"
+data.size &lt;- 50
+
+# Simulate two historical datasets
+p &lt;- 1
+set.seed(111)
+x1 &lt;- matrix(rnorm(p*data.size),ncol=p,nrow=data.size)
+set.seed(222)
+x2 &lt;- matrix(rnorm(p*data.size),ncol=p,nrow=data.size)
+beta &lt;- c(1,2)
+mean1 &lt;- exp(x1*beta)/(1+exp(x1*beta))
+mean2 &lt;- exp(x2*beta)/(1+exp(x2*beta))
+historical &lt;- list(list(y0=rbinom(data.size,size=1,prob=mean1),x0=x1),
+                   list(y0=rbinom(data.size, size=1, prob=mean2),x0=x2))
+
+# Create grid of possible values of a0 with two columns corresponding to a0_1 and a0_2
+g &lt;- c(0.1, 0.25, 0.5, 0.75, 1)
+grid &lt;- expand.grid(a0_1=g, a0_2=g)
+
+nMC &lt;- 100 # nMC should be larger in practice
+nBI &lt;- 50
+result &lt;- normalizing.constant(grid=grid, historical=historical,
+                               data.type=data.type, data.link=data.link,
+                               nMC=nMC, nBI=nBI)
+</code></pre>
+
+
+</div>

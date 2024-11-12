@@ -1,0 +1,220 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>selectData</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Select data for analysis from a larger data frame</h2>
+
+<h3>Description</h3>
+
+<p>Select data for analysis from a larger data frame based on dependent
+variable, station, and layer. Removing records with missing
+values, performing log-transformations, and adding a centering date are
+performed based on settings.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">selectData(
+  df,
+  dep,
+  stat,
+  layer = NA,
+  transform = TRUE,
+  remMiss = TRUE,
+  analySpec
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>df</code></td>
+<td>
+<p>data frame</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>dep</code></td>
+<td>
+<p>dependent variable</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>stat</code></td>
+<td>
+<p>station</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>layer</code></td>
+<td>
+<p>layer (optional)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>transform</code></td>
+<td>
+<p>logical field to return log-transformed value (TRUE [default])</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>remMiss</code></td>
+<td>
+<p>logical field to remove records where dependent
+variable, dep, is a missing value (TRUE [default])</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>analySpec</code></td>
+<td>
+<p>analytical specifications</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The returned data frame will include dyear and cyear. dyear is the decimal
+year computed using smwrBase::baseDay2decimal and smwrBase::baseDay. From
+this, the minimum and maximum 'dyear' are averaged. This averaged value,
+centerYear, is used to compute the centering date, cyear, using cyear =
+dyear - centerYear.
+</p>
+<p>The variable identified by dep is copied to the variable name dep+".orig"
+(e.g., chla.orig) allowing the user to track the original concentrations. A
+new column, recensor, is added. The value of recensor is FALSE unless the
+value of dep.orig was &lt;=0. In the cases where dep.orig is &lt;= 0, recensor is
+set to TRUE and the value of dep is set to "less-than" a small positive
+value which is stored as iSpec$recensor. If transform=TRUE, the returned
+data frame will also include a variable "ln"+dep (i.e., "lnchla" for log
+transformed chla).
+</p>
+<p>The data frame will include a column, intervention, which is a factor identifying
+different periods of record such as when different laboratory methods were
+used and is based on the data frame methodsList that is loaded into the
+global environment. This column is set to "A" with only 1 level if the data
+frame methodsList has not been loaded into the global environment.
+</p>
+<p>The data frame will include a column, lowCensor, to indicate whether the
+data record occurs in a year with a low level of censoring over that
+particular year. The function gamTest uses this column to identify years of
+record (i.e., when lowCensor==FALSE) that should not be used in analyses.
+</p>
+<p>If remMiss=TRUE, then the returned data frame will be down selected by
+removing records where the variable identified in 'dep' is missing;
+otherwise, no down selection is performed.
+</p>
+<p>iSpec contains a large list of information
+</p>
+<p>dep - name of column where dependent variable is stored, could be "ln"+dep
+for variables that will be analyzed after natural log transformation
+</p>
+<p>depOrig - name of original dependent variable, could be same as dep if no
+transformation is used
+</p>
+<p>stat - name of station
+</p>
+<p>stationMethodGroup - name of station group that the station belongs to,
+derived from station list (stationMasterList) and used to identify interventions
+specified in methodsList table
+</p>
+<p>intervenNum - number of interventions found for this station and dependent
+variable as derived from methodsList table, a value of 1 is assigned if no
+methodsList entry is found
+</p>
+<p>intervenList - data frame of interventions identified by beginning and ending
+date and labeled consecutively starting with "A"
+</p>
+<p>layer - layer
+</p>
+<p>layerName - layer name derived from layerLukup
+</p>
+<p>transform - TRUE/FALSE indicating whether log transformations were taken
+</p>
+<p>trendIncrease - an indicator for interpretation of an increasing concentration
+</p>
+<p>logConst - not currently used
+</p>
+<p>recensor - small value that observations &lt;=0 are recensored to as "less than"
+the small value
+</p>
+<p>censorFrac - data frame indicating the yearly number of observations and
+fraction of observations reported as less than, uncensored, interval
+censored, less than zero, and recensored; also includes a 'lowCensor' field
+indicating which years will be dropped by gamTest due to high yearly
+censoring
+</p>
+<p>yearRangeDropped - year range of data that will be dropped due to censoring
+</p>
+<p>censorFracSum - censoring overall summary
+</p>
+<p>centerYear - centering year
+</p>
+<p>parmName - parameter name
+</p>
+<p>parmNamelc - parameter name in lower case
+</p>
+<p>parmUnits - parameter units
+</p>
+<p>statLayer - station/layer label, e.g., "LE3.1 (S)"
+</p>
+<p>usgsGageID - USGS gage used for flow adjustments
+</p>
+<p>usgsGageName - USGS gage used for flow adjustments
+</p>
+<p>numObservations - number of observations
+</p>
+<p>dyearBegin - begin date in decimal form
+</p>
+<p>dyearEnd - end date in decimal form
+</p>
+<p>dyearLength - period of record length
+</p>
+<p>yearBegin - period of record begin year
+</p>
+<p>yearend - period of record end year
+</p>
+<p>dateBegin - begin date
+</p>
+<p>dateEnd - end date
+</p>
+<p>The baseDay and baseDay2decimal functions have been added to this package 
+from the smwrBase package.
+</p>
+
+
+<h3>Value</h3>
+
+<p>A nest list is returned. The first element of the nest list is the down-selected
+data frame. The second element is the list, iSpec, contains specifications for
+data extraction. See examples for usage and details for further discussion of the data
+processing and components of each element.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## Not run: 
+dfr    &lt;- analysisOrganizeData(dataCensored)
+
+# retrieve Secchi depth for Station CB5.4, no transformations are applied
+dfr1   &lt;- selectData(dfr[["df"]], 'secchi', 'CB5.4', 'S', transform=FALSE,
+                    remMiss=FALSE, analySpec=dfr[["analySpec"]])
+df1    &lt;- dfr1[[1]]   # data frame of selected data
+iSpec1 &lt;- dfr1[[2]]   # meta data about selected data
+
+# retrieve surface corrected chlorophyll-a concentrations for Station CB5.4,
+# missing values are removed and transformation applied
+dfr2   &lt;- selectData(dfr[["df"]], 'chla', 'CB5.4', 'S', analySpec=dfr[["analySpec"]])
+df2    &lt;- dfr2[[1]]   # data frame of selected data
+iSpec2 &lt;- dfr2[[2]]   # meta data about selected data
+
+## End(Not run)
+</code></pre>
+
+
+</div>

@@ -1,0 +1,153 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>bamlss.formula</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>
+Formulae for BAMLSS
+</h2>
+
+<h3>Description</h3>
+
+<p>This function creates an extended BAMLSS <code>formula</code>. In combination with a
+<code>bamlss.family</code> object, each parameter of the response distribution is linked
+to a single formula. If no formula is supplied for a parameter, a simple intercept only
+model is created. Moreover, the function identifies hierarchical structures, see the examples.
+This function is useful for creating complex <code>model.frame</code>s for (hierarchical)
+multi-parameter models and is used by function <code>bamlss.frame</code>. 
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">bamlss.formula(formula, family = NULL, specials = NULL, env = NULL, ...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>formula</code></td>
+<td>
+<p>A simple <code>formula</code>, or a <code>list</code> of simple formulae,
+or an extended <code>Formula</code>. For formula lists or extended
+<code>Formula</code>e, each single formula represents one model for the
+respective parameter as specified in the <code>family</code> object.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>family</code></td>
+<td>
+<p>A <code>bamlss.family</code> object.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>specials</code></td>
+<td>
+<p>A character vector specifying special functions to be used within
+formulae, see <code>terms.object</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>env</code></td>
+<td>
+<p>The environment that should be assigned to the formula.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Arguments passed to the <code>family</code>.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>A named list of class <code>"bamlss.formula"</code>. Each list entry specifies a model, e.g., for
+one parameter of a provided <code>bamlss.family</code> object. Each entry (parameter model) then
+holds:
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>formula</code></td>
+<td>
+<p>A simple <code>formula</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>fake.formula</code></td>
+<td>
+<p>A formula with all function calls being dropped, e.g., the formula
+<code>y ~ s(x1) + s(x2)</code> is represented in the <code>fake.formula</code> entry as
+<code>y ~ x1 + x2</code>. The <code>fake.formula</code> is useful for creating model frames.</p>
+</td>
+</tr>
+</table>
+<h3>See Also</h3>
+
+<p><code>bamlss</code>, <code>bamlss.frame</code>, <code>bamlss.family</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## Simple formula without family object.
+f &lt;- bamlss.formula(y ~ x1 + s(x2))
+print(f)
+print(str(f))
+
+## Complex formula with list of formulae.
+f &lt;- list(
+  y1 ~ x1 + s(x2),
+  y2 ~ x3 + te(lon, lat),
+  u ~ x4 + x1
+)
+
+f &lt;- bamlss.formula(f)
+print(f)
+print(names(f))
+
+## Same formula but using extended formulae
+## of package Formula.
+f &lt;- y1|y2|u ~ x1 + s(x2)|x3 + te(lon,lat)|x4 + x1
+f &lt;- bamlss.formula(f)
+print(f)
+print(names(f))
+
+## Using a bamlss family object, e.g., gaussian_bamlss().
+## The family has two parameters, mu and sigma, for
+## each parameter one formula is returned. If no
+## formula is specified an intercept only model is
+## generated for the respective parameter.
+f &lt;- bamlss.formula(y ~ x1 + s(x2), family = gaussian_bamlss)
+
+## Note, same as:
+f &lt;- bamlss.formula(y ~ x1 + s(x2), family = "gaussian")
+print(f)
+
+## Specify model for parameter sigma, too
+f &lt;- list(
+  y ~ x1 + s(x2),
+  sigma ~ x2 + te(lon, lat)
+)
+f &lt;- bamlss.formula(f, family = "gaussian")
+print(f)
+
+## With complex hierarchical structures,
+## each parameter is another list of formulae,
+## indicated by the h1,...,hk, names.
+f &lt;- list(
+  y ~ x1 + s(x2) + id1,
+  sigma ~ x2 + te(lon, lat) + id2,
+  id1 ~ s(x3) + x4 + s(id3),
+  id3 ~ x5 + s(x5, x6),
+  id2 ~ x7
+)
+f &lt;- bamlss.formula(f, family = "gaussian")
+print(f)
+</code></pre>
+
+
+</div>

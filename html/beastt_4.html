@@ -1,0 +1,148 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>calc_power_prior_norm</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Calculate Power Prior Normal</h2>
+
+<h3>Description</h3>
+
+<p>Calculate a (potentially inverse probability weighted) normal
+power prior using external data.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">calc_power_prior_norm(
+  external_data,
+  response,
+  prior = NULL,
+  external_sd = NULL
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>external_data</code></td>
+<td>
+<p>This can either be a <code>prop_scr_obj</code> created by calling
+<code>create_prop_scr()</code> or a tibble of the external data. If it is just a
+tibble the weights will be assumed to be 1. Only the external data for the
+arm(s) of interest should be included in this object (e.g., external
+control data if creating a power prior for the control mean)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>response</code></td>
+<td>
+<p>Name of response variable</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>prior</code></td>
+<td>
+<p>Either <code>NULL</code> or a normal distributional object that is the
+initial prior for the parameter of interest (e.g., control mean) before the
+external data are observed</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>external_sd</code></td>
+<td>
+<p>Standard deviation of external response data if assumed
+known. It can be left as <code>NULL</code> if assumed unknown</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>Weighted participant-level response data from an external study are
+incorporated into an inverse probability weighted (IPW) power prior for the
+parameter of interest <code class="reqn">\theta</code> (e.g., the control mean if borrowing
+from an external control arm). When borrowing information from an external
+dataset of size <code class="reqn">N_{E}</code>, the IPW likelihood of the external response
+data <code class="reqn">y_E</code> with weights <code class="reqn">\hat{\boldsymbol{a}}_0</code> is defined as
+</p>
+<p style="text-align: center;"><code class="reqn">\mathcal{L}_E(\theta \mid \boldsymbol{y}_E, \hat{\boldsymbol{a}}_0,
+  \sigma_{E}^2) \propto \exp \left( -\frac{1}{2 \sigma_{E}^2}
+  \sum_{i=1}^{N_{E}} \hat{a}_{0i} (y_i - \theta)^2 \right).</code>
+</p>
+
+<p>The <code>prior</code> argument should be either a distributional object with a family
+type of <code>normal</code> or <code>NULL</code>, corresponding to the use of a normal initial
+prior or an improper uniform initial prior (i.e., <code class="reqn">\pi(\theta) \propto
+  1</code>), respectively.
+</p>
+<p>The <code>external_sd</code> argument can be a positive value if the external standard
+deviation is assumed known or left as <code>NULL</code> otherwise. If <code>external_sd = NULL</code>, then <code>prior</code> must be <code>NULL</code> to indicate the use of an improper
+uniform initial prior for <code class="reqn">\theta</code>, and an improper prior is defined
+for the unknown external standard deviation such that <code class="reqn">\pi(\sigma_E^2)
+  \propto (\sigma_E^2)^{-1}</code>. The details of the IPW power prior for each
+case are as follows:
+</p>
+
+<dl>
+<dt>
+<code style="white-space: pre;">⁠external_sd = positive value⁠</code> (<code class="reqn">\sigma_E^2</code> known):</dt>
+<dd>
+<p>With
+either a proper normal or an improper uniform initial prior, the IPW
+weighted power prior for <code class="reqn">\theta</code> is a normal distribution.</p>
+</dd>
+<dt>
+<code>external_sd = NULL</code> (<code class="reqn">\sigma_E^2</code> unknown):</dt>
+<dd>
+<p>With improper
+priors for both <code class="reqn">\theta</code> and <code class="reqn">\sigma_E^2</code>, the marginal IPW weighted
+power prior for <code class="reqn">\theta</code> after integrating over <code class="reqn">\sigma_E^2</code> is
+a non-standardized <code class="reqn">t</code> distribution.</p>
+</dd>
+</dl>
+<p>Defining the weights <code class="reqn">\hat{\boldsymbol{a}}_0</code> to equal 1 results in a
+conventional normal (or <code class="reqn">t</code>) power prior if the external standard
+deviation is known (unknown).
+</p>
+
+
+<h3>Value</h3>
+
+<p>Normal power prior object
+</p>
+
+
+<h3>See Also</h3>
+
+<p>Other power prior: 
+<code>calc_power_prior_beta()</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">library(distributional)
+library(dplyr)
+# This function can be used directly on the data
+calc_power_prior_norm(ex_norm_df,
+  response = y,
+  prior = dist_normal(50, 10),
+  external_sd = 0.15)
+
+# Or this function can be used with a propensity score object
+ps_obj &lt;- calc_prop_scr(internal_df = filter(int_norm_df, trt == 0),
+                       external_df = ex_norm_df,
+                       id_col = subjid,
+                       model = ~ cov1 + cov2 + cov3 + cov4)
+calc_power_prior_norm(ps_obj,
+                     response = y,
+                     prior = dist_normal(50, 10),
+                     external_sd = 0.15)
+
+</code></pre>
+
+
+</div>

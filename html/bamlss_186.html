@@ -1,0 +1,182 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>sam_Cox</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>
+Cox Model Markov Chain Monte Carlo
+</h2>
+
+<h3>Description</h3>
+
+<p>This sampler function implements a derivative based MCMC algorithm for
+flexible Cox models with structured additive predictors.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">sam_Cox(x, y, family, start, weights, offset,
+  n.iter = 1200, burnin = 200, thin = 1,
+  verbose = TRUE, digits = 4, step = 20, ...)
+
+cox_mcmc(x, y, family, start, weights, offset,
+  n.iter = 1200, burnin = 200, thin = 1,
+  verbose = TRUE, digits = 4, step = 20, ...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>The <code>x</code> list, as returned from function
+<code>bamlss.frame</code> and transformed by function <code>surv_transform</code>,
+holding all model matrices and other information that is used for
+fitting the model.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>y</code></td>
+<td>
+<p>The model response, as returned from function <code>bamlss.frame</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>family</code></td>
+<td>
+<p>A <span class="pkg">bamlss</span> family object, see <code>family.bamlss</code>.
+In this case this is the <code>cox_bamlss</code> family object.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>start</code></td>
+<td>
+<p>A named numeric vector containing possible starting values, the names are based on
+function <code>parameters</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>weights</code></td>
+<td>
+<p>Prior weights on the data, as returned from function <code>bamlss.frame</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>offset</code></td>
+<td>
+<p>Can be used to supply model offsets for use in fitting,
+returned from function <code>bamlss.frame</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>n.iter</code></td>
+<td>
+<p>Sets the number of MCMC iterations.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>burnin</code></td>
+<td>
+<p>Sets the burn-in phase of the sampler, i.e., the number of starting samples that
+should be removed.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>thin</code></td>
+<td>
+<p>Defines the thinning parameter for MCMC simulation. E.g., <code>thin = 10</code> means,
+that only every 10th sampled parameter will be stored.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>verbose</code></td>
+<td>
+<p>Print information during runtime of the algorithm.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>digits</code></td>
+<td>
+<p>Set the digits for printing when <code>verbose = TRUE</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>step</code></td>
+<td>
+<p>How many times should algorithm runtime information be printed, divides <code>n.iter</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Currently not used.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The sampler uses derivative based proposal functions to create samples of parameters.
+For time-dependent functions the proposals are based on one Newton-Raphson iteration centered
+at the last state, while for the time-constant functions proposals can be based
+on iteratively reweighted least squares (IWLS), see also function <code>GMCMC</code>.
+The integrals that are part of the time-dependent function updates are solved numerically.
+In addition, smoothing variances are sampled using slice sampling.
+</p>
+
+
+<h3>Value</h3>
+
+<p>The function returns samples of parameters. The samples are provided as a
+<code>mcmc</code> matrix.
+</p>
+
+
+<h3>References</h3>
+
+<p>Umlauf N, Klein N, Zeileis A (2016). Bayesian Additive Models for Location
+Scale and Shape (and Beyond). <em>(to appear)</em>
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>opt_Cox</code>, <code>cox_bamlss</code>, <code>surv_transform</code>,
+<code>simSurv</code>, <code>bamlss</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## Not run: library("survival")
+set.seed(123)
+
+## Simulate survival data.
+d &lt;- simSurv(n = 500)
+
+## Formula of the survival model, note
+## that the baseline is given in the first formula by s(time).
+f &lt;- list(
+  Surv(time, event) ~ s(time) + s(time, by = x3),
+  gamma ~ s(x1) + s(x2)
+)
+
+## Cox model with continuous time.
+## Note the the family object cox_bamlss() sets
+## the default optimizer and sampler function!
+## First, posterior mode estimates are computed
+## using function opt_Cox(), afterwards the
+## sampler sam_Cox() is started.
+b &lt;- bamlss(f, family = "cox", data = d)
+
+## Plot estimated effects.
+plot(b)
+
+## End(Not run)
+</code></pre>
+
+
+</div>

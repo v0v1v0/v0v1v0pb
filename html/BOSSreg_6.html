@@ -1,0 +1,97 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>predict.boss</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Prediction given new data entries.</h2>
+
+<h3>Description</h3>
+
+<p>This function returns the prediction(s) given new observation(s), for BOSS,
+where the optimal coefficient vector is chosen via certain selection rule.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">## S3 method for class 'boss'
+predict(object, newx, ...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>object</code></td>
+<td>
+<p>The boss object, returned from calling 'boss' function.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>newx</code></td>
+<td>
+<p>A new data entry or several entries. It can be a vector, or a matrix with
+<code>nrow(newx)</code> being the number of new entries and <code>ncol(newx)=p</code> being the
+number of predictors. The function takes care of the intercept, NO need to add <code>1</code>
+to <code>newx</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Extra arguments to be plugged into <code>coef</code>, such as <code>select.boss</code>,
+see the description of <code>coef.boss</code> for more details.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The function basically calculates <code class="reqn">x * coef</code>, where <code>coef</code>
+is a coefficient vector chosen by a selection rule. See more details about the default
+and available choices of the selection rule in the description of <code>coef.boss</code>.
+</p>
+
+
+<h3>Value</h3>
+
+<p>The prediction(s) for BOSS.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## Generate a trivial dataset, X has mean 0 and norm 1, y has mean 0
+set.seed(11)
+n = 20
+p = 5
+x = matrix(rnorm(n*p), nrow=n, ncol=p)
+x = scale(x, center = colMeans(x))
+x = scale(x, scale = sqrt(colSums(x^2)))
+beta = c(1, 1, 0, 0, 0)
+y = x%*%beta + scale(rnorm(n, sd=0.01), center = TRUE, scale = FALSE)
+
+## Fit the model
+boss_result = boss(x, y)
+
+## Get the coefficient vector selected by AICc-hdf (S3 method for boss)
+beta_boss_aicc = coef(boss_result)
+# the above is equivalent to the following
+beta_boss_aicc = boss_result$beta_boss[, which.min(boss_result$IC_boss$aicc), drop=FALSE]
+## Get the fitted values of BOSS-AICc-hdf (S3 method for boss)
+mu_boss_aicc = predict(boss_result, newx=x)
+# the above is equivalent to the following
+mu_boss_aicc = cbind(1,x) %*% beta_boss_aicc
+
+## Repeat the above process, but using Cp-hdf instead of AICc-hdf
+## coefficient vector
+beta_boss_cp = coef(boss_result, method.boss='cp')
+beta_boss_cp = boss_result$beta_boss[, which.min(boss_result$IC_boss$cp), drop=FALSE]
+## fitted values of BOSS-Cp-hdf
+mu_boss_cp = predict(boss_result, newx=x, method.boss='cp')
+mu_boss_cp = cbind(1,x) %*% beta_boss_cp
+</code></pre>
+
+
+</div>

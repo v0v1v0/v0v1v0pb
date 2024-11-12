@@ -1,0 +1,189 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>opt_isgd</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>
+Implicit Stochastic Gradient Descent Optimizer
+</h2>
+
+<h3>Description</h3>
+
+<p>This optimizer performs an implicit stochastic gradient descent
+algorithm. It is mainly used within a <code>bamlss</code> call.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">opt_isgd(x, y, family, weights = NULL, offset = NULL,
+     gammaFun = function(i) 1/(1 + i), shuffle = TRUE,
+     CFun = function(beta) diag(length(beta)),
+     start = NULL, i.state = 0)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>For function <code>boost()</code> the <code>x</code> list, as returned from
+function <code>bamlss.frame</code>, holding all model matrices
+and other information that is used for fitting the model.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>y</code></td>
+<td>
+<p>The model response, as returned from function
+<code>bamlss.frame</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>family</code></td>
+<td>
+<p>A <span class="pkg">bamlss</span> family object, see
+<code>family.bamlss</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>weights</code></td>
+<td>
+<p>Prior weights on the data, as returned from function <code>bamlss.frame</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>offset</code></td>
+<td>
+<p>Can be used to supply model offsets for use in fitting,
+returned from function <code>bamlss.frame</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>gammaFun</code></td>
+<td>
+<p>Function specifying the step length.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>shuffle</code></td>
+<td>
+<p>Should the data be shuffled?</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>CFun</code></td>
+<td>
+<p>Hessian approximating function.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>start</code></td>
+<td>
+<p>Vector of starting values.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>i.state</code></td>
+<td>
+<p>Added to <code>gammaFUN()</code>.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>tpf
+</p>
+
+
+<h3>Value</h3>
+
+<p>For function <code>opt_isgd()</code> a list containing the following objects:
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>fitted.values</code></td>
+<td>
+<p>A named list of the fitted values based on the last iteration
+of the modeled parameters of the selected distribution.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>parameters</code></td>
+<td>
+<p>A matrix, each row corresponds to the parameter values of one iteration.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>sgd.summary</code></td>
+<td>
+<p>The summary of the stochastic gradient descent algorithm which can be printed and plotted.</p>
+</td>
+</tr>
+</table>
+<h3>Warning </h3>
+
+<p>CAUTION: Arguments <code>weights</code> and <code>offset</code> are not implemented yet!
+</p>
+
+
+<h3>Note</h3>
+
+<p>Motivated by the lecture 'Regression modelling with large data sets'
+given by Ioannis Kosmidis in Innsbruck, January 2017.
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Thorsten Simon
+</p>
+
+
+<h3>References</h3>
+
+<p>Toulis, P and Airoldi, EM (2015): Scalable estimation strategies based on
+stochastic approximations: Classical results and new insights.
+Statistics and Computing, 25, no. 4, 781–795.
+doi: 10.1007/s11222-015-9560-y
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>bamlss.frame</code>, <code>bamlss</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## Not run: 
+set.seed(111)
+d &lt;- GAMart(n = 10000)
+f &lt;- num ~ s(x1) + s(x2) + s(x3) + te(lon, lat)
+b &lt;- bamlss(f, data = d, optimizer = opt_isgd, sampler = FALSE)
+plot(b, ask = F)
+
+## loop over observations a 2nd time
+b &lt;- bamlss(f, data = d, optimizer = opt_isgd, sampler = FALSE, start = parameters(b),
+            i.state = b$model.stats$optimizer$sgd.summary$i.state)
+plot(b, ask = F)
+
+## try differeent gammaFuns, e.g.,
+# gammaFun &lt;- function(i) .3/sqrt((1+i)) + 0.001
+
+## testing some families
+f2 &lt;- bin ~ s(x1) + s(x2) + s(x3) + te(lon, lat)
+b2 &lt;- bamlss(f2, data = d, optimizer = opt_isgd, sampler = FALSE, family = "binomial")
+
+f3 &lt;- cens ~ s(x1) + s(x2) + s(x3) + te(lon, lat)
+b3 &lt;- bamlss(f3, data = d, optimizer = opt_isgd, sampler = FALSE, family = "cnorm")
+
+## End(Not run)
+</code></pre>
+
+
+</div>

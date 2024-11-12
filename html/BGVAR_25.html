@@ -1,0 +1,218 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>irf</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Impulse Response Function</h2>
+
+<h3>Description</h3>
+
+<p>This function calculates three alternative ways of dynamic responses, namely generalized impulse response functions (GIRFs) as in Pesaran and Shin (1998), orthogonalized impulse response functions using a Cholesky decomposition and finally impulse response functions given a set of user-specified sign restrictions.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">irf(x, n.ahead=24, shockinfo=NULL, quantiles=NULL, 
+    expert=NULL, verbose=TRUE)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>Object of class <code>bgvar</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>n.ahead</code></td>
+<td>
+<p>Forecasting horizon.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>shockinfo</code></td>
+<td>
+<p>Dataframe with additional information about the nature of shocks. Depending on the <code>ident</code> argument, the dataframe has to be specified differently. In order to get a dummy version for each identification scheme use <code>get_shockinfo</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>quantiles</code></td>
+<td>
+<p>Numeric vector with posterior quantiles. Default is set to compute median along with 68%/80%/90% confidence intervals.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>expert</code></td>
+<td>
+<p>Expert settings, must be provided as list. Default is set to <code>NULL</code>.</p>
+
+<dl>
+<dt><code>MaxTries</code></dt>
+<dd>
+<p> Numeric specifying maximal number of tries for finding a rotation matrix with sign-restrictions. Attention: setting this number very large may results in very long computational times. Default is set to <code>MaxTries=100</code>.</p>
+</dd>
+<dt><code>save.store</code></dt>
+<dd>
+<p> If set to <code>TRUE</code> the full posterior of both, impulses responses and rotation matrices, are returned. Default is set to <code>FALSE</code> in order to save storage.</p>
+</dd>
+<dt><code>use_R</code></dt>
+<dd>
+<p> Boolean whether IRF computation should fall back on <code>R</code> version, otherwise <code>Rcpp</code> version is used.</p>
+</dd>
+<dt><code>applyfun</code></dt>
+<dd>
+<p> In case <code>use_R=TRUE</code>, this allows for user-specific apply function, which has to have the same interface than <code>lapply</code>. If <code>cores=NULL</code> then <code>lapply</code> is used, if set to a numeric either <code>parallel::parLapply()</code> is used on Windows platforms and <code>parallel::mclapply()</code> on non-Windows platforms.</p>
+</dd>
+<dt><code>cores</code></dt>
+<dd>
+<p> Numeric specifying the number of cores which should be used, also <code>all</code> and <code>half</code> is possible. By default only one core is used.</p>
+</dd>
+</dl>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>verbose</code></td>
+<td>
+<p>If set to <code>FALSE</code> it suppresses printing messages to the console.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>Returns a list of class <code>bgvar.irf</code> with the following elements: </p>
+
+<dl>
+<dt><code>posterior</code></dt>
+<dd>
+<p> Four-dimensional array (K times n.ahead times number of shocks times Q) that contains Q quantiles of the posterior distribution of the impulse response functions.</p>
+</dd>
+<dt><code>shockinfo</code></dt>
+<dd>
+<p> Dataframe with details on identification specification.</p>
+</dd>
+<dt><code>rot.nr</code></dt>
+<dd>
+<p> In case identification is based on sign restrictions (i.e., <code>ident="sign"</code>), this provides the number of rotation matrices found for the number of posterior draws (save*save_thin).</p>
+</dd>
+<dt><code>struc.obj</code></dt>
+<dd>
+<p> List object that contains posterior quantitites needed when calculating historical decomposition and structural errors via <code>hd.decomp</code>.</p>
+
+<dl>
+<dt><code>A</code></dt>
+<dd>
+<p> Median posterior of global coefficient matrix.</p>
+</dd>
+<dt><code>Ginv</code></dt>
+<dd>
+<p> Median posterior of matrix <code>Ginv</code>, which describes contemporaneous relationships between countries.</p>
+</dd>
+<dt><code>S</code></dt>
+<dd>
+<p> Posterior median of matrix with country variance-covariance matrices on the main diagonal.</p>
+</dd>
+<dt><code>Rmed</code></dt>
+<dd>
+<p> Posterior rotation matrix if <code>ident="sign"</code>.</p>
+</dd>
+</dl>
+</dd>
+<dt><code>model.obj</code></dt>
+<dd>
+<p> List object that contains model-specific information, in particular</p>
+
+<dl>
+<dt><code>xglobal</code></dt>
+<dd>
+<p> Data of the model.</p>
+</dd>
+<dt><code>lags</code></dt>
+<dd>
+<p> Lag specification of the model.</p>
+</dd>
+</dl>
+</dd>
+<dt><code>IRF_store</code></dt>
+<dd>
+<p> Four-dimensional array (K times n.ahead times number of shock times draws) which stores the whole posterior distribution. Exists only if <code>save.store=TRUE</code>.</p>
+</dd>
+<dt><code>R_store</code></dt>
+<dd>
+<p> Three-dimensional array (K times K times draws) which stores all rotation matrices. Exists only if <code>save.store=TRUE</code>.</p>
+</dd>
+</dl>
+<h3>Author(s)</h3>
+
+<p>Maximilian Boeck, Martin Feldkircher, Florian Huber
+</p>
+
+
+<h3>References</h3>
+
+<p>Arias, J.E., Rubio-Ramirez, J.F, and D.F. Waggoner (2018) <em>Inference Based on SVARs Identified with Sign and Zero Restrictions: Theory and Applications.</em> Econometrica Vol. 86(2), pp. 685-720.
+</p>
+<p>D'Amico, S. and T. B. King (2017) <em>What Does Anticipated Monetary Policy Do?</em> Federal Reserve Bank of Chicago Working paper series, Nr. 2015-10.
+</p>
+<p>Pesaran, H.M. and Y. Shin (1998) <em>Generalized impulse response analysis in linear multivariate models.</em> Economics Letters, Volume 58, Issue 1, p. 17-29.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>bgvar</code>, <code>get_shockinfo</code>, <code>add_shockinfo</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+oldpar &lt;- par(no.readonly = TRUE)
+# First example, a US monetary policy shock, quarterly data
+library(BGVAR)
+data(testdata)
+# US monetary policy shock
+model.eer&lt;-bgvar(Data=testdata, W=W.test, draws=50, burnin=50, 
+                 plag=1, prior="SSVS", eigen=TRUE)
+
+# generalized impulse responses
+shockinfo&lt;-get_shockinfo("girf")
+shockinfo$shock&lt;-"US.stir"; shockinfo$scale&lt;--100
+
+irf.girf.us.mp&lt;-irf(model.eer, n.ahead=24, shockinfo=shockinfo)
+
+# cholesky identification
+shockinfo&lt;-get_shockinfo("chol")
+shockinfo$shock&lt;-"US.stir"; shockinfo$scale&lt;--100
+
+irf.chol.us.mp&lt;-irf(model.eer, n.ahead=24, shockinfo=shockinfo)
+
+# sign restrictions
+shockinfo &lt;- get_shockinfo("sign")
+shockinfo &lt;- add_shockinfo(shockinfo, shock="US.stir", restriction=c("US.y","US.Dp"), 
+                           sign=c("&lt;","&lt;"), horizon=c(1,1), scale=1, prob=1)
+irf.sign.us.mp&lt;-irf(model.eer, n.ahead=24, shockinfo=shockinfo)
+
+# sign restrictions
+shockinfo &lt;- get_shockinfo("sign")
+shockinfo &lt;- add_shockinfo(shockinfo, shock="US.stir", restriction=c("US.y","US.Dp"), 
+sign=c("&lt;","&lt;"), horizon=c(1,1), scale=1, prob=1)
+irf.sign.us.mp&lt;-irf(model.eer, n.ahead=24, shockinfo=shockinfo)
+
+#' # sign restrictions with relaxed cross-country restrictions
+shockinfo &lt;- get_shockinfo("sign")
+# restriction for other countries holds to 75\%
+shockinfo &lt;- add_shockinfo(shockinfo, shock="US.stir", restriction=c("US.y","EA.y","UK.y"), 
+                           sign=c("&lt;","&lt;","&lt;"), horizon=1, scale=1, prob=c(1,0.75,0.75))
+shockinfo &lt;- add_shockinfo(shockinfo, shock="US.stir", restriction=c("US.Dp","EA.Dp","UK.Dp"),
+                           sign=c("&lt;","&lt;","&lt;"), horizon=1, scale=1, prob=c(1,0.75,0.75))
+irf.sign.us.mp&lt;-irf(model.eer, n.ahead=20, shockinfo=shockinfo)
+
+</code></pre>
+
+
+</div>

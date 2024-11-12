@@ -1,0 +1,114 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>VS</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Function to perform variable selection</h2>
+
+<h3>Description</h3>
+
+<p>Perform variable selection using the 95
+neighborhood criterion (SNC), median probability model (MPM) or Bayesian
+false discovery rate (FDR). Note that the Bayesian FDR only applies for each
+subgroup if there are subgroups.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">VS(x, method = "FDR", threshold = NA, subgroup = 1)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>fitted object obtained with <code>BayesSurvive</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>method</code></td>
+<td>
+<p>variable selection method to choose from
+<code>c("CI", "SNC", "MPM", "FDR")</code>. Default is "FDR"</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>threshold</code></td>
+<td>
+<p>SNC threshold value (default 0.5) or the Bayesian expected false
+discovery rate threshold (default 0.05)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>subgroup</code></td>
+<td>
+<p>index of the subgroup for visualizing posterior coefficients</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>A boolean vector of selected (= TRUE) and rejected (= FALSE)
+variables
+</p>
+
+
+<h3>References</h3>
+
+<p>Lee KH, Chakraborty S, Sun J (2015). Survival prediction and variable
+selection with simultaneous shrinkage and grouping priors. Statistical
+Analysis and Data Mining, 8:114-127
+</p>
+<p>Newton MA, Noueiry A, Sarkar D, Ahlquist P (2004). Detecting differential
+gene expression with a semiparametric hierarchical mixture method.
+Biostatistics, 5(2), 155-76
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+library("BayesSurvive")
+set.seed(123)
+
+# Load the example dataset
+data("simData", package = "BayesSurvive")
+
+dataset &lt;- list(
+  "X" = simData[[1]]$X,
+  "t" = simData[[1]]$time,
+  "di" = simData[[1]]$status
+)
+
+# Initial value: null model without covariates
+initial &lt;- list("gamma.ini" = rep(0, ncol(dataset$X)))
+# Hyperparameters
+hyperparPooled &lt;- list(
+  "c0"     = 2, # prior of baseline hazard
+  "tau"    = 0.0375, # sd for coefficient prior
+  "cb"     = 20, # sd for coefficient prior
+  "pi.ga"  = 0.02, # prior variable selection probability for standard Cox models
+  "a"      = -4, # hyperparameter in MRF prior
+  "b"      = 0.1, # hyperparameter in MRF prior
+  "G"      = simData$G # hyperparameter in MRF prior
+)
+
+
+# run Bayesian Cox with graph-structured priors
+fit &lt;- BayesSurvive(
+  survObj = dataset, hyperpar = hyperparPooled,
+  initial = initial, nIter = 100
+)
+# show variable selection
+VS(fit, method = "FDR")
+
+
+</code></pre>
+
+
+</div>

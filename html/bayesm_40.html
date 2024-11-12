@@ -1,0 +1,236 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>rhierLinearModel</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Gibbs Sampler for Hierarchical Linear Model with Normal Heterogeneity</h2>
+
+<h3>Description</h3>
+
+<p><code>rhierLinearModel</code> implements a Gibbs Sampler for hierarchical linear models with a normal prior.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">rhierLinearModel(Data, Prior, Mcmc)</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>Data </code></td>
+<td>
+<p>list(regdata, Z)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Prior</code></td>
+<td>
+<p>list(Deltabar, A, nu.e, ssq, nu, V)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Mcmc </code></td>
+<td>
+<p>list(R, keep, nprint)</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+
+
+<h4>Model and Priors</h4>
+
+<p><code>nreg</code> regression equations with <code class="reqn">nvar</code> <code class="reqn">X</code> variables in each equation <br><code class="reqn">y_i = X_i\beta_i + e_i</code> with <code class="reqn">e_i</code> <code class="reqn">\sim</code> <code class="reqn">N(0, \tau_i)</code> 
+</p>
+<p><code class="reqn">\tau_i</code> <code class="reqn">\sim</code> nu.e*<code class="reqn">ssq_i/\chi^2_{nu.e}</code> where <code class="reqn">\tau_i</code> is the variance of <code class="reqn">e_i</code><br><code class="reqn">\beta_i</code> <code class="reqn">\sim</code> N(Z<code class="reqn">\Delta</code>[i,], <code class="reqn">V_{\beta}</code>) <br>
+Note:  Z<code class="reqn">\Delta</code> is the matrix <code class="reqn">Z * \Delta</code> and [i,] refers to <code class="reqn">i</code>th row of this product<br></p>
+<p><code class="reqn">vec(\Delta)</code> given <code class="reqn">V_{\beta}</code> <code class="reqn">\sim</code> <code class="reqn">N(vec(Deltabar), V_{\beta}(x) A^{-1})</code><br><code class="reqn">V_{\beta}</code> <code class="reqn">\sim</code> <code class="reqn">IW(nu,V)</code> <br><code class="reqn">Delta, Deltabar</code> are <code class="reqn">nz x nvar</code>; <code class="reqn">A</code> is <code class="reqn">nz x nz</code>; <code class="reqn">V_{\beta}</code> is <code class="reqn">nvar x nvar</code>.
+</p>
+<p>Note: if you don't have any <code class="reqn">Z</code> variables, omit <code class="reqn">Z</code> in the <code>Data</code> argument and 
+a vector of ones will be inserted; the matrix <code class="reqn">\Delta</code> will be <code class="reqn">1 x nvar</code> and should 
+be interpreted as the mean of all unit <code class="reqn">\beta</code>s.
+</p>
+
+
+
+<h4>Argument Details</h4>
+
+<p><em><code>Data  = list(regdata, Z)</code> [<code>Z</code> optional]</em>
+</p>
+
+<table>
+<tr>
+<td style="text-align: left;">
+    <code>regdata:        </code> </td>
+<td style="text-align: left;"> list of lists with <code class="reqn">X</code> and <code class="reqn">y</code> matrices for each of <code>nreg=length(regdata)</code> regressions </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+    <code>regdata[[i]]$X: </code> </td>
+<td style="text-align: left;"> <code class="reqn">n_i x nvar</code> design matrix for equation <code class="reqn">i</code> </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+    <code>regdata[[i]]$y: </code> </td>
+<td style="text-align: left;"> <code class="reqn">n_i x 1</code> vector of observations for equation <code class="reqn">i</code> </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+    <code>Z:              </code> </td>
+<td style="text-align: left;"> <code class="reqn">nreg x nz</code> matrix of unit characteristics (def: vector of ones)
+    </td>
+</tr>
+</table>
+<p><em><code>Prior = list(Deltabar, A, nu.e, ssq, nu, V)</code>  [optional]</em>
+</p>
+
+<table>
+<tr>
+<td style="text-align: left;">
+    <code>Deltabar:       </code> </td>
+<td style="text-align: left;"> <code class="reqn">nz x nvar</code> matrix of prior means (def: 0) </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+    <code>A:              </code> </td>
+<td style="text-align: left;"> <code class="reqn">nz x nz</code> matrix for prior precision (def: 0.01I) </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+    <code>nu.e:           </code> </td>
+<td style="text-align: left;"> d.f. parameter for regression error variance prior (def: 3) </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+    <code>ssq:            </code> </td>
+<td style="text-align: left;"> scale parameter for regression error var prior (def: <code>var(y_i)</code>) </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+    <code>nu:             </code> </td>
+<td style="text-align: left;"> d.f. parameter for Vbeta prior (def: nvar+3) </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+    <code>V:              </code> </td>
+<td style="text-align: left;"> Scale location matrix for Vbeta prior (def: nu*I)
+    </td>
+</tr>
+</table>
+<p><em><code>Mcmc  = list(R, keep, nprint)</code> [only <code>R</code> required]</em>
+</p>
+
+<table>
+<tr>
+<td style="text-align: left;">
+    <code>R:              </code> </td>
+<td style="text-align: left;"> number of MCMC draws </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+    <code>keep:           </code> </td>
+<td style="text-align: left;"> MCMC thinning parm -- keep every <code>keep</code>th draw (def: 1) </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+    <code>nprint:         </code> </td>
+<td style="text-align: left;"> print the estimated time remaining for every <code>nprint</code>'th draw (def: 100, set to 0 for no print)
+    </td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>A list containing:
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>betadraw  </code></td>
+<td>
+<p><code class="reqn">nreg x nvar x R/keep</code> array of individual regression coef draws</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>taudraw   </code></td>
+<td>
+<p><code class="reqn">R/keep x nreg</code> matrix of error variance draws</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Deltadraw </code></td>
+<td>
+<p><code class="reqn">R/keep x nz*nvar</code> matrix of Deltadraws</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Vbetadraw </code></td>
+<td>
+<p><code class="reqn">R/keep x nvar*nvar</code> matrix of Vbeta draws</p>
+</td>
+</tr>
+</table>
+<h3>Author(s)</h3>
+
+<p>Peter Rossi, Anderson School, UCLA, <a href="mailto:perossichi@gmail.com">perossichi@gmail.com</a>.</p>
+
+
+<h3>References</h3>
+
+<p>For further discussion, see Chapter 3, <em>Bayesian Statistics and Marketing</em> by Rossi, Allenby, and McCulloch.</p>
+
+
+<h3>See Also</h3>
+
+ <p><code>rhierLinearMixture</code> </p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">if(nchar(Sys.getenv("LONG_TEST")) != 0) {R=2000} else {R=10}
+set.seed(66)
+
+nreg = 100
+nobs = 100
+nvar = 3
+Vbeta = matrix(c(1, 0.5, 0, 0.5, 2, 0.7, 0, 0.7, 1), ncol=3)
+
+Z = cbind(c(rep(1,nreg)), 3*runif(nreg))
+Z[,2] = Z[,2] - mean(Z[,2])
+nz = ncol(Z)
+Delta = matrix(c(1,-1,2,0,1,0), ncol=2)
+Delta = t(Delta) # first row of Delta is means of betas
+Beta = matrix(rnorm(nreg*nvar),nrow=nreg)%*%chol(Vbeta) + Z%*%Delta
+
+tau = 0.1
+iota = c(rep(1,nobs))
+regdata = NULL
+for (reg in 1:nreg) { 
+  X = cbind(iota, matrix(runif(nobs*(nvar-1)),ncol=(nvar-1)))
+	y = X%*%Beta[reg,] + sqrt(tau)*rnorm(nobs)
+	regdata[[reg]] = list(y=y, X=X) 
+}
+
+Data1 = list(regdata=regdata, Z=Z)
+Mcmc1 = list(R=R, keep=1)
+
+out = rhierLinearModel(Data=Data1, Mcmc=Mcmc1)
+
+cat("Summary of Delta draws", fill=TRUE)
+summary(out$Deltadraw, tvalues=as.vector(Delta))
+
+cat("Summary of Vbeta draws", fill=TRUE)
+summary(out$Vbetadraw, tvalues=as.vector(Vbeta[upper.tri(Vbeta,diag=TRUE)]))
+
+## plotting examples
+if(0){
+  plot(out$betadraw)
+  plot(out$Deltadraw)
+}
+</code></pre>
+
+
+</div>

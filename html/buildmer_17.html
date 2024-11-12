@@ -1,0 +1,215 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>buildmerControl</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Set control options for buildmer</h2>
+
+<h3>Description</h3>
+
+<p><code>buildmerControl</code> provides all the knobs and levers that can be manipulated during the buildmer fitting and <code>summary</code>/<code>anova</code> process. Some of these are part of buildmer's core functionality—for instance, <code>crit</code> allows to specify different elimination criteria, a core buildmer feature—whereas some are only meant for internal usage, e.g. <code>I_KNOW_WHAT_I_AM_DOING</code> is only used to turn off the PQL safeguards in <code>buildbam</code>/<code>buildgam</code>, which you really should only do if you have a very good reason to believe that the PQL check is being triggered erroneously for your problem.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">buildmerControl(
+  formula = quote(stop("No formula specified")),
+  data = NULL,
+  family = gaussian(),
+  args = list(),
+  direction = c("order", "backward"),
+  cl = NULL,
+  crit = NULL,
+  elim = NULL,
+  fit = function(...) stop("No fitting function specified"),
+  include = NULL,
+  quiet = FALSE,
+  calc.anova = FALSE,
+  calc.summary = TRUE,
+  ddf = "Wald",
+  quickstart = 0,
+  singular.ok = FALSE,
+  grad.tol = formals(buildmer::converged)$grad.tol,
+  hess.tol = formals(buildmer::converged)$hess.tol,
+  dep = NULL,
+  REML = NA,
+  can.use.reml = TRUE,
+  force.reml = FALSE,
+  scale.est = NA,
+  I_KNOW_WHAT_I_AM_DOING = FALSE
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>formula</code></td>
+<td>
+<p>The model formula for the maximal model you would like to fit. Alternatively, a buildmer term list as obtained from <code>tabulate.formula</code>. In the latter formulation, you also need to specify a <code>dep='...'</code> argument specifying the dependent variable to go along with the term list. See <code>tabulate.formula</code> for an example of where this is useful.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+<p>The data to fit the model(s) to.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>family</code></td>
+<td>
+<p>The error distribution to use.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>args</code></td>
+<td>
+<p>Extra arguments passed to the fitting function.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>direction</code></td>
+<td>
+<p>Character string or vector indicating the direction for stepwise elimination; possible options are <code>'order'</code> (order terms by their contribution to the model), <code>'backward'</code> (backward elimination), <code>'forward'</code> (forward elimination, implies <code>order</code>). The default is the combination <code>c('order','backward')</code>, to first make sure that the model converges and to then perform backward elimination; other such combinations are perfectly allowed.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>cl</code></td>
+<td>
+<p>Specifies a cluster to use for parallelizing the evaluation of terms. This can be an object as returned by function <code>makeCluster</code> from package <code>parallel</code>, or a whole number to let buildmer create, manage, and destroy a cluster for you with the specified number of parallel processes.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>crit</code></td>
+<td>
+<p>Character string or vector determining the criterion used to test terms for their contribution to the model fit in the ordering step. Possible options are <code>'LRT'</code> (likelihood-ratio test based on chi-square mixtures per Stram &amp; Lee 1994 for random effects; this is the default), <code>'LL'</code> (use the raw -2 log likelihood), <code>'AIC'</code> (Akaike Information Criterion), <code>'BIC'</code> (Bayesian Information Criterion), and <code>'deviance'</code> (explained deviance – note that this is not a formal test). If left at its default value of <code>NULL</code>, the same value is used as in the <code>elim</code> argument; if that is also <code>NULL</code>, both are set to <code>'LRT'</code>. If <code>crit</code> is a function, it may optionally have an <code>crit.name</code> attribute, which will be used as its name in buildmer. This is used to guide the code checking for mismatches between <code>crit</code> and <code>elim</code> arguments.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>elim</code></td>
+<td>
+<p>Character string or vector determining the criterion used to test terms for elimination in the elimination step. Possible options are <code>'LRT'</code> (likelihood-ratio test based on chi-square mixtures per Stram &amp; Lee 1994 for random effects; this is the default), <code>'LL'</code> (use the raw -2 log likelihood), <code>'AIC'</code> (Akaike Information Criterion), <code>'BIC'</code> (Bayesian Information Criterion), and <code>'deviance'</code> (explained deviance — note that this is not a formal test). If left at its default value of <code>NULL</code>, the same value is used as in the <code>crit</code> argument; if that is also <code>NULL</code>, both are set to <code>'LRT'</code>. If <code>elim</code> is a function, it may optionally have an <code>elim.name</code> attribute, which will be used as its name in buildmer. This is used to guide the code checking for mismatches between <code>crit</code> and <code>elim</code> arguments.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>fit</code></td>
+<td>
+<p>Internal parameter — do not modify.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>include</code></td>
+<td>
+<p>A one-sided formula or character vector of terms that will be included in the model at all times and are not subject to testing for elimination. These do not need to be specified separately in the <code>formula</code> argument. Useful for e.g. passing correlation structures in <code>glmmTMB</code> models.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>quiet</code></td>
+<td>
+<p>A logical indicating whether to suppress progress messages.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>calc.anova</code></td>
+<td>
+<p>Logical indicating whether to also calculate the ANOVA table for the final model after term elimination.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>calc.summary</code></td>
+<td>
+<p>Logical indicating whether to also calculate the summary table for the final model after term elimination.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ddf</code></td>
+<td>
+<p>The method used for calculating <em>p</em>-values for <code>lme4</code> models and <code>calc.anova=TRUE</code> or <code>calc.summary=TRUE</code>. Options are <code>'Wald'</code> (default), <code>'Satterthwaite'</code> (if package <code>lmerTest</code> is available), <code>'Kenward-Roger'</code> (if packages <code>lmerTest</code> and <code>pbkrtest</code> are available), and <code>'lme4'</code> (no <em>p</em>-values).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>quickstart</code></td>
+<td>
+<p>For <code>gam</code> models only: a numeric with values from 0 to 5. If set to 1, will use <code>bam</code> to obtain starting values for <code>gam</code>'s outer iteration, potentially resulting in a much faster fit for each model. If set to 2, will disregard ML/REML and always use <code>bam</code>'s <code>fREML</code> for the quickstart fit. 3 also sets <code>discrete=TRUE</code>. Values between 3 and 4 fit the quickstart model to a subset of that value (e.g.\ <code>quickstart=3.1</code> fits the quickstart model to 10% of the data, which is also the default if <code>quickstart=3</code>. Values between 4 and 5 do the same, but also set a very sloppy convergence tolerance of 0.2.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>singular.ok</code></td>
+<td>
+<p>Logical indicating whether singular fits are acceptable. Only for lme4 models.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>grad.tol</code></td>
+<td>
+<p>Tolerance for declaring gradient convergence. For <code>buildbam</code>, the default value is multiplied by 100.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>hess.tol</code></td>
+<td>
+<p>Tolerance for declaring Hessian convergence. For <code>buildbam</code>, the default value is multiplied by 100.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>dep</code></td>
+<td>
+<p>A character string specifying the name of the dependent variable. Only used if <code>formula</code> is a buildmer terms list.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>REML</code></td>
+<td>
+<p>In some situations, the user may want to force REML on or off, rather than using buildmer's autodetection. If <code>REML=TRUE</code> (or more precisely, if <code>isTRUE(REML)</code> evaluates to true), then buildmer will always use REML. This results in invalid results if formal model-comparison criteria are used with models differing in fixed effects (and the user is not guarded against this), but is useful with the 'deviance-explained' criterion, where it is actually the default (you can disable this and use the 'normal' REML/ML-differentiating behavior by passing <code>REML=NA</code>).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>can.use.reml</code></td>
+<td>
+<p>Internal option specifying whether the fitting engine should distinguish between fixed-effects and random-effects model comparisons. Do not set this option yourself unless you are programming a new fitting function for <code>buildcustom</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>force.reml</code></td>
+<td>
+<p>Internal option specifying whether, if not differentiating between fixed-effects and random-effects model comparisons, these comparisons should be based on ML or on REML (if possible). Do not set this option yourself unless you are programming a new fitting function for <code>buildcustom</code>. Enabling this option only makes sense for criteria that do not compare likelihoods, in which case this is an optimization; it is applied automatically for the 'deviance-explained' criterion.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>scale.est</code></td>
+<td>
+<p>Internal option specifying whether the model estimates an unknown scale parameter. Used only in <code>crit.F</code>. Possible values are <code>TRUE</code> (scale is estimated), <code>FALSE</code> (scale is known), and <code>NA</code> (unknown, needs to be inferred from the fitted model; this is the default). There is limited support for modifying this parameter.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>I_KNOW_WHAT_I_AM_DOING</code></td>
+<td>
+<p>An internal option that you should not modify unless you know what you are doing.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>With the default options, all <code>buildmer</code> functions will do two things:
+</p>
+
+<ol>
+<li>
+<p> Determine the order of the effects in your model, based on their importance as measured by the likelihood-ratio test statistic. This identifies the ‘maximal model’, which is the model containing either all effects specified by the user, or subset of those effects that still allow the model to converge, ordered such that the most information-rich effects have made it in.
+</p>
+</li>
+<li>
+<p> Perform backward stepwise elimination based on the significance of the change in log-likelihood.
+</p>
+</li>
+</ol>
+<p>The final model is returned in the <code>model</code> slot of the returned <code>buildmer</code> object.
+All functions in the <code>buildmer</code> package are aware of the distinction between (f)REML and ML, and know to divide chi-square <em>p</em>-values by 2 when comparing models differing only in random effects (see Pinheiro &amp; Bates 2000).
+The steps executed above can be changed using the <code>direction</code> argument, allowing for arbitrary chains of, for instance, forward-backward-forward stepwise elimination (although using more than one elimination method on the same data is not recommended). The criterion for determining the importance of terms in the ordering stage and the elimination of terms in the elimination stage can also be changed, using the <code>crit</code> argument.
+</p>
+
+
+</div>

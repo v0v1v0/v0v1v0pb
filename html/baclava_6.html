@@ -1,0 +1,649 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>fit_baclava</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Bayesian Analysis of Cancer Latency with Auxiliary Variable Augmentation</h2>
+
+<h3>Description</h3>
+
+<p>Markov chain Monte Carlo sampler to fit a three-state mixture compartmental
+model of cancer natural history to individual-level screening and cancer
+diagnosis histories in a Bayesian framework.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">fit_baclava(
+  data.assess,
+  data.clinical,
+  baclava.object = NULL,
+  M = 100L,
+  thin = 1L,
+  t0 = 0,
+  theta_0 = list(),
+  prior = list(),
+  epsilon_rate_H = 0.001,
+  epsilon_rate_P = 0.001,
+  epsilon_psi = 0.001,
+  indolent = TRUE,
+  adaptive = NULL,
+  round.age.entry = TRUE,
+  verbose = TRUE,
+  save.latent = FALSE
+)
+
+## S3 method for class 'baclava'
+summary(object, ...)
+
+## S3 method for class 'baclava'
+print(x, ...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>data.assess</code></td>
+<td>
+<p>A data.frame. Disease status assessments recorded
+during healthy or preclinical compartment, e.g., screenings for disease.
+The data must be structured as
+</p>
+
+<ul>
+<li> <p><code>id</code>: A character, numeric, or integer object. The unique participant
+id to which the record pertains. Multiple records for each id are allowed.
+</p>
+</li>
+<li> <p><code>age_assess</code>: A numeric object. The participant's age at time of
+assessment.
+</p>
+</li>
+<li> <p><code>disease_detected</code>: An integer object. Must be binary 0/1, where
+1 indicates that disease was detected at the assessment; 0 otherwise.
+</p>
+</li>
+</ul>
+<p>If the sensitivity parameter (beta) is screen-specific, an additional
+column <code>screen_type</code> is required indicating the type of each
+screen.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>data.clinical</code></td>
+<td>
+<p>A data.frame. The clinical data. The data must
+be structured as
+</p>
+
+<ul>
+<li> <p><code>id</code>: A character, numeric, or integer object. The unique participant
+id to which the record pertains. Note these must include those provided in
+<code>data.assess</code>. Must be only 1 record for each participant.
+</p>
+</li>
+<li> <p><code>age_entry</code>: A numeric object. The age at time of entry into the study.
+Note that this data is used to calculate a normalization; to expedite
+numerical integration, it is recommended that the ages be rounded.
+Optional input <code>round.age.entry</code> can be
+set to FALSE if this approximation is not desired; however, the
+computation time will significantly increase.
+</p>
+</li>
+<li> <p><code>endpoint_type</code>: A character object. Must be one of {"clinical",
+"censored", "preclinical"}. Type "clinical" indicates that disease
+was diagnosed in the clinical compartment (i.e., symptomatic). Type
+"preclinical" indicates that disease was diagnosed in the preclinical
+compartment (i.e., during an assessment). Type
+"censored" indicates disease was not diagnosed prior to end of study.
+</p>
+</li>
+<li> <p><code>age_endpoint</code>: A numeric object. The participant's age at the
+time the endpoint was evaluated.
+</p>
+</li>
+</ul>
+<p>If the sensitivity parameter (beta) is arm-specific, an additional
+column <code>arm</code> is required indicating the study arm to which each
+participant is assigned. Similarly, if the preclinical Weibull distribution is
+group-specific, an additional column <code>grp.rateP</code> is required. See Details
+for further information.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>baclava.object</code></td>
+<td>
+<p>NULL or a 'baclava' object. To continue a calculation,
+provide the object returned by a previous call.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>M</code></td>
+<td>
+<p>A positive integer object. The number of Monte Carlo samples. This
+is the total, i.e., M = adaptive$warmup + n_MCMC.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>thin</code></td>
+<td>
+<p>A positive integer object. Keep each thin-th step of the sampler
+after the warmup period, if any, is complete.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>t0</code></td>
+<td>
+<p>A non-negative scalar numeric object. The risk onset age. Must be
+less than the earliest assessment age, entry age, and endpoint age.
+If <code>baclava.object</code> is a 'baclava' object, this input is ignored.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>theta_0</code></td>
+<td>
+<p>A list object. The initial values for all distribution
+parameters. If <code>baclava.object</code> is a 'baclava' object, this input is ignored.
+See Details for further information.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>prior</code></td>
+<td>
+<p>A list object. The prior parameters. If <code>baclava.object</code> is
+a 'baclava' object, this input is ignored. See Details for further
+information.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>epsilon_rate_H</code></td>
+<td>
+<p>A small scalar numeric. The Monte Carlo step size
+for rate_H (the rate parameter of the Weibull of the healthy compartment).
+If <code>baclava.object</code> is a 'baclava' object, this input is ignored.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>epsilon_rate_P</code></td>
+<td>
+<p>A small scalar numeric or named numeric vector.
+The Monte Carlo step size for rate_P (the rate parameter of the Weibull of
+the preclinical compartment). If group-specific Weibull distributions
+are used, this must be a vector; see Details for further information.
+If <code>baclava.object</code> is a 'baclava' object, this input is ignored.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>epsilon_psi</code></td>
+<td>
+<p>A small scalar numeric. The Monte Carlo step size for
+parameter psi (the probability of indolence). If disease under
+analysis does not have an indolent state, set to 0 and ensure that
+the initial value for psi in theta_0 is also 0.
+If <code>baclava.object</code> is a 'baclava' object, this input is ignored.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>indolent</code></td>
+<td>
+<p>A logical object. If <code>FALSE</code>, disease under analysis
+does not have an indolent state, i.e., it is always progressive.
+This input is provided for convenience; if FALSE, <code>epislon_psi</code> and
+<code>theta_0$psi</code> will be set to 0.
+If <code>baclava.object</code> is a 'baclava' object, this input is ignored.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>adaptive</code></td>
+<td>
+<p>NULL or named list. If NULL, the step sizes are
+not modified in the MCMC. If a list, the parameters for the
+adaptive MCMC.
+The provided list must contain elements "delta", the target acceptance
+rate; "warmup", the number of iterations to apply step size correction;
+and parameters "m0", "kappa", and "gamma". See Details for further
+information.
+If <code>baclava.object</code> is a 'baclava' object, this input is ignored.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>round.age.entry</code></td>
+<td>
+<p>A logical object. If TRUE, the age at time of entry
+will be rounded to the nearest integer prior to performing the MCMC.
+This data is used to estimate the probability of experiencing clinical
+disease prior to entering the study, which is estimated using a
+time consuming numerical integration procedure. It is expected that
+rounding the ages at time of entry introduces minimal bias. If FALSE,
+and ages cannot be grouped, these integrals significantly increase
+computation time.
+If <code>baclava.object</code> is a 'baclava' object, this input is ignored.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>verbose</code></td>
+<td>
+<p>A logical object. If <code>TRUE</code>, a progress bar will be shown
+during the MCMC.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>save.latent</code></td>
+<td>
+<p>A logical object. If <code>TRUE</code>, latent variable tau_HP
+and indolence will be returned. These can be very large matrices. To
+estimate the cohort overdiagnosis probability using cohortODX(),
+this must be set to TRUE.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>object</code></td>
+<td>
+<p>An object of class <code>baclava</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Ignored.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>An object of class <code>baclava</code>.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>Input <code>theta_0</code> contains the initial values for all distribution
+parameters. The list must include
+</p>
+
+<ul>
+<li> <p><code>rate_H</code>: A scalar numeric. The rate for the Weibull
+distribution of the healthy compartment.
+</p>
+</li>
+<li> <p><code>shape_H</code>: A scalar numeric. The shape parameter for the
+Weibull distribution of the healthy compartment.
+</p>
+</li>
+<li> <p><code>rate_P</code>: A numeric scalar or named numeric vector. The rate
+parameter for each Weibull distribution of the preclinical compartment.
+If all participants follow the same Weibull distribution, provide a scalar.
+If multiple preclinical Weibull distributions are used, see note below.
+</p>
+</li>
+<li> <p><code>shape_P</code>: A scalar numeric. The shape parameter for all
+Weibull distributions of the preclinical compartment.
+</p>
+</li>
+<li> <p><code>beta</code>: A  scalar numeric or named numeric vector. The assessment
+sensitivity. If the sensitivity is the same for all participants, provide
+a scalar. If the sensitivity is arm- or screen-type-specific, see note below.
+Each element must be in [0, 1].
+</p>
+</li>
+<li> <p><code>psi</code>: A scalar numeric. The probability of being indolent.
+Must be in [0,1]. If disease is always progressive, this element is
+required, but its value must be set to 0.
+</p>
+</li>
+</ul>
+<p>Input <code>prior</code> contains all distribution parameters for the priors.
+The list must include
+</p>
+
+<ul>
+<li> <p><code>rate_P</code>: A scalar numeric or named vector object. The rate
+for the Gamma(shape_P, rate_P) prior on the rate of the Weibull of the
+preclinical compartment. If group-specific distributions are used, see
+note below.
+</p>
+</li>
+<li> <p><code>shape_P</code>: A scalar numeric or named vector object. The shape
+for the Gamma(shape_P, rate_P) prior on the rate of the Weibull of the
+preclinical compartment. If group-specific distributions are used, see
+note below.
+</p>
+</li>
+<li> <p><code>rate_H</code>: A scalar numeric. The rate for the
+Gamma(shape_H, rate_H) prior on the rate of the Weibull of the healthy
+compartment.
+</p>
+</li>
+<li> <p><code>shape_H</code>: A scalar numeric. The shape for the
+Gamma(shape_H, rate_H) prior on the rate of the Weibull of the healthy
+compartment.
+</p>
+</li>
+<li> <p><code>a_beta</code>: A positive scalar numeric or named numeric vector.
+The first parameter of the Beta(a, b) prior on the assessment sensitivity.
+If arm- or screen-type-specific distributions are used, see note below.
+If beta is not allowed to change, specify 0.0.
+</p>
+</li>
+<li> <p><code>b_beta</code>: A positive scalar numeric or named numeric vector.
+The second parameter of the Beta(a, b) prior on the assessment sensitivity.
+If arm- or screen-type-specific distributions are used, see note below.
+If beta is not allowed to change, specify 0.0.
+</p>
+</li>
+<li> <p><code>a_psi</code>: A positive scalar numeric. The first parameter of the
+Beta(a, b) prior on the indolence probability. If disease under analysis
+does not have an indolent state, this element must be included, but it
+will be ignored.
+</p>
+</li>
+<li> <p><code>b_psi</code>: A positive scalar numeric. The second parameter of the
+Beta(a, b) prior on the indolence probability. If disease under analysis
+does not have an indolent state, this element must be included, but it
+will be ignored.
+</p>
+</li>
+</ul>
+<p>It is possible to assign participants to study arms such that each arm has
+its own screening sensitivities and/or rate_P distributions, or to
+assign screen-type specific sensitivities.
+</p>
+<p>To designate study arms, each of which will have its own screening
+sensitivities:
+</p>
+
+<ul>
+<li>
+<p> Provide an additional column in <code>data.clinical</code> named
+"arm", which gives the study arm to which each participant is
+assigned. For example,
+<code>data.clinical$arm = c("Control", "Tx", "Tx", ...)</code>.
+</p>
+</li>
+<li>
+<p> Define all beta related prior parameters as named vectors.
+For example, <code>prior$a_beta = c("Control" = 1, "Tx" = 38.5)</code>,
+and <code>prior$b_beta = c("Control" = 1, "Tx" = 5.8)</code>
+</p>
+</li>
+<li>
+<p> Define the initial beta values of theta as a named vector.
+For example,  <code>theta_0$beta = c("Control" = 0.75, "Tx" = 0.8)</code>.
+</p>
+</li>
+</ul>
+<p>Similarly, if using multiple preclinical Weibull distributions
+(distributions will have the same shape_P),
+</p>
+
+<ul>
+<li>
+<p> Provide an additional column in <code>data.clinical</code> named
+"grp.rateP", which assigns each participant to one of the preclinical
+Weibull distributions.
+For example, <code>data.clinical$grp.rateP = c("rateP1", "rateP2", "rateP2", ... )</code>.
+</p>
+</li>
+<li>
+<p> Define the rate_P prior parameter as a named vector.
+For example, <code>prior$rate_P &lt;- c("rateP1" = 0.01, "rateP2" = 0.02)</code>.
+</p>
+</li>
+<li>
+<p> Define the shape_P prior parameter as a named vector.
+For example, <code>prior$shape_P &lt;- c("rateP1" = 1, "rateP2" = 2)</code>.
+</p>
+</li>
+<li>
+<p> Define the initial rate_P values of theta as a named vector.
+For example,  <code>theta_0$rate_P &lt;- c("rateP1" = 1e-5, "rateP2" = 0.01)</code>.
+</p>
+</li>
+<li>
+<p> Define step size of rate_P as a named vector. For example,
+<code>epsilon_rate_P &lt;- c("rateP1" = 0.001, "rateP2" = 0.002)</code>.
+</p>
+</li>
+</ul>
+<p>To assign screen-specific sensitivities,
+</p>
+
+<ul>
+<li>
+<p> Provide an additional column in <code>data.assess</code> named
+"screen_type", which gives the screening type for each screen. For example,
+<code>data.assess$screen_type = c("film", "2D", "2D", ...)</code>.
+</p>
+</li>
+<li>
+<p> Define all beta related prior parameters as named vectors.
+For example, <code>prior$a_beta = c("film" = 1, "2D" = 38.5)</code>,
+and <code>prior$b_beta = c("film" = 1, "2D" = 5.8)</code>
+</p>
+</li>
+<li>
+<p> Define the initial beta values of theta as a named vector.
+For example,  <code>theta_0$beta = c("film" = 0.75, "2D" = 0.8)</code>.
+</p>
+</li>
+</ul>
+<p>NOTE: If using integers to indicate group membership, vector names
+still must be provided. For example, if group membership is binary 0/1,
+vector elements of the prior, initial theta, and step size must be named
+as "0" and "1".
+</p>
+<p>The adaptive MCMC tuning expression at step m + 1 is defined as
+</p>
+<p style="text-align: center;"><code class="reqn">\epsilon_{m+1} = (1 - m^{\kappa}) \epsilon_{m} + m^{\kappa}
+  \xi_{m+1},</code>
+</p>
+
+<p>where
+</p>
+<p style="text-align: center;"><code class="reqn">\xi_{m+1} = \frac{\sqrt{m}}{\gamma}\frac{1}{m+m_0}
+  \sum_{i=1}^{m} (\alpha_m - \delta).</code>
+</p>
+
+<p>To initiate the adaptive selection procedure, input <code>adaptive</code>
+must specify the parameters of the above expressions.
+Specifically, the provided list must contain elements "delta", the
+target acceptance rate; "warmup", the number of iterations to apply step
+size correction; and parameters "m0", "kappa", and "gamma".
+</p>
+
+
+<h3>Value</h3>
+
+<p>An object of S3 class <code>baclava</code>, which extends a list object.
+</p>
+
+<ul>
+<li>
+<p> theta: A list of the posterior distribution parameters at the thinned samples.
+</p>
+
+<ul>
+<li>
+<p> rate_H: A numeric vector. The rates for the Weibull of the
+the healthy compartment.
+</p>
+</li>
+<li>
+<p> shape_H: A scalar numeric. The input shape_H parameter.
+</p>
+</li>
+<li>
+<p> rate_P: A numeric matrix. The rates for the Weibull of the
+preclinical compartment.
+</p>
+</li>
+<li>
+<p> shape_P: A scalar numeric. The input shape_P parameter.
+</p>
+</li>
+<li>
+<p> beta: A numeric matrix. The assessment sensitivities.
+</p>
+</li>
+<li>
+<p> psi: A numeric vector. The probabilities of indolence. Will be
+NA if disease is always progressive.
+</p>
+</li>
+</ul>
+</li>
+<li>
+<p> tau_hp: If <code>save.latent = TRUE</code>, a matrix.
+The age at time of transition from
+healthy to preclinical compartment for each participant at the
+thinned samples.
+</p>
+</li>
+<li>
+<p> indolent: If <code>save.latent = TRUE</code>, a matrix.
+The indolent status for each participant at the
+thinned samples. Will be <code>NA</code> if disease is always progressive.
+</p>
+</li>
+<li>
+<p> accept: A list of the accept indicator at the thinned samples.
+</p>
+
+<ul>
+<li>
+<p> rate_H: A numeric vector.
+</p>
+</li>
+<li>
+<p> rate_P: A numeric matrix.
+</p>
+</li>
+<li>
+<p> tau_hp: If <code>save.latent = TRUE</code>, a matrix. Will be NA if
+current and new transition ages are Inf.
+</p>
+</li>
+<li>
+<p> psi: A numeric vector. The probability of indolence. Will be
+<code>NA</code> if disease is always progressive.
+</p>
+</li>
+</ul>
+</li>
+<li>
+<p> epsilon: A list. The step sizes for each parameter.
+</p>
+</li>
+<li>
+<p> adaptive: A list. Settings for the adaptive procedure. Will be NA
+if adaptive procedure not requested.
+</p>
+</li>
+<li>
+<p> last_theta: A list. The theta parameters of the last MCMC iteration.
+</p>
+</li>
+<li>
+<p> prior: A list. The provided parameters of the prior distributions.
+</p>
+</li>
+<li>
+<p> setup: A list of inputs provided to the call.
+</p>
+
+<ul>
+<li>
+<p> t0: The input age of risk onset.
+</p>
+</li>
+<li>
+<p> indolent: TRUE if disease is not progressive.
+</p>
+</li>
+<li>
+<p> round.age.entry: TRUE if age at entry was rounded to the nearest
+whole number.
+</p>
+</li>
+<li>
+<p> groups.beta: A vector of the beta grouping values.
+</p>
+</li>
+<li>
+<p> groups.rateP: A vector of the rate_P grouping values.
+</p>
+</li>
+<li>
+<p> thin: The number of samples dropped between kept MCMC iterations.
+</p>
+</li>
+<li>
+<p> initial.theta: theta_0 as provided by user.
+</p>
+</li>
+<li>
+<p> initial.prior: prior as provided by user.
+</p>
+</li>
+</ul>
+</li>
+<li>
+<p> clinical.groupings: A data.frame of the original data's arm/rateP grouping.
+</p>
+</li>
+<li>
+<p> screen_types: A data.frame of the original data's screen type grouping.
+</p>
+</li>
+<li>
+<p> call: The matched call.
+</p>
+</li>
+</ul>
+<h3>Functions</h3>
+
+
+<ul>
+<li> <p><code>summary(baclava)</code>: Summary statistics of posterior distribution parameters
+</p>
+</li>
+<li> <p><code>print(baclava)</code>: Print summary statistics of posterior distribution parameters
+</p>
+</li>
+</ul>
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+data(screen_data)
+
+theta_0 &lt;- list("rate_H" = 7e-4, "shape_H" = 2.0,
+                "rate_P" = 0.5  , "shape_P" = 1.0,
+                "beta" = 0.9, psi = 0.4)
+prior &lt;- list("rate_H" = 0.01, "shape_H" = 1,
+              "rate_P" = 0.01, "shape_P" = 1,
+              "a_psi" = 1/2 , "b_psi" = 1/2,
+              "a_beta" = 38.5, "b_beta" = 5.8)
+
+# This is for illustration only -- the number of Gibbs samples should be
+# significantly larger and the epsilon values should be tuned.
+example &lt;- fit_baclava(data.assess = data.screen,
+                       data.clinical = data.clinical,
+                       t0 = 30.0,
+                       theta_0 = theta_0,
+                       prior = prior)
+
+summary(example)
+print(example)
+
+# To continue this calculation
+example_continued &lt;- fit_baclava(data.assess = data.screen,
+                                 data.clinical = data.clinical,
+                                 baclava.object = example)
+</code></pre>
+
+
+</div>

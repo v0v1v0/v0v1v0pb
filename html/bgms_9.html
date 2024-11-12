@@ -1,0 +1,183 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>mrfSampler</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Sample states of the ordinal MRF</h2>
+
+<h3>Description</h3>
+
+<p>This function samples states from the ordinal MRF using a Gibbs sampler. The
+Gibbs sampler is initiated with random values from the response options,
+after which it proceeds by simulating states for each variable from a logistic
+model using the other variable states as predictor variables.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">mrfSampler(
+  no_states,
+  no_variables,
+  no_categories,
+  interactions,
+  thresholds,
+  variable_type = "ordinal",
+  reference_category,
+  iter = 1000
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>no_states</code></td>
+<td>
+<p>The number of states of the ordinal MRF to be generated.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>no_variables</code></td>
+<td>
+<p>The number of variables in the ordinal MRF.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>no_categories</code></td>
+<td>
+<p>Either a positive integer or a vector of positive
+integers of length <code>no_variables</code>. The number of response categories on top
+of the base category: <code>no_categories = 1</code> generates binary states.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>interactions</code></td>
+<td>
+<p>A symmetric <code>no_variables</code> by <code>no_variables</code> matrix of
+pairwise interactions. Only its off-diagonal elements are used.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>thresholds</code></td>
+<td>
+<p>A <code>no_variables</code> by <code>max(no_categories)</code> matrix of
+category thresholds. The elements in row <code>i</code> indicate the thresholds of
+variable <code>i</code>. If <code>no_categories</code> is a vector, only the first
+<code>no_categories[i]</code> elements are used in row <code>i</code>. If the Blume-Capel
+model is used for the category thresholds for variable <code>i</code>, then row
+<code>i</code> requires two values (details below); the first is
+<code class="reqn">\alpha</code>, the linear contribution of the Blume-Capel model and
+the second is <code class="reqn">\beta</code>, the quadratic contribution.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>variable_type</code></td>
+<td>
+<p>What kind of variables are simulated? Can be a single
+character string specifying the variable type of all <code>p</code> variables at
+once or a vector of character strings of length <code>p</code> specifying the type
+for each variable separately. Currently, bgm supports “ordinal” and
+“blume-capel”. Binary variables are automatically treated as “ordinal’’.
+Defaults to <code>variable_type = "ordinal"</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>reference_category</code></td>
+<td>
+<p>An integer vector of length <code>no_variables</code> specifying the
+reference_category category that is used for the Blume-Capel model (details below).
+Can be any integer value between <code>0</code> and <code>no_categories</code> (or
+<code>no_categories[i]</code>).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>iter</code></td>
+<td>
+<p>The number of iterations used by the Gibbs sampler.
+The function provides the last state of the Gibbs sampler as output. By
+default set to <code>1e3</code>.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>There are two modeling options for the category thresholds. The default
+option assumes that the category thresholds are free, except that the first
+threshold is set to zero for identification. The user then only needs to
+specify the thresholds for the remaining response categories. This option is
+useful for any type of ordinal variable and gives the user the most freedom
+in specifying their model.
+</p>
+<p>The Blume-Capel option is specifically designed for ordinal variables that
+have a special type of reference_category category, such as the neutral
+category in a Likert scale. The Blume-Capel model specifies the following
+quadratic model for the threshold parameters:
+</p>
+<p style="text-align: center;"><code class="reqn">\mu_{\text{c}} = \alpha \times \text{c} + \beta \times (\text{c} - \text{r})^2,</code>
+</p>
+
+<p>where <code class="reqn">\mu_{\text{c}}</code> is the threshold for category c
+(which now includes zero), <code class="reqn">\alpha</code> offers a linear trend
+across categories (increasing threshold values if
+<code class="reqn">\alpha &gt; 0</code> and decreasing threshold values if
+<code class="reqn">\alpha &lt;0</code>), if <code class="reqn">\beta &lt; 0</code>, it offers an
+increasing penalty for responding in a category further away from the
+reference_category category r, while <code class="reqn">\beta &gt; 0</code> suggests a
+preference for responding in the reference_category category.
+</p>
+
+
+<h3>Value</h3>
+
+<p>A <code>no_states</code> by <code>no_variables</code> matrix of simulated states of
+the ordinal MRF.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R"># Generate responses from a network of five binary and ordinal variables.
+no_variables = 5
+no_categories = sample(1:5, size = no_variables, replace = TRUE)
+
+Interactions = matrix(0, nrow = no_variables, ncol = no_variables)
+Interactions[2, 1] = Interactions[4, 1] = Interactions[3, 2] =
+  Interactions[5, 2] = Interactions[5, 4] = .25
+Interactions = Interactions + t(Interactions)
+Thresholds = matrix(0, nrow = no_variables, ncol = max(no_categories))
+
+x = mrfSampler(no_states = 1e3,
+               no_variables = no_variables,
+               no_categories = no_categories,
+               interactions = Interactions,
+               thresholds = Thresholds)
+
+# Generate responses from a network of 2 ordinal and 3 Blume-Capel variables.
+no_variables = 5
+no_categories = 4
+
+Interactions = matrix(0, nrow = no_variables, ncol = no_variables)
+Interactions[2, 1] = Interactions[4, 1] = Interactions[3, 2] =
+  Interactions[5, 2] = Interactions[5, 4] = .25
+Interactions = Interactions + t(Interactions)
+
+Thresholds = matrix(NA, no_variables, no_categories)
+Thresholds[, 1] = -1
+Thresholds[, 2] = -1
+Thresholds[3, ] = sort(-abs(rnorm(4)), decreasing = TRUE)
+Thresholds[5, ] = sort(-abs(rnorm(4)), decreasing = TRUE)
+
+x = mrfSampler(no_states = 1e3,
+               no_variables = no_variables,
+               no_categories = no_categories,
+               interactions = Interactions,
+               thresholds = Thresholds,
+               variable_type = c("b","b","o","b","o"),
+               reference_category = 2)
+</code></pre>
+
+
+</div>

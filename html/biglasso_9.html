@@ -1,0 +1,243 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>cv.biglasso</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Cross-validation for biglasso</h2>
+
+<h3>Description</h3>
+
+<p>Perform k-fold cross validation for penalized regression models over a grid
+of values for the regularization parameter lambda.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">cv.biglasso(
+  X,
+  y,
+  row.idx = 1:nrow(X),
+  family = c("gaussian", "binomial", "cox", "mgaussian"),
+  eval.metric = c("default", "MAPE", "auc", "class"),
+  ncores = parallel::detectCores(),
+  ...,
+  nfolds = 5,
+  seed,
+  cv.ind,
+  trace = FALSE,
+  grouped = TRUE
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>X</code></td>
+<td>
+<p>The design matrix, without an intercept, as in <code>biglasso()</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>y</code></td>
+<td>
+<p>The response vector, as in <code>biglasso</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>row.idx</code></td>
+<td>
+<p>The integer vector of row indices of <code>X</code> that used for
+fitting the model. as in <code>biglasso</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>family</code></td>
+<td>
+<p>Either <code>"gaussian"</code>, <code>"binomial"</code>, <code>"cox"</code> or
+<code>"mgaussian"</code> depending on the response. <code>"cox"</code> and <code>"mgaussian"</code>
+are not supported yet.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>eval.metric</code></td>
+<td>
+<p>The evaluation metric for the cross-validated error and
+for choosing optimal <code>lambda</code>. "default" for linear regression is MSE
+(mean squared error), for logistic regression is binomial deviance.
+"MAPE", for linear regression only, is the Mean Absolute Percentage Error.
+"auc", for binary classification, is the area under the receiver operating
+characteristic curve (ROC).
+"class", for binary classification, gives the misclassification error.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ncores</code></td>
+<td>
+<p>The number of cores to use for parallel execution of the
+cross-validation folds, run on a cluster created by the <code>parallel</code>
+package. (This is also supplied to the <code>ncores</code> argument in
+<code>biglasso()</code>, which is the number of OpenMP threads, but only for
+the first call of <code>biglasso()</code> that is  run on the entire data. The
+individual calls of <code>biglasso()</code> for the CV folds are run without
+the <code>ncores</code> argument.)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Additional arguments to <code>biglasso</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nfolds</code></td>
+<td>
+<p>The number of cross-validation folds.  Default is 5.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>seed</code></td>
+<td>
+<p>The seed of the random number generator in order to obtain
+reproducible results.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>cv.ind</code></td>
+<td>
+<p>Which fold each observation belongs to.  By default the
+observations are randomly assigned by <code>cv.biglasso</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>trace</code></td>
+<td>
+<p>If set to TRUE, cv.biglasso will inform the user of its
+progress by announcing the beginning of each CV fold.  Default is FALSE.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>grouped</code></td>
+<td>
+<p>Whether to calculate CV standard error (<code>cvse</code>) over
+CV folds (<code>TRUE</code>), or over all cross-validated predictions. Ignored
+when <code>eval.metric</code> is 'auc'.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The function calls <code>biglasso</code> <code>nfolds</code> times, each time leaving
+out 1/<code>nfolds</code> of the data. The cross-validation error is based on the
+residual sum of squares when <code>family="gaussian"</code> and the binomial
+deviance when <code>family="binomial"</code>.
+</p>
+<p>The S3 class object <code>cv.biglasso</code> inherits class <code>ncvreg::cv.ncvreg()</code>. So S3
+functions such as <code style="white-space: pre;">⁠"summary", "plot"⁠</code> can be directly applied to the
+<code>cv.biglasso</code> object.
+</p>
+
+
+<h3>Value</h3>
+
+<p>An object with S3 class <code>"cv.biglasso"</code> which inherits from
+class <code>"cv.ncvreg"</code>. The following variables are contained in the
+class (adopted from <code>ncvreg::cv.ncvreg()</code>).
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>cve</code></td>
+<td>
+<p>The error for each value of <code>lambda</code>, averaged across the cross-validation folds.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>cvse</code></td>
+<td>
+<p>The estimated standard error associated with each value of for <code>cve</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>lambda</code></td>
+<td>
+<p>The sequence of regularization parameter values along which the cross-validation error was calculated.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>fit</code></td>
+<td>
+<p>The fitted <code>biglasso</code> object for the whole data.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>min</code></td>
+<td>
+<p>The index of <code>lambda</code> corresponding to <code>lambda.min</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>lambda.min</code></td>
+<td>
+<p>The value of <code>lambda</code> with the minimum cross-validation error.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>lambda.1se</code></td>
+<td>
+<p>The largest value of <code>lambda</code> for which the cross-validation error is at most one standard error larger than the minimum cross-validation error.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>null.dev</code></td>
+<td>
+<p>The deviance for the intercept-only model.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>pe</code></td>
+<td>
+<p>If <code>family="binomial"</code>, the cross-validation prediction error for each value of <code>lambda</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>cv.ind</code></td>
+<td>
+<p>Same as above.</p>
+</td>
+</tr>
+</table>
+<h3>Author(s)</h3>
+
+<p>Yaohui Zeng and Patrick Breheny
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>biglasso()</code>, <code>plot.cv.biglasso()</code>, <code>summary.cv.biglasso()</code>, <code>setupX()</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## Not run: 
+## cv.biglasso
+data(colon)
+X &lt;- colon$X
+y &lt;- colon$y
+X.bm &lt;- as.big.matrix(X)
+
+## logistic regression
+cvfit &lt;- cv.biglasso(X.bm, y, family = 'binomial', seed = 1234, ncores = 2)
+par(mfrow = c(2, 2))
+plot(cvfit, type = 'all')
+summary(cvfit)
+
+## End(Not run)
+</code></pre>
+
+
+</div>

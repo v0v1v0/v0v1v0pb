@@ -1,0 +1,223 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>estimates.bma</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Posterior Inclusion Probabilities and Coefficients from a 'bma' Object</h2>
+
+<h3>Description</h3>
+
+<p>Returns a matrix with aggregate covariate-specific Bayesian model Averaging:
+posterior inclusion probabilites (PIP), post. expected values and standard
+deviations of coefficients, as well as sign probabilites
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">estimates.bma(
+  bmao,
+  exact = FALSE,
+  order.by.pip = TRUE,
+  include.constant = FALSE,
+  incl.possign = TRUE,
+  std.coefs = FALSE,
+  condi.coef = FALSE
+)
+
+## S3 method for class 'bma'
+coef(
+  object,
+  exact = FALSE,
+  order.by.pip = TRUE,
+  include.constant = FALSE,
+  incl.possign = TRUE,
+  std.coefs = FALSE,
+  condi.coef = FALSE,
+  ...
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>exact</code></td>
+<td>
+<p>if <code>exact=FALSE</code>, then PIPs, coefficients, etc. will be
+based on aggregate information from the sampling chain with posterior model
+distributions based on MCMC frequencies (except in case of enumeration - cf.
+'Details');<br> if <code>exact=TRUE</code>, estimates will be based on the
+<code>nmodel</code> best models encountered by the sampling chain,
+with the posterior model distribution based on their <em>exact</em> marginal
+likelihoods - cf. 'Details' below.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>order.by.pip</code></td>
+<td>
+<p><code>order.by.pip=TRUE</code> orders the resulting matrix
+according to posterior inclusion probabilites, <code>order.by.pip=FALSE</code>
+ranks them according to the original data (order of the covariates as in
+provided in <code>X.data</code> to <code>bms</code>), default <code>TRUE</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>include.constant</code></td>
+<td>
+<p>If <code>include.constant=TRUE</code> then the resulting
+matrix includes the expected value of the constant in its last row. Default
+<code>FALSE</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>incl.possign</code></td>
+<td>
+<p>If <code>incl.possign=FALSE</code>, then the sign probabilites
+column (cf. 'Values' below) is omitted from the result. Default <code>TRUE</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>std.coefs</code></td>
+<td>
+<p>If <code>std.coefs=TRUE</code> then the expected values and
+standard deviations are returned in standardized form, i.e. as if the
+original data all had mean zero and variance 1. If <code>std.coefs=FALSE</code>
+(default) then both expected values and standard deviations are returned 'as
+is'.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>condi.coef</code></td>
+<td>
+<p>If <code>condi.coef=FALSE</code> (default) then coefficients
+<code class="reqn">\beta_i</code> and standard deviations are unconditional posterior expected
+values, as in standard model averaging; if <code>condi.coef=FALSE</code> then they
+are given as conditional on inclusion (equivalent to <code class="reqn">\beta_i / PIP_i</code>).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>object, bmao</code></td>
+<td>
+<p>a 'bma' object (cf. <code>bms</code>)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>further arguments for other <code>coef</code> methods</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>More on the argument <code>exact</code>: <br> In case the argument
+<code>exact=TRUE</code>, the PIPs, coefficient statistics and conditional sign
+probabilities are computed on the basis of the (500) best models the
+sampling chain encountered (cf. argument <code>nmodel</code> in
+<code>bms</code>). Here, the weights for Bayesian model averaging (BMA) are
+the posterior marginal likelihoods of these best models. <br> In case
+<code>exact=FALSE</code>, then these statistics are based on all accepted models
+(except burn-ins): If <code>mcmc="enumerate"</code> then this are simply all
+models of the traversed model space, with their marginal likelihoods
+providing the weights for BMA.<br> If, however, the bma object <code>bmao</code>
+was based on an MCMC sampler (e.g. when <code>bms</code> argument
+<code>mcmc="bd"</code>), then BMA statistics are computed differently: In contrast
+to above, the weights for BMA are MCMC frequencies, i.e. how often the
+respective models were encountered by the MCMC sampler. (cf. a comparison of
+MCMC frequencies and marginal likelihoods for the best models via the
+function <code>pmp.bma</code>).
+</p>
+
+
+<h3>Value</h3>
+
+<p>A matrix with five columns (or four if <code>incl.possign=FALSE</code>)
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>Column 'PIP'</code></td>
+<td>
+<p>Posterior inclusion probabilities <code class="reqn">\sum p(\gamma|i
+\in \gamma, Y) / sum p(\gamma|Y) </code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Column 'Post Mean'</code></td>
+<td>
+<p>posterior
+expected value of coefficients, unconditional <code class="reqn">E(\beta|Y)=\sum
+p(\gamma|Y) E(\beta|\gamma,Y)</code>, where <code class="reqn">E(\beta_i|\gamma,i \notin \gamma,
+Y)=0</code> if <code>condi.coef=FALSE</code>, or conditional on inclusion
+(<code class="reqn">E(\beta|Y) / \sum p(\gamma|Y, i \in \gamma) </code> ) if
+<code>condi.coef=TRUE</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Column 'Post SD'</code></td>
+<td>
+<p>posterior standard deviation
+of coefficients, unconditional or conditional on inclusion, depending on
+<code>condi.coef</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Column 'Cond.Pos.Sign'</code></td>
+<td>
+<p>The ratio of how often the
+coefficients' expected values were positive conditional on inclusion. (over
+all visited models in case <code>exact=FALSE</code>, over the best models in case
+<code>exact=TRUE</code>)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Column 'Idx'</code></td>
+<td>
+<p>the original order of covariates as
+the were used for sampling. (if included, the constant has index 0)</p>
+</td>
+</tr>
+</table>
+<h3>See Also</h3>
+
+<p><code>bms</code> for creating bma objects, <code>pmp.bma</code>
+for comparing MCMC frequencies and marginal likelihoods.
+</p>
+<p>Check <a href="http://bms.zeugner.eu">http://bms.zeugner.eu</a> for additional help.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+#sample, with keeping the best 200 models:
+data(datafls)
+mm=bms(datafls,burn=1000,iter=5000,nmodel=200)
+
+#standard BMA PIPs and coefficients from the MCMC sampling chain, based on 
+#  ...how frequently the models were drawn
+coef(mm)
+
+#standardized coefficients, ordered by index
+coef(mm,std.coefs=TRUE,order.by.pip=FALSE)
+
+#coefficients conditional on inclusion:
+coef(mm,condi.coef=TRUE)
+
+#same as
+ests=coef(mm,condi.coef=FALSE)
+ests[,2]/ests[,1]
+
+#PIPs, coefficients, and signs based on the best 200 models
+estimates.bma(mm,exact=TRUE)
+
+#... and based on the 50 best models
+coef(mm[1:50],exact=TRUE)
+
+
+</code></pre>
+
+
+</div>

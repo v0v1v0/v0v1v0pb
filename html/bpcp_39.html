@@ -1,0 +1,444 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>kmtestALL</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>
+Pointwise confidence intervals for survival for right censored data.
+</h2>
+
+<h3>Description</h3>
+
+<p>These functions give several different methods for calculating pointwise confidence intervals for the survival distribution for right censored data. 
+The recommended confidence intervals are the beta product ones given by <code>bpcp</code> or  <code>bpcpfit</code>. 
+</p>
+<p>The other confidence intervals are included primarily to show that the beta product confidence procedure (using <code>bpcp</code>) has better coverage than the best alternatives. 
+See details for a description of all the methods.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">bpcp(time,status,nmc=0,alpha=.05,Delta=0,stype="km",midp=FALSE,
+    monotonic=NULL, control=bpcpControl())
+
+bpcpfit(time, ...)
+
+## Default S3 method:
+bpcpfit(time, status = NULL, group = NULL, formula=NULL, nmc=0, alpha=NULL, 
+  conf.level=0.95, Delta=0, stype="km", midp=FALSE,
+  monotonic=NULL, control=bpcpControl(), plotstyle = "ggplot", 
+  data=NULL, subset=NULL, na.action=NULL, ...)
+
+## S3 method for class 'formula'
+bpcpfit(formula, data, subset, na.action, ...)
+
+kmciBorkowf(time, status, type="log", alpha = 0.05)
+kmtestBoot(time, status, tstar, pstar, M = 1000, alpha = 0.05)
+kmtestConstrainBoot(time, status, tstar, pstar, M = 1000, alpha = 0.05)
+kmtestConstrainBeta(time,status,tstar,pstar,alpha=.05)
+kmciSW(time, status, alpha = 0.05)
+kmciTG(time, status, alpha = 0.05)
+kmci1TG(time, status, tstar, alpha = 0.05)
+
+kmtestALL(time,status,t0,S0,cens=NULL,M=1000,NMC=10^5,alpha=0.05)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>time</code></td>
+<td>
+
+<p>time to event or censoring
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>status</code></td>
+<td>
+<p> status vector,
+1 is event, 0 is censoring (if NULL assumes all are events)
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>group</code></td>
+<td>
+<p>vector of treatments or groups, if applicable</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>formula</code></td>
+<td>
+
+<p>a formula object, which must have a Surv object as the response on the left of the ~ operator and, 
+if desired, a grouping/treatment variable on the right. 
+For a single survival curve the right hand side should be ~ 1.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+
+<p>a data frame in which to interpret the variables named in the formula.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>subset</code></td>
+<td>
+
+<p>an optional vector specifying a subset of observations to be used.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>na.action</code></td>
+<td>
+
+<p>a function which indicates what should happen when the data contain NAs.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>alpha</code></td>
+<td>
+
+<p>1- conf.level
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>conf.level</code></td>
+<td>
+<p>confidence level. To be used in place of alpha starting in version 1.4</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nmc</code></td>
+<td>
+<p>number of Monte Carlo replications from each beta distribution, nmc=0 means use method of moments for beta parameters instead</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>NMC</code></td>
+<td>
+<p>same as nmc</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Delta</code></td>
+<td>
+<p>width of grouped confidence intervals, defaults to 0 (rarely need to change this, even with ties, see details)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>stype</code></td>
+<td>
+<p>type of survival estimate, either "km" for Kaplan-Meier or "mue" for median unbiased estimator</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>midp</code></td>
+<td>
+<p>logical, calculate the mid-p type of interval?</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>monotonic</code></td>
+<td>
+<p>logical, force lower and upper confidence limits to be monotonic over time? If NULL: nmc=0 gives TRUE, nmc&gt;0 gives FALSE</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>control</code></td>
+<td>
+<p>list with arguments for adjusting numeric calculation. Generally does not need to be changed. See 
+<code>bpcpControl</code>
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>plotstyle</code></td>
+<td>
+<p>which type of plot to use, "ggplot" will produce a kmciLRtidy object that will be plotted with ggplot. "standard" will procude a kmciLRgroup object (if there are groups) which will be plotted with base R. If there are no groups, "standard" will produce a kmciLR object.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>tstar</code></td>
+<td>
+<p> time to test survival distribution</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>pstar</code></td>
+<td>
+<p>null survival distribution</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>M</code></td>
+<td>
+<p>number of bootstrap replications</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>t0</code></td>
+<td>
+<p>null hypothesis time for survival test </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>S0</code></td>
+<td>
+<p>null hypothesis value of survival at t0</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>cens</code></td>
+<td>
+<p>vector of censoring times (even those with failures before it), used for Binomial test. If NULL gives NA for binom test</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>type</code></td>
+<td>
+<p>see details</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Extra parameters to be passed.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+ 
+<p>The recommended functions to calculate beta product confidence intervals are either  <code>bpcp</code> or  <code>bpcpfit</code>. 
+The function <code>bpcp</code> has the original function arguments, while 
+the <code>bpcpfit</code> function  allows formulas similar to those used in the <code>survival</code> package, allowing separate analyses by group, and allowing easier use of <code>ggplot2</code> methods. The numerical output for the <code>bpcpfit</code> function is the same as multiple calls of <code>bpcp</code> for each group level. 
+</p>
+<p>The standard beta product confidence procedure (i.e., with midp=FALSE) will give pointwise confidence intervals for the survival function, S, with right censored data. This means that for any given t, we get confidence intervals for S(t) with the following properties. When there is no censoring or Progressive Type II censoring the BPCP guarantees central coverage (e.g., the error rate on either side of the 95 percent confidence interval is guaranteed to be less than 2.5 percent). For general independent censoring the BPCP is asymptotically equivalent to standard methods such as the normal approximation with Greenwood variance, and 
+hence the BPCP (as with the other confidence intervals given here) has asymptotically accurate coverage of S(t) for any t&gt;0.   
+</p>
+<p>The <code>bpcpfit</code> function will produce multiple survival curves with the pointwise confidence intervals for right censored data for different treatment/grouping variables. Only a treatment/grouping variable can be specified in this function. No other covariates should be included. Data can be input as either a formula or as a default method. If the plotstyle argument is "ggplot" (the default), then <code>bpcpfit</code> will return a <code>kmciLRtidy</code> object that can be passed into <code>"plot"</code>, and it will return a generic ggplot. If there is no group variable, a <code>kmciLRtidy</code> object will still be created. The <code>kmciLRtidy</code> object can also be passed to <code>tidykmciLR</code>, which returns a dataframe that can be passed into ggplot for custom plotting. If the plotstyle argument is "standard", then <code>bpcpfit</code> will return a <code>kmciLRgroup</code> object that can be passed into <code>"plot"</code>, which will return a base R plot. If there is no treatment variable, a <code>kmciLR</code> object will be created. 
+</p>
+<p>There is also a mid-p version of the BPCP. The BPCP is derived from using the known distribution of the failure times, and acting conservatively between the failure times (see Fay, Brittain, and Proschan, 2013 for details). Instead of acting conservatively between the failure times, the midp=TRUE version combines the distributions for the previous failure and the future failure time (see Fay and Brittain, 2016). 
+</p>
+<p>For description of how <code>bpcp</code> with different values of Delta works, see "Beta Product Confidence Intervals for Discrete Failure Times" vignette (especially Section 2.2). Note especially that confidence intervals exactly at the failure times when Delta=0 are handled differently before Version 1.3.0 than from Version&gt;=1.3.0. For users not interested in details who only want to know the recommended confidence intervals on right censored data when ties are allowed, we recommend the <code> bpcp</code> function version 1.3.0 or greater using the default Delta=0 argument. That recommendation will give pointwise confidence intervals that treats ties similarly to the way that the Kaplan-Meier estimator treats ties, and hence will give confidence intervals that enclose the Kaplan-Meier estimate.
+</p>
+<p>Now we describe the other methods.
+</p>
+<p>In general the functions are of three naming types: kmtestXX, kmci1XX and kmciXX, where XX changes for different methods. 
+Functions kmtestXX only test whether S(tstar)=pstar and return a vector of 1s for reject and 0s for fail to rejecting either of the one-sided or the two-sided hypotheses. 
+Functions kmci1XX only give confidence intervals at  S(tstar), while kmciXX give confidence intervals for all values of t.
+The standard methods calculate the confidence intervals at the observed failure times and carry them forward (e.g., kmciTG, kmciSW)
+and the results are objects of class kmci. More involved methods allow confidence intervals to change after censored objects (e.g., kmciBorkowf, bpcp)
+and the results are objects of class kmciLR.  
+</p>
+<p>The function kmtestBoot tests S(tstar)=pstar using the nonparametric bootstrap (sampling vectors of (time,status) with replacement) with the percentile method as described in Efron (1981). 
+The function kmtestConstrainBoot and kmtestConstrainBeta tests S(tstar)=pstar using the constrained Bootstrap or constrained Beta method described 
+in Barber and Jennison (1999). 
+</p>
+<p>The function kmci1TG does a confidence interval only at tstar, while kmciTG does a confidence interval 
+at all the observed event times. The method can be derived as a likelihood ratio test and is described in  Thomas and Grunkemeier (1975). 
+It has asymptoticly correct coverage, which is  rigorously proved in 
+Murphy (1995). You can also think of the method as the empirical likelihood applied to the survival distribution for 
+right censored  data (see Owen, 2001, p. 144-145).
+</p>
+<p>The function <code>kmciSW</code> calculates confidence intervals using Edgeworth expansions as described in 
+Strawderman and Wells (1997). Note, Strawderman, Parzen and Wells (1997) is easier to understand than  Strawderman and Wells (1997). 
+</p>
+<p>Borkowf (2005) creates confidence intervals for the Kaplan-Meier survival estimate for right censored data. 
+He allows the confidence interval to change at censoring times as well as at failure times.  
+</p>
+<p>Four types of confidence intervals may be selected. The asymptotic normal approximation (type="norm"), the shifted K-M 
+estimate with normal approximation (type="norms"), the log transformed normal approximation using the delta method (type="log"), 
+and the log transformed normal approximation using the delta method with the shifted K-M  (type="logs"). 
+</p>
+<p>The function <code>kmtestALL</code> performs hypothesis tests on all the methods except the unconstrained bootstrap method (unless M=0 then it does not test the constrained bootstrap method either). 
+The output is a matrix with three columns with a value of 1 representing either (1) rejection for two-sided test implying the estimate is greater than the null, 
+(2) rejection for two-sided test implying the estimate less than the null, or (3) any rejection of the two-sided test. 
+Each row represents a different test.
+</p>
+<p>The <code>kmci</code>, <code>kmciLR</code>, <code>kmciLRtidy</code>, or <code>kmciLRgroup</code> classes have the following methods:
+<code>"plot"</code>,<code>"lines"</code>, <code>"summary"</code>, <code>"quantile"</code>, and <code>"median"</code>. Additionally, you can pull out survival and confidence intervals from these objects at specific times using <code>"StCI"</code>. </p>
+
+
+<h3>Value</h3>
+
+<p>The functions return an object of class either <code>kmci</code>, <code>kmciLR</code>, <code>kmciLRtidy</code> or <code>kmciLRgroup</code> see details). 
+</p>
+<p>kmci, kmciLR, kmciLRtidy, and kmciLRgroup objects are lists. kmciLRtidy and kmciLRgroup are lists of kmciLR objects, one element for each treatment/group. They contain elements
+
+
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>surv</code></td>
+<td>
+<p>survival distribution in interval/at time point</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>lower</code></td>
+<td>
+<p>lower pointwise confidence limit in interval/at time point</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>upper</code></td>
+<td>
+<p>upper pointwise confidence limit in interval/at time point</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>time</code></td>
+<td>
+<p>time of survival or confidence interval</p>
+</td>
+</tr>
+</table>
+<p>while the kmciLR have intervals represented by the four elements
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>L</code></td>
+<td>
+<p>left endpoint of interval</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Lin</code></td>
+<td>
+<p>logical vector, include left endpoint?</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>R</code></td>
+<td>
+<p>right endpoint of interval</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Rin</code></td>
+<td>
+<p>logical vector, include right endpoint?</p>
+</td>
+</tr>
+</table>
+<p>and results from bpcp additionally have an element
+</p>
+<table><tr style="vertical-align: top;">
+<td><code>betaParms</code></td>
+<td>
+<p>list with 4 elements of beta parameters associated with the CIs: alower, blower, aupper, bupper</p>
+</td>
+</tr></table>
+<p>kmciLR objects contained in the kmciLRgroup and kmciLRgroup have the elements
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>num</code></td>
+<td>
+<p>total number of subjects</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>events</code></td>
+<td>
+<p>total number of events (observed failures)</p>
+</td>
+</tr>
+</table>
+<h3>Author(s)</h3>
+
+<p>Michael Fay
+</p>
+
+
+<h3>References</h3>
+
+<p>Fay, MP, Brittain, E, and Proschan, MA. (2013). Pointwise Confidence Intervals for a Survival Distribution with Small Samples or Heavy Censoring.  Biostatistics 14 (4): 723-736. (copy available at http://www.niaid.nih.gov/about/organization/dcr/brb/staff/Pages/michael.aspx).  
+</p>
+<p>Fay, MP, and Brittain, E (2016). Finite Sample Pointwise Confidence Intervals for a Survival Distribution with Right-Censored Data. Statistics in Medicine.35: 2726-2740. 
+</p>
+<p>Barber and Jennison (1999) Biometrics, 55: 430-436.
+</p>
+<p>Borkowf (2005) Statistics in Medicine, 24: 827-851.
+</p>
+<p>Efron (1981) JASA 76:312-319.
+</p>
+<p>Murphy (1995) JASA 90: 1399-1405.
+</p>
+<p>Owen (2001) Empirical Likelihood. Chapman and Hall: New York.
+</p>
+<p>Strawderman and Wells (1997) JASA 92:1356-1374.
+</p>
+<p>Strawderman, Parzen and Wells (1997) Biometrics 53: 1399-1415.
+</p>
+<p>Thomas and Grunkemeier (1975) JASA 70: 865-871.
+</p>
+
+
+<h3>See Also</h3>
+
+<p>The <code>kmci</code>, <code>kmciLR</code>, <code>kmciLRtidy</code>, or <code>kmciLRgroup</code> objects have methods: <code>"plot"</code>,<code>"lines"</code>, <code>"summary"</code>, <code>"quantile"</code>, and <code>"median"</code>,<code>"StCI"</code>.</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">library(bpcp)
+data(leuk)
+data(leuk2)
+
+### Recommended method is bpcp
+### since the data are truncated to the nearest integer
+### use Delta=1 option
+out&lt;-bpcp(leuk$time,leuk$status,Delta=1)
+summary(out)
+median(out)
+plot(out)
+
+
+### bpcpfit for multiple survival curves
+a &lt;- bpcpfit(Surv(time, status)~treatment, data=leuk2)
+b &lt;- bpcpfit(Surv(time, status)~1, data=leuk2)
+fitBPsurv &lt;- bpcpfit(Surv(time, status)~treatment, data=leuk2)
+fitBPsurv
+
+bpcpfit(leuk2$time, leuk2$status, leuk2$treatment)
+bpcpfit(leuk2$time, leuk2$status, plotstyle = "standard")
+
+### Borkowf 2005 method
+norm&lt;-kmciBorkowf(leuk$time,leuk$status,type="norm")
+norms&lt;-kmciBorkowf(leuk$time,leuk$status,type="norms")
+## check Table VII of Borkowf
+I&lt;-c(1,2,3,5,7,8,9,11,13,15,17,19,21,23,25,27,29,31,33)
+round(data.frame(lowerNorm=norm$lower[I],
+    upperNorm=norm$upper[I],lowerNormS=norms$lower[I],
+    upperNorms=norms$upper[I],row.names=norm$Interval[I]),3)
+
+### Strawderman and Wells (1997) method
+swci&lt;-kmciSW(leuk$time,leuk$status)
+summary(swci)
+
+
+### Thomas and Grunkemeier 1975 method
+x&lt;-kmciTG(leuk$time,leuk$status)
+summary(x)
+## compare to Table 1, Sample 2, of Thomas and Grunkemeier (1975)
+StCI(x,c(10,20))
+
+
+</code></pre>
+
+
+</div>

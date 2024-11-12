@@ -1,0 +1,142 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>data.pisaNLD</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>
+Some PISA Datasets
+</h2>
+
+<h3>Description</h3>
+
+<p>Some PISA datasets.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">data(data.pisaNLD)
+</code></pre>
+
+
+<h3>Format</h3>
+
+<p>The dataset <code>data.pisaNLD</code> is a data frame with 3992 observations on 405 variables
+which is a part of the Dutch PISA 2006 data.
+</p>
+
+
+<h3>Source</h3>
+
+<p>Downloaded from <a href="https://doi.org/10.18637/jss.v020.i05">doi:10.18637/jss.v020.i05</a> (Fox, 2007).
+</p>
+
+
+<h3>References</h3>
+
+<p>Fox, J.-P. (2007). Multilevel IRT Modeling in practice with the package mlirt.
+<em>Journal of Statistical Software, 20</em>(5), 1-16. <a href="https://doi.org/10.18637/jss.v020.i05">doi:10.18637/jss.v020.i05</a>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## Not run: 
+library(mitools)
+library(survey)
+library(intsvy)
+
+#############################################################################
+# EXAMPLE 1: Dutch PISA 2006 dataset
+#############################################################################
+
+data(data.pisaNLD)
+data &lt;- data.pisaNLD
+
+#--- Create object of class BIFIEdata
+
+# list variables with plausible values: These must be named
+# as pv1math, pv2math, ..., pv5math, ...
+pv_vars &lt;- toupper( c("math", "math1", "math2", "math3", "math4",
+             "read", "scie", "prob") )
+# create 5 datasets including different sets of plausible values
+dfr &lt;- NULL
+VV &lt;- length(pv_vars)
+Nimp &lt;- 5           # number of plausible values
+for (vv in 1:VV){
+      vv1 &lt;- pv_vars[vv]
+      ind.vv1 &lt;- which( colnames(data) %in% paste0("PV", 1:Nimp, vv1) )
+      dfr2 &lt;- data.frame( "variable"=paste0("PV", vv1), "var_index"=vv,
+          "data_index"=ind.vv1, "impdata_index"=1:Nimp )
+      dfr &lt;- rbind( dfr, dfr2 )
+}
+
+sel_ind &lt;- setdiff( 1:( ncol(data) ), dfr$data_index )
+data0 &lt;- data[, sel_ind ]
+V0 &lt;- ncol(data0)
+newvars &lt;- seq( V0+1, V0+VV )
+datalist &lt;- as.list( 1:Nimp )
+for (ii in 1:Nimp ){
+    dat1 &lt;- data.frame( data0, data[, dfr[ dfr$impdata_index==ii, "data_index" ]])
+    colnames(dat1)[ newvars ] &lt;- paste0("PV",pv_vars)
+    datalist[[ii]] &lt;- dat1
+}
+
+# dataset with replicate weights
+datarep &lt;- data[, grep( "W_FSTR", colnames(data) ) ]
+RR &lt;- ncol(datarep)     # number of replicate weights
+
+# create BIFIE object
+bifieobj &lt;- BIFIEsurvey::BIFIE.data( datalist, wgt=data[, "W_FSTUWT"],
+                 wgtrep=datarep, fayfac=1 / RR / ( 1 - .5 )^2 )
+# For PISA: RR=80 and therefore fayfac=1/20=.05
+summary(bifieobj)
+
+#--- Create BIFIEdata object immediately using BIFIE.data.jack function
+bifieobj1 &lt;- BIFIEsurvey::BIFIE.data.jack( data.pisaNLD, jktype="RW_PISA", cdata=TRUE)
+summary(bifieobj1)
+
+#--- Create object in survey package
+datL &lt;- mitools::imputationList(list( datalist[[1]],datalist[[2]],
+                  datalist[[3]],datalist[[4]],datalist[[5]]) )
+pisades &lt;- survey::svrepdesign(ids=~ 1, weights=~W_FSTUWT, data=datL,
+                    repweights="W_FSTR[0-9]+", type="Fay", rho=0.5, mse=TRUE)
+print(pisades)
+
+#++++++++++++++ some comparisons with other packages +++++++++++++++++++++++++++++++
+
+#**** Model 1: Means for mathematics and reading
+# BIFIEsurvey package
+mod1a &lt;- BIFIEsurvey::BIFIE.univar( bifieobj, vars=c("PVMATH", "PVREAD") )
+summary(mod1a)
+
+# intsvy package
+mod1b &lt;- intsvy::pisa.mean.pv(pvlabel="MATH", data=data.pisaNLD )
+mod1b
+
+# survey package
+mod1c &lt;- with( pisades, survey::svymean(PVMATH~1, design=pisades) )
+res1c &lt;- mitools::MIcombine(mod1c)
+summary(res1c)
+
+#**** Model 2: Linear regression
+# BIFIEsurvey package
+mod2a &lt;- BIFIEsurvey::BIFIE.linreg( bifieobj, dep="PVMATH",
+              pre=c("one","ANXMAT","HISEI"))
+summary(mod2a)
+
+# intsvy package
+mod2b &lt;- intsvy::pisa.reg.pv(pvlabel="MATH", x=c("ANXMAT","HISEI"), data=data.pisaNLD)
+mod2b
+
+# survey package
+mod2c &lt;- with( pisades, survey::svyglm(PVMATH~ANXMAT+HISEI, design=pisades) )
+res2c &lt;- mitools::MIcombine(mod2c)
+summary(res2c)
+
+## End(Not run)
+</code></pre>
+
+
+</div>

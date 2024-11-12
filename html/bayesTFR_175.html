@@ -1,0 +1,542 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>run.tfr.mcmc</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>
+Running Markov Chain Monte Carlo for Parameters of Total Fertility Rate in Phase II
+</h2>
+
+<h3>Description</h3>
+
+<p>Runs (or continues running) MCMCs for simulating the total fertility rate of all countries of the world (phase II), using a Bayesian hierarchical model.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">run.tfr.mcmc(nr.chains = 3, iter = 62000, 
+    output.dir = file.path(getwd(), "bayesTFR.output"), 
+    thin = 1, replace.output = FALSE, annual = FALSE, uncertainty = FALSE, 
+    start.year = 1950, present.year = 2020, wpp.year = 2019, 
+    my.tfr.file = NULL, my.locations.file = NULL, my.tfr.raw.file = NULL, 
+    use.wpp.data = TRUE, ar.phase2 = FALSE, buffer.size = 100, 
+    raw.outliers = c(-2, 1),
+    U.c.low = 5.5, U.up = 8.8, U.width = 3,
+    mean.eps.tau0 = -0.25, sd.eps.tau0 = 0.4, nu.tau0 = 2, 
+    Triangle_c4.low = 1, Triangle_c4.up = 2.5, 
+    Triangle_c4.trans.width = 2,
+    Triangle4.0 = 0.3, delta4.0 = 0.8, nu4 = 2,
+    S.low = 3.5, S.up = 6.5, S.width = 0.5, 
+    a.low = 0, a.up = 0.2, a.width = 0.02, 
+    b.low = a.low, b.up = a.up, b.width = 0.05, 
+    sigma0.low = if (annual) 0.0045 else 0.01, sigma0.up = 0.6,  
+    sigma0.width = 0.1, sigma0.min = 0.04, 
+    const.low = 0.8, const.up = 2, const.width = 0.3, 
+    d.low = 0.05, d.up = 0.5, d.trans.width = 1, 
+    chi0 = -1.5, psi0 = 0.6, nu.psi0 = 2, 
+    alpha0.p = c(-1, 0.5, 1.5), delta0 = 1, nu.delta0 = 2, 
+    dl.p1 = 9, dl.p2 = 9, phase3.parameter=NULL,
+    S.ini = NULL, a.ini = NULL, b.ini = NULL, sigma0.ini = NULL, 
+    Triangle_c4.ini = NULL, const.ini = NULL, gamma.ini = 1, 
+    phase3.starting.values = NULL, proposal_cov_gammas = NULL, 
+    iso.unbiased = NULL, covariates = c("source", "method"), cont_covariates = NULL, 
+    source.col.name="source", seed = NULL, parallel = FALSE, nr.nodes = nr.chains, 
+    save.all.parameters = FALSE, compression.type = 'None',
+    auto.conf = list(max.loops = 5, iter = 62000, iter.incr = 10000, 
+        nr.chains = 3, thin = 80, burnin = 2000),
+    verbose = FALSE, verbose.iter = 10, ...)
+		
+continue.tfr.mcmc(iter, chain.ids = NULL, 
+    output.dir = file.path(getwd(), "bayesTFR.output"), 
+    parallel = FALSE, nr.nodes = NULL, auto.conf = NULL,
+    verbose = FALSE, verbose.iter = 10, ...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>nr.chains</code></td>
+<td>
+<p>Number of MCMC chains to run.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>iter</code></td>
+<td>
+<p>Number of iterations to run in each chain. In addition to a single value, it can have the value ‘auto’ in which case the function runs for the number of iterations given in the <code>auto.conf</code> list (see below), then checks if the MCMCs converged (using the <code>auto.conf</code> settings). If it did not converge, the procedure is repeated until convergence is reached or the number of repetition exceeded <code>auto.conf$max.loops</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>output.dir</code></td>
+<td>
+<p>Directory which the simulation output should be written into.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>thin</code></td>
+<td>
+<p>Thinning interval between consecutive observations to be stored on disk.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>replace.output</code></td>
+<td>
+<p>If <code>TRUE</code>, existing outputs in <code>output.dir</code> will be replaced by results of this simulation.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>annual</code></td>
+<td>
+<p>If <code>TRUE</code>, the model will be trained based on annual TFR data.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>uncertainty</code></td>
+<td>
+<p>Logical. If <code>TRUE</code>, the model described in Liu and Raftery(2020) which takes into account uncertainty about the past TFR observations is used. It will take the observations from <code>rawTFR</code> or from a file given by <code>my.tfr.raw.file</code>, estimate the distribution of these observations with respect to the true TFR. Then instead of treating the observed data as true data, it assumes the true TFR is unknown and include an extra step for estimating past TFR.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>use.wpp.data</code></td>
+<td>
+<p>Logical indicating if default WPP data should be used, i.e. if <code>my.tfr.file</code> will be matched with the WPP data in terms of time periods and locations. If <code>FALSE</code>, it is assumed that the <code>my.tfr.file</code> contains all locations and time periods to be included in the simulation.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ar.phase2</code></td>
+<td>
+<p>Logical where <code>TRUE</code> implies that the autoregressive component on the residual (for Phase II) is considered as a global parameter. Only used if <code>annual</code> is <code>TRUE</code>. See details below.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>start.year</code></td>
+<td>
+<p>Start year for using historical data.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>present.year</code></td>
+<td>
+<p>End year for using historical data.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>wpp.year</code></td>
+<td>
+<p>Year for which WPP data is used. The functions loads a package called <span class="pkg">wpp</span><code class="reqn">x</code> where <code class="reqn">x</code> is the <code>wpp.year</code> and uses the <code>tfr*</code> datasets.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>my.tfr.file</code></td>
+<td>
+<p>File name containing user-specified TFR time series for one or more countries. See Details below.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>my.locations.file</code></td>
+<td>
+<p>File name containing user-specified locations. See Details below.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>my.tfr.raw.file</code></td>
+<td>
+<p>File name of the raw TFR, used when <code>uncertainty</code> is <code>TRUE</code>. See details below.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>buffer.size</code></td>
+<td>
+<p>Buffer size (in number of iterations) for keeping data in the memory. The smaller the <code>buffer.size</code> the more often will the process access the hard disk and thus, the slower the run. On the other hand, the smaller the <code>buffer.size</code> the less data will be lost in case of failure.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>raw.outliers</code></td>
+<td>
+<p>Vector of size two giving the maximum annual decrease and increase of raw TFR change, respectively. The default values mean that any raw TFR data that decrease more than 2 or increase more than 1 in one year are considered as outliers.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>U.c.low, U.up</code></td>
+<td>
+<p>Lower and upper bound of the parameter <code class="reqn">U_c</code>, the start level of the fertility transition. The lower bound is set for each country as the maximum of <code>U.c.low</code> and the minimum of historical TFR for that country.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>U.width</code></td>
+<td>
+<p>Width for slice sampling used when updating the <code class="reqn">U_c</code> parameter.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>mean.eps.tau0, sd.eps.tau0</code></td>
+<td>
+<p>Mean and standard deviation of the prior distribution of <code class="reqn">m_{\tau}</code> which is the mean of the distortion terms <code class="reqn">\epsilon_{c,\tau}</code> in start periods <code class="reqn">\tau_c</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nu.tau0</code></td>
+<td>
+<p>The shape parameter of the prior Gamma distribution of <code class="reqn">1/s_{\tau}^2</code> is <code>nu.tau0</code>/2. <code class="reqn">s_{\tau}</code> is standard deviation of the distortion terms in start periods <code class="reqn">\tau_c</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Triangle_c4.low, Triangle_c4.up</code></td>
+<td>
+<p>Lower and upper bound of the <code class="reqn">\Delta_{c4}</code> parameter.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Triangle_c4.trans.width</code></td>
+<td>
+<p>Width for slice sampling used when updating the logit-transformed <code class="reqn">\Delta_{c4}</code> parameter.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Triangle4.0, delta4.0</code></td>
+<td>
+<p>Mean and standard deviation of the prior distribution of the <code class="reqn">\Delta_4</code> parameter which is the hierarchical mean of the logit-transformed <code class="reqn">\Delta_{c4}</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nu4</code></td>
+<td>
+<p>The shape parameter of the prior Gamma distribution of <code class="reqn">1/\delta_4^2</code> is <code>nu4</code>/2. <code class="reqn">\delta_4</code> is standard deviation of the logit-transformed <code class="reqn">\Delta_{c4}</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>S.low, S.up</code></td>
+<td>
+<p>Lower and upper bound of the uniform prior distribution of the <code class="reqn">S</code> parameter which is the TFR at which the distortion has maximum variance.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>S.width</code></td>
+<td>
+<p>Width for slice sampling used when updating the <code class="reqn">S</code> parameter.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>a.low, a.up</code></td>
+<td>
+<p>Lower and upper bound of the uniform prior distribution of the <code class="reqn">a</code> parameter which is a coefficient for linear decrease of the TFR for TFR larger than <code class="reqn">S</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>a.width</code></td>
+<td>
+<p>Width for slice sampling used when updating the <code class="reqn">a</code> parameter.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>b.low, b.up</code></td>
+<td>
+<p>Lower and upper bound of the uniform prior distribution of the <code class="reqn">b</code> parameter which is a  coefficient for linear decrease of the TFR for TFR smaller than <code class="reqn">S</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>b.width</code></td>
+<td>
+<p>Width for slice sampling used when updating  the <code class="reqn">b</code> parameter.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>sigma0.low, sigma0.up</code></td>
+<td>
+<p>Lower and upper bound of the uniform prior distribution of the <code class="reqn">\sigma_0</code> parameter. <code class="reqn">\sigma_0^2</code> is the maximum variance of the distortions at TFR equals <code class="reqn">S</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>sigma0.width</code></td>
+<td>
+<p>Width for slice sampling used when updating the <code class="reqn">\sigma_0</code> parameter.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>sigma0.min</code></td>
+<td>
+<p>Minimum value that <code class="reqn">\sigma_0</code> can take.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>const.low, const.up</code></td>
+<td>
+<p>Lower and upper bound of the uniform prior distribution of the <code class="reqn">c</code> parameter which is the multiplier of standard deviation of the distortions before 1975.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>const.width</code></td>
+<td>
+<p>Width for slice sampling used when updating the <code class="reqn">c</code> parameter.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>d.low, d.up</code></td>
+<td>
+<p>Lower and upper bound of the parameter <code class="reqn">d_c</code>, the maximum annual decrement for country <code class="reqn">c</code>. (Note that in Alkema et al. this parameter is a five-years decrement.)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>d.trans.width</code></td>
+<td>
+<p>Width for slice sampling used when updating the logit-transformed <code class="reqn">d_c</code> parameter.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>chi0, psi0</code></td>
+<td>
+<p>Prior mean and standard deviation of the <code class="reqn">\chi</code> parameter which is the hierarchical mean of logit-transformed maximum decline parameter <code class="reqn">d_c</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nu.psi0</code></td>
+<td>
+<p>The shape parameter of the prior Gamma distribution of <code class="reqn">1/\psi^2</code> is <code>nu.psi0</code>/2. <code class="reqn">\psi</code> is the standard devation of logit-transformed maximum decline parameter <code class="reqn">d_c</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>alpha0.p</code></td>
+<td>
+<p>Vector of prior means of the <code class="reqn">\alpha_i</code> parameters, <code class="reqn">i=1,2,3</code>. <code class="reqn">\alpha_i</code> is the hierarchical mean of <code class="reqn">\gamma_{ci}</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>delta0</code></td>
+<td>
+<p>Prior standard deviation of the <code class="reqn">\alpha_i</code> parameters. It is a single value, i.e. the same standard deviation is used for all <code class="reqn">i</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nu.delta0</code></td>
+<td>
+<p>The shape parameter of the prior Gamma distribution of <code class="reqn">1/\delta_i^2</code> is <code>nu.delta0</code>/2. <code class="reqn">\delta_i</code> is the standard deviation of <code class="reqn">\gamma_{ci}</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>dl.p1, dl.p2</code></td>
+<td>
+<p>Values of the parameters <code class="reqn">p_1</code> and <code class="reqn">p_2</code> of the double logistic function.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>phase3.parameter</code></td>
+<td>
+<p>When <code>uncertainty=TRUE</code>, we need to combine the MCMC process for Phase II and Phase III together. This parameter is used to provide a list for phase3 initial ranges, such as <code>mu.prior.range</code>. If the input is <code>NULL</code>, the default values will be used.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>S.ini</code></td>
+<td>
+<p>Initial value for the <code class="reqn">S</code> parameter. It can be a single value or an array of the size <code>nr.chains</code>.  By default, if <code>nr.chains</code> is 1, it is the middle point of the interval [<code>S.low, S.up</code>]. Otherwise, it is equally spaced distributed between <code>S.low</code> and <code>S.up</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>a.ini</code></td>
+<td>
+<p>Initial value for the <code class="reqn">a</code> parameter. It can be a single value or an array of the size <code>nr.chains</code>.  By default, if <code>nr.chains</code> is 1, it is the middle point of the interval [<code>a.low, a.up</code>]. Otherwise, it is equally spaced distributed between <code>a.low</code> and <code>a.up</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>b.ini</code></td>
+<td>
+<p>Initial value for the <code class="reqn">b</code> parameter. It can be a single value or an array of the size <code>nr.chains</code>.  By default, if <code>nr.chains</code> is 1, it is the middle point of the interval [<code>b.low, b.up</code>]. Otherwise, it is equally spaced distributed between <code>b.low</code> and <code>b.up</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>sigma0.ini</code></td>
+<td>
+<p>Initial value for the <code class="reqn">\sigma_0</code> parameter. It can be a single value or an array of the size <code>nr.chains</code>.  By default, if <code>nr.chains</code> is 1, it is the middle point of the interval [<code>sigma0.low, sigma0.up</code>]. Otherwise, it is equally spaced distributed between <code>sigma0.low</code> and <code>sigma0.up</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Triangle_c4.ini</code></td>
+<td>
+<p>Initial value for the <code class="reqn">\Delta_{c4}</code> parameter. It can be a single value or an array of the size <code>nr.chains</code>.  By default, if <code>nr.chains</code> is 1, it is the middle point of the interval [<code>Triangle_c4.low, Triangle_c4.up</code>]. Otherwise, it is equally spaced distributed between <code>Triangle_c4.low</code> and <code>Triangle_c4.up</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>const.ini</code></td>
+<td>
+<p>Initial value for the <code class="reqn">c</code> parameter. It can be a single value or an array of the size <code>nr.chains</code>.  By default, if <code>nr.chains</code> is 1, it is the middle point of the interval [<code>const.low, const.up</code>]. Otherwise, it is equally spaced distributed between <code>const.low</code> and <code>const.up</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>gamma.ini</code></td>
+<td>
+<p>Initial value for the <code class="reqn">\gamma_c</code> parameter. The same value is used for all countries.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>phase3.starting.values</code></td>
+<td>
+<p>This parameter is used to provide a list of Phase 3 initial values, such as <code>mu.ini</code> and <code>rho.ini</code> in <code>run.tfr3.mcmc</code>. If the input is <code>NULL</code>, the default values will be used.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>proposal_cov_gammas</code></td>
+<td>
+<p>Proposal for the gamma covariance matrices for each country. It should be a list with two values: <code>values</code> and <code>country_codes</code>. The structure corresponds to the object returned by the function <code>get.cov.gammas</code>. By default the covariance matrices are obtained using <code>data(proposal_cov_gammas_cii)</code>. This argument overwrite the defaults for countries contained the argument.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>iso.unbiased</code></td>
+<td>
+<p>Codes of countries for which the vital registration TFR estimates are considered unbiased. Only used if <code>uncertainty = TRUE</code>. See details below.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>covariates, cont_covariates</code></td>
+<td>
+<p>Categorical and continuous features used in estimating bias and standard deviation if <code>uncertainty = TRUE</code>. See details below.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>source.col.name</code></td>
+<td>
+<p>If <code>uncertainty</code> is <code>TRUE</code> this is a column name within the given covariates that determines the data source. It is used if <code>iso.unbiased</code> is given to identify the vital registration records.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>seed</code></td>
+<td>
+<p>Seed of the random number generator. If <code>NULL</code> no seed is set. It can be used to generate reproducible results.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>parallel</code></td>
+<td>
+<p>Logical determining if the simulation should run multiple chains in parallel. If it is <code>TRUE</code>, the package <span class="pkg">snowFT</span> is required. In such a case further arguments can be passed, see description of ....</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nr.nodes</code></td>
+<td>
+<p>Relevant only if <code>parallel</code> is <code>TRUE</code>. It gives the number of nodes for running the simulation in parallel. By default it equals to the number of chains.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>save.all.parameters</code></td>
+<td>
+<p>If <code>TRUE</code>, the distortion terms <code class="reqn">\epsilon_{c,t}</code> for all <code class="reqn">t</code> are stored on disk, otherwise not.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>compression.type</code></td>
+<td>
+<p>One of ‘None’, ‘gz’, ‘xz’, ‘bz’, determining type of a compression of the MCMC files. Important: Do not use this option for a long MCMC simulation as this tends to cause very long run times due to slow reading!</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>auto.conf</code></td>
+<td>
+<p>List containing a configuration for an ‘automatic’ run (see description of argument <code>iter</code>). Item <code>iter</code> gives the number of iterations in the first chunk of the MCMC simulation; item <code>iter.incr</code> gives the number of iterations in the following chunks; <code>nr.chains</code> gives the number of chains in all chunks of the MCMC simulation; items <code>thin</code> and <code>burnin</code> are used in the convergence diagnostics following each chunk; <code>max.loops</code> controls the maximum number of chunks. All items must be integer values. This argument is only used if the function argument <code>iter</code> is set to ‘auto’.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>verbose</code></td>
+<td>
+<p>Logical switching log messages on and off.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>verbose.iter</code></td>
+<td>
+<p>Integer determining how often (in number of iterations) log messages are outputted during the estimation.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Additional parameters to be passed to the function <code>performParallel</code>, if <code>parallel</code> is <code>TRUE</code>. For example <code>cltype</code> which is ‘SOCK’ by default but can be set to ‘MPI’.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>chain.ids</code></td>
+<td>
+<p>Array of chain identifiers that should be resumed. If it is <code>NULL</code>, all existing chains in <code>output.dir</code> are resumed.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The function <code>run.tfr.mcmc</code> creates an object of class <code>bayesTFR.mcmc.meta</code> and stores it in <code>output.dir</code>.  It launches <code>nr.chains</code> MCMCs, either sequentially or in parallel.  Parameter traces of each chain are stored as (possibly compressed) ASCII files in a subdirectory of <code>output.dir</code>, called <code>mc</code><em>x</em> where <em>x</em> is the identifier of that chain.  There is one file per parameter, named after the parameter with the suffix “.txt”, possibly followed by a compression suffix if <code>compression.type</code> is given.  Country-specific parameters (<code class="reqn">U, d, \gamma</code>) have the suffix <code>_c</code><em>y</em> where <em>y</em> is the country code.  In addition to the trace files, each <code>mc</code><em>x</em> directory contains the object <code>bayesTFR.mcmc</code> in binary format.  All chain-specific files  are written into disk after the first, last and each <code>buffer.size</code>-th iteration.
+</p>
+<p>Using the function <code>continue.tfr.mcmc</code> one can continue simulating an existing MCMCs by <code>iter</code> iterations for either all or selected chains.
+</p>
+<p>The function loads observed data (further denoted as WPP dataset) from the <code>tfr</code> and <code>tfr_supplemental</code> datasets in a <span class="pkg">wpp</span><code class="reqn">x</code> package where <code class="reqn">x</code> is the <code>wpp.year</code>. It is then merged with the  <code>include</code> dataset that corresponds to the same <code>wpp.year</code>. The argument <code>my.tfr.file</code> can be used to overwrite those default data. If <code>use.wpp.data</code> is <code>FALSE</code>, it fully replaces the default dataset. Otherwise (by default), such a file can include a subset of countries contained in the WPP dataset, as well as a set of new countries. In the former case,
+the function replaces the corresponding country data from the WPP dataset by values in this file. Only columns are replaced that match column names of the WPP dataset, and in addition, columns ‘last.observed’ and ‘include_code’ are used, if present. Countries are merged with WPP using the column ‘country_code’. In addition, in order the countries to be included in the simulation, in both cases (whether they are included in the WPP dataset or not), they must be contained in the table of locations (<code>UNlocations</code>). In addition, their corresponding <code>include_code</code> must be set to 2. If the column ‘include_code’ is present in <code>my.tfr.file</code>, its value overwrites the default include code, unless it is -1.  
+</p>
+<p>The default UN table of locations mentioned above can be overwritten/extended by using a file passed as the <code>my.locations.file</code> argument. Such a file must have the same structure as the <code>UNlocations</code> dataset. Entries in this file will overwrite corresponding entries in <code>UNlocations</code> matched by the column ‘country_code’. If there is no such entry in the default dataset, it will be appended. This option of appending new locations is especially useful in cases when <code>my.tfr.file</code> contains new countries/regions that are not included in <code>UNlocations</code>. In such a case, one must provide a <code>my.locations.file</code> with a definition of those countries/regions.
+</p>
+<p>For simulation of the hyperparameters of the Bayesian hierarchical model, all countries are used that are included in the WPP dataset, possibly complemented by the <code>my.tfr.file</code>, that have <code>include_code</code> equal to 2. The hyperparameters are used to simulate country-specific parameters, which is done for all countries with <code>include_code</code> equal 1 or 2. The following values of <code>include_code</code> in <code>my.tfr.file</code> are recognized: -1 (do not overwrite the default include code), 0 (ignore), 1 (include in prediction but not estimation), 2 (include in both, estimation and prediction). Thus, the set of countries included in the estimation and prediction can be fully user-specific.
+</p>
+<p>Optionally, <code>my.tfr.file</code> can contain a column called <code>last.observed</code> containing the year of the last observation for each country. In such a case, the code would ignore any data after that time point. Furthermore, the function <code>tfr.predict</code> fills in the missing values using the median of the BHM procedure (stored in <code>tfr_matrix_reconstructed</code> of the <code>bayesTFR.prediction</code> object). For <code>last.observed</code> values that are below a middle year of a time interval <code class="reqn">[t_i, t_{i+1}]</code> (computed as <code class="reqn">t_i+3</code>) the last valid data point is the time interval <code class="reqn">[t_{i-1}, t_i]</code>, whereas for values larger equal a middle year, the data point in <code class="reqn">[t_i, t_{i+1}]</code> is valid.
+</p>
+<p>The package contains a dataset called ‘<span class="file">my_tfr_template</span>’ (in ‘<span class="file">extdata</span>’ directory) which is a template for user-specified <code>my.tfr.file</code>.
+</p>
+<p>The parameter <code>uncertainty</code> is set to control whether past TFR is considered to be precise (<code>FALSE</code>), or need to be estimated from the raw data (<code>TRUE</code>). In the latter case, the raw TFR observations are taken either from the <code>rawTFR</code> dataset (default) or from a file given by the <code>my.tfr.raw.file</code> argument.  The Bayesian hierarchical model considers the past TFR as unknown, estimates it and stores in <code>output.dir</code>. Details can be found in Liu and Raftery (2020). The <code>covariates</code>, <code>cont_covariates</code> arguments are for listing categorical and continuous features for estimating bias and standard deviation of past TFR observations. If a country is known to have unbiased vital registration (VR) records, one can include it in the  <code>iso.unbiased</code> argument as those countries will estimate their past VR records to have 0 bias and 0.0161 standard deviation. The VR records are identified as having “VR” in the column given by <code>source.col.name</code> (“source” by default).
+</p>
+<p>If <code>annual=TRUE</code>, which implies using annual data for training the model, the parameter <code>ar.phase2</code> will be activated. If <code>ar.phase2</code> is set to <code>TRUE</code>, then the model of Phase II will change from <code class="reqn">d_{c,t} = g_{c,t} + \epsilon_{c,t}</code> to <code class="reqn">d_{c,t}-g_{c,t} = \phi(d_{c,t-1}-g_{c,t-1}) + \epsilon_{c,t}</code>. <code class="reqn">\phi</code> is considered as country-independent and is called <code>rho_phase2</code>.
+</p>
+<p>Furthermore, if <code>annual</code> is <code>TRUE</code> and <code>my.tfr.file</code> is given, the data in the file must be on annual basis and no matching with the WPP dataset takes place. 
+</p>
+
+
+<h3>Value</h3>
+
+<p>An object of class <code>bayesTFR.mcmc.set</code> which is a list with two components:
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>meta</code></td>
+<td>
+<p>An object of class <code>bayesTFR.mcmc.meta</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>mcmc.list</code></td>
+<td>
+<p>A list of objects of class <code>bayesTFR.mcmc</code>, one for each MCMC.</p>
+</td>
+</tr>
+</table>
+<h3>Author(s)</h3>
+
+<p>Hana Sevcikova, Leontine Alkema, Peiran Liu
+</p>
+
+
+<h3>References</h3>
+
+<p>Peiran Liu, Hana Sevcikova, Adrian E. Raftery (2023): Probabilistic Estimation and Projection of the Annual Total Fertility Rate Accounting for Past Uncertainty: A Major Update of the bayesTFR R Package. Journal of Statistical Software, 106(8), 1-36. <a href="https://doi.org/10.18637/jss.v106.i08">doi:10.18637/jss.v106.i08</a>.
+</p>
+<p>L. Alkema, A. E. Raftery, P. Gerland, S. J. Clark, F. Pelletier, Buettner, T., Heilig, G.K. (2011). Probabilistic Projections of the Total Fertility Rate for All Countries. Demography, Vol. 48, 815-839. <a href="https://doi.org/10.1007/s13524-011-0040-5">doi:10.1007/s13524-011-0040-5</a>.
+</p>
+<p>P. Liu, and A. E. Raftery (2020). Accounting for Uncertainty About Past Values In Probabilistic Projections of the Total Fertility Rate for All Countries. Annals of Applied Statistics, Vol 14, no. 2, 685-705. <a href="https://doi.org/10.1214/19-AOAS1294">doi:10.1214/19-AOAS1294</a>.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>get.tfr.mcmc</code>, <code>summary.bayesTFR.mcmc.set</code>.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## Not run: 
+sim.dir &lt;- tempfile()
+m &lt;- run.tfr.mcmc(nr.chains = 1, iter = 5, output.dir = sim.dir, verbose = TRUE)
+summary(m)
+m &lt;- continue.tfr.mcmc(iter = 5, verbose = TRUE)
+summary(m)
+unlink(sim.dir, recursive = TRUE)
+## End(Not run)
+</code></pre>
+
+
+</div>

@@ -1,0 +1,299 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>filter.data</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Basic Eddy Covariance Data Filtering</h2>
+
+<h3>Description</h3>
+
+<p>Filters time series of EC data for high-quality values and specified
+meteorological conditions.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">filter.data(
+  data,
+  quality.control = TRUE,
+  filter.growseas = FALSE,
+  filter.precip = FALSE,
+  filter.vars = NULL,
+  filter.vals.min,
+  filter.vals.max,
+  NA.as.invalid = TRUE,
+  vars.qc = NULL,
+  quality.ext = "_qc",
+  good.quality = c(0, 1),
+  missing.qc.as.bad = TRUE,
+  GPP = "GPP",
+  doy = "doy",
+  year = "year",
+  tGPP = 0.5,
+  ws = 15,
+  min.int = 5,
+  precip = "precip",
+  tprecip = 0.01,
+  precip.hours = 24,
+  records.per.hour = 2,
+  filtered.data.to.NA = TRUE,
+  constants = bigleaf.constants()
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+<p>Data.frame or matrix containing all required input variables in 
+half-hourly or hourly resolution. Including year, month, day information</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>quality.control</code></td>
+<td>
+<p>Should quality control be applied? Defaults to <code>TRUE</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>filter.growseas</code></td>
+<td>
+<p>Should data be filtered for growing season? Defaults to <code>FALSE</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>filter.precip</code></td>
+<td>
+<p>Should precipitation filtering be applied? Defaults to <code>FALSE</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>filter.vars</code></td>
+<td>
+<p>Additional variables to be filtered. Vector of type character.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>filter.vals.min</code></td>
+<td>
+<p>Minimum values of the variables to be filtered. Numeric vector of 
+the same length than <code>filter.vars</code>. Set to <code>NA</code> to be ignored.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>filter.vals.max</code></td>
+<td>
+<p>Maximum values of the variables to be filtered. Numeric vector of 
+the same length than <code>filter.vars</code>. Set to <code>NA</code> to be ignored.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>NA.as.invalid</code></td>
+<td>
+<p>If <code>TRUE</code> (the default) missing data are filtered out (applies to all variables).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>vars.qc</code></td>
+<td>
+<p>Character vector indicating the variables for which quality filter should 
+be applied. Ignored if <code>quality.control = FALSE</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>quality.ext</code></td>
+<td>
+<p>The extension to the variables' names that marks them as 
+quality control variables. Ignored if <code>quality.control = FALSE</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>good.quality</code></td>
+<td>
+<p>Which values indicate good quality (i.e. not to be filtered) 
+in the quality control (qc) variables? Ignored if <code>quality.control = FALSE</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>missing.qc.as.bad</code></td>
+<td>
+<p>If quality control variable is <code>NA</code>, should the corresponding data point be
+treated as bad quality? Defaults to <code>TRUE</code>. Ignored if <code>quality.control = FALSE</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>GPP</code></td>
+<td>
+<p>Gross primary productivity (umol m-2 s-1); Ignored if <code>filter.growseas = FALSE</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>doy</code></td>
+<td>
+<p>Day of year; Ignored if <code>filter.growseas = FALSE</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>year</code></td>
+<td>
+<p>Year; Ignored if <code>filter.growseas = FALSE</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>tGPP</code></td>
+<td>
+<p>GPP threshold (fraction of 95th percentile of the GPP time series).
+Must be between 0 and 1. Ignored if <code>filter.growseas</code> is <code>FALSE</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ws</code></td>
+<td>
+<p>Window size used for GPP time series smoothing. 
+Ignored if <code>filter.growseas = FALSE</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>min.int</code></td>
+<td>
+<p>Minimum time interval in days for a given state of growing season.
+Ignored if <code>filter.growseas = FALSE</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>precip</code></td>
+<td>
+<p>Precipitation (mm time-1)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>tprecip</code></td>
+<td>
+<p>Precipitation threshold used to identify a precipitation event (mm). 
+Ignored if <code>filter.precip = FALSE</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>precip.hours</code></td>
+<td>
+<p>Number of hours removed following a precipitation event (h).
+Ignored if <code>filter.precip = FALSE</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>records.per.hour</code></td>
+<td>
+<p>Number of observations per hour. I.e. 2 for half-hourly data.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>filtered.data.to.NA</code></td>
+<td>
+<p>Logical. If <code>TRUE</code> (the default), all variables in the input
+data.frame/matrix are set to <code>NA</code> for the time step where ANY of the
+<code>filter.vars</code> were beyond their acceptable range (as
+determined by <code>filter.vals.min</code> and <code>filter.vals.max</code>).
+If <code>FALSE</code>, values are not filtered, and an additional column 'valid'
+is added to the data.frame/matrix, indicating if any value of a row
+did (1) or did not fulfill the filter criteria (0).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>constants</code></td>
+<td>
+<p>frac2percent - conversion between fraction and percent</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>This routine consists of two parts:
+</p>
+<p>1) Quality control: All variables included in <code>vars.qc</code> are filtered for 
+good quality data. For these variables a corresponding quality variable with 
+the same name as the variable plus the extension as specified in <code>quality.ext</code>
+must be provided. For time steps where the value of the quality indicator is not included
+in the argument <code>good.quality</code>, i.e. the quality is not considered as 'good', 
+its value is set to <code>NA</code>.
+</p>
+<p>2) Meteorological filtering. Under certain conditions (e.g. low ustar), the assumptions
+of the EC method are not fulfilled. Further, some data analysis require certain meteorological
+conditions, such as periods without rainfall, or active vegetation (growing season, daytime).
+The filter applied in this second step serves to exclude time periods that do not fulfill the criteria
+specified in the arguments. More specifically, time periods where one of the variables is higher
+or lower than the specified thresholds (<code>filter.vals.min</code> and <code>filter.vals.max</code>)
+are set to <code>NA</code> for all variables. If a threshold is set to <code>NA</code>, it will be ignored.
+</p>
+
+
+<h3>Value</h3>
+
+<p>If <code>filtered.data.to.NA = TRUE</code> (default), the input data.frame/matrix with 
+observations which did not fulfill the filter criteria set to <code>NA</code>. 
+If <code>filtered.data.to.NA = FALSE</code>, the input data.frame/matrix with an additional 
+column "valid", which indicates whether all the data of a time step fulfill the 
+filtering criteria (1) or not (0).
+</p>
+
+
+<h3>Note</h3>
+
+<p>The thresholds set with <code>filter.vals.min</code> and <code>filter.vals.max</code> filter all data
+that are smaller than ("&lt;"), or greater than ("&gt;") the specified thresholds. That means
+if a variable has exactly the same value as the threshold, it will not be filtered. Likewise,
+<code>tprecip</code> filters all data that are greater than <code>tprecip</code>. 
+</p>
+<p>Variables considered of bad quality (as specified by the corresponding quality control variables)      
+will be set to <code>NA</code> by this routine. Data that do not fulfill the filtering criteria are set to
+<code>NA</code> if <code>filtered.data.to.NA = TRUE</code>. Note that with this option *all* variables of the same
+time step are set to <code>NA</code>. Alternatively, if <code>filtered.data.to.NA = FALSE</code> data are not set to <code>NA</code>,
+and a new column "valid" is added to the data.frame/matrix, indicating if any value of a row
+did (1) or did not fulfill the filter criteria (0).
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R"># Example of data filtering; data are for a month within the growing season,
+# hence growing season is not filtered.
+# If filtered.data.to.NA=TRUE, all values of a row are set to NA if one filter
+# variable is beyond its bounds. 
+DE_Tha_Jun_2014_2 &lt;- filter.data(DE_Tha_Jun_2014,quality.control=FALSE,
+                                 vars.qc=c("Tair","precip","H","LE"),
+                                 filter.growseas=FALSE,filter.precip=TRUE,
+                                 filter.vars=c("Tair","PPFD","ustar"),
+                                 filter.vals.min=c(5,200,0.2),
+                                 filter.vals.max=c(NA,NA,NA),NA.as.invalid=TRUE,
+                                 quality.ext="_qc",good.quality=c(0,1),
+                                 missing.qc.as.bad=TRUE,GPP="GPP",doy="doy",
+                                 year="year",tGPP=0.5,ws=15,min.int=5,precip="precip",
+                                 tprecip=0.1,precip.hours=24,records.per.hour=2,
+                                 filtered.data.to.NA=TRUE)
+
+ ## same, but with filtered.data.to.NA=FALSE
+ DE_Tha_Jun_2014_3 &lt;- filter.data(DE_Tha_Jun_2014,quality.control=FALSE,
+                                 vars.qc=c("Tair","precip","H","LE"),
+                                 filter.growseas=FALSE,filter.precip=TRUE,
+                                 filter.vars=c("Tair","PPFD","ustar"),
+                                 filter.vals.min=c(5,200,0.2),
+                                 filter.vals.max=c(NA,NA,NA),NA.as.invalid=TRUE,
+                                 quality.ext="_qc",good.quality=c(0,1),
+                                 missing.qc.as.bad=TRUE,GPP="GPP",doy="doy",
+                                 year="year",tGPP=0.5,ws=15,min.int=5,precip="precip",
+                                 tprecip=0.1,precip.hours=24,records.per.hour=2,
+                                 filtered.data.to.NA=FALSE)
+                                 
+ # note the additional column 'valid' in DE_Tha_Jun_2014_3.
+ # To remove time steps marked as filtered out (i.e. 0 values in column 'valid'):
+ DE_Tha_Jun_2014_3[DE_Tha_Jun_2014_3["valid"] == 0,] &lt;- NA
+  
+  
+</code></pre>
+
+
+</div>

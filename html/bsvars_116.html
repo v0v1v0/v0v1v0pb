@@ -1,0 +1,131 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>verify_autoregression.PosteriorBSVARSV</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Verifies hypotheses involving autoregressive parameters</h2>
+
+<h3>Description</h3>
+
+<p>Computes the logarithm of Bayes factor for the joint hypothesis, 
+<code class="reqn">H_0</code>, possibly for many autoregressive parameters represented by argument 
+<code>hypothesis</code> via Savage-Dickey Density Ration (SDDR).
+The logarithm of Bayes factor for this hypothesis can be computed using the SDDR 
+as the difference of logarithms of the marginal posterior distribution ordinate at the restriction 
+less the marginal prior distribution ordinate at the same point:
+</p>
+<p style="text-align: center;"><code class="reqn">log p(H_0 | data) - log p(H_0)</code>
+</p>
+
+<p>Therefore, a negative value of the difference is the evidence against 
+hypothesis. The estimation of both elements of the difference requires 
+numerical integration.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">## S3 method for class 'PosteriorBSVARSV'
+verify_autoregression(posterior, hypothesis)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>posterior</code></td>
+<td>
+<p>the <code>posterior</code> element of the list from the estimation outcome</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>hypothesis</code></td>
+<td>
+<p>an <code>NxK</code> matrix of the same dimension as the autoregressive 
+matrix <code class="reqn">A</code> with numeric values for the parameters to be verified,
+in which case the values represent the joint hypothesis, and missing value <code>NA</code> 
+for these parameters that are not tested</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>An object of class <code>SDDRautoregression</code> that is a list of three components:
+</p>
+<p><code>logSDDR</code> a scalar with values of the logarithm of the Bayes factors for 
+the autoregressive hypothesis for each of the shocks
+</p>
+<p><code>log_SDDR_se</code> an <code>N</code>-vector with estimation standard errors of the logarithm of 
+the Bayes factors reported in output element <code>logSDDR</code> that are computed based on 30 random 
+sub-samples of the log-ordinates of the marginal posterior and prior distributions.
+</p>
+<p><code>components</code> a list of three components for the computation of the Bayes factor
+</p>
+
+<dl>
+<dt>log_denominator</dt>
+<dd>
+<p>an <code>N</code>-vector with values of the logarithm of the Bayes factor denominators</p>
+</dd>
+<dt>log_numerator</dt>
+<dd>
+<p>an <code>N</code>-vector with values of the logarithm of the Bayes factor numerators</p>
+</dd>
+<dt>log_numerator_s</dt>
+<dd>
+<p>an <code>NxS</code> matrix of the log-full conditional posterior density ordinates computed to estimate the numerator</p>
+</dd>
+<dt>log_denominator_s</dt>
+<dd>
+<p>an <code>NxS</code> matrix of the log-full conditional posterior density ordinates computed to estimate the denominator</p>
+</dd>
+<dt>se_components</dt>
+<dd>
+<p>a <code>30</code>-vector containing the log-Bayes factors on the basis of which the standard errors are computed</p>
+</dd>
+</dl>
+<h3>Author(s)</h3>
+
+<p>Tomasz Woźniak <a href="mailto:wozniak.tom@pm.me">wozniak.tom@pm.me</a>
+</p>
+
+
+<h3>References</h3>
+
+<p>Woźniak, T., and Droumaguet, M., (2024) Bayesian Assessment of Identifying Restrictions for Heteroskedastic Structural VARs
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R"># simple workflow
+############################################################
+# upload data
+data(us_fiscal_lsuw)
+
+# specify the model and set seed
+specification  = specify_bsvar_sv$new(us_fiscal_lsuw, p = 1)
+set.seed(123)
+
+# estimate the model
+posterior      = estimate(specification, 10)
+
+# verify autoregression
+H0             = matrix(NA, ncol(us_fiscal_lsuw), ncol(us_fiscal_lsuw) + 1)
+H0[1,3]        = 0        # a hypothesis of no Granger causality from gdp to ttr
+sddr           = verify_autoregression(posterior, H0)
+
+# workflow with the pipe |&gt;
+############################################################
+set.seed(123)
+us_fiscal_lsuw |&gt;
+  specify_bsvar_sv$new(p = 1) |&gt;
+  estimate(S = 10) |&gt; 
+  verify_autoregression(hypothesis = H0) -&gt; sddr
+
+</code></pre>
+
+
+</div>

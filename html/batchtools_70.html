@@ -1,0 +1,162 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>makeClusterFunctions</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>ClusterFunctions Constructor</h2>
+
+<h3>Description</h3>
+
+<p>This is the constructor used to create <em>custom</em> cluster functions.
+Note that some standard implementations for TORQUE, Slurm, LSF, SGE, etc. ship
+with the package.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">makeClusterFunctions(
+  name,
+  submitJob,
+  killJob = NULL,
+  listJobsQueued = NULL,
+  listJobsRunning = NULL,
+  array.var = NA_character_,
+  store.job.collection = FALSE,
+  store.job.files = FALSE,
+  scheduler.latency = 0,
+  fs.latency = 0,
+  hooks = list()
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>name</code></td>
+<td>
+<p>[<code>character(1)</code>]<br>
+Name of cluster functions.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>submitJob</code></td>
+<td>
+<p>[<code>function(reg, jc, ...)</code>]<br>
+Function to submit new jobs. Must return a <code>SubmitJobResult</code> object.
+The arguments are <code>reg</code> (<code>Registry</code>) and <code>jobs</code> (<code>JobCollection</code>).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>killJob</code></td>
+<td>
+<p>[<code>function(reg, batch.id)</code>]<br>
+Function to kill a job on the batch system. Make sure that you definitely kill the job! Return
+value is currently ignored. Must have the arguments <code>reg</code> (<code>Registry</code>) and
+<code>batch.id</code> (<code>character(1)</code> as returned by <code>submitJob</code>).
+Note that there is a helper function <code>cfKillJob</code> to repeatedly try to kill jobs.
+Set <code>killJob</code> to <code>NULL</code> if killing jobs cannot be supported.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>listJobsQueued</code></td>
+<td>
+<p>[<code>function(reg)</code>]<br>
+List all queued jobs on the batch system for the current user.
+Must return an character vector of batch ids, same format as they
+are returned by <code>submitJob</code>.
+Set <code>listJobsQueued</code> to <code>NULL</code> if listing of queued jobs is not supported.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>listJobsRunning</code></td>
+<td>
+<p>[<code>function(reg)</code>]<br>
+List all running jobs on the batch system for the current user.
+Must return an character vector of batch ids, same format as they
+are returned by <code>submitJob</code>. It does not matter if you return a few job ids too many (e.g.
+all for the current user instead of all for the current registry), but you have to include all
+relevant ones. Must have the argument are <code>reg</code> (<code>Registry</code>).
+Set <code>listJobsRunning</code> to <code>NULL</code> if listing of running jobs is not supported.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>array.var</code></td>
+<td>
+<p>[<code>character(1)</code>]<br>
+Name of the environment variable set by the scheduler to identify IDs of job arrays.
+Default is <code>NA</code> for no array support.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>store.job.collection</code></td>
+<td>
+<p>[<code>logical(1)</code>]<br>
+Flag to indicate that the cluster function implementation of <code>submitJob</code> can not directly handle <code>JobCollection</code> objects.
+If set to <code>FALSE</code>, the <code>JobCollection</code> is serialized to the file system before submitting the job.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>store.job.files</code></td>
+<td>
+<p>[<code>logical(1)</code>]<br>
+Flag to indicate that job files need to be stored in the file directory.
+If set to <code>FALSE</code> (default), the job file is created in a temporary directory, otherwise (or if the debug mode is enabled) in
+the subdirectory <code>jobs</code> of the <code>file.dir</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>scheduler.latency</code></td>
+<td>
+<p>[<code>numeric(1)</code>]<br>
+Time to sleep after important interactions with the scheduler to ensure a sane state.
+Currently only triggered after calling <code>submitJobs</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>fs.latency</code></td>
+<td>
+<p>[<code>numeric(1)</code>]<br>
+Expected maximum latency of the file system, in seconds.
+Set to a positive number for network file systems like NFS which enables more robust (but also more expensive) mechanisms to
+access files and directories.
+Usually safe to set to <code>0</code> to disable the heuristic, e.g. if you are working on a local file system.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>hooks</code></td>
+<td>
+<p>[<code>list</code>]<br>
+Named list of functions which will we called on certain events like “pre.submit” or “post.sync”.
+See Hooks.</p>
+</td>
+</tr>
+</table>
+<h3>See Also</h3>
+
+<p>Other ClusterFunctions: 
+<code>makeClusterFunctionsDocker()</code>,
+<code>makeClusterFunctionsInteractive()</code>,
+<code>makeClusterFunctionsLSF()</code>,
+<code>makeClusterFunctionsMulticore()</code>,
+<code>makeClusterFunctionsOpenLava()</code>,
+<code>makeClusterFunctionsSGE()</code>,
+<code>makeClusterFunctionsSSH()</code>,
+<code>makeClusterFunctionsSlurm()</code>,
+<code>makeClusterFunctionsSocket()</code>,
+<code>makeClusterFunctionsTORQUE()</code>
+</p>
+<p>Other ClusterFunctionsHelper: 
+<code>cfBrewTemplate()</code>,
+<code>cfHandleUnknownSubmitError()</code>,
+<code>cfKillJob()</code>,
+<code>cfReadBrewTemplate()</code>,
+<code>makeSubmitJobResult()</code>,
+<code>runOSCommand()</code>
+</p>
+
+
+</div>

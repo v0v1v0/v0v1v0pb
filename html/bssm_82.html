@@ -1,0 +1,209 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>ssm_ung</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>General univariate non-Gaussian state space model</h2>
+
+<h3>Description</h3>
+
+<p>Construct an object of class <code>ssm_ung</code> by directly defining the
+corresponding terms of the model.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">ssm_ung(
+  y,
+  Z,
+  T,
+  R,
+  a1 = NULL,
+  P1 = NULL,
+  distribution,
+  phi = 1,
+  u,
+  init_theta = numeric(0),
+  D = NULL,
+  C = NULL,
+  state_names,
+  update_fn = default_update_fn,
+  prior_fn = default_prior_fn
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>y</code></td>
+<td>
+<p>Observations as time series (or vector) of length <code class="reqn">n</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Z</code></td>
+<td>
+<p>System matrix Z of the observation equation. Either a
+vector of length m,
+a m x n matrix, or object which can be coerced to such.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>T</code></td>
+<td>
+<p>System matrix T of the state equation. Either a m x m matrix or a
+m x m x n array, or object which can be coerced to such.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>R</code></td>
+<td>
+<p>Lower triangular matrix R the state equation. Either
+a m x k matrix or a m x k x n array, or object which can be coerced to such.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>a1</code></td>
+<td>
+<p>Prior mean for the initial state as a vector of length m.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>P1</code></td>
+<td>
+<p>Prior covariance matrix for the initial state as m x m matrix.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>distribution</code></td>
+<td>
+<p>Distribution of the observed time series. Possible
+choices are <code>"poisson"</code>, <code>"binomial"</code>, <code>"gamma"</code>, and
+<code>"negative binomial"</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>phi</code></td>
+<td>
+<p>Additional parameter relating to the non-Gaussian distribution.
+For negative binomial distribution this is the dispersion term, for gamma
+distribution this is the shape parameter, and for other distributions this
+is ignored. Should an object of class <code>bssm_prior</code> or
+a positive scalar.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>u</code></td>
+<td>
+<p>A vector of positive constants for non-Gaussian models. For
+Poisson, gamma, and negative binomial distribution, this corresponds to the
+offset term. For binomial, this is the number of trials.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>init_theta</code></td>
+<td>
+<p>Initial values for the unknown hyperparameters theta
+(i.e. unknown variables excluding latent state variables).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>D</code></td>
+<td>
+<p>Intercept terms <code class="reqn">D_t</code> for the observations equation, given as a
+scalar or vector of length n.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>C</code></td>
+<td>
+<p>Intercept terms <code class="reqn">C_t</code> for the state equation, given as a
+m times 1 or m times n matrix.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>state_names</code></td>
+<td>
+<p>A character vector defining the names of the states.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>update_fn</code></td>
+<td>
+<p>A function which returns list of updated model
+components given input vector theta. This function should take only one
+vector argument which is used to create list with elements named as
+<code>Z</code>, <code>T</code>, <code>R</code>, <code>a1</code>, <code>P1</code>, <code>D</code>, <code>C</code>, and
+<code>phi</code>, where each element matches the dimensions of the original model.
+If any of these components is missing, it is assumed to be constant wrt.
+theta. It's best to check the internal dimensions with
+<code>str(model_object)</code> as the dimensions of input arguments can differ
+from the final dimensions.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>prior_fn</code></td>
+<td>
+<p>A function which returns log of prior density
+given input vector theta.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The general univariate non-Gaussian model is defined using the following
+observational and state equations:
+</p>
+<p style="text-align: center;"><code class="reqn">p(y_t | D_t + Z_t \alpha_t), (\textrm{observation equation})</code>
+</p>
+
+<p style="text-align: center;"><code class="reqn">\alpha_{t+1} = C_t + T_t \alpha_t + R_t \eta_t, 
+(\textrm{transition equation})</code>
+</p>
+
+<p>where <code class="reqn">\eta_t \sim N(0, I_k)</code> and
+<code class="reqn">\alpha_1 \sim N(a_1, P_1)</code> independently of each other,
+and <code class="reqn">p(y_t | .)</code> is either Poisson, binomial, gamma, or
+negative binomial distribution.
+Here k is the number of disturbance terms which can be less than m,
+the number of states.
+</p>
+<p>The <code>update_fn</code> function should take only one
+vector argument which is used to create list with elements named as
+<code>Z</code>, <code>phi</code> <code>T</code>, <code>R</code>, <code>a1</code>, <code>P1</code>, <code>D</code>,
+and <code>C</code>,
+where each element matches the dimensions of the original model.
+If any of these components is missing, it is assumed to be constant
+wrt. theta.
+Note that while you can input say R as m x k matrix for <code>ssm_ung</code>,
+<code>update_fn</code> should return R as m x k x 1 in this case.
+It might be useful to first construct the model without updating function
+and then check the expected structure of the model components from
+the output.
+</p>
+
+
+<h3>Value</h3>
+
+<p>An object of class <code>ssm_ung</code>.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+data("drownings", package = "bssm")
+model &lt;- ssm_ung(drownings[, "deaths"], Z = 1, T = 1, R = 0.2, 
+  a1 = 0, P1 = 10, distribution = "poisson", u = drownings[, "population"])
+
+# approximate results based on Gaussian approximation
+out &lt;- smoother(model)
+ts.plot(cbind(model$y / model$u, exp(out$alphahat)), col = 1:2)
+</code></pre>
+
+
+</div>

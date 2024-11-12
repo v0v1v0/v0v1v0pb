@@ -1,0 +1,349 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>LOAD_MODEL</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>
+Load a BIMETS model description file
+</h2>
+
+<h3>Description</h3>
+
+<p>This function parses a <code>MDL</code> model definition and creates an equivalent R data structure that can be estimated and simulated. The input model definition can be either an external plain text file or a <code>character</code> variable.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">LOAD_MODEL( modelFile=NULL, 
+            modelText=NULL,  
+            quietly=FALSE,
+            oldStyleModel=FALSE, 
+            ...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>modelFile</code></td>
+<td>
+
+<p>The path to the text file containing the <code>MDL</code> model definition.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>modelText</code></td>
+<td>
+
+<p>The <code>character</code> variable containing the <code>MDL</code> model definition. <code>modelText</code> takes precedence over <code>modelFile</code> if both are defined.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>quietly</code></td>
+<td>
+
+<p>If <code>TRUE</code>, information messages will be suppressed.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>oldStyleModel</code></td>
+<td>
+
+<p>Backward compatibility.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+
+<p>Backward compatibility.
+</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>This function returns a BIMETS model object containing all the information gathered the input model definition's parsing. <br><br>
+A BIMETS model created with the <code>LOAD_MODEL</code> function can be viewed as a complex R <code>list()</code> containing the following elements (see example):<br><br>
+- <b>rawData</b> and <b>cleanModel</b>: string arrays containing the original model definition. <code>cleanModel</code> is a clean version of the model definition, i.e. without comments, blank lines, etc.; <br><br>
+- <b>behaviorals</b> and <b>identities</b>: sub-lists containing all the information gathered from the behavioral and the identity definitions. This sub lists are described later in this page; <br><br>
+- <b>vendog</b> and <b>vexog</b>: string array containing the names of the endogenous and exogenous variables of the model; the former is also subsetted into <b>vendogBehaviorals</b> and <b>vendogIdentities</b><br><br>
+- <b>totNumEqs</b>, <b>totNumIds</b> and <b>eqCoeffNum</b>: integer variables containing the behaviorals count, the identities count and the coefficients count of the model;<br><br>
+- <b>max_lag</b>: the max lag of the model, i.e. the highest number of periods a time series of the model is lagged by in the <code>MDL</code> definition. It also accounts for recursive lagging<br> (e.g. <code>TSLAG(...TSLAG(...)...)</code>), PDLs and for the order of the error autocorrelation, if any; <br><br>
+- <b>max_lead</b>: the max lead of the model, i.e. the highest number of periods a time series of the model is leaded by in the <code>MDL</code> definition. It also accounts for recursive leading<br> (e.g. <code>TSLEAD(...TSLEAD(...)...)</code>); <br><br>
+- <b>modelName</b>: the name of the model, copied from the input file name or from the input <code>character</code> variable name containing the model definition; <br><br>
+- <b>bimets_version</b>: the version of the BIMETS package the current model has been built with. <br><br>
+- <b>incidence_matrix</b>: the incidence matrix built from the model equations; it is a square matrix in which each row and each column represent an endogenous variable. If the <code>(i,j)</code> element is equal to <code>1</code> then in the model definition the current value of the endogenous variable referred by the <code>i</code>-row directly depends on the current value of the endogenous variable referred by the <code>j</code>-column. (see example)<br><br>
+- <b>vpre</b>, <b>vblocks</b>: the simulation process takes advantage of an appropriate ordering of the equations to increase the performances by iteratively solving only one subset of equations, while the other equations are solved straightforwardly. More details in "The Optimal Reordering" section in <code>SIMULATE</code> help pages (Ref: <em>Don Gallo - Solving large sparse systems of equations in econometric models - Journal of Forecasting 1987</em> and <em>Numerical methods for simulation and optimal control of large-scale macroeconomic models - Nepomiastchy, Rachidi, Ravelli - 1980</em>). The optimal reordering of the model equations is achieved by using an iterative algorithm applied to the incidence matrix, that produces <code>1+3*N</code> ordered arrays of endogenous variables, given <code>N</code> the length of the <code>vblocks</code> list: <br> 
+1. <code>vpre</code> is the ordered list containing the names of the endogenous pre-recursive variables to be sequentially computed (once per simulation period) before the simulation iterative algorithm takes place;<br>
+2. <code>vblocks[[i]]$vsim, i=1..N</code> (the simultaneous subset) is the ordered list containing the names of the endogenous variables to be sequentially computed during each iteration of the simulation iterative algorithm in the current block <code>i</code>; <br>
+3. <code>vblocks[[i]]$vfeed, i=1..N</code> is the list containing the names of the endogenous feedback variables in the current block <code>i</code>; generally <code>vfeed</code> are the last variables in the ordered <code>vsim</code> list; <br>
+4. <code>vblocks[[i]]$vpost, i=1..N</code> is the ordered list containing the names of the endogenous post-recursive variables to be sequentially computed (once per simulation period) after the simulation iterative algorithm has found a solution in the simultaneous subset  in the current block <code>i</code>;<br><br>
+In forward-looking models, the incidence matrix and the equations reordering depend on the simulation periods count, therefore the attributes <b>incidence_matrix</b>, <b>vpre</b> and <b>vblocks</b> will be available only after a simulation has been completed, and will be available to users in the <br><code>model$simulation[['__SIM_PARAMETERS__']]</code> lists.<br><br>
+BEHAVIORALS and IDENTITIES<br><br>
+The elements <b>'behaviorals'</b> and <b>'identities'</b> of the BIMETS model are named lists that contain information on behaviorals and identities of the model. In both of this two lists, the name of each element is the name of the behavioral or the identity the data refer to, as specified in the model definition file: e.g. given a BIMETS model named <code>myModel</code>, the information on a behavioral named <code>cn</code> (i.e there exists a "BEHAVIORAL&gt; cn" in the <code>MDL</code> definition of the model) is stored into  <code>myModel$behaviorals$cn</code>.<br><br>
+Behavioral elements have the following components:<br><br>
+- <b>eq</b>: the equation of the behavioral, as a <code>character</code> variable;<br><br>
+- <b>eqCoefficientsNames</b>: the names of the coefficients (the original ones and eventually the ones created by the <code>PDL&gt;</code> expansion);<br><br>
+- <b>eqCoefficientsNamesOriginal</b>: the names of the original coefficients;<br><br>
+- <b>eqComponentsNames</b>: the names of endogenous and exogenous variables that appear in the behavioral equation;<br><br>
+- <b>eqComponentsNamesBehaviorals</b>: the names of behavioral endogenous variables that appear in the behavioral equation;<br><br>
+- <b>eqComponentsNamesIdentities</b>: the names of identity endogenous variables that appear in the behavioral equation;<br><br>
+- <b>eqComponentsNamesExogenous</b>: the names of exogenous variables that appear in the behavioral equation;<br><br>
+- <b>tsrange</b>: the estimation time range as a 4 integer array;<br><br>
+- <b>eqRegressorsNames</b>: a <code>character</code> array containing the regressor expressions (the original ones and eventually the ones created by the <code>PDL&gt;</code> expansion); <br><br>
+- <b>eqRegressorsNamesOriginal</b>:  a <code>character</code> array containing the expressions of the original regressors;<br><br>
+- <b>errorRaw</b>: the original definition of the error autocorrelation, if any (see <code>MDL</code>);<br><br>
+- <b>errorType</b>: the type of the error structure;<br><br>
+- <b>errorDim</b>: the dimension of the error autocorrelation;<br><br>
+- <b>eqSimExp</b>: the <code>R</code> optimized <code>expression</code> of the current behavioral equation; it is used in the simulation algorithm and is derived by parsing the <b>eqSimExpText</b> text element;<br><br>
+- <b>eqSimExpLeadedText</b>: it is derived by transforming the leaded time series that apper in the current behavioral equation, if any, and it is used, during the simulation of forward-looking models, to build up the <b>leadsEqSimExpText</b> and <b>leadsEqSimExp</b> elements, that contain, per each period in the simulation <code>TSRANGE</code>, the leaded and accordingly transformed equation (see "Rational Expectation Models" section in <code>SIMULATE</code> help page));<br><br>
+- <b>matrixR</b>: the <code>R</code> Lagrange matrix that is used in restriction analysis (see <code>MDL</code>);<br><br>
+- <b>vectorR</b>: the <code>r</code> Lagrange vector that is used in restriction analysis (see <code>MDL</code>);<br><br>
+- <b>restrictRaw</b>: the original definition of the coefficient restrictions, if any.<br><br>
+- <b>pdlRaw</b>: the original definition of the PDL restrictions, if any (see example and <code>MDL</code>).<br><br>
+- <b>pdlRestrictionMatrix</b>: the <code>R</code> Lagrange matrix that is used in PDL restriction analysis (see example and <code>MDL</code>);<br><br>
+- <b>IVComponentsNames</b>: the names of endogenous and exogenous variables that appear in the instrumental variables equations, if any;<br><br>
+- <b>iv</b>: the original definitions of instrumental variables, if any.<br><br>
+- <b>lhsFun</b>: the LHS function that appers in the current behavioral equations;<br><br>
+For example, given a BIMETS model named <code>myModel</code>, the information on a technical identity named <code>y</code> (i.e there exists an "IDENTITY&gt; y" in the <code>MDL</code> definition of the model) is stored in <code>myModel$identities$y</code>.<br><br> Identity elements have the following components:<br><br>
+- <b>eqRaw</b>: the original equations  of the identity (more than one if the identity has multiple equations and has <code>IF&gt;</code> conditions), as a <code>character</code> variable (see example and <code>MDL</code>);<br><br>
+- <b>ifRaw</b>, <b>ifCondition</b>: the original and the optimized <code>IF&gt;</code> conditions, if any, of the identity, as a <code>character</code> variable;<br><br>
+- <b>eqFull</b>: the full expression of the identity, composed with <code>IF&gt;</code> conditions and related equations (see example), as a <code>character</code> variable;<br><br>
+- <b>eqComponentsNames</b>: the names of endogenous and exogenous variables that appear in the identity equation;<br><br>
+- <b>eqComponentsNamesBehaviorals</b>: the names of behavioral endogenous variables that appear in the identity equation;<br><br>
+- <b>eqComponentsNamesIdentities</b>: the names of identity endogenous variables that appear in the identity equation;<br><br>
+- <b>eqSimExp</b>: the <code>R</code> optimized <code>expression</code> of the current identity equation; it is used in the simulation algorithm and is derived by parsing the <b>eqSimExpText</b> text element;<br><br>
+- <b>eqSimExpLeadedText</b>: it is derived by transforming the leaded time series that apper in the current identity equation, if any, and it is used, during the simulation of forward-looking models, to build up the <b>leadsEqSimExpText</b> and <b>leadsEqSimExp</b> elements, that contain, per each period in the simulation <code>TSRANGE</code>, the leaded and accordingly transformed equation (see "Rational Expectation Models" section in <code>SIMULATE</code> help page));<br><br>
+- <b>hasIF</b>: boolean, <code>TRUE</code> if the identity has an <code>IF&gt;</code> condition;<br><br>
+- <b>multipleLhsFun</b>: the list of the LHS functions that apper in the equations related to the current identity;<br><br></p>
+
+
+<h3>See Also</h3>
+
+<p><code>MDL</code><br><code>LOAD_MODEL_DATA</code><br><code>ESTIMATE</code><br><code>SIMULATE</code><br><code>STOCHSIMULATE</code><br><code>MULTMATRIX</code><br><code>RENORM</code><br><code>TIMESERIES</code><br><code>BIMETS indexing</code><br><code>BIMETS configuration</code><br></p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">#define model
+myModelDefinition&lt;-
+"MODEL
+
+COMMENT&gt; Modified Klein Model 1 of the U.S. Economy with PDL,
+COMMENT&gt; autocorrelation on errors, restrictions and conditional evaluations
+
+COMMENT&gt; Consumption
+BEHAVIORAL&gt; cn
+TSRANGE 1925 1 1941 1
+EQ&gt; cn = a1 + a2*p + a3*TSLAG(p,1) + a4*(w1+w2)
+COEFF&gt; a1 a2 a3 a4
+ERROR&gt; AUTO(2)
+
+COMMENT&gt; Investment
+BEHAVIORAL&gt; i
+TSRANGE 1923 1 1941 1
+EQ&gt; i = b1 + b2*p + b3*TSLAG(p,1) + b4*TSLAG(k,1)
+COEFF&gt; b1 b2 b3 b4
+RESTRICT&gt; b2 + b3 = 1
+
+COMMENT&gt; Demand for Labor
+BEHAVIORAL&gt; w1
+TSRANGE 1925 1 1941 1
+EQ&gt; w1 = c1 + c2*(y+t-w2) + c3*TSLAG(y+t-w2,1) + c4*time
+COEFF&gt; c1 c2 c3 c4
+PDL&gt; c3 1 3
+
+COMMENT&gt; Gross National Product
+IDENTITY&gt; y
+EQ&gt; y = cn + i + g - t
+
+COMMENT&gt; Profits
+IDENTITY&gt; p
+EQ&gt; p = y - (w1+w2)
+
+COMMENT&gt; Capital Stock with switches
+IDENTITY&gt; k
+EQ&gt; k = TSLAG(k,1) + i
+IF&gt; i &gt; 0
+IDENTITY&gt; k
+EQ&gt; k = TSLAG(k,1)
+IF&gt; i &lt;= 0
+END"
+
+#load model 
+myModel&lt;-LOAD_MODEL(modelText=myModelDefinition)
+
+#retrieve model structure...
+#get definition
+myModel$cleanModel
+# [1] "BEHAVIORAL&gt; cn"                                        
+# [2] "TSRANGE 1925 1 1941 1"                                 
+# [3] "EQ&gt; cn = a1 + a2*p + a3*TSLAG(p,1) + a4*(w1+w2)"       
+# [4] "COEFF&gt; a1 a2 a3 a4"                                    
+# [5] "ERROR&gt; AUTO(2)"                                        
+# [6] "BEHAVIORAL&gt; i"                                         
+# [7] "TSRANGE 1923 1 1941 1"                                 
+# [8] "EQ&gt; i = b1 + b2*p + b3*TSLAG(p,1) + b4*TSLAG(k,1)"     
+# [9] "COEFF&gt; b1 b2 b3 b4"                                    
+#[10] "RESTRICT&gt; b2 + b3 = 1"                                 
+#[11] "BEHAVIORAL&gt; w1"                                        
+#[12] "TSRANGE 1925 1 1941 1"                                 
+#[13] "EQ&gt; w1 = c1 + c2*(y+t-w2) + c3*TSLAG(y+t-w2,1)+c4*time"
+#[14] "COEFF&gt; c1 c2 c3 c4"                                    
+#[15] "PDL&gt; c3 1 3"                                           
+#[16] "IDENTITY&gt; y"                                           
+#[17] "EQ&gt; y = cn + i + g - t"                                
+#[18] "IDENTITY&gt; p"                                           
+#[19] "EQ&gt; p = y - (w1+w2)"                                   
+#[20] "IDENTITY&gt; k"                                           
+#[21] "EQ&gt; k = TSLAG(k,1) + i"                                
+#[22] "IF&gt; i &gt; 0"                                             
+#[23] "IDENTITY&gt; k"                                           
+#[24] "EQ&gt; k = TSLAG(k,1)"                                    
+#[25] "IF&gt; i &lt;= 0"                                            
+
+#get endogenous and exogenous
+myModel$vendog
+#[1] "cn" "i"  "w1" "y"  "p"  "k" 
+myModel$vexog
+#[1] "w2"   "t"    "time" "g"   
+
+#get behaviorals, identities and coefficients count
+myModel$totNumEqs
+#[1] 3
+myModel$totNumIds
+#[1] 3
+myModel$eqCoeffNum
+#[1] 12
+
+#get the incidence matrix
+myModel$incidence_matrix
+#   cn i w1 y p k
+#cn  0 0  1 0 1 0
+#i   0 0  0 0 1 0
+#w1  0 0  0 1 0 0
+#y   1 1  0 0 0 0
+#p   0 0  1 1 0 0
+#k   0 1  0 0 0 0
+
+#get the optimal reordering arrays
+myModel$vpre
+#NULL
+myModel$vblocks[[1]]$vsim
+#[1] "w1" "p"  "i" "cn" "y" 
+myModel$vblocks[[1]]$vfeed
+#[1] "y"
+myModel$vblocks[[1]]$vpost
+#[1] "k"
+
+#get the model max lag and the model name
+myModel$max_lag
+#[1] 3
+myModel$modelName
+#myModelDefinition
+
+
+
+#get infos on behavioral w1
+
+myModel$behaviorals$w1$eq
+#[1] "w1=c1+c2*(y+t-w2)+c3*TSLAG(y+t-w2,1)+c4*time"
+
+myModel$behaviorals$w1$eqCoefficientsNames
+#[1] "c1"       "c2"       "c3"       "c3_PDL_1" "c3_PDL_2" "c4"  
+
+myModel$behaviorals$w1$eqCoefficientsNamesOriginal
+#[1] "c1" "c2" "c3" "c4"
+
+myModel$behaviorals$w1$eqComponentsNames
+#[1] "t"    "time" "w1"   "w2"   "y"   
+
+myModel$behaviorals$w1$tsrange
+#[1] 1925    1 1941    1
+
+myModel$behaviorals$w1$eqRegressorsNames
+#[1] "1"                       "(y+t-w2)"               
+#[3] "TSLAG(y+t-w2,1)"  "TSLAG(TSLAG(y+t-w2,1),1)" "TSLAG(TSLAG(y+t-w2,1),2)" "time"
+
+myModel$behaviorals$w1$eqRegressorsNamesOriginal
+#[1] "1"                "(y+t-w2)"       
+#[3] "TSLAG(y+t-w2,1)" "time"
+
+myModel$behaviorals$w1$pdlRaw
+#[1] "c3 1 3;"
+
+myModel$behaviorals$w1$pdlRestrictionMatrix
+#     [,1] [,2] [,3] [,4] [,5] [,6]
+#[1,]    0    0    1   -2    1    0
+
+
+
+#get infos on behavioral cn
+
+myModel$behaviorals$cn$errorRaw
+#[1] "AUTO(2)"
+
+myModel$behaviorals$cn$errorType
+#[1] "AUTO"
+
+myModel$behaviorals$cn$errorDim
+#[1] 2
+
+myModel$behaviorals$cn$eqSimExp
+#expression(cn[4,]=cn__ADDFACTOR[4,]+cn__a1+cn__a2*p[4,]+cn__a3*(p[3,])+
+#cn__a4*(w1[4,]+w2[4,])+cn__RHO_1*(cn[3,]-(cn__ADDFACTOR[3,]+
+#cn__a1+cn__a2*p[3,]+cn__a3*(p[2,])+cn__a4*(w1[3,]+w2[3,])))+
+#cn__RHO_2*(cn[2,]-(cn__ADDFACTOR[2,]+cn__a1+cn__a2*p[2,]+
+#cn__a3*(p[1,])+cn__a4*(w1[2,]+w2[2,]))))
+
+
+
+#get infos on behavioral i
+
+myModel$behaviorals$i$matrixR
+#    [,1] [,2] [,3] [,4]
+#[1,]   0    1    1    0
+
+myModel$behaviorals$i$vectorR
+#[1] 1
+
+myModel$behaviorals$i$restrictRaw
+#[1] "b2+b3=1;"
+
+
+
+#get infos on identitiy k
+
+myModel$identities$k$eqRaw
+#[1] "k=TSLAG(k,1)+i;k=TSLAG(k,1);"
+
+myModel$identities$k$ifRaw
+#[1] "i &gt; 0;i &lt;= 0;"
+
+myModel$identities$k$eqFull
+#[1] "__IF__ (i &gt; 0) __THEN__ k=TSLAG(k,1)+i;__IF__ (i &lt;= 0) __THEN__ k=TSLAG(k,1);"
+
+myModel$identities$k$eqComponentsNames
+#[1] "i" "k"
+
+myModel$identities$k$eqSimExp
+#expression(k[4,]=.MODEL_VIF(k[4,],i[4,] &gt; 0,k_ADDFACTOR[4,]+
+#(k[3,])+i[4,]),k[4,]=.MODEL_VIF(k[4,],i[4,] &lt;= 0,
+#k_ADDFACTOR[4,]+(k[3,])))
+
+myModel$identities$k$hasIF
+#[1] TRUE
+
+
+</code></pre>
+
+
+</div>

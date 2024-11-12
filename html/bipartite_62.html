@@ -1,0 +1,151 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>nested</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>
+Calculates any of several measures of nestedness
+</h2>
+
+<h3>Description</h3>
+
+<p>Wrapper function calling one, several or all currently implemented nestedness measures
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">nested(web, method = "binmatnest", rescale=FALSE, normalised=TRUE)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>web</code></td>
+<td>
+<p>A matrix with elements of a set (e.g. plants) as rows, elements of a second set (e.g. pollinators) as columns and number of interactions as entries.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>method</code></td>
+<td>
+<p>One or more of the following: <span class="option">discrepancy</span>, <span class="option">discrepancy2</span>, <span class="option">binmatnest</span>, <span class="option">NODF</span>, <span class="option">NODF2</span>, <span class="option">C score</span>, <span class="option">checker</span>, <span class="option">weighted NODF</span>, <span class="option">wine</span>, <span class="option">ALL</span>. See details for details on each method.</p>
+</td>
+</tr>
+</table>
+<table>
+<tr style="vertical-align: top;">
+<td><code>rescale</code></td>
+<td>
+<p>Should all measures be rescaled so that higher values mean higher nestedness? Defaults to FALSE, i.e. the standard interpretation of each measure is maintained.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>normalised</code></td>
+<td>
+<p>Logical, defaulting to TRUE. Should C-scores be normalised to a value between 0 and 1? See <code>C.score</code> for details.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>There are seven different measures (with variations yielding ten indices) currently available:
+</p>
+
+<dl>
+<dt>1</dt>
+<dd>
+<p>binmatnest calculates nestedness temperature following the function <code>nestedtemp</code> (0 = cold = highly nested; 100 = hot = not nested at all).   (Note that we replaced <span class="option">binmatnest</span>, which calls the retired <code>nestedness</code>, which used the original C++-program of Miguel Rodriguez-Girones, by what used to be <code>binmatnest2</code>. Because binmatnest sometimes (and to us unexplicably) invert the matrix, we prefer the <span class="pkg">vegan</span>'s binmatnest2, now binmatnest, option. That is the implementation by Jari Oksanen in <code>nestedtemp</code> of the same algorithm.)</p>
+</dd>
+<dt>2</dt>
+<dd>
+<p>Discrepancy calculates the number of non-nested 0s and 1s. While <code>discrepancy</code> calls the function with the same name, discrepancy2 calls <code>nesteddisc</code>, which handles ties differently. Most of the time, these two should deliver very, very similar results. Higher values indicate lower nestedness.</p>
+</dd>
+<dt>3</dt>
+<dd>
+<p>NODF is the nestedness measure proposed by Almeida-Neto et al., correcting for matrix fill and matrix dimensions. Values of 0 indicate non-nestedness, those of 100 perfect nesting. NODF2 sorts the matrix before calculating the measure. NODF is, I understand, closer to the version presented in the paper, while NODF2 seems to make more sense for comparisons across different networks (because it is independent of the initial presentation of the matrix). Both call <code>nestednodf</code> in <span class="pkg">vegan</span>. (Yes,  I initially programmed NODF myself, only to find that it was there already. Luckily, there was a perfect agreement between my (depricated) version and nestednodf.) A weighted version is also now available (see point 6 below), following the paper of Almeida-Neto and Ulrich (2010).</p>
+</dd>
+<dt>4</dt>
+<dd>
+<p><code>C.score</code> calculates the number of checkerboard pattern in the matrix. As default, it normalises this value between min and max, so that values of 0 indicate no checkerboards (i.e. nesting), while a value of 1 indicates a perfect checkerboard. checker is the non-normalised version, based on <code>nestedchecker</code>.</p>
+</dd>
+<dt>5</dt>
+<dd>
+<p>wine is one of two nestedness measure using the information on the weight of a link. See <code>wine</code> for details.</p>
+</dd>
+<dt>6</dt>
+<dd>
+<p>weighted NODF is a version of 3, but now incorporating information on the weights of the link; it is the second quantitative nestedness measure, (chronologically) after wine. It uses the sorted matrix to compute NODF. If you want NODF of the unsorted, you have to directly use <code>nestednodf</code> in <span class="pkg">vegan</span>.</p>
+</dd>
+<dt>7</dt>
+<dd>
+<p>weighted NODA, or WNODA, does try to give a good nestedness measure <em>without</em> correcting for column/row expectations, as that should be left to the null model; see Félix et al. (2017) for details. Also, NODA accounts for modular structures of the network, computing nestedness separately in each (see <code>nest.smdm</code> for further details).</p>
+</dd>
+</dl>
+<h3>Value</h3>
+
+<p>A vector with values for each of the selected nestedness measures.
+</p>
+
+
+<h3>Note</h3>
+
+<p>The idea behind this function is to encourage the comparison of different nestedness measures. That does not mean, we necessarily see much ecological sense in them (see, e.g., the paper by Blüthgen et al. 2008).
+</p>
+<p><code>nested</code> uses one non-default setting for the <code>nestedness</code> measures called: <span class="option">null.models=FALSE</span>. This is simply to speed up the computation. Null models should be built for all nestedness measures, of course, not only for <code>nestedness</code>!
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Carsten F. Dormann <a href="mailto:carsten.dormann@biom.uni-freiburg.de">carsten.dormann@biom.uni-freiburg.de</a>
+</p>
+
+
+<h3>References</h3>
+
+<p>Almeida-Neto, M., Guimaraes, P., Guimaraes, P.R., Loyola, R.D. and Ulrich, W. 2008. A consistent metric for nestedness analysis in
+ecological systems: reconciling concept and measurement. <em>Oikos</em> <b>117</b>, 1227–1239.
+</p>
+<p>Almeida-Neto, M. and Ulrich, W. (2011) A straightforward computational approach for measuring nestedness using quantitative matrices. <em>Environmental Modelling &amp; Software</em>, <b>26</b>, 173–178
+</p>
+<p>Blüthgen, N., J. Fründ, D. P. Vazquez, and F. Menzel. 2008. What do interaction network metrics tell us about specialisation and biological traits? <em>Ecology</em> <b>89</b>, 3387–3399.
+</p>
+<p>Brualdi, R.A. and Sanderson, J.G. 1999. Nested species subsets, gaps, and discrepancy. <em>Oecologia</em>  <b>119</b>, 256–264.
+</p>
+<p>Felix, G.M., Pinheiro, R.B.P., Poulin, R., Krasnov, B.R. &amp; Mello, M.A.R. (2017). The compound topology of a continent-wide interaction network explained by an integrative hypothesis of specialization. <em>bioRxiv</em>
+</p>
+<p>Galeano, J., Pastor, J.M., Iriondo and J.M. 2008. Weighted-Interaction  Nestedness Estimator (WINE): A new  estimator to calculate over frequency matrices. <em>arXiv</em> 0808.3397v2 [physics.bio-ph]
+</p>
+<p>Rodríguez-Gironés, M.A.  and Santamaría, L. 2006. A new algorithm to calculate the nestedness temperature of presence-absence matrices. <em>J. Biogeogr.</em>  <b>33</b>, 924–935.
+</p>
+<p>Stone, L. and Roberts, A. 1990. The checkerboard score and species distributions. <em>Oecologia</em> <b>85</b>, 74–79.
+</p>
+<p>Almeida-Neto, M. and Ulrich, W. 2010. A straightforward computational approach for measuring nestedness using quantitative matrices. Environmental Modelling &amp; Software, in press.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>C.score</code>, <code>wine</code>, <code>nestedness</code>, <code>discrepancy</code>; and, within <span class="pkg">vegan</span>: <code>nestedtemp</code>,   
+<code>nestedchecker</code>, <code>nesteddisc</code>, <code>nestednodf</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## Not run: 
+data(Safariland)
+nested(Safariland, "ALL")
+nested(Safariland, "ALL", rescale=TRUE)
+# illustration that non-normalised C.score and checker are the same:
+nested(Safariland, c("C.score", "checker"), normalise=FALSE)
+
+## End(Not run)
+</code></pre>
+
+
+</div>

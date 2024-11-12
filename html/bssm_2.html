@@ -1,0 +1,108 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>ar1_lg</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Univariate Gaussian model with AR(1) latent process</h2>
+
+<h3>Description</h3>
+
+<p>Constructs a simple Gaussian model where the state dynamics
+follow an AR(1) process.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">ar1_lg(y, rho, sigma, mu, sd_y, beta, xreg = NULL)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>y</code></td>
+<td>
+<p>A vector or a <code>ts</code> object of observations.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>rho</code></td>
+<td>
+<p>A prior for autoregressive coefficient.
+Should be an object of class <code>bssm_prior</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>sigma</code></td>
+<td>
+<p>A prior for the standard deviation of noise of the AR-process.
+Should be an object of class <code>bssm_prior</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>mu</code></td>
+<td>
+<p>A fixed value or a prior for the stationary mean of the latent
+AR(1) process. Should be an object of class <code>bssm_prior</code> or scalar
+value defining a fixed mean such as 0.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>sd_y</code></td>
+<td>
+<p>A prior for the standard deviation of observation equation.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>beta</code></td>
+<td>
+<p>A prior for the regression coefficients.
+Should be an object of class <code>bssm_prior</code> or <code>bssm_prior_list</code>
+(in case of multiple coefficients) or missing in case of no covariates.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>xreg</code></td>
+<td>
+<p>A matrix containing covariates with number of rows matching the
+length of <code>y</code>. Can also be <code>ts</code>, <code>mts</code> or similar object
+convertible to matrix.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>An object of class <code>ar1_lg</code>.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">set.seed(1)
+mu &lt;- 2
+rho &lt;- 0.7
+sd_y &lt;- 0.1
+sigma &lt;- 0.5
+beta &lt;- -1
+x &lt;- rnorm(30)
+z &lt;- y &lt;- numeric(30)
+z[1] &lt;- rnorm(1, mu, sigma / sqrt(1 - rho^2))
+y[1] &lt;- rnorm(1, beta * x[1] + z[1], sd_y)
+for(i in 2:30) {
+  z[i] &lt;- rnorm(1, mu * (1 - rho) + rho * z[i - 1], sigma)
+  y[i] &lt;- rnorm(1, beta * x[i] + z[i], sd_y)
+}
+model &lt;- ar1_lg(y, rho = uniform(0.5, -1, 1), 
+  sigma = halfnormal(1, 10), mu = normal(0, 0, 1), 
+  sd_y = halfnormal(1, 10), 
+  xreg = x,  beta = normal(0, 0, 1))
+out &lt;- run_mcmc(model, iter = 2e4)
+summary(out, return_se = TRUE)
+
+</code></pre>
+
+
+</div>

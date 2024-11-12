@@ -1,0 +1,103 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>getTransformations</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Return a list with transformation functions</h2>
+
+<h3>Description</h3>
+
+<p>This function takes in response data from a dose-response model and attempts
+to find an optimal Box-Cox power transform based on
+<code>optim.boxcox</code> function. It then returns a list of transformation
+functions which contains this power transform and its inverse which can be
+subsequently used in <code>fitMarginals</code> and <code>fitSurface</code>.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">getTransformations(data, shift = FALSE, args = list(N0 = 1, time.hours = 1))
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+<p>Dose-response dataframe.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>shift</code></td>
+<td>
+<p>If <code>TRUE</code> or is a numeric value, then a two-parameter
+Box-Cox transformation is assumed. This parameter will be passed on to
+<code>optim.boxcox</code> function.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>args</code></td>
+<td>
+<p>List with elements that are added to the list of transformation
+function and which can be used by these functions. In particular, this
+list should be of type <code>args = list("N0" = 1, "time.hours" = 1)</code> where
+<code>N0</code> and <code>time.hours</code> are arguments used for the biological
+transform.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>Additionally, returned list contains biological transform and its inverse
+based on a simple exponential growth model, especially useful when response
+data is provided in cell counts. User can additionally provide arguments for
+these biological transforms where <code>N0</code> stands for initial cell count and
+<code>time.hours</code> indicates number in hours after which response data was
+measured.
+</p>
+<p><code>getTransformations</code> relies on
+<code>optim.boxcox</code> to obtain the optimal Box-Cox transformation
+parameters. However, <code>optim.boxcox</code> optimizes for the power
+parameter only within the interval (0.1, 0.9). Hence, if obtained power
+parameter is close to 0.1, then a logarithmic transformation is applied
+instead.
+</p>
+
+
+<h3>Value</h3>
+
+<p>This function returns a list with transformation functions. These
+include power transformation (<code>"PowerT"</code>) and its inverse
+(<code>"InvPowerT"</code>) as well as biological transformation (<code>"BiolT"</code>)
+and its inverse (<code>"InvBiolT"</code>).
+</p>
+<p>Power transformation is a 1-parameter Box-Cox transformation. If
+<code>shift = TRUE</code>, then power transformation is a 2-parameter Box-Cox
+transformation. Optimal values for power and shift operators are selected
+by means of <code>optim.boxcox</code> function.
+</p>
+<p>Biological transformation <code>y = N0 * exp(x * t)</code> where <code>N0</code> is the
+initial cell count and <code>t</code> is the incubation time. If response/effect
+variable (<code>y</code>) is given in terms of cell counts, biological
+transformation ensures that modelisation is done for the growth rate
+instead (<code>x</code>).
+</p>
+<p>Returned list also contains <code>"compositeArgs"</code> elements shared by all
+the transformation functions. These arguments include initial cell count
+(<code>"N0"</code>) and incubation time (<code>"time.hours"</code>).
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">  data &lt;- subset(directAntivirals, experiment == 1)
+  ## Data must contain d1, d2 and effect columns
+  getTransformations(data)
+</code></pre>
+
+
+</div>

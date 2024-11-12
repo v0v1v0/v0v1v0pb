@@ -1,0 +1,188 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>bfastlite</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Detect multiple breaks in a time series</h2>
+
+<h3>Description</h3>
+
+<p>A combination of <code>bfastpp</code> and <code>breakpoints</code>
+to do light-weight detection of multiple breaks in a time series
+while also being able to deal with NA values by excluding them
+via <code>bfastpp</code>.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">bfastlite(
+  data,
+  formula = response ~ trend + harmon,
+  order = 3,
+  breaks = "LWZ",
+  lag = NULL,
+  slag = NULL,
+  na.action = na.omit,
+  stl = c("none", "trend", "seasonal", "both"),
+  decomp = c("stl", "stlplus"),
+  sbins = 1,
+  ...
+)
+
+bfast0n(
+  data,
+  formula = response ~ trend + harmon,
+  order = 3,
+  breaks = "LWZ",
+  lag = NULL,
+  slag = NULL,
+  na.action = na.omit,
+  stl = c("none", "trend", "seasonal", "both"),
+  decomp = c("stl", "stlplus"),
+  sbins = 1,
+  ...
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+<p>A time series of class <code>ts</code>, or another
+object that can be coerced to such. For seasonal components, a frequency
+greater than 1 is required.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>formula</code></td>
+<td>
+<p>a symbolic description for the model in which breakpoints
+will be estimated.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>order</code></td>
+<td>
+<p>numeric. Order of the harmonic term, defaulting to <code>3</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>breaks</code></td>
+<td>
+<p>either a positive integer specifying the maximal number of breaks to be calculated,
+or a string specifying the information criterion to use to automatically determine
+the optimal number of breaks (see also <code>logLik</code>.
+<code>"all"</code> means the maximal number allowed by <code>h</code> is used.
+<code>NULL</code> is treated as the default of the <code>breakpoints</code> function (i.e. BIC).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>lag</code></td>
+<td>
+<p>numeric. Orders of the autoregressive term, by default omitted.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>slag</code></td>
+<td>
+<p>numeric. Orders of the seasonal autoregressive term, by default
+omitted.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>na.action</code></td>
+<td>
+<p>function for handling <code>NA</code>s in the data (after all
+other preprocessing).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>stl</code></td>
+<td>
+<p>character. Prior to all other preprocessing, STL (season-trend
+decomposition via LOESS smoothing) can be employed for trend-adjustment
+and/or season-adjustment.  The <code>"trend"</code> or <code>"seasonal"</code> component
+or both from <code>stl</code> are removed from each column in
+<code>data</code>. By default (<code>"none"</code>), no STL adjustment is used.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>decomp</code></td>
+<td>
+<p>"stlplus" or "stl": use the NA-tolerant decomposition package
+or the reference package (which can make use of time series with 2-3
+observations per year)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>sbins</code></td>
+<td>
+<p>numeric. Controls the number of seasonal dummies. If integer &gt; 1,
+sets the number of seasonal dummies to use per year.
+If &lt;= 1, treated as a multiplier to the number of observations per year, i.e.
+<code>ndummies = nobs/year * sbins</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Additional arguments to <code>breakpoints</code>.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>An object of class <code>bfastlite</code>, with two elements:
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>breakpoints</code></td>
+<td>
+<p>output from <code>breakpoints</code>,
+containing information about the estimated breakpoints.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>data_pp</code></td>
+<td>
+<p>preprocessed data as output by <code>bfastpp</code>.</p>
+</td>
+</tr>
+</table>
+<h3>Author(s)</h3>
+
+<p>Dainius Masiliunas, Jan Verbesselt
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">plot(simts) # stl object containing simulated NDVI time series
+datats &lt;- ts(rowSums(simts$time.series))
+# sum of all the components (season,abrupt,remainder)
+tsp(datats) &lt;- tsp(simts$time.series) # assign correct time series attributes
+plot(datats)
+
+# Detect breaks
+bp = bfastlite(datats)
+
+# Default method of estimating breakpoints
+bp[["breakpoints"]][["breakpoints"]]
+
+# Plot
+plot(bp)
+
+# Custom method of estimating number of breaks (request 2 breaks)
+strucchangeRcpp::breakpoints(bp[["breakpoints"]], breaks = 2)
+
+# Plot including magnitude based on RMSD for the cos1 component of harmonics
+plot(bp, magstat = "RMSD", magcomp = "harmoncos1", breaks = 2)
+</code></pre>
+
+
+</div>

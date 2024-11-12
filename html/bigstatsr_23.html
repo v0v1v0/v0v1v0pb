@@ -1,0 +1,149 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>big_prodMat</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Product with a matrix</h2>
+
+<h3>Description</h3>
+
+<p>Product between a Filebacked Big Matrix and a matrix.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">big_prodMat(
+  X,
+  A.col,
+  ind.row = rows_along(X),
+  ind.col = cols_along(X),
+  ncores = 1,
+  block.size = block_size(nrow(X), ncores),
+  center = NULL,
+  scale = NULL
+)
+
+## S4 method for signature 'FBM,matrix'
+x %*% y
+
+## S4 method for signature 'matrix,FBM'
+x %*% y
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>X</code></td>
+<td>
+<p>An object of class FBM.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>A.col</code></td>
+<td>
+<p>A matrix with <code>length(ind.col)</code> rows.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ind.row</code></td>
+<td>
+<p>An optional vector of the row indices that are used.
+If not specified, all rows are used. <strong>Don't use negative indices.</strong></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ind.col</code></td>
+<td>
+<p>An optional vector of the column indices that are used.
+If not specified, all columns are used. <strong>Don't use negative indices.</strong></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ncores</code></td>
+<td>
+<p>Number of cores used. Default doesn't use parallelism.
+You may use nb_cores.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>block.size</code></td>
+<td>
+<p>Maximum number of columns read at once.
+Default uses block_size.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>center</code></td>
+<td>
+<p>Vector of same length of <code>ind.col</code> to subtract from columns of <code>X</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>scale</code></td>
+<td>
+<p>Vector of same length of <code>ind.col</code> to divide from columns of <code>X</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>A 'double' FBM or a matrix.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>y</code></td>
+<td>
+<p>A 'double' FBM or a matrix.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p><code class="reqn">X \cdot A</code>.
+</p>
+
+
+<h3>Matrix parallelization</h3>
+
+<p>Large matrix computations are made block-wise and won't be parallelized
+in order to not have to reduce the size of these blocks. Instead, you can use
+the <a href="https://forum.posit.co/t/intel-mkl-integration-to-r-on-windows/176071">MKL</a>
+or OpenBLAS in order to accelerate these block matrix computations.
+You can control the number of cores used by these optimized matrix libraries
+with <code>bigparallelr::set_blas_ncores()</code>.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">X &lt;- big_attachExtdata()
+n &lt;- nrow(X)
+m &lt;- ncol(X)
+A &lt;- matrix(0, m, 10); A[] &lt;- rnorm(length(A))
+
+test &lt;- big_prodMat(X, A)
+true &lt;- X[] %*% A
+all.equal(test, true)
+
+X2 &lt;- big_copy(X, type = "double")
+all.equal(X2 %*% A, true)
+
+# subsetting
+ind.row &lt;- sample(n, n/2)
+ind.col &lt;- sample(m, m/2)
+
+tryCatch(test2 &lt;- big_prodMat(X, A, ind.row, ind.col),
+         error = function(e) print(e))
+# returns an error. You need to use the subset of A:
+test2 &lt;- big_prodMat(X, A[ind.col, ], ind.row, ind.col)
+true2 &lt;- X[ind.row, ind.col] %*% A[ind.col, ]
+all.equal(test2, true2)
+
+</code></pre>
+
+
+</div>

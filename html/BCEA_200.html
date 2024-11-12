@@ -1,0 +1,171 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>struct.psa</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Structural Probability Sensitivity Analysis</h2>
+
+<h3>Description</h3>
+
+<p>Computes the weights to be associated with a set of competing models in
+order to perform structural PSA.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">struct.psa(
+  models,
+  effect,
+  cost,
+  ref = NULL,
+  interventions = NULL,
+  Kmax = 50000,
+  plot = FALSE,
+  w = NULL
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>models</code></td>
+<td>
+<p>A list containing the output from either R2jags or
+R2WinBUGS for all the models that need to be combined in the model average</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>effect</code></td>
+<td>
+<p>A list containing the measure of effectiveness computed from
+the various models (one matrix with n.sim x n.ints simulations for each
+model)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>cost</code></td>
+<td>
+<p>A list containing the measure of costs computed from the various
+models (one matrix with n.sim x n.ints simulations for each model)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ref</code></td>
+<td>
+<p>Which intervention is considered to be the reference
+strategy. The default value <code>ref=1</code> means that the intervention
+appearing first is the reference and the other(s) is(are) the comparator(s)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>interventions</code></td>
+<td>
+<p>Defines the labels to be associated with each
+intervention. By default and if <code>NULL</code>, assigns labels in the form
+"Intervention1", ... , "InterventionT"</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Kmax</code></td>
+<td>
+<p>Maximum value of the willingness to pay to be considered.
+Default value is <code>50000</code>. The willingness to pay is then approximated
+on a discrete grid in the interval <code style="white-space: pre;">⁠[0, Kmax]⁠</code>. The grid is equal to
+<code>k</code> if the parameter is given, or composed of <code>501</code> elements if
+<code>k=NULL</code> (the default)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>plot</code></td>
+<td>
+<p>A logical value indicating whether the function should produce
+the summary plot or not</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>w</code></td>
+<td>
+<p>A vector of weights. By default it's NULL to indicate that the
+function will calculate the model weights based on DIC and the individual
+model fit. This behaviour can be overridden by passing a vector <code>w</code>,
+for instance based on expert opinion</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The model is a list containing the output from either R2jags or
+R2WinBUGS for all the models that need to be combined in the model average
+effect is a list containing the measure of effectiveness computed from the
+various models (one matrix with n_sim x n_ints simulations for each model)
+cost is a list containing the measure of costs computed from the various
+models (one matrix with n_sim x n_ints simulations for each model).
+</p>
+
+
+<h3>Value</h3>
+
+<p>List object of bcea object, model weights and DIC
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Gianluca Baio
+</p>
+
+
+<h3>References</h3>
+
+<p>Baio G (2013).
+<em>Bayesian Methods in Health Economics</em>.
+CRC.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>bcea()</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+## Not run: 
+# load sample jags output
+load(system.file("extdata", "statins_base.RData", package = "BCEA"))
+load(system.file("extdata", "statins_HC.RData", package = "BCEA"))
+
+interventions &lt;- c("Atorvastatin", "Fluvastatin",
+                   "Lovastatin", "Pravastatin",
+                   "Rosuvastatin", "Simvastatin")
+
+m1 &lt;- bcea(eff = statins_base$sims.list$effect,
+           cost = statins_base$sims.list$cost.tot,
+           ref = 1, interventions = interventions)
+
+m2 &lt;- bcea(eff = statins_HC$sims.list$effect,
+           cost = statins_HC$sims.list$cost.tot,
+           ref = 1, interventions = interventions)
+
+models &lt;- list(statins_base, statins_HC)
+
+effects &lt;- list(statins_base$sims.list$effect,
+                statins_HC$sims.list$effect)
+costs &lt;- list(statins_base$sims.list$cost.tot,
+              statins_HC$sims.list$cost.tot)
+
+m3 &lt;- struct.psa(models, effects, costs,
+                 ref = 1, interventions = interventions)
+
+## End(Not run)
+
+</code></pre>
+
+
+</div>

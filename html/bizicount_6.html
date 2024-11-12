@@ -1,0 +1,192 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>extract.bizicount</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Texreg for bizicount objects</h2>
+
+<h3>Description</h3>
+
+<p>This is a method for the <code>extract</code> generic
+to be used with objects that are output from the <code>bizicount</code>
+function. The results can be used with any of the
+<code>texreg-package</code> generics.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">## S3 method for class 'bizicount'
+extract(model, CI = NULL, id = TRUE, ...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>model</code></td>
+<td>
+<p>A <code>bizicount-class</code> model object (S3).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>CI</code></td>
+<td>
+<p>The two-tailed confidence level, if confidence intervals are
+desired in the texreg object, otherwise <code>NULL</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>id</code></td>
+<td>
+<p>Logical indicating whether to prepend equation identifiers to
+coefficient names (<code>ct_</code> for count parameters, <code>zi_</code> for zero-inflated parameters)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Ignored.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>A <code>texreg-class</code> object, as produced by
+<code>createTexreg</code>, which can interface with all of that
+package's generics.
+</p>
+
+
+<h3>Note</h3>
+
+<p>Users can typically just call <code>texreg</code> directly on
+a <code>bizicount-class</code> object, instead of first extracting and
+then calling texreg.
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>John Niehaus
+</p>
+
+
+<h3>References</h3>
+
+<p>Leifeld, Philip (2013). texreg: Conversion of Statistical Model
+Output in R to LaTeX and HTML Tables. Journal of Statistical Software,
+55(8), 1-24. URL http://dx.doi.org/10.18637/jss.v055.i08.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>extract</code>, <code>createTexreg</code>,
+<code>bizicount</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## SETUP
+set.seed(123)
+n = 500
+
+# define a function to simulate from a gaussian copula
+# first margin is zero-inflated negative binomial (zinb)
+# second margin is zero-inflated poisson (zip)
+# Note: marginal distributions are hard-coded in function, including
+# inverse dispersion parameter for zinb.
+gen = function(n,
+               b1,
+               b2,
+               g1,
+               g2,
+               dep) {
+
+     k1 = length(b1)
+     k2 = length(b2)
+
+     X1 = cbind(1, matrix(rbinom(n * (k1 - 1), 1, .5), ncol = k1 - 1))
+     X2 = cbind(1, matrix(rexp(n * (k2 - 1), 3), ncol = k2 - 1))
+
+     lam1 = exp(X1 %*% b1)
+     lam2 = exp(X2 %*% b2)
+
+     Z1 = cbind(1, matrix(runif(n * (k1 - 1), -1, 1), ncol = k1 - 1))
+     Z2 = cbind(1, matrix(rnorm(n * (k2 - 1)), ncol = k2 - 1))
+
+     psi1 = plogis(Z1 %*% g1)
+     psi2 = plogis(Z2 %*% g2)
+
+     norm_vars = MASS::mvrnorm(
+          n,
+          mu = c(0, 0),
+          Sigma = matrix(c(1, dep, dep, 1), ncol =2)
+     )
+
+     U = pnorm(norm_vars)
+
+     y1 =  qzinb(U[, 1],
+                 mu = lam1,
+                 psi = psi1,
+                 size = .3)
+     y2 =  qzip(U[, 2],
+                lambda = lam2,
+                psi = psi2)
+
+     dat = data.frame(
+          X1 = X1[, -1],
+          X2 = X2[, -1],
+          Z1 = Z1[, -1],
+          Z2 = Z2[, -1],
+          y1,
+          y2,
+          lam1,
+          lam2,
+          psi1,
+          psi2
+     )
+     return(dat)
+}
+
+
+# define parameters
+b1 = c(1, -2, 3)
+b2 = c(-1, 3, 1)
+g1 = c(2, -1.5, 2)
+g2 = c(-1, -3.75, 1.25)
+rho = .5
+
+
+# generate data
+dat = gen(n, b1, b2, g1, g2, rho)
+f1 = y1 ~ X1.1 + X1.2 | Z1.1 + Z1.2
+f2 = y2 ~ X2.1 + X2.2 | Z2.1 + Z2.2
+
+## END SETUP
+
+# estimate model
+
+mod = bizicount(f1, f2, dat, cop = "g", margins = c("zinb", "zip"), keep=TRUE)
+
+# extract texreg objects, one with SEs, one with CIs
+tr_obj_se = texreg::extract(mod)
+tr_obj_ci = texreg::extract(mod, CI = .95)
+
+
+# output to latex, single table.
+# Note use of c(), because tr_obj_se, tr_obj_ci are lists.
+texreg::texreg(c(tr_obj_se, tr_obj_ci))
+
+
+# output as plaintext, two tables
+texreg::screenreg(tr_obj_se)
+texreg::screenreg(tr_obj_ci)
+</code></pre>
+
+
+</div>

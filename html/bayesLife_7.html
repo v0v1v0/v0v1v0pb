@@ -1,0 +1,253 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>e0.predict</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>
+Generating Posterior Trajectories of the Life Expectancy
+</h2>
+
+<h3>Description</h3>
+
+<p>Using the posterior parameter samples simulated by <code>run.e0.mcmc</code> the function  generates posterior trajectories for the life expectancy for all countries of the world.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">e0.predict(mcmc.set = NULL, end.year = 2100, 
+    sim.dir = file.path(getwd(), "bayesLife.output"), replace.output = FALSE, 
+    predict.jmale = TRUE, nr.traj = NULL, thin = NULL, burnin = 10000, 
+    use.diagnostics = FALSE, save.as.ascii = 0, start.year = NULL,  
+    output.dir = NULL, low.memory = TRUE, ignore.last.observed = FALSE,
+    seed = NULL, verbose = TRUE, ...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>mcmc.set</code></td>
+<td>
+<p>Object of class <code>bayesLife.mcmc.set</code>. If it is <code>NULL</code>, the object is loaded from the directory given by <code>sim.dir</code>.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>end.year</code></td>
+<td>
+<p>End year of the prediction.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>sim.dir</code></td>
+<td>
+<p>Directory with the MCMC simulation results. It should equal to the <code>output.dir</code> argument in <code>run.e0.mcmc</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>replace.output</code></td>
+<td>
+<p>Logical. If <code>TRUE</code>, existing predictions in <code>output.dir</code> will be replaced by results of this run.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>predict.jmale</code></td>
+<td>
+<p>Logical controlling if a joint female-male prediciton should be performed. This is done only if the underlying mcmcs in <code>sim.dir</code> correspond to a female simulation. In such a case the <code>e0.jmale.predict</code> is invoked. Arguments to this function can be passed in ....</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nr.traj</code></td>
+<td>
+<p>Number of trajectories to be generated. If <code>NULL</code>, the argument <code>thin</code> is taken to determine the number of trajectories. If both are <code>NULL</code>, the number of trajectories corresponds to the minimum of the size of the parameter sample and 2000.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>thin</code></td>
+<td>
+<p>Thinning interval used for determining the number of trajectories. Only relevant, if <code>nr.traj</code> is <code>NULL</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>burnin</code></td>
+<td>
+<p>Number of iterations to be discarded from the beginning of the parameter traces.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>use.diagnostics</code></td>
+<td>
+<p>Logical determining if an existing convergence diagnostics should be used for choosing the values of <code>thin</code> and <code>burnin</code>. In such a case, arguments <code>nr.traj</code>, <code>thin</code> and <code>burnin</code> are ignored. The ‘best’ values are chosen from results of running the <code>e0.diagnose</code> function. Only diagnostics can be used that suggest a convergence of the underlying MCMCs. If there are more than one such objects, the one is chosen whose recommendation for the number of trajectories is larger and closest to 2000.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>save.as.ascii</code></td>
+<td>
+<p>Either a number determining how many trajectories should be converted into an ASCII file, or “all” in which case all trajectories are converted. It should be set to 0, if no conversion is desired (default).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>start.year</code></td>
+<td>
+<p>This argument should be only used if the start year of the prediction is before or at the present year of the MCMC run (see Details below). By default the prediction starts in the next time period after the present year (passed to <code>run.e0.mcmc</code>).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>output.dir</code></td>
+<td>
+<p>Directory into which the resulting prediction object and the trajectories are stored. If it is <code>NULL</code>, it is set to either <code>sim.dir</code>, or to <code>output.dir</code> of <code>mcmc.set$meta</code> if <code>mcmc.set</code> is given.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>low.memory</code></td>
+<td>
+<p>Logical indicating if the prediction should run in a low-memory mode. If it is <code>FALSE</code>, the whole traces of all parameters, including the burnin, are loaded into memory. Otherwise, burnins are discarded and parameters are loaded as they are needed and are not kept in the memory.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ignore.last.observed</code></td>
+<td>
+<p>Logical. By default, the prediction (or imputation) for each country starts one time period after the last observed data point for that country defined by the “last.observed” column in the data. If this argument is set to <code>TRUE</code>, the prediction ignores that “last.observed” value and starts at the last data point found in the data. This allows to exclude some time periods from the estimation, but include them in the prediction.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>seed</code></td>
+<td>
+<p>Seed of the random number generator. If <code>NULL</code> no seed is set. It can be used to generate reproducible projections.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>verbose</code></td>
+<td>
+<p>Logical switching log messages on and off.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Additional arguments passed to the <code>e0.jmale.predict</code> function.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The trajectories are generated using the double logistic function (Chunn et al. 2013). Parameter samples  simulated via <code>run.e0.mcmc</code> are used from all chains, from which the given burnin was discarded. They are evenly thinned to match <code>nr.traj</code> or using the <code>thin</code> argument. Such thinned parameter traces, collapsed into one chain, if they do not already exist, are stored on disk into the sub-directory ‘<span class="file">thinned_mcmc_<em>t</em>_<em>b</em></span>’ where <em>t</em> is the value  of <code>thin</code> and <em>b</em> the value of <code>burnin</code> (see <code>create.thinned.e0.mcmc</code>). 
+</p>
+<p>The projection is run for all missing values before the present year, if any. Medians over the trajectories are used as  imputed values and the trajectories are discarded. The process then continues by projecting the future values where all generated trajectories are kept.
+</p>
+<p>A special case is when the argument <code>start.year</code> is given that is smaller or equal the present year. In such a case, imputed missing values before present year are treated as ordinary predictions (trajectories are kept). All historical data between start year and present year are used as projections.
+</p>
+<p>The resulting prediction object is saved into ‘<span class="file">{output.dir}/predictions</span>’. Trajectories for all countries are saved into the same directory in a binary format, one file per country. At the end of the projection, if <code>save.as.ascii</code> is larger than 0, the function converts the given number of trajectories into a CSV file of a UN-specific format. They are selected by equal spacing (see function <code>convert.e0.trajectories</code> for more details on the conversion). In addition, two summary files are created: one in a user-friendly format, the other using a UN-specific coding of the variants and time (see <code>write.e0.projection.summary</code> for more details).
+</p>
+
+
+<h3>Value</h3>
+
+<p>Object of class <code>bayesLife.prediction</code> which is a list containing components:
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>quantiles</code></td>
+<td>
+<p>A <code class="reqn">n \times q \times p</code> array of quantile values computed on the trajectories. <code class="reqn">n</code> is the number of countries,
+<code class="reqn">q</code> is the number of quantiles and <code class="reqn">p</code> is the number of projections. Which quantiles are to be computed is determined by the global option <code>e0pred.options("quantiles")</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>traj.mean.sd</code></td>
+<td>
+<p>A <code class="reqn">n \times 2 \times p</code> array holding the mean of all trajectories in the first column and the standard deviation in the second column.
+<code class="reqn">n</code> and <code class="reqn">p</code> are the number of countries and number of projections, respectively.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nr.traj</code></td>
+<td>
+<p>Number of trajectories.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>e0.matrix.reconstructed</code></td>
+<td>
+<p>Matrix containing imputed e0 values on spots where the original e0 matrix has missing values, i.e. between the last observed data point and the present year. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>output.directory</code></td>
+<td>
+<p>Directory where trajectories corresponding to this prediction are stored.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nr.projections</code></td>
+<td>
+<p>Number of projections.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>burnin</code></td>
+<td>
+<p>Burnin used for this prediction.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>end.year</code></td>
+<td>
+<p>The end year of this prediction.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>start.year</code></td>
+<td>
+<p>The <code>start.year</code> input argument.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>mcmc.set</code></td>
+<td>
+<p>Object of class <code>bayesLife.mcmc.set</code> used for this prediction, i.e. the burned, thinned, and collapsed MCMC chain.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>joint.male</code></td>
+<td>
+<p>If <code>e0.jmale.predict</code> was invoked, this is an object of class <code>bayesLife.prediction</code> containing male projections. In addition to the components above, it contains elements <code>fit</code> (estimation results from <code>e0.jmale.estimate</code>) and <code>meta.changes</code> (components of <code>bayesLife.mcmc.meta</code> that differ from the female meta component).</p>
+</td>
+</tr>
+</table>
+<h3>Author(s)</h3>
+
+<p>Hana Sevcikova, using code from Jennifer Chunn
+</p>
+
+
+<h3>References</h3>
+
+<p>J. L. Chunn, A. E. Raftery, P. Gerland, H. Sevcikova (2013): Bayesian Probabilistic Projections of Life Expectancy for All Countries. Demography 50(3):777-801. &lt;doi:10.1007/s13524-012-0193-x&gt;
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>run.e0.mcmc</code>, <code>e0.jmale.predict</code>, <code>create.thinned.e0.mcmc</code>, <code>convert.e0.trajectories</code>, 
+<code>get.e0.prediction</code>, <code>summary.bayesLife.prediction</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## Not run: 
+m &lt;- run.e0.mcmc(nr.chains = 1, iter = 50, thin = 1, verbose = TRUE)
+pred &lt;- e0.predict(m, burnin = 25, verbose = TRUE)
+summary(pred, country = "Portugal")
+
+# names and codes of countries included
+head(get.countries.table(pred, iso = TRUE))
+## End(Not run)
+</code></pre>
+
+
+</div>

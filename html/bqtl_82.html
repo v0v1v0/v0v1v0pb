@@ -1,0 +1,209 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>swapf2</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>
+Sample F2 loci  via approximate posterior 
+</h2>
+
+<h3>Description</h3>
+
+<p>An MCMC sampler for loci using precomputed dispersion matrices,
+various priors, and a pre-selected set of variables. For use with F2
+intercross design.
+</p>
+<p>Using precomputed dispersion matrices, various priors, and a pre-selected set of variables, one locus is removed, all other loci are examined to determine the effect of each on the posterior. One locus is sampled. The process is repeated until each locus has been removed and a new one sampled in its place (possibly the same one that was removed is sampled). 
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">swapf2(varcov, invars, rparm, nreps, ana.obj, locs, 
+    locs.prior, combo.prior, tol = 1e-10)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>varcov</code></td>
+<td>
+<p> The result of <code> make.varcov </code>. The columns of
+<code>varcov$var.x</code> must alternate 'additive' and 'dominance' terms.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>rparm</code></td>
+<td>
+
+<p>The 'ridge' parameters for the independent variables - larger values
+imply more shrinkage or a more concentrated prior for the regresion
+coefficients. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nreps</code></td>
+<td>
+<p>How many cycles of MCMC to perform</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ana.obj</code></td>
+<td>
+<p>A object produced by <code>make.analysis.obj</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>invars</code></td>
+<td>
+<p>A vector of variable indexes. This determines which
+variables to start in the model. If both additive and 
+dominance terms are to be used, they should occupy adjacent
+locations in <code>invars</code>. The variable(s) associated with the
+first locus is (are) immediately removed, serving only as
+placeholder(s). If there are k loci associated with the variables,
+then all subsequent models have k loci, although the nuimber of
+variables may vary according to the selection of one or both of the
+'additive' or 'dominance' terms.  </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>locs</code></td>
+<td>
+
+<p>The pairs of columns of <code>varcov$var.x</code> to use. The default
+uses all of them.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>locs.prior</code></td>
+<td>
+<p> Vector whose elements are 
+the prior masses to associate with each locus. Typically, these sum
+to one, but sometimes they might each be set to one (as in computing
+lod scores). The default value sets them all to 1.0.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>combo.prior</code></td>
+<td>
+
+<p>The prior probability for each term or combination of terms for the
+phenotypic effect at a locus. Typically, there will be three of
+these - one for the 'additive' term (linear in number of alleles
+from one parent strain), the 'dominance' term (quadratic in allele
+number), or both terms. The default sets them all to 1/3.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>tol</code></td>
+<td>
+<p>Used in forming QR decomposition. Let it be.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>A call to <code>swapf2</code> is used to obtain the results. This function
+is really just a wrapper. 
+</p>
+
+
+<h3>Value</h3>
+
+<p>A list with components:
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>configs</code></td>
+<td>
+<p> A 2k by k by nreps array of indexes of variables sampled in
+each of the nreps iterations. Models using less than 2k variables
+<code>configs[,i,j]</code> will contain one or more zeroes in the last
+position(s) </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>posteriors</code></td>
+<td>
+<p> A vector of length <code>k*nreps</code> with the
+posteriors of the models sampled.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>coefs</code></td>
+<td>
+<p>A 2k by k by nreps matrix of the regression
+coefficients. Models using less than 2k variables 
+<code>configs[,i,j]</code> will contain one or more zeroes in the last
+position(s) </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>call</code></td>
+<td>
+<p>The call to <code>swapf2</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>cond</code></td>
+<td>
+<p>The <code>k*nreps</code> posterior probabilities of the k-1 gene
+models.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>marg</code></td>
+<td>
+<p>The <code>k*nreps</code> marginal posteriors for all k gene
+models that could be formed using the current k-1 gene model)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>alt.marginal</code></td>
+<td>
+<p>A vector with <code>length(locs)</code> elements. At
+each step, the posterior associated with  each candidate locus is
+added to an element of this vector. After all steps are finished,
+the result is normalized to sum to one. This turns out to be an
+exceedingly stable estimate of the relative marginal posterior. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>alt.coef</code></td>
+<td>
+<p>A vector with <code>2*length(locs)</code> elements. At
+each step, the product of each posterior times the coefficient
+associated with a candidate variable is 
+added to an element of this vector. After all steps are finished,
+the result is normalized by the total marginal posterior. This turns
+out to be an rather stable estimate of the marginal (over all
+models) posterior mean of the regression coefficients. </p>
+</td>
+</tr>
+</table>
+<h3>Author(s)</h3>
+
+<p>Charles C. Berry <a href="mailto:cberry@ucsd.edu">cberry@ucsd.edu</a> </p>
+
+
+<h3>References</h3>
+
+<p>Berry C.C. (1998) Computationally Efficient Bayesian QTL Mapping in
+Experimental Crosses. <em>ASA Proceedings of the Biometrics
+Section,</em> 164-169.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>swapbc1</code>
+</p>
+
+
+</div>

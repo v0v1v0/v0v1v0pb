@@ -1,0 +1,245 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>learn.dynamic.network</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>learn a dynamic network (structure and parameters) of a BN from a BNDataset.</h2>
+
+<h3>Description</h3>
+
+<p>Learn a dynamic network (structure and parameters) of a BN from a BNDataset (see the <code>Details</code> section).
+This method is a wrapper for <code>learn.network</code> to simplify the learning of a dynamic network.
+It provides an automated generation of the <code>layering</code> required to represent the set of time constraints
+encoded in a dynamic network. In this function, it is assumed that the dataset contains the observations for each variable
+in all the time steps:
+<code>V_1^{t_1}, V_2^{t_1}, V_n^{t_1}, V_1^{t_2}, ... , V_n^{t_k}</code>.
+Variables in time step <code>j</code> can be parents for any variable in time steps <code>k&gt;=j</code>, but not for variables <code>i&lt;j</code>.
+If a layering is provided for a time step, it is valid in each time step, and not throughout the whole dynamic network;
+a global layering can however be provided.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">learn.dynamic.network(x, ...)
+
+## S4 method for signature 'BN'
+learn.dynamic.network(
+  x,
+  y = NULL,
+  num.time.steps = num.time.steps(y),
+  algo = "mmhc",
+  scoring.func = "BDeu",
+  initial.network = NULL,
+  alpha = 0.05,
+  ess = 1,
+  bootstrap = FALSE,
+  layering = c(),
+  max.fanin = num.variables(y) - 1,
+  max.fanin.layers = NULL,
+  max.parents = num.variables(y) - 1,
+  max.parents.layers = NULL,
+  layer.struct = NULL,
+  cont.nodes = c(),
+  use.imputed.data = FALSE,
+  use.cpc = TRUE,
+  mandatory.edges = NULL,
+  ...
+)
+
+## S4 method for signature 'BNDataset'
+learn.dynamic.network(
+  x,
+  num.time.steps = num.time.steps(x),
+  algo = "mmhc",
+  scoring.func = "BDeu",
+  initial.network = NULL,
+  alpha = 0.05,
+  ess = 1,
+  bootstrap = FALSE,
+  layering = c(),
+  max.fanin = num.variables(x) - 1,
+  max.fanin.layers = NULL,
+  max.parents = num.variables(x) - 1,
+  max.parents.layers = NULL,
+  layer.struct = NULL,
+  cont.nodes = c(),
+  use.imputed.data = FALSE,
+  use.cpc = TRUE,
+  mandatory.edges = NULL,
+  ...
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>can be a <code>BN</code> or a <code>BNDataset</code>. If <code>x</code> is a <code>BN</code>,
+then also the <code>dataset</code> parameter must be given.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>potential further arguments for methods.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>y</code></td>
+<td>
+<p>a <code>BNDataset</code> object, to be provided only if <code>x</code> is a <code>BN</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>num.time.steps</code></td>
+<td>
+<p>the number of time steps to be represented in the dynamic BN.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>algo</code></td>
+<td>
+<p>the algorithm to use. Currently, one among <code>sm</code> (Silander-Myllymaki), <code>mmpc</code>
+(Max-Min Parent-and-Children), <code>mmhc</code> (Max-Min Hill Climbing, default), <code>hc</code>
+(Hill Climbing) and <code>sem</code> (Structural Expectation Maximization).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>scoring.func</code></td>
+<td>
+<p>the scoring function to use. Currently, one among
+<code>BDeu</code>, <code>AIC</code>, <code>BIC</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>initial.network</code></td>
+<td>
+<p>network structure to be used as starting point for structure search.
+Can take different values:
+a <code>BN</code> object, a matrix containing the adjacency matrix of the structure of the network,
+or the string <code>random.chain</code> to sample a random chain as starting point.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>alpha</code></td>
+<td>
+<p>confidence threshold (only for <code>mmhc</code>).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ess</code></td>
+<td>
+<p>Equivalent Sample Size value.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>bootstrap</code></td>
+<td>
+<p><code>TRUE</code> to use bootstrap samples.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>layering</code></td>
+<td>
+<p>vector containing the layers each node belongs to.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>max.fanin</code></td>
+<td>
+<p>maximum number of parents for each node (only for <code>hc</code>, <code>mmhc</code>).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>max.fanin.layers</code></td>
+<td>
+<p>matrix of available parents in each layer (only for <code>sm</code> –
+DEPRECATED, use <code>max.parents.layers</code> instead).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>max.parents</code></td>
+<td>
+<p>maximum number of parents for each node (for <code>sm</code>, <code>hc</code>, <code>mmhc</code>).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>max.parents.layers</code></td>
+<td>
+<p>matrix of available parents in each layer (only for <code>sm</code>).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>layer.struct</code></td>
+<td>
+<p><code>0/1</code> matrix for indicating which layers can contain parent nodes
+for nodes in a layer (only for <code>mmhc</code>, <code>mmpc</code>).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>cont.nodes</code></td>
+<td>
+<p>vector containing the index of continuous variables.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>use.imputed.data</code></td>
+<td>
+<p><code>TRUE</code> to learn the structure from the imputed dataset
+(if available, a check is performed). Default is to use raw dataset</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>use.cpc</code></td>
+<td>
+<p>(when using <code>mmhc</code>) compute Candidate Parent-and-Children sets instead of 
+starting the Hill Climbing from an empty graph.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>mandatory.edges</code></td>
+<td>
+<p>binary matrix, where a <code>1</code> in cell <code>[i,j]</code>
+indicates that an edge from node <code>i</code> to node <code>j</code> must be present
+in the final network.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The other parameters available are the ones of <code>learn.network</code>, refer to the documentation of that function 
+for more details. See also the documentation for <code>learn.structure</code> and <code>learn.params</code> for more informations.
+</p>
+
+
+<h3>Value</h3>
+
+<p>new <code>BN</code> object with structure (DAG) and conditional probabilities
+as learnt from the given dataset.
+</p>
+
+
+<h3>See Also</h3>
+
+<p>learn.network learn.structure learn.params
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## Not run: 
+mydataset &lt;- BNDataset("data.file", "header.file")
+
+net &lt;- learn.dynamic.network(mydataset, num.time.steps=2)
+
+## End(Not run)
+
+</code></pre>
+
+
+</div>

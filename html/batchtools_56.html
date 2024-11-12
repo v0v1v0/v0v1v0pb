@@ -1,0 +1,91 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>Tags</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Add or Remove Job Tags</h2>
+
+<h3>Description</h3>
+
+<p>Add and remove arbitrary tags to jobs.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">addJobTags(ids = NULL, tags, reg = getDefaultRegistry())
+
+removeJobTags(ids = NULL, tags, reg = getDefaultRegistry())
+
+getUsedJobTags(ids = NULL, reg = getDefaultRegistry())
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>ids</code></td>
+<td>
+<p>[<code>data.frame</code> or <code>integer</code>]<br>
+A <code>data.frame</code> (or <code>data.table</code>)
+with a column named “job.id”.
+Alternatively, you may also pass a vector of integerish job ids.
+If not set, defaults to all jobs.
+Invalid ids are ignored.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>tags</code></td>
+<td>
+<p>[<code>character</code>]<br>
+Tags to add or remove as strings. Each tag may consist of letters, numbers, underscore and dots (pattern “^[[:alnum:]_.]+”).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>reg</code></td>
+<td>
+<p>[<code>Registry</code>]<br>
+Registry. If not explicitly passed, uses the default registry (see <code>setDefaultRegistry</code>).</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>[<code>data.table</code>] with job ids affected (invisible).
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+tmp = makeRegistry(file.dir = NA, make.default = FALSE)
+ids = batchMap(sqrt, x = -3:3, reg = tmp)
+
+# Add new tag to all ids
+addJobTags(ids, "needs.computation", reg = tmp)
+getJobTags(reg = tmp)
+
+# Add more tags
+addJobTags(findJobs(x &lt; 0, reg = tmp), "x.neg", reg = tmp)
+addJobTags(findJobs(x &gt; 0, reg = tmp), "x.pos", reg = tmp)
+getJobTags(reg = tmp)
+
+# Submit first 5 jobs and remove tag if successful
+ids = submitJobs(1:5, reg = tmp)
+if (waitForJobs(reg = tmp))
+  removeJobTags(ids, "needs.computation", reg = tmp)
+getJobTags(reg = tmp)
+
+# Grep for warning message and add a tag
+addJobTags(grepLogs(pattern = "NaNs produced", reg = tmp), "div.zero", reg = tmp)
+getJobTags(reg = tmp)
+
+# All tags where tag x.neg is set:
+ids = findTagged("x.neg", reg = tmp)
+getUsedJobTags(ids, reg = tmp)
+</code></pre>
+
+
+</div>

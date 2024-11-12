@@ -1,0 +1,154 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>overlap</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2> Overlap analysis </h2>
+
+<h3>Description</h3>
+
+<p>Calculate the squared overlap between sets of vectors.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">overlap(modes, dv, nmodes=20)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>modes</code></td>
+<td>
+<p> an object of class <code>"pca"</code> or <code>"nma"</code> as obtained from
+function <code>pca.xyz</code> or <code>nma</code>. Alternatively a 3NxM matrix
+of eigenvectors can be provided. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>dv</code></td>
+<td>
+<p> a displacement vector of length 3N. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nmodes</code></td>
+<td>
+<p> the number of modes in which the calculation should be based. </p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>Squared overlap (or dot product) is used to measure the similiarity 
+between a displacement vector (e.g. a difference vector between two 
+conformational states) and mode vectors obtained from principal component 
+or normal modes analysis. 
+</p>
+<p>By definition the cumulative sum of the overlap values equals to one. 
+</p>
+<p>Structure <code>modes$U</code> (or alternatively, the 3NxM matrix of eigenvectors)
+should be of same length (3N) as <code>dv</code>. 
+</p>
+
+
+<h3>Value</h3>
+
+<p>Returns a list with the following components:
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>overlap</code></td>
+<td>
+<p> a numeric vector of the squared dot products (overlap values)
+between the (normalized) vector (<code>dv</code>) and each mode in <code>mode</code>. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>overlap.cum</code></td>
+<td>
+<p> a numeric vector of the cumulative squared overlap values. </p>
+</td>
+</tr>
+</table>
+<h3>Author(s)</h3>
+
+<p> Lars Skjaerven </p>
+
+
+<h3>References</h3>
+
+<p>Skjaerven, L. et al. (2011) <em>Proteins</em> <b>79</b>, 232–243.
+Grant, B.J. et al. (2006) <em>Bioinformatics</em> <b>22</b>, 2695–2696.
+</p>
+
+
+<h3>See Also</h3>
+
+ <p><code>rmsip</code>, <code>pca.xyz</code>, <code>nma</code>,
+<code>difference.vector</code> </p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">attach(kinesin)
+     
+# Ignore gap containing positions
+##gaps.res &lt;- gap.inspect(pdbs$ali)
+gaps.pos &lt;- gap.inspect(pdbs$xyz)
+     
+#-- Do PCA
+pc.xray &lt;- pca.xyz(pdbs$xyz[, gaps.pos$f.inds])
+    
+# Define a difference vector between two structural states
+diff.inds &lt;- c(grep("d1v8ka", pdbs$id), 
+               grep("d1goja", pdbs$id))
+
+dv &lt;- difference.vector( pdbs$xyz[diff.inds,], gaps.pos$f.inds )
+
+# Calculate the squared overlap between the PCs and the difference vector  
+o &lt;- overlap(pc.xray, dv)
+o &lt;- overlap(pc.xray$U, dv)
+
+# Plot results
+plot(o$overlap, type='h', ylim=c(0,1))
+points(o$overlap)
+lines(o$overlap.cum, type='b', col='red')
+
+
+detach(kinesin)
+
+## Not run: 
+## Calculate overlap from NMA
+pdb.a &lt;- read.pdb("1cmk")
+pdb.b &lt;- read.pdb("3dnd")
+
+## Fetch CA coordinates
+sele.a &lt;- atom.select(pdb.a, chain='E', resno=c(15:350), elety='CA')
+sele.b &lt;- atom.select(pdb.b, chain='A', resno=c(1:350), elety='CA')
+
+xyz &lt;- rbind(pdb.a$xyz[sele.a$xyz],
+             pdb.b$xyz[sele.b$xyz])
+
+## Superimpose
+xyz[2,] &lt;- fit.xyz(xyz[1,], xyz[2,], 1:ncol(xyz))
+
+## The difference between the two conformations
+dv &lt;- difference.vector( xyz )
+
+## Calculate normal modes
+modes &lt;- nma(pdb.a, inds=sele.a)
+
+# Calculate the squared overlap between the normal modes 
+# and the difference vector  
+o &lt;- overlap(modes, dv)
+
+## End(Not run)
+</code></pre>
+
+
+</div>

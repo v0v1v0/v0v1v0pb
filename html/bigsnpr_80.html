@@ -1,0 +1,138 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>snp_PRS</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>PRS</h2>
+
+<h3>Description</h3>
+
+<p>Polygenic Risk Scores with possible clumping and thresholding.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">snp_PRS(
+  G,
+  betas.keep,
+  ind.test = rows_along(G),
+  ind.keep = cols_along(G),
+  same.keep = rep(TRUE, length(ind.keep)),
+  lpS.keep = NULL,
+  thr.list = 0
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>G</code></td>
+<td>
+<p>A FBM.code256
+(typically <code style="white-space: pre;">⁠&lt;bigSNP&gt;$genotypes⁠</code>).<br><strong>You shouldn't have missing values.</strong> Also, remember to do quality control,
+e.g. some algorithms in this package won't work if you use SNPs with 0 MAF.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>betas.keep</code></td>
+<td>
+<p>Numeric vector of weights associated with each SNP
+corresponding to <code>ind.keep</code>. You may want to see bigstatsr::big_univLinReg
+or bigstatsr::big_univLogReg.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ind.test</code></td>
+<td>
+<p>The individuals on whom to project the scores. Default uses all.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ind.keep</code></td>
+<td>
+<p>Column (SNP) indices to use (if using clumping, the
+output of snp_clumping). Default doesn't clump.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>same.keep</code></td>
+<td>
+<p>A logical vector associated with <code>betas.keep</code> whether the
+reference allele is the same for G. Default is all <code>TRUE</code> (for example when
+you train the betas on the same dataset). Otherwise, use same_ref.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>lpS.keep</code></td>
+<td>
+<p>Numeric vector of <code>-log10(p-value)</code> associated with
+<code>betas.keep</code>. Default doesn't use thresholding.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>thr.list</code></td>
+<td>
+<p>Threshold vector on <code>lpS.keep</code> at which SNPs are excluded if
+they are not significant enough. Default doesn't use thresholding.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>A matrix of scores, where rows correspond to <code>ind.test</code> and
+columns correspond to <code>thr.list</code>.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">test &lt;- snp_attachExtdata()
+G &lt;- big_copy(test$genotypes, ind.col = 1:1000)
+CHR &lt;- test$map$chromosome[1:1000]
+POS &lt;- test$map$physical.position[1:1000]
+y01 &lt;- test$fam$affection - 1
+
+# PCA -&gt; covariables
+obj.svd &lt;- snp_autoSVD(G, infos.chr = CHR, infos.pos = POS)
+
+# train and test set
+ind.train &lt;- sort(sample(nrow(G), 400))
+ind.test &lt;- setdiff(rows_along(G), ind.train) # 117
+
+# GWAS
+gwas.train &lt;- big_univLogReg(G, y01.train = y01[ind.train],
+                             ind.train = ind.train,
+                             covar.train = obj.svd$u[ind.train, ])
+# clumping
+ind.keep &lt;- snp_clumping(G, infos.chr = CHR,
+                         ind.row = ind.train,
+                         S = abs(gwas.train$score))
+# -log10(p-values) and thresolding
+summary(lpS.keep &lt;- -predict(gwas.train)[ind.keep])
+thrs &lt;- seq(0, 4, by = 0.5)
+nb.pred &lt;- sapply(thrs, function(thr) sum(lpS.keep &gt; thr))
+
+# PRS
+prs &lt;- snp_PRS(G, betas.keep = gwas.train$estim[ind.keep],
+               ind.test = ind.test,
+               ind.keep = ind.keep,
+               lpS.keep = lpS.keep,
+               thr.list = thrs)
+
+# AUC as a function of the number of predictors
+aucs &lt;- apply(prs, 2, AUC, target = y01[ind.test])
+library(ggplot2)
+qplot(nb.pred, aucs) +
+  geom_line() +
+  scale_x_log10(breaks = nb.pred) +
+  labs(x = "Number of predictors", y = "AUC") +
+  theme_bigstatsr()
+
+</code></pre>
+
+
+</div>

@@ -1,0 +1,167 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>simulate_breathtest_data</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Simulate 13C breath time series data</h2>
+
+<h3>Description</h3>
+
+<p>Generates simulated breath test data, optionally with errors. If none of the three
+standard deviations <code>m_std, k_std, beta_std</code> is given, an empirical covariance
+matrix from USZ breath test data is used. If any of the standard deviations is given,
+default values for the others will be used.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">simulate_breathtest_data(
+  n_records = 10,
+  m_mean = 40,
+  m_std = NULL,
+  k_mean = 0.01,
+  k_std = NULL,
+  beta_mean = 2,
+  beta_std = NULL,
+  noise = 1,
+  cov = NULL,
+  student_t_df = NULL,
+  missing = 0,
+  seed = NULL,
+  dose = 100,
+  first_minute = 5,
+  step_minute = 15,
+  max_minute = 155
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>n_records</code></td>
+<td>
+<p>Number of records</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>m_mean, m_std</code></td>
+<td>
+<p>Mean and between-record standard deviation of parameter m giving metabolized fraction.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>k_mean, k_std</code></td>
+<td>
+<p>Mean and between-record standard deviation of parameter k, in units of 1/minutes.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>beta_mean, beta_std</code></td>
+<td>
+<p>Mean and between-record standard deviations of lag parameter beta</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>noise</code></td>
+<td>
+<p>Standard deviation of normal noise when <code>student_t_df = NULL</code>; scaling of noise when student_t_df &gt;= 2.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>cov</code></td>
+<td>
+<p>Covariance matrix, default NULL, i.e. not used. If given, overrides 
+standard deviation settings.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>student_t_df</code></td>
+<td>
+<p>When NULL (default), Gaussian noise is added; when &gt;= 2, Student_t distributed noise is added, which generates more realistic outliers. Values from 2 to 5 are useful, when higher values are used the result comes close to that of Gaussian noise. Values below 2 are truncated to 2.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>missing</code></td>
+<td>
+<p>When 0 (default), all curves have the same number of data points. When &gt; 0, this is the fraction of points that were removed randomly to simulate missing</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>seed</code></td>
+<td>
+<p>Optional seed; not set if seed = NULL (default)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>dose</code></td>
+<td>
+<p>Octanoate/acetate dose, almost always 100 mg, which is also the default</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>first_minute</code></td>
+<td>
+<p>First sampling time. Do not use 0 here, some algorithms do not 
+converge when data near 0 are passed.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>step_minute</code></td>
+<td>
+<p>Inter-sample interval for breath test</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>max_minute</code></td>
+<td>
+<p>Maximal time in minutes.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>A list of class simulated_breathtest_data with 2  elements:
+</p>
+
+<dl>
+<dt>record</dt>
+<dd>
+<p>Data frame with columns
+<code>patient_id(chr), m, k, beta, t50</code> giving the effective parameters 
+for the individual patient record.</p>
+</dd>
+<dt>data</dt>
+<dd>
+<p>Data frame with columns
+<code>patient_id(chr), minute(dbl), pdr(dbl)</code> giving the
+time series and grouping parameters.</p>
+</dd>
+</dl>
+<p>A comment is attached to the return value that can be used as a title for plotting.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">library(ggplot2)
+pdr = simulate_breathtest_data(n_records = 4, seed = 4711, missing = 0.3,
+       student_t_df = 2, noise = 1.5) # Strong outliers
+#
+str(pdr, 1)  
+#
+pdr$record # The "correct" parameters
+#
+# Explicit plotting
+ggplot(pdr$data, aes(x = minute, y = pdr)) + geom_point() +
+  facet_wrap(~patient_id) + ggtitle(comment(pdr$data))
+#
+# Or use cleanup_data and null_fit for S3 plotting
+plot(null_fit(cleanup_data(pdr$data)))
+</code></pre>
+
+
+</div>

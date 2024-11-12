@@ -1,0 +1,304 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>hanova1</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Posterior sampling for a 1-way hierarchical ANOVA</h2>
+
+<h3>Description</h3>
+
+<p>Produces random samples from the posterior distribution of the parameters
+of a 1-way hierarchical ANOVA model.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">hanova1(
+  n = 1000,
+  resp,
+  fac,
+  ...,
+  prior = "default",
+  hpars = NULL,
+  param = c("trans", "original"),
+  init = NULL,
+  mu0 = 0,
+  sigma0 = Inf,
+  nrep = NULL
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>n</code></td>
+<td>
+<p>A numeric scalar.  The size of posterior sample required.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>resp</code></td>
+<td>
+<p>A numeric vector.  Response values.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>fac</code></td>
+<td>
+<p>A vector of class <code>factor</code> indicating the group from
+which the corresponding element of <code>resp</code> originates.
+Must have the same length as <code>resp</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Optional further arguments to be passed to
+<code>ru</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>prior</code></td>
+<td>
+<p>The log-prior for the parameters of the hyperprior
+distribution.  If the user wishes to specify their own prior then
+<code>prior</code> must be an object returned from a call to
+<code>set_user_prior</code>.
+Otherwise, <code>prior</code> is a character scalar giving the name of the
+required in-built prior.
+If <code>prior</code> is not supplied then a default prior is used.
+See <strong>Details</strong>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>hpars</code></td>
+<td>
+<p>A numeric vector.  Used to set parameters (if any) in
+an in-built prior.  If <code>prior = cauchy</code> then <code>hpars</code> is
+a numeric vector of length 2 giving the respective scale parameters
+of the half-Cauchy priors for <code class="reqn">\sigma_\alpha</code> and <code class="reqn">\sigma</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>param</code></td>
+<td>
+<p>A character scalar.
+If <code>param = "trans"</code> (the default) then the marginal posterior
+of hyperparameter vector <code class="reqn">\phi</code> is reparameterized in terms of
+<code class="reqn">log \sigma_\alpha, log \sigma</code>.
+If <code>param = "original"</code> the original parameterization,
+i.e. <code class="reqn">\sigma_\alpha, \sigma</code> is used.
+The former tends to make the optimizations involved in the
+ratio-of-uniforms algorithm more stable and to increase the probability
+of acceptance, but at the expense of slower function evaluations.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>init</code></td>
+<td>
+<p>A numeric vector. Optional initial estimates sent to
+<code>ru</code> in the search for the mode of the posterior
+density of (perhaps a subset of) the hyperparameter vector <code class="reqn">\phi</code>.
+If an in-built prior is used then <code>ru</code> is used to sample from the
+marginal posterior density of <code class="reqn">(\sigma_\alpha, \sigma)</code>, so
+<code>init</code> must have length 2.  Otherwise, <code>init</code> has length
+equal to the argument <code>anova_d</code> supplied to
+<code>set_user_prior</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>mu0, sigma0</code></td>
+<td>
+<p>A numeric scalar.  Mean and standard deviation of a
+normal prior for <code class="reqn">\mu</code>.  Only used if an in-built prior is used
+or if <code>anova_d = 2</code> is supplied in a call to
+<code>set_user_prior</code> to set a user-defined prior.
+The default, <code>sigma0 = Inf</code>, sets an improper uniform prior
+for <code class="reqn">\mu</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nrep</code></td>
+<td>
+<p>A numeric scalar.  If <code>nrep</code> is not <code>NULL</code> then
+<code>nrep</code> gives the number of replications of the original dataset
+simulated from the posterior predictive distribution.
+Each replication is based on one of the samples from the posterior
+distribution.  Therefore, <code>nrep</code> must not be greater than <code>n</code>.
+In that event <code>nrep</code> is set equal to <code>n</code>.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>Consider <code class="reqn">I</code> independent experiments in which the <code class="reqn">ni</code> responses
+<strong><code class="reqn">y</code></strong><code class="reqn">i</code> from experiment/group <code class="reqn">i</code> are normally
+distributed with mean <code class="reqn">\theta i</code> and standard deviation <code class="reqn">\sigma</code>.
+The population parameters <code class="reqn">\theta</code>1, ...,
+<code class="reqn">\theta</code><code class="reqn">I</code> are modelled as random samples from a normal
+distribution with mean <code class="reqn">\mu</code> and standard deviation
+<code class="reqn">\sigma_\alpha</code>.  Let <code class="reqn">\phi = (\mu, \sigma_\alpha, \sigma)</code>.
+Conditionally on <code class="reqn">\theta</code>1, ..., <code class="reqn">\theta</code><code class="reqn">I</code>,
+<strong><code class="reqn">y</code></strong>1, ..., <strong><code class="reqn">y</code></strong><code class="reqn">I</code>
+are independent of each other and are independent of <code class="reqn">\phi</code>.
+A <em>hyperprior</em> is placed on <code class="reqn">\phi</code>.
+The user can either choose parameter values of a default hyperprior or
+specify their own hyperprior using <code>set_user_prior</code>.
+</p>
+<p>The <code>ru</code> function in the <code>rust</code>
+package is used to draw a random sample from the marginal posterior
+of the hyperparameter vector <code class="reqn">\phi</code>.
+Then, conditional on these values, population parameters are sampled
+directly from the conditional posterior density of
+<code class="reqn">\theta</code>1, ..., <code class="reqn">\theta</code><code class="reqn">I</code> given <code class="reqn">\phi</code> and the data.
+See the vignette("bang-c-anova-vignette", package = "bang")
+for details.
+</p>
+<p>The following priors are specified up to proportionality.
+</p>
+<p><em>Priors:</em>
+</p>
+<p><code>prior = "bda"</code> (the default):
+<code class="reqn">\pi(\mu, \sigma_\alpha, \sigma) = 1/\sigma,</code>
+that is, a uniform prior for <code class="reqn">(\mu, \sigma_\alpha, log \sigma)</code>,
+for <code class="reqn">\sigma_\alpha &gt; 0</code> and <code class="reqn">\sigma &gt; 0</code>.
+The data must contain at least 3 groups, that is, <code>fac</code> must have
+at least 3 levels, for a proper posterior density to be obtained.
+[See Sections 5.7 and  11.6 of Gelman et al. (2014).]
+</p>
+<p><code>prior = "unif"</code>:
+<code class="reqn">\pi(\mu, \sigma_\alpha, \sigma) = 1,</code>
+that is, a uniform prior for <code class="reqn">(\mu, \sigma_\alpha, \sigma)</code>,
+for <code class="reqn">\sigma_\alpha &gt; 0</code> and <code class="reqn">\sigma &gt; 0</code>.
+[See Section 11.6 of Gelman et al. (2014).]
+</p>
+<p><code>prior = "cauchy"</code>: independent half-Cauchy priors for
+<code class="reqn">\sigma_\alpha</code> and <code class="reqn">\sigma</code> with respective scale parameters
+<code class="reqn">A_\alpha</code> and <code class="reqn">A</code>, that is,
+<code class="reqn">\pi(\sigma_\alpha, \sigma) =
+  1 / [(1 + \sigma_\alpha^2 / A_\alpha^2) (1 + \sigma^2 / A^2)].</code>
+[See Gelman (2006).]  The scale parameters (<code class="reqn">A_\alpha</code>, <code class="reqn">A</code>)
+are specified using <code>hpars</code> = (<code class="reqn">A_\alpha</code>, <code class="reqn">A</code>).
+The default setting is <code>hpars = c(10, 10).</code>
+</p>
+<p><em>Parameterizations for sampling:</em>
+</p>
+<p><code>param = "original"</code> is (<code class="reqn">\mu, \sigma_\alpha, \sigma</code>),
+<code>param = "trans"</code> (the default) is
+<code class="reqn">\phi1 = \mu, \phi2 = log \sigma_\alpha, \phi3 = log \sigma</code>.
+</p>
+
+
+<h3>Value</h3>
+
+<p>An object (list) of class <code>"hef"</code>, which has the same
+structure as an object of class "ru" returned from <code>ru</code>.
+In particular, the columns of the <code>n</code>-row matrix <code>sim_vals</code>
+contain the simulated values of <code class="reqn">\phi</code>.
+In addition this list contains the arguments <code>model</code>, <code>resp</code>,
+<code>fac</code> and <code>prior</code> detailed above and an <code>n</code> by <code class="reqn">I</code>
+matrix <code>theta_sim_vals</code>: column <code class="reqn">i</code> contains the simulated
+values of  <code class="reqn">\theta</code><code class="reqn">i</code>.  Also included are
+<code>data = cbind(resp, fac)</code> and <code>summary_stats</code> a list
+containing: the number of groups <code>I</code>; the numbers of responses
+each group <code>ni</code>; the total number of observations; the sample mean
+response in each group; the sum of squared deviations from the
+group means <code>s</code>; the arguments to <code>hanova1</code> <code>mu0</code> and
+<code>sigma0</code>; <code>call</code>: the matched call to <code>hanova1</code>.
+</p>
+
+
+<h3>References</h3>
+
+<p>Gelman, A., Carlin, J. B., Stern, H. S. Dunson, D. B.,
+Vehtari, A. and Rubin, D. B. (2014) <em>Bayesian Data Analysis</em>.
+Chapman &amp; Hall / CRC.
+</p>
+<p>Gelman, A. (2006) Prior distributions for variance
+parameters in hierarchical models. <em>Bayesian Analysis</em>,
+<strong>1</strong>(3), 515-533. <a href="https://doi.org/10.1214/06-BA117A">doi:10.1214/06-BA117A</a>.
+</p>
+
+
+<h3>See Also</h3>
+
+<p>The <code>ru</code> function in the <code>rust</code>
+package for details of the arguments that can be passed to <code>ru</code> via
+<code>hanova1</code>.
+</p>
+<p><code>hef</code> for hierarchical exponential family models.
+</p>
+<p><code>set_user_prior</code> to set a user-defined prior.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R"># ======= Late 21st Century Global Temperature Data =======
+
+# Extract data for RCP2.6
+RCP26_2 &lt;- temp2[temp2$RCP == "rcp26", ]
+
+# Sample from the posterior under the default `noninformative' flat prior
+# for (mu, sigma_alpha, log(sigma)).  Ratio-of-uniforms is used to sample
+# from the marginal posterior for (log(sigma_alpha), log(sigma)).
+temp_res &lt;- hanova1(resp = RCP26_2[, 1], fac = RCP26_2[, 2])
+
+# Plot of sampled values of (sigma_alpha, sigma)
+plot(temp_res, params = "ru")
+
+# Plot of sampled values of (log(sigma_alpha), log(sigma))
+# (centred at (0,0))
+plot(temp_res, ru_scale = TRUE)
+
+# Plot of sampled values of (mu, sigma_alpha, sigma)
+plot(temp_res)
+
+# Estimated marginal posterior densities of the mean for each GCM
+plot(temp_res, params = "pop", which_pop = "all", one_plot = TRUE)
+
+# Posterior sample quantiles
+probs &lt;- c(2.5, 25, 50, 75, 97.5) / 100
+round(t(apply(temp_res$sim_vals, 2, quantile, probs = probs)), 2)
+
+# Ratio-of-uniforms information and posterior sample summaries
+summary(temp_res)
+
+# ======= Coagulation time data, from Table 11.2 Gelman et al (2014) =======
+
+# With only 4 groups the posterior for sigma_alpha has a heavy right tail if
+# the default `noninformative' flat prior for (mu, sigma_alpha, log(sigma))
+# is used.  If we try to sample from the marginal posterior for
+# (sigma_alpha, sigma) using the default generalized ratio-of-uniforms
+# runing parameter value r = 1/2 then the acceptance region is not bounded.
+
+# Two remedies: reparameterize the posterior and/or increase the value of r.
+
+# (log(sigma_alpha), log(sigma)) parameterization, ru parameter r = 1/2
+coag1 &lt;- hanova1(resp = coagulation[, 1], fac = coagulation[, 2])
+
+# (sigma_alpha, sigma) parameterization, ru parameter r = 1
+coag2 &lt;- hanova1(resp = coagulation[, 1], fac = coagulation[, 2],
+               param = "original", r = 1)
+
+# Values to compare to those in Table 11.3 of Gelman et al (2014)
+all1 &lt;- cbind(coag1$theta_sim_vals, coag1$sim_vals)
+all2 &lt;- cbind(coag2$theta_sim_vals, coag2$sim_vals)
+round(t(apply(all1, 2, quantile, probs = probs)), 1)
+round(t(apply(all2, 2, quantile, probs = probs)), 1)
+
+# Pairwise plots of posterior samples from the group means
+plot(coag1, which_pop = "all", plot_type = "pairs")
+
+# Independent half-Cauchy priors for sigma_alpha and sigma
+coag3 &lt;- hanova1(resp = coagulation[, 1], fac = coagulation[, 2],
+                 param = "original", prior = "cauchy", hpars = c(10, 1e6))
+
+</code></pre>
+
+
+</div>

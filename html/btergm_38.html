@@ -1,0 +1,174 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>tergm-terms</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Temporal dependencies for TERGMs</h2>
+
+<h3>Description</h3>
+
+<p>Network statistics that span multiple time points.
+</p>
+<p>Transform a covariate using a function of time.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">timecov(
+  covariate,
+  minimum = 1,
+  maximum = length(covariate),
+  transform = function(t) 1 + (0 * t) + (0 * t^2),
+  onlytime = FALSE
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>covariate</code></td>
+<td>
+<p>The list of networks or matrices for which to create a time
+covariate. This can be the list of networks on the left-hand side of the
+formula, in which case a time trend is created as a covariate list of
+matrices, or it can be a list of networks or matrices that is used as a
+dyadic covariate on the right-hand side of the formula, in which case an
+interaction effect between the time trend and the covariate is created. If
+used as a model term inside a formula, <code>covariate = NULL</code> is
+permitted, in which case the networks on the left-hand side will be used to
+form a time trend.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>minimum, maximum</code></td>
+<td>
+<p>For time steps below the <code>minimum</code> value and
+above the <code>maximum</code> value, the time covariate is set to 0. These
+arguments can be used to create step-wise, discrete effects, for example to
+use a value of 0 up to an external event and 1 from that event onwards in
+order to control for influences of external events.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>transform</code></td>
+<td>
+<p>In the default case, edges are modeled as being linearly
+increasingly important over time (i.e., a linear time trend). By tweaking
+the <code>transform</code> function, arbitrary functional forms of time can be
+tested. For example, <code>transform = sqrt</code> (for a geometrically
+decreasing time effect), <code>transform = function(x) x^2</code> (for a
+geometrically increasing time effect), <code>transform = function(t) t</code>
+(for a linear time trend) or polynomial functional forms (e.g.,
+<code>transform = function(t) 0 + (1 * t) + (1 * t^2)</code>) can be used.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>onlytime</code></td>
+<td>
+<p>If <code>TRUE</code>, return a time trend only. If <code>FALSE</code>,
+return an interaction between the time trend and the covariate. Note that
+the model term may need to be called twice or more inside a formula: one
+time to create the time trend main effect and one time for each
+interaction term; you also need to include the main effects for the
+covariates separately using <code>edgecov</code> or similar terms.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>In addition to the ERGM user terms that can be estimated within a single
+network (see ergm-terms), the <span class="pkg">btergm</span> package provides
+additional model terms that can be used within a formula. These additional
+statistics span multiple time periods and are therefore called "temporal
+dependencies." Examples include memory terms (i.e., positive autoregression,
+dyadic stability, edge innovation, or edge loss), delayed reciprocity or
+mutuality, and time covariates (i.e., functions of time or interactions with
+time):
+</p>
+
+<dl>
+<dt><code>delrecip(mutuality = FALSE, lag = 1)</code></dt>
+<dd>
+<p>The <code>delrecip</code> term
+checks for delayed reciprocity. For example, if node <code>j</code> is tied to
+node <code>i</code> at <code>t = 1</code>, does this lead to a reciprocation of that
+tie back from <code>i</code> to <code>j</code> at <code>t = 2</code>? If
+<code>mutuality = TRUE</code> is set, this extends not only to ties, but also
+non-ties. That is, if <code>i</code> is not tied to <code>j</code> at <code>t = 1</code>,
+will this lead to <code>j</code> not being tied to <code>i</code> at <code>t = 2</code>, in
+addition to positively reciprocal patterns over time? The <code>lag</code>
+argument controls the size of the temporal lag: with <code>lag = 1</code>,
+reciprocity over one consecutive time period is checked. Note that as
+<code>lag</code> increases, the number of time steps on the dependent variable
+decreases.</p>
+</dd>
+<dt><code>memory(type = "stability", lag = 1)</code></dt>
+<dd>
+<p>Memory terms control for
+the impact of a previous network on the current network. Four different
+types of memory terms are available: positive autoregression
+(<code>type = "autoregression"</code>) checks whether previous ties are carried
+over to the current network; dyadic stability (<code>type = "stability"</code>)
+checks whether both edges and non-edges are stable between the previous
+and the current network; edge loss (<code>type = "loss"</code>) checks whether
+ties in the previous network have been dissolved and no longer exist in
+the current network; and edge innovation (<code>type = "innovation"</code>)
+checks whether previously unconnected nodes have the tendency to become
+tied in the current network. The <code>lag</code> argument accepts integer
+values and controls whether the comparison is made with the previous
+network (<code>lag = 1</code>), the pre-previous network (<code>lag = 2</code>) etc.
+Note that as <code>lag</code> increases, the number of time steps on the
+dependent variable decreases.</p>
+</dd>
+<dt><code>timecov(x = NULL, minimum = 1, maximum = NULL,
+    transform = function(t) t)</code></dt>
+<dd>
+<p>The <code>timecov</code> model term checks for
+linear or non-linear time trends with regard to edge formation.
+Optionally, this can be combined with a covariate to create an
+interaction effect between a dyadic covariate and time in order to test
+whether the importance of a covariate increases or decreases over time.
+In the default case, edges modeled as being linearly increasingly
+important over time. By tweaking the <code>transform</code> function,
+arbitrary functional forms of time can be tested. For example,
+<code>transform = sqrt</code> (for a geometrically decreasing time effect),
+<code>transform = function(x) x^2</code> (for a geometrically increasing time
+effect), <code>transform = function(t) t</code> (for a linear time trend) or
+polynomial functional forms (e.g., <code>0 + (1 * t) + (1 * t^2)</code>) can
+be used. For time steps below the <code>minimum</code> value and above the
+<code>maximum</code> value, the time covariate is set to 0. These arguments
+can be used to create step-wise, discrete effects, for example to use a
+value of 0 up to an external event and 1 from that event onwards in
+order to control for influences of external events.</p>
+</dd>
+</dl>
+<p>The <code>timecov</code> model term checks for linear or non-linear time trends
+with regard to edge formation. Optionally, this can be combined with a
+covariate to create an interaction effect between a dyadic covariate and time
+in order to test whether the importance of a covariate increases or decreases
+over time. The function can either be used in a formula with
+<code>btergm</code>, <code>mtergm</code>, or <code>tbergm</code>, or it
+can be executed directly for manual inclusion of the results as a covariate.
+</p>
+
+
+<h3>Functions</h3>
+
+
+<ul><li> <p><code>timecov()</code>: Time trends and temporal covariate interactions
+</p>
+</li></ul>
+<h3>References</h3>
+
+<p>Leifeld, Philip, Skyler J. Cranmer and Bruce A. Desmarais (2017):
+Temporal Exponential Random Graph Models with btergm: Estimation and
+Bootstrap Confidence Intervals. <em>Journal of Statistical Software</em>
+83(6): 1-36. <a href="https://doi.org/10.18637/jss.v083.i06">doi:10.18637/jss.v083.i06</a>.
+</p>
+
+
+</div>

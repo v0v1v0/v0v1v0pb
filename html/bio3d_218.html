@@ -1,0 +1,242 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>pca.xyz</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2> Principal Component Analysis </h2>
+
+<h3>Description</h3>
+
+<p>Performs principal components analysis (PCA) on a <code>xyz</code>
+numeric data matrix.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">## S3 method for class 'xyz'
+pca(xyz, subset = rep(TRUE, nrow(as.matrix(xyz))),
+                 use.svd = FALSE, rm.gaps=FALSE, mass = NULL, ...)
+
+## S3 method for class 'pca'
+print(x, nmodes=6, ...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>xyz</code></td>
+<td>
+<p> numeric matrix of Cartesian coordinates with a row per
+structure. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>subset</code></td>
+<td>
+<p> an optional vector of numeric indices that selects a
+subset of rows (e.g. experimental structures vs molecular dynamics
+trajectory structures) from the full <code>xyz</code> matrix. Note: the
+full <code>xyz</code> is projected onto this subspace.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>use.svd</code></td>
+<td>
+<p> logical, if TRUE singular value decomposition (SVD) is 
+called instead of eigenvalue decomposition. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>rm.gaps</code></td>
+<td>
+<p> logical, if TRUE gap positions (with missing
+coordinate data in any input structure) are removed before
+calculation. This is equivalent to removing NA cols from xyz. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p> an object of class <code>pca</code>, as obtained from function
+<code>pca.xyz</code>. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nmodes</code></td>
+<td>
+<p> numeric, number of modes to be printed. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>mass</code></td>
+<td>
+<p> a ‘pdb’ object or numeric vector of residue/atom masses. 
+By default (<code>mass=NULL</code>), mass is ignored. If provided 
+with a ‘pdb’ object, masses of all amino acids obtained from 
+<code>aa2mass</code> are used. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p> additional arguments to <code>fit.xyz</code> 
+(for <code>pca.xyz</code>) or to <code>print</code> (for <code>print.pca</code>). </p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>Returns a list with the following components:
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>L </code></td>
+<td>
+<p>eigenvalues.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>U </code></td>
+<td>
+<p>eigenvectors (i.e. the x, y, and z variable loadings).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>z </code></td>
+<td>
+<p>scores of the supplied <code>xyz</code> on the pcs.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>au </code></td>
+<td>
+<p>atom-wise loadings (i.e. xyz normalized eigenvectors).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>sdev </code></td>
+<td>
+<p>the standard deviations of the pcs.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>mean </code></td>
+<td>
+<p>the means that were subtracted.</p>
+</td>
+</tr>
+</table>
+<h3>Note</h3>
+
+<p>If <code>mass</code> is provided, mass weighted coordinates will be considered, 
+and iteration of fitting onto the mean structure is performed internally. 
+The extra fitting process is to remove external translation and rotation 
+of the whole system. With this option, a direct comparison can be made 
+between PCs from <code>pca.xyz</code> and vibrational modes from 
+<code>nma.pdb</code>, with the fact that 
+</p>
+<p style="text-align: center;"><code class="reqn">A=k_BTF^{-1}</code>
+</p>
+<p>, 
+where <code class="reqn">A</code> is the variance-covariance matrix, <code class="reqn">F</code> the Hessian 
+matrix, <code class="reqn">k_B</code> the Boltzmann's constant, and <code class="reqn">T</code> the 
+temperature.
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p> Barry Grant </p>
+
+
+<h3>References</h3>
+
+<p>Grant, B.J. et al. (2006) <em>Bioinformatics</em> <b>22</b>, 2695–2696.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>pca</code>, <code>pca.pdbs</code>,
+<code>plot.pca</code>, <code>mktrj.pca</code>,
+<code>pca.tor</code>, <code>project.pca</code> </p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+## Not run: 
+#-- Read transducin alignment and structures
+aln &lt;- read.fasta(system.file("examples/transducin.fa",package="bio3d"))
+pdbs &lt;- read.fasta.pdb(aln)
+
+# Find core
+core &lt;- core.find(pdbs, 
+                  #write.pdbs = TRUE,
+                  verbose=TRUE)
+
+rm(list=c("pdbs", "core"))
+
+## End(Not run)
+
+#-- OR for demo purposes just read previously saved transducin data
+attach(transducin)
+
+# Previously fitted coordinates based on sub 1.0A^3 core. See core.find() function.
+xyz &lt;- pdbs$xyz
+                
+#-- Do PCA ignoring gap containing positions
+pc.xray &lt;- pca.xyz(xyz, rm.gaps=TRUE)
+
+# Plot results (conformer plots &amp; scree plot overview)
+plot(pc.xray, col=annotation[, "color"])
+
+# Plot a single conformer plot of PC1 v PC2
+plot(pc.xray, pc.axes=1:2, col=annotation[, "color"])
+
+## Plot atom wise loadings
+plot.bio3d(pc.xray$au[,1], ylab="PC1 (A)")
+
+
+# PDB server connection required - testing excluded
+
+## Plot loadings in relation to reference structure 1TAG
+pdb &lt;- read.pdb("1tag")
+ind &lt;- grep("1TAG", pdbs$id)             ## location in alignment
+
+resno &lt;- pdbs$resno[ind, !is.gap(pdbs)]  ## non-gap residues
+tpdb &lt;- trim.pdb(pdb, resno=resno)
+
+op &lt;- par(no.readonly=TRUE)
+par(mfrow = c(3, 1), cex = 0.6, mar = c(3, 4, 1, 1))
+plot.bio3d(pc.xray$au[,1], resno, ylab="PC1 (A)", sse=tpdb)
+plot.bio3d(pc.xray$au[,2], resno, ylab="PC2 (A)", sse=tpdb)
+plot.bio3d(pc.xray$au[,3], resno, ylab="PC3 (A)", sse=tpdb)
+par(op)
+
+
+## Not run: 
+# Write PC trajectory
+resno = pdbs$resno[1, !is.gap(pdbs)]
+resid = aa123(pdbs$ali[1, !is.gap(pdbs)])
+
+a &lt;- mktrj.pca(pc.xray, pc=1, file="pc1.pdb",
+               resno=resno, resid=resid )
+
+b &lt;- mktrj.pca(pc.xray, pc=2, file="pc2.pdb",
+               resno=resno, resid=resid )
+
+c &lt;- mktrj.pca(pc.xray, pc=3, file="pc3.pdb",
+               resno=resno, resid=resid )
+
+## End(Not run)
+
+detach(transducin)
+</code></pre>
+
+
+</div>

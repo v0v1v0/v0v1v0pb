@@ -1,0 +1,285 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>bdw.reg</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>	Bayesian estimation of (zero-inflated) Discrete Weibull regression </h2>
+
+<h3>Description</h3>
+
+<p>Bayesian estimation of the parameters for Discrete Weibull (DW) regression. The conditional distribution of the response given the predictors is assumed to be DW with parameters q and beta, dependent on the predictors, and,  with an additional parameter pi under zero inflation.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">bdw.reg( data, formula = NA, iter = 5000, burnin = NULL, 
+         dist.q = dnorm, dist.beta = dnorm, 
+         par.q = c( 0, 1 ), par.beta = c( 0, 1 ), par.pi = c( 1, 1 ), 
+         initial.q = NULL, initial.beta = NULL, initial.pi = NULL, 
+         ZI = FALSE, scale.proposal = NULL, adapt = TRUE, print = TRUE )
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+<p><code>data.frame</code> or <code>matrix</code> corresponding to the data, containing the variables in the model.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>formula</code></td>
+<td>
+<p> object of class formula as a symbolic description of the model to be fitted. For the case of <code>data.frame</code>, it is taken as the model frame (see <code>model.frame)</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>iter</code></td>
+<td>
+<p> number of iterations for the sampling algorithm.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>burnin</code></td>
+<td>
+<p>number of burn-in iterations for the sampling algorithm.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>dist.q</code></td>
+<td>
+<p> Prior density for the regression coefficients associated to the parameter <code>q</code>. The default is a Normal distribution (<code>dnorm</code>). 
+Any density function which has two parameters and can support the <code>log = TRUE</code> flag can be used, e.g. <code>dnorm</code>, <code>dlnorm</code>, <code>dunif</code> etc. 
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>dist.beta</code></td>
+<td>
+<p> Prior density for the regression coefficients associated to the parameter <code>beta</code>. The default is a Normal distribution (<code>dnorm</code>). 
+Any density function which has two parameters and can support the <code>log = TRUE</code> flag can be used, e.g. <code>dnorm</code>, <code>dlnorm</code>, <code>dunif</code> etc. 
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>par.q</code></td>
+<td>
+<p> vector of length two corresponding to the parameters of <code>dist.q</code>. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>par.beta</code></td>
+<td>
+<p> vector of length two corresponding to the parameters of <code>dist.beta</code>. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>par.pi</code></td>
+<td>
+<p> vector of length two corresponding to the parameters of the <code>beta</code> prior density on <code>pi</code>. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>initial.q, initial.beta, initial.pi</code></td>
+<td>
+<p> vector of initial values for the regression coefficients and for <code>pi</code> (if <code>ZI</code> = <code>TRUE</code>). </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ZI</code></td>
+<td>
+ 
+<p>logical: if FALSE (default), the conditional distribution of the response given the predictors is assumed to be DW with parameters <code>q</code> and <code>beta</code>. 
+If TRUE, a zero-inflated DW distribution will be applied.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>scale.proposal </code></td>
+<td>
+<p> scale of the proposal function. Setting to lower values results in an increase in the acceptance rate of the sampler. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>adapt </code></td>
+<td>
+<p> logical: if TRUE (default), the proposals will be adapted. If FALSE, no adapting will be applied. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>print </code></td>
+<td>
+<p> logical: if TRUE (default), tracing information is printed.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The regression model uses a logit link function on <code>q</code> and a log link function on <code>beta</code>, the two parameters of a DW distribution, with probability mass function given by 
+</p>
+<p style="text-align: center;"><code class="reqn">
+DW(y) = q^{y^\beta} - q^{(y+1)^\beta}, y = 0, 1, 2, \ldots
+</code>
+</p>
+
+<p>For the case of zero inflation (<code>ZI</code> = <code>TRUE</code>), a zero-inflated DW is considered:
+</p>
+<p style="text-align: center;"><code class="reqn">
+f(y) = (1 - pi) I(y = 0) + pi DW(y)
+</code>
+</p>
+
+<p>where <code class="reqn">0 \leq pi \leq 1</code> and <code class="reqn">I(y = 0)</code> is an indicator for the point mass at zero for the response <code>y</code>. 
+</p>
+
+
+<h3>Value</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>sample</code></td>
+<td>
+<p> MCMC samples </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>q.est</code></td>
+<td>
+<p> posterior estimates of <code>q</code> </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>beta.est</code></td>
+<td>
+<p> posterior estimates of <code>beta</code> </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>pi.est</code></td>
+<td>
+<p> posterior estimates of <code>pi</code> </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>accept.rate</code></td>
+<td>
+<p> acceptance rate of the MCMC algorithm </p>
+</td>
+</tr>
+</table>
+<h3>Author(s)</h3>
+
+<p> Veronica Vinciotti, Reza Mohammadi <a href="mailto:a.mohammadi@uva.nl">a.mohammadi@uva.nl</a>, and Pariya Behrouzi </p>
+
+
+<h3>References</h3>
+
+<p>Vinciotti, V., Behrouzi, P., and Mohammadi, R. (2022) Bayesian structural learning of microbiota systems from count metagenomic data, <em>arXiv preprint</em>, <a href="https://doi.org/10.48550/arXiv.2203.10118">doi:10.48550/arXiv.2203.10118</a>
+</p>
+<p>Peluso, A., Vinciotti, V., and Yu, K. (2018) Discrete Weibull generalized additive model: an application to count fertility, <em>Journal of the Royal Statistical Society: Series C</em>, 68(3):565-583, <a href="https://doi.org/10.1111/rssc.12311">doi:10.1111/rssc.12311</a>  
+</p>
+<p>Haselimashhadi, H., Vinciotti, V. and Yu, K. (2018) A novel Bayesian regression model for counts with an application to health data, <em>Journal of Applied Statistics,</em> 45(6):1085-1105, <a href="https://doi.org/10.1080/02664763.2017.1342782">doi:10.1080/02664763.2017.1342782</a>
+</p>
+
+
+<h3>See Also</h3>
+
+ <p><code>bdgraph.dw</code>, <code>bdgraph</code>, <code>ddweibull</code>, <code>bdgraph.sim</code> </p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## Not run: 
+# - - Example 1
+
+q    = 0.6
+beta = 1.1
+n    = 500
+
+y = BDgraph::rdweibull( n = n, q = q, beta = beta )
+
+output = bdw.reg( data = y, y ~ ., iter = 5000 )
+
+output $ q.est
+output $ beta.est
+
+traceplot( output $ sample[ , 1 ], acf = T, pacf = T )
+traceplot( output $ sample[ , 2 ], acf = T, pacf = T )
+
+# - - Example 2
+
+q    = 0.6
+beta = 1.1
+pii  = 0.8
+n    = 500
+
+y_dw = BDgraph::rdweibull( n = n, q = q, beta = beta )
+z = rbinom( n = n, size = 1, prob = pii ) 
+y = z * y_dw
+
+output = bdw.reg( data = y, iter = 5000, ZI = TRUE )
+
+output $ q.est
+output $ beta.est
+output $ pi.est
+
+traceplot( output $ sample[ , 1 ], acf = T, pacf = T )
+traceplot( output $ sample[ , 2 ], acf = T, pacf = T )
+traceplot( output $ sample[ , 3 ], acf = T, pacf = T )
+
+# - - Example 3
+
+theta.q    = c( 0.1, -0.1, 0.34 )  # true parameter
+theta.beta = c( 0.1, -.15, 0.5  )  # true parameter
+
+n  = 500
+
+x1 = runif( n = n, min = 0, max = 1.5 )
+x2 = runif( n = n, min = 0, max = 1.5 )
+
+reg_q = theta.q[ 1 ] + x1 * theta.q[ 2 ] + x2 * theta.q[ 3 ]
+q     = 1 / ( 1 + exp( - reg_q ) )
+
+reg_beta = theta.beta[ 1 ] + x1 * theta.beta[ 2 ] + x2 * theta.beta[ 3 ]
+beta     = exp( reg_beta )
+
+y = BDgraph::rdweibull( n = n, q = q, beta = beta )
+
+data = data.frame( x1, x2, y ) 
+
+output = bdw.reg( data, y ~. , iter = 5000 )
+
+# - - Example 4
+
+theta.q    = c( 1, -1, 0.8 )  # true parameter
+theta.beta = c( 1, -1, 0.3 )  # true parameter
+pii = 0.8
+
+n  = 500
+
+x1 = runif( n = n, min = 0, max = 1.5 )
+x2 = runif( n = n, min = 0, max = 1.5 )
+
+reg_q = theta.q[ 1 ] + x1 * theta.q[ 2 ] + x2 * theta.q[ 3 ]
+q     = 1 / ( 1 + exp( - reg_q ) )
+
+reg_beta = theta.beta[ 1 ] + x1 * theta.beta[ 2 ] + x2 * theta.beta[ 3 ]
+beta     = exp( reg_beta )
+
+y_dw = BDgraph::rdweibull( n = n, q = q, beta = beta )
+z    = rbinom( n = n, size = 1, prob = pii ) 
+y    = z * y_dw
+
+data = data.frame( x1, x2, y ) 
+
+output = bdw.reg( data, y ~. , iter = 5000, ZI = TRUE )
+
+## End(Not run)	  
+</code></pre>
+
+
+</div>

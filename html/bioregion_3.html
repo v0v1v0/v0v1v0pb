@@ -1,0 +1,154 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>dissimilarity</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Compute dissimilarity metrics (beta-diversity) between sites based on
+species composition</h2>
+
+<h3>Description</h3>
+
+<p>This function creates a <code>data.frame</code> where each row provides one or
+several dissimilarity metric(s) between each pair of sites from a
+co-occurrence <code>matrix</code> with sites as rows and species as columns.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">dissimilarity(comat, metric = "Simpson", formula = NULL, method = "prodmat")
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>comat</code></td>
+<td>
+<p>a co-occurrence <code>matrix</code> with sites as rows and species
+as columns.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>metric</code></td>
+<td>
+<p>a <code>character</code> vector indicating which metrics to chose
+(see Details). Available options are <em>abc</em>, <em>ABC</em>, <em>Jaccard</em>,
+<em>Jaccardturn</em>, <em>Sorensen</em>, <em>Simpson</em>,  <em>Bray</em>,
+<em>Brayturn</em> or <em>Euclidean</em>.<br>
+If <code>"all"</code> is specified, then all metrics will be
+calculated. Can be set to <code>NULL</code> if <code>formula</code> is used.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>formula</code></td>
+<td>
+<p>a <code>character</code> vector with your own formula(s) based on the
+<code>a</code>, <code>b</code>, <code>c</code>, <code>A</code>, <code>B</code>, and <code>C</code> quantities
+(see Details). <code>formula</code> is set to <code>NULL</code> by default.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>method</code></td>
+<td>
+<p>a <code>character</code> indicating what method should be used to compute
+<code>abc</code> (see Details).
+<code>method = "prodmat"</code> by default is more efficient but can be greedy
+in memory and <code>method="loops"</code> is less efficient but less greedy in
+memory.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<script id="MathJax-script" async src="../../mathjaxr/doc/mathjax/es5/tex-chtml-full.js"></script><p>With <code>a</code> the number of species shared by a pair of sites, <code>b</code> species only
+present in the first site  and <code>c</code> species only present in the second site.
+</p>
+<p>\(Jaccard = (b + c) / (a + b + c)\)
+</p>
+<p>\(Jaccardturn = 2min(b, c) / (a + 2min(b, c))\)(Baselga 2012)
+</p>
+<p>\(Sorensen = (b + c) / (2a + b + c)\)
+</p>
+<p>\(Simpson = min(b, c) / (a + min(b, c))\)
+</p>
+<p>If abundances data are available, Bray-Curtis and its turnover component
+can also be computed with the following equation:
+</p>
+<p>\(Bray = (B + C) / (2A + B + C)\)
+</p>
+<p>\(Brayturn = min(B, C)/(A + min(B, C))\) (Baselga 2013)
+</p>
+<p>with A the sum of the lesser values for common species shared by a pair of
+sites. B and C are the total number of specimens counted at both sites minus
+A.
+</p>
+<p><code>formula</code> can be used to compute customized metrics with the terms
+<code>a</code>, <code>b</code>, <code>c</code>, <code>A</code>, <code>B</code>, and <code>C</code>. For example
+<code>formula = c("pmin(b,c) / (a + pmin(b,c))", "(B + C) / (2*A + B + C)")</code>
+will compute the Simpson and Bray-Curtis dissimilarity metrics, respectively.
+<strong>Note that pmin is used in the Simpson formula because a, b, c, A, B and C
+are <code>numeric</code> vectors.</strong>
+</p>
+<p>Euclidean computes the Euclidean distance between each pair of sites.
+</p>
+
+
+<h3>Value</h3>
+
+<p>A <code>data.frame</code> with additional class <code>bioregion.pairwise.metric</code>,
+providing one or several dissimilarity
+metric(s) between each pair of sites. The two first columns represent each
+pair of sites.
+One column per dissimilarity metric provided in <code>metric</code> and
+<code>formula</code> except for the metric <em>abc</em> and <em>ABC</em> that
+are stored in three columns (one for each letter).
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Maxime Lenormand (<a href="mailto:maxime.lenormand@inrae.fr">maxime.lenormand@inrae.fr</a>),
+Pierre Denelle (<a href="mailto:pierre.denelle@gmail.com">pierre.denelle@gmail.com</a>) and
+Boris Leroy (<a href="mailto:leroy.boris@gmail.com">leroy.boris@gmail.com</a>)
+</p>
+
+
+<h3>References</h3>
+
+<p>Baselga A (2012).
+“The Relationship between Species Replacement, Dissimilarity Derived from Nestedness, and Nestedness.”
+<em>Global Ecology and Biogeography</em>, <b>21</b>(12), 1223–1232.
+</p>
+<p>Baselga A (2013).
+“Separating the two components of abundance-based dissimilarity: balanced changes in abundance vs. abundance gradients.”
+<em>Methods in Ecology and Evolution</em>, <b>4</b>(6), 552–557.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>similarity()</code> dissimilarity_to_similarity
+similarity_to_dissimilarity
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">comat &lt;- matrix(sample(0:1000, size = 50, replace = TRUE,
+prob = 1 / 1:1001), 5, 10)
+rownames(comat) &lt;- paste0("Site", 1:5)
+colnames(comat) &lt;- paste0("Species", 1:10)
+
+dissim &lt;- dissimilarity(comat,
+metric = c("abc", "ABC", "Simpson", "Brayturn"))
+
+dissim &lt;- dissimilarity(comat, metric = "all",
+formula = "1 - (b + c) / (a + b + c)")
+
+</code></pre>
+
+
+</div>

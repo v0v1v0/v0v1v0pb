@@ -1,0 +1,231 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>ipdma.model.onestage</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Make an one-stage individual patient data meta-analysis object containing data, priors, and a JAGS model code</h2>
+
+<h3>Description</h3>
+
+<p>This function sets up data and JAGS code that is needed to run one-stage IPD-MA models in JAGS.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">ipdma.model.onestage(
+  y = NULL,
+  study = NULL,
+  treat = NULL,
+  X = NULL,
+  response = "normal",
+  type = "random",
+  shrinkage = "none",
+  scale = TRUE,
+  mean.alpha = 0,
+  prec.alpha = 0.001,
+  mean.beta = 0,
+  prec.beta = 0.001,
+  mean.gamma = 0,
+  prec.gamma = 0.001,
+  mean.delta = 0,
+  prec.delta = 0.001,
+  hy.prior = list("dhnorm", 0, 1),
+  lambda.prior = NULL,
+  p.ind = NULL,
+  g = NULL,
+  hy.prior.eta = NULL
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>y</code></td>
+<td>
+<p>outcome of the study. Can be continuous or binary.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>study</code></td>
+<td>
+<p>vector indicating which study the patient belongs to. Please change the study names into numbers (i.e. 1, 2, 3, etc)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>treat</code></td>
+<td>
+<p>vector indicating which treatment the patient was assigned to (i.e. 1 for treatment, 0 for placebo)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>X</code></td>
+<td>
+<p>matrix of covariate values for each patient. Dimension would be number of patients x number of covariates.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>response</code></td>
+<td>
+<p>specification of the outcome type. Must specify either "normal" or "binomial".</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>type</code></td>
+<td>
+<p>assumption on the treatment effect: either "random" for random effects model or "fixed" for fixed effects model. Default is "random".</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>shrinkage</code></td>
+<td>
+<p>shrinkage method applied to the effect modifiers. "none" correspond to no shrinkage.
+"laplace" corresponds to a adaptive shrinkage with a Laplacian prior (ie often known as Bayesian LASSO).
+"SSVS" corresponds to the Stochastic Search Variable Selection method. SSVS is not strictly a shrinkage method, but pulls the estimated coefficient toward zero through variable selection in each iteration of the MCMC. 
+See O'hara et al (2009) for more details.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>scale</code></td>
+<td>
+<p>indicator for scaling the covariates by the overall average; default is TRUE.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>mean.alpha</code></td>
+<td>
+<p>prior mean for the study intercept</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>prec.alpha</code></td>
+<td>
+<p>prior precision for the study intercept</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>mean.beta</code></td>
+<td>
+<p>prior mean for the regression coefficients of the main effects of the covariates; main effects are assumed to have common effect.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>prec.beta</code></td>
+<td>
+<p>prior precision for the regression coefficients of the main effects of the covariates</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>mean.gamma</code></td>
+<td>
+<p>prior mean for the effect modifiers. This parameter is not used if penalization is placed on effect modifiers.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>prec.gamma</code></td>
+<td>
+<p>prior precision for the effect modifiers. This parameter is not used if penalization is placed on effect modifiers.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>mean.delta</code></td>
+<td>
+<p>prior mean for the average treatment effect</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>prec.delta</code></td>
+<td>
+<p>prior precision for the average treatment effect</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>hy.prior</code></td>
+<td>
+<p>prior for the heterogeneity parameter. Supports uniform, gamma, and half normal for normal and binomial response
+It should be a list of length 3, where first element should be the distribution (one of dunif, dgamma, dhnorm) and the next two are the parameters associated with the distribution. For example, list("dunif", 0, 5) gives uniform prior with lower bound 0 and upper bound 5 for the heterogeneity parameter.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>lambda.prior</code></td>
+<td>
+<p>(only for shrinkage = "laplace") two options for laplace shrinkage. We can put a gamma prior on the lambda (i.e. list("dgamma",2,0.1)) or put a uniform prior on the inverse of lambda (i.e. list("dunif",0,5))</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>p.ind</code></td>
+<td>
+<p>(only for shrinkage = "SSVS") prior probability of including each of the effect modifiers. Length should be same as the total length of the covariates.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>g</code></td>
+<td>
+<p>(only for shrinkage = "SSVS") multiplier for the precision of spike. Default is g = 1000.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>hy.prior.eta</code></td>
+<td>
+<p>(only for shrinkage = "SSVS") standard deviation of the slab prior. Currently only support uniform distribution. Default is list("dunif", 0, 5)</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>data.JAGS</code></td>
+<td>
+<p>data organized in a list so that it can be used when running code in JAGS</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>code</code></td>
+<td>
+<p>JAGS code that is used to run the model. Use cat(code) to see the code in a readable format</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>model.JAGS</code></td>
+<td>
+<p>JAGS code in a function. This is used when running model in parallel</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>scale.mean</code></td>
+<td>
+<p>mean used in scaling covariates</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>scale.sd</code></td>
+<td>
+<p>standard deviation used in scaling covariates</p>
+</td>
+</tr>
+</table>
+<h3>References</h3>
+
+<p>O'Hara RB, Sillanpaa MJ. A review of Bayesian variable selection methods: what, how and which. <em>Bayesian Anal</em>. 2009;4(1):85-117. doi: <a href="https://doi.org/10.1214/09-BA403">10.1214/09-BA403</a>
+</p>
+<p>Seo M, White IR, Furukawa TA, et al. Comparing methods for estimating patient-specific treatment effects in individual patient data meta-analysis. <em>Stat Med</em>. 2021;40(6):1553-1573. doi: <a href="https://doi.org/10.1002/sim.8859">10.1002/sim.8859</a>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">ds &lt;- generate_ipdma_example(type = "continuous")
+ipd &lt;- with(ds, ipdma.model.onestage(y = y, study = studyid, treat = treat, X = cbind(z1, z2), 
+response = "normal", shrinkage = "none"))
+
+samples &lt;- ipd.run(ipd)
+treatment.effect(ipd, samples, newpatient= c(1,0.5))
+ 
+</code></pre>
+
+
+</div>

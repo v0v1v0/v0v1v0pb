@@ -1,0 +1,186 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>uniform_prior</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Prior objects for bssm models</h2>
+
+<h3>Description</h3>
+
+<p>These simple objects of class <code>bssm_prior</code> are used to construct a
+prior distributions for the hyperparameters theta for some of the model
+objects of <code>bssm</code> package. Note that these priors do not include the
+constant terms as they do not affect the sampling.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">uniform_prior(init, min, max)
+
+uniform(init, min, max)
+
+halfnormal_prior(init, sd)
+
+halfnormal(init, sd)
+
+normal_prior(init, mean, sd)
+
+normal(init, mean, sd)
+
+tnormal_prior(init, mean, sd, min = -Inf, max = Inf)
+
+tnormal(init, mean, sd, min = -Inf, max = Inf)
+
+gamma_prior(init, shape, rate)
+
+gamma(init, shape, rate)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>init</code></td>
+<td>
+<p>Initial value for the parameter, used in initializing the model
+components and as a starting values in MCMC.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>min</code></td>
+<td>
+<p>Lower bound of the uniform and truncated normal prior.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>max</code></td>
+<td>
+<p>Upper bound of the uniform and truncated normal prior.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>sd</code></td>
+<td>
+<p>Positive value defining the standard deviation of the
+(underlying i.e. non-truncated) Normal distribution.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>mean</code></td>
+<td>
+<p>Mean of the Normal prior.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>shape</code></td>
+<td>
+<p>Positive shape parameter of the Gamma prior.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>rate</code></td>
+<td>
+<p>Positive rate parameter of the Gamma prior.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>Currently supported priors are
+</p>
+
+<ul>
+<li>
+<p> uniform prior (<code>uniform()</code>) with a probability density function (pdf)
+defined as <code class="reqn">\frac{1}{max - min}</code> for <code class="reqn">min &lt; theta &lt; max</code>.
+</p>
+</li>
+<li>
+<p> normal (<code>normal()</code>), a normal distribution parameterized via mean and
+standard deviation, i.e. N(mean, sd^2).
+</p>
+</li>
+<li>
+<p> truncated normal distribution  (<code>tnormal()</code>), a normal distribution
+with known truncation points (from below and/or above). Ignoring the
+scaling factors, this corresponds to the pdf of N(mean, sd^2) when
+<code class="reqn">min &lt; theta &lt; max</code> and zero otherwise.
+</p>
+</li>
+<li>
+<p> half-normal (<code>halfnormal()</code>) with a pdf matching the pdf of the
+truncated normal distribution with min=0 and max=inf.
+</p>
+</li>
+<li>
+<p> gamma (<code>gamma</code>), a gamma distribution with shape and rate
+parameterization.
+</p>
+</li>
+</ul>
+<p>All parameters are vectorized so for regression coefficient vector beta you
+can define prior for example as <code>normal(0, 0, c(10, 20))</code>.
+</p>
+<p>For the general exponential models, i.e. models built with the <code>ssm_ulg</code>,
+<code>ssm_ung</code>, <code>ssm_mlg</code>, and <code>ssm_mng</code>, you can define arbitrary priors by
+defining the <code>prior_fn</code> function, which takes the one argument, <code>theta</code>,
+corresponding to the hyperparameter vector of the model,
+and returns a log-density of the (joint) prior (see the R Journal paper and
+e.g. <code>ssm_ulg</code> for examples).  Similarly, the priors for the non-linear
+models (<code>ssm_nlg</code>) and SDE models (<code>ssm_sde</code>) are constructed
+via C++ snippets (see the vignettes for details).
+</p>
+<p>The longer name versions of the prior functions with <code>_prior</code> ending
+are identical with shorter versions and they are available only to
+avoid clash with R's primitive function <code>gamma</code> (other long prior names
+are just for consistent naming).
+</p>
+
+
+<h3>Value</h3>
+
+<p>object of class <code>bssm_prior</code> or <code>bssm_prior_list</code> in case
+of multiple priors (i.e. multiple regression coefficients).
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+# create uniform prior on [-1, 1] for one parameter with initial value 0.2:
+uniform(init = 0.2, min = -1.0, max = 1.0)
+# two normal priors at once i.e. for coefficients beta:
+normal(init = c(0.1, 2.5), mean = 0.1, sd = c(1.5, 2.8))
+# Gamma prior (not run because autotest tests complain)
+# gamma(init = 0.1, shape = 2.5, rate = 1.1)
+# Same as
+gamma_prior(init = 0.1, shape = 2.5, rate = 1.1)
+# Half-normal
+halfnormal(init = 0.01, sd = 0.1)
+# Truncated normal
+tnormal(init = 5.2, mean = 5.0, sd = 3.0, min = 0.5, max = 9.5)
+
+
+# Further examples for diagnostic purposes:
+uniform(c(0, 0.2), c(-1.0, 0.001), c(1.0, 1.2))
+normal(c(0, 0.2), c(-1.0, 0.001), c(1.0, 1.2))
+tnormal(c(2, 2.2), c(-1.0, 0.001), c(1.0, 1.2), c(1.2, 2), 3.3)
+halfnormal(c(0, 0.2), c(1.0, 1.2))
+# not run because autotest bug
+# gamma(c(0.1, 0.2), c(1.2, 2), c(3.3, 3.3))
+
+# longer versions:
+uniform_prior(init = c(0, 0.2), min = c(-1.0, 0.001), max = c(1.0, 1.2))
+normal_prior(init = c(0, 0.2), mean = c(-1.0, 0.001), sd = c(1.0, 1.2))
+tnormal_prior(init = c(2, 2.2), mean = c(-1.0, 0.001), sd = c(1.0, 1.2),
+  min = c(1.2, 2), max = 3.3)
+halfnormal_prior(init = c(0, 0.2), sd = c(1.0, 1.2))
+gamma_prior(init = c(0.1, 0.2), shape = c(1.2, 2), rate = c(3.3, 3.3))
+
+</code></pre>
+
+
+</div>

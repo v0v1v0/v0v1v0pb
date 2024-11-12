@@ -1,0 +1,1100 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>bayesHistogram</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Smoothing of a uni- or bivariate histogram using Bayesian
+G-splines</h2>
+
+<h3>Description</h3>
+
+<p>A function to estimate a density of a uni- or bivariate
+(possibly censored) sample. The density is specified as a mixture of Bayesian G-splines
+(normal densities with equidistant means and equal variances). This function performs an
+MCMC sampling from the posterior distribution of unknown quantities in
+the density specification. Other method functions are available to
+visualize resulting density estimate.
+</p>
+<p>This function served as a basis for further developed
+<code>bayesBisurvreg</code>, <code>bayessurvreg2</code> and
+<code>bayessurvreg3</code> functions. However, in contrast to these
+functions, <code>bayesHistogram</code> does not allow for doubly censoring.
+</p>
+<p><b>Bivariate case:</b>
+</p>
+<p>Let <code class="reqn">Y_{i,l},\; i=1,\dots,N,\; l=1,2</code> be
+observations for the <code class="reqn">i</code>th cluster and the first and the second
+unit (dimension). The bivariate observations
+<code class="reqn">Y_i=(Y_{i,1},\,Y_{i,2})',\;i=1,\dots,N</code>
+are assumed to be i.i.d. with a~bivariate density
+<code class="reqn">g_{y}(y_1,\,y_2)</code>. This density is expressed as
+a~mixture of Bayesian G-splines (normal densities with equidistant
+means and constant variance matrices). We distinguish two,
+theoretically equivalent, specifications.
+</p>
+
+<dl>
+<dt>Specification 1</dt>
+<dd>
+<p style="text-align: center;"><code class="reqn">(Y_1,\,Y_2)' \sim
+	\sum_{j_1=-K_1}^{K_1}\sum_{j_2=-K_2}^{K_2} w_{j_1,j_2} N_2(\mu_{(j_1,j_2)},\,\mbox{diag}(\sigma_1^2,\,\sigma_2^2))</code>
+</p>
+
+<p>where <code class="reqn">\sigma_1^2,\,\sigma_2^2</code> are
+<b>unknown</b> basis variances and
+<code class="reqn">\mu_{(j_1,j_2)} = (\mu_{1,j_1},\,\mu_{2,j_2})'</code>
+is an~equidistant grid of knots symmetric around the
+<b>unknown</b> point <code class="reqn">(\gamma_1,\,\gamma_2)'</code> 
+and related to the unknown basis variances through the
+relationship
+</p>
+<p style="text-align: center;"><code class="reqn">\mu_{1,j_1} = \gamma_1 + j_1\delta_1\sigma_1,\quad j_1=-K_1,\dots,K_1,</code>
+</p>
+
+<p style="text-align: center;"><code class="reqn">\mu_{2,j_2} = \gamma_2 + j_2\delta_2\sigma_2,\quad j_2=-K_2,\dots,K_2,</code>
+</p>
+
+<p>where <code class="reqn">\delta_1,\,\delta_2</code> are fixed
+constants, e.g. <code class="reqn">\delta_1=\delta_2=2/3</code>
+(which has a~justification of being close to cubic B-splines).      
+</p>
+</dd>
+<dt>Specification 2</dt>
+<dd>
+<p style="text-align: center;"><code class="reqn">(Y_1,\,Y_2)' \sim (\alpha_1,\,\alpha_2)'+ \bold{S}\,(Y_1,\,Y_2)'</code>
+</p>
+
+<p>where <code class="reqn">(\alpha_1,\,\alpha_2)'</code> is an
+<b>unknown</b> intercept term and
+<code class="reqn">\bold{S} \mbox{ is a diagonal matrix with } \tau_1 \mbox{ and }\tau_2 \mbox{ on a diagonal,}</code>
+i.e. <code class="reqn">\tau_1,\,\tau_2</code> are <b>unknown</b> scale
+parameters. <code class="reqn">(V_1,\,V_2)'</code> is then
+standardized observational vector which is distributed according
+to the bivariate normal mixture, i.e.
+</p>
+<p style="text-align: center;"><code class="reqn">(V_1,\,V_2)'\sim \sum_{j_1=-K_1}^{K_1}\sum_{j_2=-K_2}^{K_2}
+	w_{j_1,j_2} N_2(\mu_{(j_1,j_2)},\,\mbox{diag}(\sigma_1^2, \sigma_2^2))</code>
+</p>
+
+<p>where <code class="reqn">\mu_{(j_1,j_2)} =
+	(\mu_{1,j_1},\,\mu_{2,j_2})'</code> is an~equidistant grid of <b>fixed</b> knots (means), usually
+symmetric about the <b>fixed</b> point <code class="reqn">(\gamma_1,\,\gamma_2)'=(0,
+	0)'</code> and
+<code class="reqn">\sigma_1^2,\,\sigma_2^2</code> are
+<b>fixed</b> basis variances. Reasonable values for the numbers of grid
+points <code class="reqn">K_1</code> and <code class="reqn">K_2</code> are
+<code class="reqn">K_1=K_2=15</code> with the distance between the two
+knots equal to <code class="reqn">\delta=0.3</code> and for the basis
+variances
+<code class="reqn">\sigma_1^2\sigma_2^2=0.2^2.</code>
+</p>
+</dd>
+</dl>
+<p><b>Univariate case:</b>
+</p>
+<p>It is a~direct simplification of the bivariate case.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">bayesHistogram(y1, y2,
+   nsimul = list(niter = 10, nthin = 1, nburn = 0, nwrite = 10),
+   prior, init = list(iter = 0),
+   mcmc.par = list(type.update.a = "slice", k.overrelax.a = 1,
+                   k.overrelax.sigma = 1, k.overrelax.scale = 1),
+   store = list(a = FALSE, y = FALSE, r = FALSE),
+   dir)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>y1</code></td>
+<td>
+<p>response for the first dimension in the form of a survival
+object created using <code>Surv</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>y2</code></td>
+<td>
+<p>response for the second dimension in the form of a survival
+object created using <code>Surv</code>. If the response
+is one-dimensional this item is missing.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nsimul</code></td>
+<td>
+<p>a list giving the number of iterations of the MCMC and
+other parameters of the simulation.
+</p>
+
+<dl>
+<dt>niter</dt>
+<dd>
+<p>total number of sampled values after discarding
+thinned ones, burn-up included;</p>
+</dd>
+<dt>nthin</dt>
+<dd>
+<p>thinning interval;</p>
+</dd>
+<dt>nburn</dt>
+<dd>
+<p>number of sampled values in a burn-up period after
+discarding thinned values. This value should be smaller than
+<code>niter</code>. If not, <code>nburn</code> is set to <code>niter - 1</code>. It can be set to zero;</p>
+</dd>
+<dt>nwrite</dt>
+<dd>
+<p>an interval at which information about the number of
+performed iterations is print on the screen and during the
+burn-up period an interval with which the sampled values are
+writen to files;</p>
+</dd>
+</dl>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>prior</code></td>
+<td>
+<p>a list that identifies prior hyperparameters and prior
+choices. See the paper Komárek and Lesaffre (2008) and the PhD. thesis
+Komárek (2006) for more details.
+</p>
+<p>Some prior parameters can be guessed by the function itself. If you
+want to do so, set such parameters to <code>NULL</code>. Set to
+<code>NULL</code> also the parameters that are not needed in your model.
+</p>
+
+<dl>
+<dt>specification</dt>
+<dd>
+<p>a~number giving which specification of the
+model is used. It can be one of the following numbers:
+</p>
+
+<dl>
+<dt>1</dt>
+<dd>
+<p>with this specification positions of the middle knots
+<code class="reqn">\gamma_1,\dots,\gamma_q,</code>
+where <code class="reqn">q</code> is dimension of the G-spline and basis
+standard deviations
+<code class="reqn">\sigma_{0,1},\dots,\sigma_{0,q}</code>
+are estimated. At the same time the G-spline intercepts
+<code class="reqn">\alpha_1,\dots,\alpha_q</code> and the
+G-spline scale parameters
+<code class="reqn">s_{1},\dots,s_{q}</code>
+are assumed to be fixed (usually, intercepts to zero and
+scales to 1). The user can specified the fixed quantities in
+the <code>init</code> parameter of this function
+</p>
+</dd>  
+<dt>2</dt>
+<dd>
+<p>with this specification, G-spline intercepts
+<code class="reqn">\alpha_1,\dots,\alpha_q</code> and the
+G-spline scale parameters
+<code class="reqn">s_{1},\dots,s_{q}</code> are estimated
+at the same time positions of the middle knots
+<code class="reqn">\gamma_1,\dots,\gamma_q</code>
+and basis standard deviations
+<code class="reqn">\sigma_{0,1},\dots,\sigma_{0,q}</code>
+are assumed to be fixed (usually, middle knots to zero ans
+basis standard deviations to some smaller number like 0.2)
+The user can specified the fixed quantities in the
+<code>init</code> parameter of this function	    
+</p>
+</dd>	  
+</dl>
+</dd>  </dl>
+<dl>
+<dt>K</dt>
+<dd>
+<p>specification of the number of knots in each dimension, i.e. <code>K</code> 
+is a vector of length equal to the dimension of the data <code class="reqn">q</code>
+and <code class="reqn">K_j,</code> <code class="reqn">j=1,\dots,q</code> determines that 
+the subscript <code class="reqn">k_j</code> of the knots runs over
+<code class="reqn">-K_j,\dots,0,\dots,K_j</code>. A value
+<code class="reqn">K_j=0</code> is valid as well. There are only some restriction
+on the minimal value of <code class="reqn">K_j</code> with respect to the choice
+of the neighbor system and possibly the order of the conditional
+autoregression in the prior of transformed weights (see below).
+</p>
+</dd>
+<dt>izero</dt>
+<dd>
+<p>subscript <code class="reqn">k_1\dots k_q</code> 
+of the knot whose transformed weight 
+<code class="reqn">a_{k_1\dots k_q}</code> will constantly be equal to zero.
+This is here for identifiability. To avoid numerical problems
+it is highly recommended to set <code>izero=rep(0, q)</code>.
+<code>izero[j]</code> should be taken from the set
+<code class="reqn">-K_j, \dots, K_j</code>.
+</p>
+</dd>
+<dt>neighbor.system</dt>
+<dd>
+<p>identification of the neighboring system
+for the Markov random field prior of transformed mixture weights
+<code class="reqn">a_{k_1\,k_2}</code>. This can be substring of one of
+the following strings:
+</p>
+
+<dl>
+<dt><code>uniCAR</code></dt>
+<dd>
+<p> “univariate conditional
+autoregression”: a~prior based on squared differences of
+given order <code class="reqn">m</code> (see argument <code>order</code>) in each row and
+column. 
+</p>
+<p>For univariate smoothing:
+</p>
+<p style="text-align: center;"><code class="reqn">
+	      p(a) \propto \exp\Bigl\{-\frac{\lambda}{2}\sum_{k=-K+m}^K\bigl(\Delta^m a_{k}\bigr)^2\Bigr\},</code>
+</p>
+
+<p>where <code class="reqn">\Delta^m</code> denotes the difference
+operator of order <code class="reqn">m</code>, i.e.
+<code class="reqn">\Delta^1 a_k = a_k - a_{k-1}</code> and
+<code class="reqn">\Delta^m a_k = \Delta^{m-1}a_k - \Delta^{m-1}a_{k-1},</code>
+<code class="reqn">m \geq 2.</code>
+</p>
+<p>For bivariate smoothing:
+</p>
+<p style="text-align: center;"><code class="reqn">
+	      p(a) \propto
+	      \exp\Bigl\{
+	      -\frac{\lambda_1}{2}\sum_{k_1=-K_1}^{K_1}\sum_{k_2=-K_2+m}^{K_2}
+	      \bigl(\Delta_1^m a_{k_1,k_2}\bigr)^2
+	      -\frac{\lambda_2}{2}\sum_{k_2=-K_2}^{K_2}\sum_{k_1=-K_1+m}^{K_1}
+	      \bigl(\Delta_2^m a_{k_1,k_2}\bigr)^2
+	      \Bigr\},</code>
+</p>
+
+<p>where <code class="reqn">\Delta_l^m</code> denotes the difference
+operator of order <code class="reqn">m</code> acting in the <code class="reqn">l</code>th
+margin, e.g.
+</p>
+<p style="text-align: center;"><code class="reqn">\Delta_1^2 = a_{k_1,k_2} - 2a_{k_1,k_2-1} + a_{k_1,k_2-2}.</code>
+</p>
+
+<p>The precision parameters <code class="reqn">\lambda_1</code> and
+<code class="reqn">\lambda_2</code> might be forced to be equal (see
+argument <code>equal.lambda</code>.)
+</p>
+</dd>
+<dt><code>eight.neighbors</code></dt>
+<dd>
+<p>this prior is based on eight
+nearest neighbors (i.e. except on edges, each full
+conditional depends only on eight nearest neighbors) and
+local quadratic smoothing.
+It applies only in the case of bivariate smoothing. The prior is then
+defined as
+</p>
+<p style="text-align: center;"><code class="reqn">
+              p(a) \propto \exp
+	      \Bigl\{-\frac{\lambda}{2}\sum_{k_1=-K_1}^{K_1-1}\sum_{k_2=-K_2}^{K_2-1}
+	      \bigl(\Delta a_{k_1,k_2} \bigr)^2\Bigr\},
+	    </code>
+</p>
+  
+<p>where
+</p>
+<p style="text-align: center;"><code class="reqn">\Delta a_{k_1,k_2} = a_{k_1,k_2} - a_{k_1+1,k_2} -
+	      a_{k_1, k_2+1} + a_{k_1+1,k_2+1}.</code>
+</p>
+	    
+</dd>
+<dt><code>twelve.neighbors</code></dt>
+<dd>
+<p>!!! THIS FEATURE HAS NOT BEEN
+IMPLEMENTED YET. !!!</p>
+</dd>
+</dl>
+</dd>	
+<dt>order</dt>
+<dd>
+<p>order of the conditional autoregression if
+<code>neighbor.system = uniCAR</code>. Implemented are 1, 2, 3. If
+<code>order = 0</code> and  <code>neighbor.system = uniCAR</code>
+then mixture weights are assumed to be fixed
+and equal to their initial values specified by the <code>init</code>
+parameter (see below). Note that the numbers <code class="reqn">K_j,</code>
+<code class="reqn">j=1,\dots,q</code> must be all equal to or higher than
+<code>order</code>.
+</p>
+</dd>
+<dt>equal.lambda</dt>
+<dd>
+<p><code>TRUE/FALSE</code> applicable in the case when
+a density of bivariate observations is estimated and
+<code>neighbor.system = uniCAR</code>. It specifies whether there is
+only one common Markov random field precision parameter
+<code class="reqn">\lambda</code> for all margins (dimensions) or whether
+each margin (dimension) has its own precision parameter
+<code class="reqn">\lambda</code>.
+For all other neighbor systems is <code>equal.lambda</code>
+automatically <code>TRUE</code>.
+</p>
+</dd>
+<dt>prior.lambda</dt>
+<dd>
+<p>specification of the prior distributions for
+the Markov random field precision parameter(s)
+<code class="reqn">\lambda</code> (when <code>equal.lambda = TRUE</code>) or
+<code class="reqn">\lambda_1,\dots,\lambda_q</code>
+(when <code>equal.lambda = TRUE</code>).
+This is a vector of substring of one of the following strings
+(one substring for each margin if <code>equal.lambda = FALSE</code>,
+otherwise just one substring):
+</p>
+
+<dl>
+<dt><code>fixed</code></dt>
+<dd>
+<p>the <code class="reqn">\lambda</code> parameter is then
+assumed to be fixed and equal to its initial values given
+by <code>init</code> (see below).</p>
+</dd>
+<dt><code>gamma</code></dt>
+<dd>
+<p>a particular <code class="reqn">\lambda</code> parameter has
+a priori gamma distribution with shape <code class="reqn">g_j</code> and rate
+(inverse scale) <code class="reqn">h_j</code> where
+<code class="reqn">j=1</code> if <code>equal.lambda=TRUE</code> and
+<code class="reqn">j=1,\dots,q</code> if <code>equal.lambda=TRUE</code>.
+Shape and rate parameters are specified by
+<code>shape.lambda</code>, <code>rate.lambda</code> (see below).</p>
+</dd>
+<dt><code>sduniform</code></dt>
+<dd>
+<p>a particular
+<code class="reqn">1/\sqrt{\lambda}</code> parameter
+(i.e.a standard deviation of the Markov random field)
+has a priori a uniform distribution on the interval
+<code class="reqn">(0, S_j)</code> where
+<code class="reqn">j=1</code> if <code>equal.lambda=TRUE</code> and
+<code class="reqn">j=1,\dots,q</code> if <code>equal.lambda=TRUE</code>.
+Upper limit of intervals is specified by <code>rate.lambda</code>
+(see below).</p>
+</dd>
+</dl>
+</dd>
+<dt>prior.gamma</dt>
+<dd>
+<p>specification of the prior distribution for a
+reference knot (intercept) <code class="reqn">\gamma</code> in each
+dimension. This is a vector of substrings of one of the following strings
+(one substring for each margin):
+</p>
+
+<dl>
+<dt><code>fixed</code></dt>
+<dd>
+<p>the <code class="reqn">\gamma</code> parameter is then
+assumed to be fixed and equal to its initial values given
+by <code>init</code> (see below).</p>
+</dd>
+<dt><code>normal</code></dt>
+<dd>
+<p>the <code class="reqn">\gamma</code> parameter has a
+priori a normal distribution with mean and variance given by
+<code>mean.gamma</code> and <code>var.gamma</code>.</p>
+</dd>
+</dl>
+</dd>	
+<dt>prior.sigma</dt>
+<dd>
+<p>specification of the prior distribution for
+basis standard deviations of the G-spline in each dimension.
+This is a vector of substrings of one of the following strings
+(one substring for each margin):
+</p>
+
+<dl>
+<dt><code>fixed</code></dt>
+<dd>
+<p>the <code class="reqn">\sigma</code> parameter is then
+assumed to be fixed and equal to its initial values given
+by <code>init</code> (see below).</p>
+</dd>
+<dt><code>gamma</code></dt>
+<dd>
+<p>a particular <code class="reqn">\sigma^{-2}</code> parameter has
+a priori gamma distribution with shape <code class="reqn">\zeta_j</code> and rate
+(inverse scale) <code class="reqn">\eta_j</code> where
+<code class="reqn">j=1,\dots,q</code>.
+Shape and rate parameters are specified by
+<code>shape.sigma</code>, <code>rate.sigma</code> (see below).</p>
+</dd>
+<dt><code>sduniform</code></dt>
+<dd>
+<p>a particular
+<code class="reqn">\sigma</code> parameter
+has a priori a uniform distribution on the interval
+<code class="reqn">(0, S_j)</code>.
+Upper limit of intervals is specified by <code>rate.sigma</code>
+(see below).</p>
+</dd>
+</dl>
+</dd>
+<dt>prior.intercept</dt>
+<dd>
+<p>specification of the prior distribution for
+the intercept terms
+<code class="reqn">\alpha_1,\dots,\alpha_q</code>
+(2nd specification) in each dimension.
+This is a vector of substrings of one of the following strings
+(one substring for each margin):
+</p>
+
+<dl>
+<dt><code>fixed</code></dt>
+<dd>
+<p>the intercept parameter is then
+assumed to be fixed and equal to its initial values given
+by <code>init</code> (see below).</p>
+</dd>
+<dt><code>normal</code></dt>
+<dd>
+<p>the intercept parameter has a
+priori a normal distribution with mean and variance given by
+<code>mean.intercept</code> and <code>var.intercept</code>.</p>
+</dd>
+</dl>
+</dd>
+<dt>prior.scale</dt>
+<dd>
+<p>specification of the prior distribution for
+the scale parameter (2nd specification) of the G-spline in each dimension
+This is a vector of substrings of one of the following strings
+(one substring for each margin):
+</p>
+
+<dl>
+<dt><code>fixed</code></dt>
+<dd>
+<p>the <code>scale</code> parameter is then
+assumed to be fixed and equal to its initial values given
+by <code>init</code> (see below).</p>
+</dd>
+<dt><code>gamma</code></dt>
+<dd>
+<p>a particular <code class="reqn">scale^{-2}</code> parameter has
+a priori gamma distribution with shape <code class="reqn">\zeta_j</code> and rate
+(inverse scale) <code class="reqn">\eta_j</code> where
+<code class="reqn">j=1,\dots,q</code>.
+Shape and rate parameters are specified by
+<code>shape.scale</code>, <code>rate.scale</code> (see below).</p>
+</dd>
+<dt><code>sduniform</code></dt>
+<dd>
+<p>a particular
+<code class="reqn">scale</code> parameter
+has a priori a uniform distribution on the interval
+<code class="reqn">(0, S_j)</code>.
+Upper limit of intervals is specified by <code>rate.scale</code>
+(see below).</p>
+</dd>
+</dl>
+</dd>      
+<dt>c4delta</dt>
+<dd>
+<p>values of <code class="reqn">c_1,\dots,c_q</code> which serve
+to compute the distance <code class="reqn">\delta_j</code>
+between two consecutive knots in each dimension.
+The knot <code class="reqn">\mu_{j\,k},</code>
+<code class="reqn">j=1,\dots,q,</code> 
+<code class="reqn">k=-K_j,\dots,K_j</code> is defined
+as <code class="reqn">\mu_{j\,k} = \gamma_j + k\,\delta_j</code>
+with <code class="reqn">\delta_j = c_j\,\sigma_j</code>.
+</p>
+</dd>
+<dt>mean.gamma</dt>
+<dd>
+<p>these are means for the normal prior
+distribution of middle knots
+<code class="reqn">\gamma_1,\dots,\gamma_q</code>
+in each dimension if this prior is normal. For fixed
+<code class="reqn">\gamma</code> an appropriate element of the vector
+<code>mean.gamma</code> may be whatever.
+</p>
+</dd>
+<dt>var.gamma</dt>
+<dd>
+<p>these are variances for the normal prior
+distribution of middle knots
+<code class="reqn">\gamma_1,\dots,\gamma_q</code>
+in each dimension if this prior is normal. For fixed
+<code class="reqn">\gamma</code> an appropriate element of the vector
+<code>var.gamma</code> may be whatever.
+</p>
+</dd>
+<dt>shape.lambda</dt>
+<dd>
+<p>these are shape parameters for the gamma prior
+(if used) of Markov random field precision parameters
+<code class="reqn">\lambda_1,\dots,\lambda_q</code> (if
+<code>equal.lambda = FALSE</code>) or <code class="reqn">\lambda_1</code> (if
+<code>equal.lambda = TRUE</code>).
+</p>
+</dd>
+<dt>rate.lambda</dt>
+<dd>
+<p>these are rate parameters for the gamma prior
+(if <code>prior.lambda = gamma</code>) of Markov random field precision parameters
+<code class="reqn">\lambda_1,\dots,\lambda_q</code> (if
+<code>equal.lambda = FALSE</code>) or <code class="reqn">\lambda_1</code> (if
+<code>equal.lambda = TRUE</code>) or upper limits of the uniform prior
+(if <code>prior.lambda = sduniform</code>) of Markov random field
+standard deviation  parameters
+<code class="reqn">\lambda_1^{-1/2},\dots,\lambda_q^{-1/2}</code> (if
+<code>equal.lambda = FALSE</code>) or <code class="reqn">\lambda_1^{-1/2}</code> (if
+<code>equal.lambda = TRUE</code>).
+</p>
+</dd>
+<dt>shape.sigma</dt>
+<dd>
+<p>these are shape parameters for the gamma prior
+(if used) of basis inverse variances
+<code class="reqn">\sigma_1^{-2},\dots,\sigma_q^{-2}</code>.
+</p>
+</dd>
+<dt>rate.sigma</dt>
+<dd>
+<p>these are rate parameters for the gamma prior
+(if <code>prior.sigma = gamma</code>) of basis inverse variances
+<code class="reqn">\sigma_1^{-2},\dots,\sigma_q^{-2}</code> 
+or upper limits of the uniform prior
+(if <code>prior.sigma = sduniform</code>) of basis standard deviations
+<code class="reqn">\sigma_1,\dots,\sigma_q</code>.
+</p>
+</dd>
+<dt>mean.intercept</dt>
+<dd>
+<p>these are means for the normal prior
+distribution of the G-spline intercepts (2nd specification)
+<code class="reqn">\alpha_1,\dots,\alpha_q</code>
+in each dimension if this prior is normal. For fixed
+<code class="reqn">\alpha</code> an appropriate element of the vector
+<code>mean.intercept</code> may be whatever.
+</p>
+</dd>
+<dt>var.intercept</dt>
+<dd>
+<p>these are variances for the normal prior
+distribution of the G-spline intercepts
+<code class="reqn">\alpha_1,\dots,\alpha_q</code>
+in each dimension if this prior is normal. For fixed
+<code class="reqn">\alpha</code> an appropriate element of the vector
+<code>var.alpha</code> may be whatever.
+</p>
+</dd>      
+<dt>shape.scale</dt>
+<dd>
+<p>these are shape parameters for the gamma prior
+(if used) of the G-spline scale parameter (2nd specification)
+<code class="reqn">scale_1^{-2},\dots,scale_q^{-2}</code>.
+</p>
+</dd>
+<dt>rate.scale</dt>
+<dd>
+<p>these are rate parameters for the gamma prior
+(if <code>prior.scale = gamma</code>) of the G-spline inverse variances
+<code class="reqn">scale_1^{-2},\dots,scale_q^{-2}</code> 
+or upper limits of the uniform prior
+(if <code>prior.scale = sduniform</code>) of the G-spline scale
+<code class="reqn">scale_1,\dots,scale_q</code>.
+</p>
+</dd>      
+</dl>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>init</code></td>
+<td>
+<p>a list of the initial values to start the McMC. Set to
+<code>NULL</code> such parameters that you want the program should itself sample
+for you or parameters that are not needed in your model.
+</p>
+
+<dl>
+<dt>iter</dt>
+<dd>
+<p>the number of the iteration to which the initial values
+correspond, usually zero.</p>
+</dd>      
+<dt>a</dt>
+<dd>
+<p>vector/matrix of initial transformed mixture weights
+<code class="reqn">a_{k_1},</code> <code class="reqn">k_1=-K_1,\dots,K_1</code>
+if univariate density is estimated;
+<code class="reqn">a_{k_1\,k_2},</code>
+<code class="reqn">k_1=-K_1,\dots,K_1,</code>
+<code class="reqn">k_2=-K_2,\dots,K_2,</code>
+if bivariate density is estimated. This initial value can be
+guessed by the function itself.
+</p>
+</dd>
+<dt>lambda</dt>
+<dd>
+<p>initial values for Markov random field precision
+parameter(s) <code class="reqn">\lambda</code> (if <code>equal.lambda = TRUE</code>),
+<code class="reqn">\lambda_1,\dots,\lambda_q</code> 
+(if <code>equal.lambda = FALSE</code>.)
+</p>
+</dd>
+<dt>gamma</dt>
+<dd>
+<p>initial values for the middle knots in each
+dimension.
+</p>
+<p>If <code>prior$specification = 2</code> it is recommended
+(for easier interpretation of the results) to set
+<code>init$gamma</code> to zero for all dimensions.
+</p>
+<p>If <code>prior$specification = 1</code> <code>init$gamma</code> should be
+approximately equal to the mean value of the data in each margin.
+</p>
+</dd>
+<dt>sigma</dt>
+<dd>
+<p>initial values for basis standard deviations in each
+dimension.
+</p>
+<p>If <code>prior$specification = 2</code> this should be
+approximately equal to the range of standardized data (let say 4
++ 4) divided by the number of knots in each margin and
+multiplied by something like 2/3.
+</p>
+<p>If <code>prior$specification = 1</code> this should be approximately equal to the range of your
+data divided by the number of knots in each margin and
+multiplied again by something like 2/3.
+</p>
+</dd>
+<dt>intercept</dt>
+<dd>
+<p>initial values for the intercept term in each
+dimension.
+</p>
+<p>Note that if <code>prior$specification = 1</code> this
+initial value is always changed to zero for all dimensions.	
+</p>
+</dd>
+<dt>scale</dt>
+<dd>
+<p>initial values for the G-spline scale parameter in each
+dimension.
+</p>
+<p>Note that if <code>prior$specification = 1</code> this
+initial value is always changed to one for all dimensions.
+</p>
+</dd>      
+<dt>y</dt>
+<dd>
+<p>initial values for (possibly unobserved censored) observations. This
+should be either a vector of length equal to the sample size if
+the response is univariate or a matrix with as many rows as is
+the sample size and two columns if the response is
+bivariate. Be aware that <code>init$y</code> must be consistent with
+data supplied. This initial can be guessed by the function
+itself. Possible missing values in <code>init$y</code> tells the
+function to guess the initial value.
+</p>
+</dd>
+<dt>r</dt>
+<dd>
+<p>initial values for labels of components to which the
+(augmented) observations belong. This initial can be guessed by
+the function itself. This
+should be either a vector of length equal to the sample size if
+the response is univariate or a matrix with as many rows as is
+the sample size and two columns if the response is
+bivariate. Values in the first column of this matrix should be
+between <code>-prior$K[1]</code> and <code>prior$K[1]</code>, values in the
+second column of this matrix between <code>-prior$K[2]</code> and
+<code>prior$K[2]</code>, e.g. when <code>init$r[i,1:2] = c(-3, 6)</code> it
+means that the <code class="reqn">i</code>th observation is initially assigned to
+the component with the mean
+<code class="reqn">\boldsymbol{\mu}=(\mu_1, \mu_2)'</code> where
+</p>
+<p style="text-align: center;"><code class="reqn">\mu_1 = \mu_{1,\,-3} = \gamma_1 -3\,c_1\sigma_1</code>
+</p>
+
+<p>and
+</p>
+<p style="text-align: center;"><code class="reqn">\mu_2 = \mu_{2,\,6} = \gamma_2 +6\,c_2\sigma_2.</code>
+</p>
+
+</dd>
+</dl>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>mcmc.par</code></td>
+<td>
+<p>a list specifying further details of the McMC
+simulation. There are default values implemented for all components
+of this list.
+</p>
+
+<dl>
+<dt>type.update.a</dt>
+<dd>
+<p>it specifies the McMC method to update
+transformed mixture weights <code class="reqn">a</code>. It is a~substring of one
+of the following strings:
+</p>
+
+<dl>
+<dt>slice</dt>
+<dd>
+<p>slice sampler of Neal (2003) is used (default choice);</p>
+</dd>
+<dt>ars.quantile</dt>
+<dd>
+<p>adaptive rejection sampling of Gilks and
+Wild (1992) is used with starting abscissae equal to 15%,
+50% and 85% quantiles of a~piecewise exponential
+approximation to the full conditional from the previous
+iteration;</p>
+</dd>
+<dt>ars.mode</dt>
+<dd>
+<p>adaptive rejection sampling of Gilks and Wild
+(1992) is used with starting abscissae equal to the mode and
+plus/minus twice approximate standard deviation of the full
+conditional distribution</p>
+</dd>
+</dl>
+</dd>
+<dt>k.overrelax.a</dt>
+<dd>
+<p>this specifies a frequency of overrelaxed
+updates of transformed mixture weights <code class="reqn">a</code> when slice
+sampler is used. Every <code class="reqn">k</code>th value is sampled in a usual
+way (without overrelaxation). If you do not want overrelaxation
+at all, set <code>k.overrelax.a</code> to 1 (default choice). Note
+that overrelaxation can be only done with the slice sampler (and
+not with adaptive rejection sampling).</p>
+</dd>
+<dt>k.overrelax.sigma</dt>
+<dd>
+<p>a vector of length equal to the dimension
+of the G-spline specifying a frequency of overrelaxed updates of
+basis G-spline variances. If you do not want overrelaxation at
+all, set all components of <code>k.overrelax.sigma</code> to 1
+(default choice).</p>
+</dd>
+<dt>k.overrelax.scale</dt>
+<dd>
+<p>a vector of length equal to the dimension
+of the G-spline specifying a frequency of overrelaxed updates of
+the G-spline scale parameters (2nd specification).
+If you do not want overrelaxation at
+all, set all components of <code>k.overrelax.scale</code> to 1
+(default choice).</p>
+</dd>      
+</dl>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>store</code></td>
+<td>
+<p>a~list of logical values specifying which chains that are
+not stored by default are to be stored. The list can have the
+following components.
+</p>
+
+<dl>
+<dt>a</dt>
+<dd>
+<p>if <code>TRUE</code> then all the transformed mixture weights
+<code class="reqn">a_{k_1,\,k_2},</code>
+<code class="reqn">k_1=-K_1,\dots,K_1,</code>
+<code class="reqn">k_2=-K_2,\dots,K_2,</code>
+related to the G-spline are stored.</p>
+</dd>
+<dt>y</dt>
+<dd>
+<p>if <code>TRUE</code> then augmented log-event times for all
+observations are stored.</p>
+</dd>
+<dt>r</dt>
+<dd>
+<p>if <code>TRUE</code> then labels of mixture components for
+residuals are stored.</p>
+</dd>
+</dl>
+</td>
+</tr>
+</table>
+<table><tr style="vertical-align: top;">
+<td><code>dir</code></td>
+<td>
+<p>a string that specifies a directory where all sampled
+values are to be stored.
+</p>
+</td>
+</tr></table>
+<h3>Value</h3>
+
+<p>A list of class <code>bayesHistogram</code> containing an information
+concerning the initial values and prior choices.
+</p>
+
+
+<h3>Files created</h3>
+
+  
+<p>Additionally, the following files with sampled values
+are stored in a directory specified by <code>dir</code> argument of this
+function (some of them are created only on request, see <code>store</code>
+parameter of this function).
+</p>
+<p>Headers are written to all files created by default and to files asked
+by the user via the argument <code>store</code>.  All
+sampled values are written in files created by default and to files
+asked by the user via the argument <code>store</code>. In the files for
+which the corresponding <code>store</code> component is <code>FALSE</code>, every
+<code>nsimul$nwrite</code> value is written during the whole MCMC (this
+might be useful to restart the MCMC from some specific point).
+</p>
+<p>The following files are created:
+</p>
+
+<dl>
+<dt>iteration.sim</dt>
+<dd>
+<p>one column labeled <code>iteration</code> with
+indeces of MCMC iterations to which the stored sampled values
+correspond.
+</p>
+</dd>
+<dt>mixmoment.sim</dt>
+<dd>
+<p>columns labeled <code>k</code>, <code>Mean.1</code>, <code>Mean.2</code>,
+<code>D.1.1</code>, <code>D.2.1</code>, <code>D.2.2</code> in the bivariate case and
+columns labeled <code>k</code>, <code>Mean.1</code>, <code>D.1.1</code> in the
+univariate case, where
+</p>
+<p><b>k</b> = number of mixture components that had probability
+numerically higher than zero;
+</p>
+<p><b>Mean.1</b> =
+<code class="reqn">\mbox{E}(Y_{i,1})</code>;
+</p>
+<p><b>Mean.2</b> =
+<code class="reqn">\mbox{E}(Y_{i,2})</code>;
+</p>
+<p><b>D.1.1</b> =
+<code class="reqn">\mbox{var}(Y_{i,1})</code>;
+</p>
+<p><b>D.2.1</b> =
+<code class="reqn">\mbox{cov}(Y_{i,1},\,Y_{i,2})</code>;
+</p>
+<p><b>D.2.2</b> =
+<code class="reqn">\mbox{var}(Y_{i,2})</code>.
+</p>
+</dd>
+<dt>mweight.sim</dt>
+<dd>
+<p>sampled mixture weights
+<code class="reqn">w_{k_1,\,k_2}</code> of mixture components that had
+probabilities numerically higher than zero. 
+</p>
+</dd>
+<dt>mmean.sim</dt>
+<dd>
+<p>indeces <code class="reqn">k_1,\;k_2,</code>
+<code class="reqn">k_1 \in\{-K_1, \dots, K_1\},</code>
+<code class="reqn">k_2 \in\{-K_2, \dots, K_2\}</code>
+of mixture components that had probabilities numerically higher
+than zero. It corresponds to the weights in
+<code>mweight.sim</code>. 
+</p>
+</dd>
+<dt>gspline.sim</dt>
+<dd>
+<p>characteristics of the sampled G-spline
+(distribution of
+<code class="reqn">(Y_{i,1},\,Y_{i,2})'</code>).
+This file together with <code>mixmoment.sim</code>,
+<code>mweight.sim</code> and <code>mmean.sim</code> can be used to reconstruct
+the G-spline in each MCMC iteration.
+</p>
+<p>The file has columns labeled <code>gamma1</code>,
+<code>gamma2</code>, <code>sigma1</code>, <code>sigma2</code>, <code>delta1</code>,
+<code>delta2</code>, <code>intercept1</code>, <code>intercept2</code>,
+<code>scale1</code>, <code>scale2</code>. The meaning of the values in these
+columns is the following:
+</p>
+<p><b>gamma1</b> = the middle knot <code class="reqn">\gamma_1</code> in the
+first dimension. If ‘Specification’ is 2, this column
+usually contains zeros;
+</p>
+<p><b>gamma2</b> = the middle knot <code class="reqn">\gamma_2</code> in the
+second dimension. If ‘Specification’ is 2, this column
+usually contains zeros;
+</p>
+<p><b>sigma1</b> = basis standard deviation <code class="reqn">\sigma_1</code>
+of the G-spline in the first dimension. This column contains
+a~fixed value if ‘Specification’ is 2;
+</p>
+<p><b>sigma2</b> = basis standard deviation <code class="reqn">\sigma_2</code>
+of the G-spline in the second dimension. This column contains
+a~fixed value if ‘Specification’ is 2;
+</p>
+<p><b>delta1</b> = distance <code class="reqn">delta_1</code> between the two knots of the G-spline in
+the first dimension. This column contains
+a~fixed value if ‘Specification’ is 2;
+</p>
+<p><b>delta2</b> = distance <code class="reqn">\delta_2</code> between the two knots of the G-spline in
+the second dimension. This column contains a~fixed value if
+‘Specification’ is 2;
+</p>
+<p><b>intercept1</b> = the intercept term <code class="reqn">\alpha_1</code> of
+the G-spline in the first dimension. If ‘Specification’ is 1, this column
+usually contains zeros;
+</p>
+<p><b>intercept2</b> = the intercept term <code class="reqn">\alpha_2</code> of
+the G-spline in the second dimension. If ‘Specification’ is 1, this column
+usually contains zeros;
+</p>
+<p><b>scale1</b> = the scale parameter <code class="reqn">\tau_1</code> of the
+G-spline in the first dimension. If ‘Specification’ is 1, this column
+usually contains ones;
+</p>
+<p><b>scale2</b> = the scale parameter <code class="reqn">\tau_2</code> of the
+G-spline in the second dimension. ‘Specification’ is 1, this column
+usually contains ones.      
+</p>
+</dd>
+<dt>mlogweight.sim</dt>
+<dd>
+<p>fully created only if <code>store$a = TRUE</code>. The
+file contains the transformed weights
+<code class="reqn">a_{k_1,\,k_2},</code>
+<code class="reqn">k_1=-K_1,\dots,K_1,</code>
+<code class="reqn">k_2=-K_2,\dots,K_2</code> of all mixture
+components, i.e. also of components that had numerically zero
+probabilities.
+</p>
+</dd>
+<dt>r.sim</dt>
+<dd>
+<p>fully created only if <code>store$r = TRUE</code>. The file
+contains the labels of the mixture components into which the
+observations are intrinsically assigned. Instead of double indeces
+<code class="reqn">(k_1,\,k_2)</code>, values from 1 to <code class="reqn">(2\,K_1+1)\times
+	(2\,K_2+1)</code> are stored here. Function
+<code>vecr2matr</code> can be used to transform it back to double
+indeces.
+</p>
+</dd>
+<dt>lambda.sim</dt>
+<dd>
+<p>either one column labeled <code>lambda</code> or two
+columns labeled <code>lambda1</code> and <code>lambda2</code>. These are the
+values of the smoothing parameter(s) <code class="reqn">\lambda</code>
+(hyperparameters of the prior distribution of the transformed
+mixture weights <code class="reqn">a_{k_1,\,k_2}</code>). 
+</p>
+</dd>
+<dt>Y.sim</dt>
+<dd>
+<p>fully created only if <code>store$y = TRUE</code>. It
+contains sampled (augmented) log-event times for all observations
+in the data set.
+</p>
+</dd>
+<dt>logposter.sim</dt>
+<dd>
+<p>columns labeled <code>loglik</code>, <code>penalty</code>
+or <code>penalty1</code> and
+<code>penalty2</code>, <code>logprw</code>. The columns have the following
+meaning (the formulas apply for the bivariate case).
+</p>
+<p><b>loglik</b>
+<code class="reqn">=</code> <code class="reqn">%
+	-N\Bigl\{\log(2\pi) + \log(\sigma_1) + \log(\sigma_2)\Bigr\}-
+          0.5\sum_{i=1}^N\Bigl\{
+	  (\sigma_1^2\,\tau_1^2)^{-1}\; (y_{i,1} - \alpha_1 - \tau_1\mu_{1,\,r_{i,1}})^2 +
+	  (\sigma_2^2\,\tau_2^2)^{-1}\; (y_{i,2} - \alpha_2 - \tau_2\mu_{2,\,r_{i,2}})^2
+          \Bigr\}
+      </code>
+</p>
+<p>where <code class="reqn">y_{i,l}</code> denotes (augmented) <em>(i,l)</em>th
+true log-event time. In other words, <code>loglik</code> is equal to the
+conditional log-density
+<code class="reqn">\sum_{i=1}^N\,\log\Bigl\{p\bigl((y_{i,1},\,y_{i,2})\;\big|\;r_{i},\,\mbox{G-spline}\bigr)\Bigr\};</code>
+</p>
+<p><b>penalty1:</b> If <code>prior$neighbor.system</code> = <code>"uniCAR"</code>:
+the penalty term for the first dimension not multiplied by
+<code>lambda1</code>;
+</p>
+<p><b>penalty2:</b> If <code>prior$neighbor.system</code> = <code>"uniCAR"</code>:
+the penalty term for the second dimension not multiplied by
+<code>lambda2</code>;
+</p>
+<p><b>penalty:</b> If <code>prior$neighbor.system</code> is different from <code>"uniCAR"</code>:
+the penalty term not multiplied by <code>lambda</code>;
+</p>
+<p><b>logprw</b> <code class="reqn">=</code>
+<code class="reqn">-2\,N\,\log\bigl\{\sum_{k_1}\sum_{k_2}a_{k_1,\,k_2}\bigr\} +
+	\sum_{k_1}\sum_{k_2}N_{k_1,\,k_2}\,a_{k_1,\,k_2},</code>
+where <code class="reqn">N_{k_1,\,k_2}</code> is the number of observations
+assigned intrinsincally to the <code class="reqn">(k_1,\,k_2)</code>th
+mixture component.
+</p>
+<p>In other words, <code>logprw</code> is equal to the conditional
+log-density
+<code class="reqn">\sum_{i=1}^N \log\bigl\{p(r_i\;|\;\mbox{G-spline
+	  weights})\bigr\}.</code>
+</p>
+</dd>
+</dl>
+<h3>Author(s)</h3>
+
+<p>Arnošt Komárek <a href="mailto:arnost.komarek@mff.cuni.cz">arnost.komarek@mff.cuni.cz</a>
+</p>
+
+
+<h3>References</h3>
+
+<p>Gilks, W. R. and Wild, P. (1992).
+Adaptive rejection sampling for Gibbs sampling.
+<em>Applied Statistics,</em> <b>41</b>, 337 - 348.
+</p>
+<p>Komárek, A. (2006).
+<em>Accelerated Failure Time Models for Multivariate
+Interval-Censored Data with Flexible Distributional Assumptions</em>.
+PhD. Thesis, Katholieke Universiteit Leuven, Faculteit Wetenschappen.
+</p>
+<p>Komárek, A. and Lesaffre, E. (2008).
+Bayesian accelerated failure time model with multivariate doubly-interval-censored data
+and flexible distributional assumptions.
+<em>Journal of the American Statistical Association</em>, <b>103</b>,
+523 - 533.
+</p>
+<p>Komárek, A. and Lesaffre, E. (2006b).
+Bayesian semi-parametric accelerated failurew time model for paired
+doubly interval-censored data.
+<em>Statistical Modelling</em>, <b>6</b>, 3 - 22.
+</p>
+<p>Neal, R. M. (2003).
+Slice sampling (with Discussion).
+<em>The Annals of Statistics,</em> <b>31</b>, 705 - 767.
+</p>
+
+
+</div>

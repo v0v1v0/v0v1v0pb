@@ -1,0 +1,1969 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>AnnivDates</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>AnnivDates (time-invariant properties and temporal structure)</h2>
+
+<h3>Description</h3>
+
+<p><b>AnnivDates</b> returns a bond's time-invariant characteristics and temporal structure as a list of
+three or four named data frames.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">AnnivDates(
+  Em = as.Date(NA),
+  Mat = as.Date(NA),
+  CpY = as.numeric(NA),
+  FIPD = as.Date(NA),
+  LIPD = as.Date(NA),
+  FIAD = as.Date(NA),
+  RV = as.numeric(NA),
+  Coup = as.numeric(NA),
+  DCC = as.numeric(NA),
+  EOM = as.numeric(NA),
+  DateOrigin = as.Date("1970-01-01"),
+  InputCheck = 1,
+  FindEOM = FALSE,
+  RegCF.equal = 0
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>Em</code></td>
+<td>
+<p>The bond's issue date. (required)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Mat</code></td>
+<td>
+<p>Maturity date, i.e. date on which the redemption value and the final interest
+are paid. (required)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>CpY</code></td>
+<td>
+<p>Number of interest payments per year (non-negative integer; element of the set
+{0,1,2,3,4,6,12}. Default: 2.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>FIPD</code></td>
+<td>
+<p>First interest payment date after <code>Em</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>LIPD</code></td>
+<td>
+<p>Last interest payment date prior to <code>Mat</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>FIAD</code></td>
+<td>
+<p>Date on which the interest accrual starts (so-called "dated date").</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>RV</code></td>
+<td>
+<p>The redemption value of the bond. Default: 100.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Coup</code></td>
+<td>
+<p>Nominal interest rate per year in percent. Default: <code>NA</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>DCC</code></td>
+<td>
+<p>The day count convention the bond follows. Default: <code>NA</code>.
+For a list of day count conventions currently implemented type <code>View(List.DCC)</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>EOM</code></td>
+<td>
+<p>Boolean indicating whether the bond follows the End-of-Month rule. Default: <code>NA</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>DateOrigin</code></td>
+<td>
+<p>Determines the starting point for the daycount in "Date" objects.
+Default: "1970-01-01".</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>InputCheck</code></td>
+<td>
+<p>If 1, the input variables are checked for the correct format. Default: 1.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>FindEOM</code></td>
+<td>
+<p>If <code>TRUE</code>, <code>EOM</code> is overridden by the value inferred from the data.
+Default: <code>FALSE</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>RegCF.equal</code></td>
+<td>
+<p>If 0, the amounts of regular cash flows are calculated according to the
+stipulated <code>DCC</code>. Any other value forces all regular cash flows to be equal sized.
+Default: 0.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p><b>AnnivDates</b> generates a list of the three data frames <code>Warnings</code>, <code>Traits</code>
+and <code>DateVectors</code>. If the variable <code>Coup</code> is passed to the function,
+the output contains additionally the data frame <code>PaySched</code>. <b>AnnivDates</b> is meant to analyze
+large data frames. Therefore some features are implemented to evaluate the quality of the data. The
+output of these features is stored in the data frame <code>Warnings</code>. Please see section <b>Value</b>
+for a detailed description of the tests run and the meaning of the variables in <code>Warnings</code>. The
+data frame <code>Traits</code> contains all time-invariant bond characteristics that were either provided by
+the user or calculated by the function. The data frame <code>DateVectors</code> contains three vectors
+of Date-Objects named <code>RealDates</code>, <code>CoupDates</code> and <code>AnnivDates</code> and three vectors of
+numerics named <code>RD_indexes</code>, <code>CD_indexes</code> and <code>AD_indexes</code>. These vectors are
+used in the other functions of this package according to the methodology presented in Djatschenko (2018).
+The data frame <code>PaySched</code> matches <code>CoupDates</code>
+to the actual amount of interest that the bond pays on the respective interest payment date. Section
+<b>Value</b> provides further information on the output of the function <b>AnnivDates</b>. Below
+information on the proper input format is provided. Subsequently follows information on the operating
+principle of the function <b>AnnivDates</b> and on the assumptions that are met to
+estimate the points in time needed to evaluate a bond.
+</p>
+
+<ul>
+<li>
+<p> The dates <code>Em</code>, <code>Mat</code>, <code>FIPD</code>, <code>LIPD</code> and <code>FIAD</code> can be provided as
+</p>
+
+<ol>
+<li>
+<p> "Date" with format <code>"%Y-%m-%d"</code>, or
+</p>
+</li>
+<li>
+<p> "numeric" with the appropriate <code>DateOrigin</code>, or
+</p>
+</li>
+<li>
+<p> number of class "character" with the appropriate <code>DateOrigin</code>, or
+</p>
+</li>
+<li>
+<p> string of class "character" in the format <code>"yyyy-mm-dd"</code>.
+</p>
+</li>
+</ol>
+<p><code>CpY</code>, <code>RV</code> and <code>Coup</code> can be provided either as class "numeric" or as a number of
+class "character".
+</p>
+</li>
+<li>
+<p> The provided issue date (<code>Em</code>) is instantly substituted by the first interest accrual
+date (<code>FIAD</code>) if <code>FIAD</code> is available and different from <code>Em</code>.
+</p>
+</li>
+<li>
+<p> Before the determination of the bond's date characteristics begins, the code evaluates
+the provided calendar dates for plausibility. In this process implausible dates are dropped.
+The sort of corresponding implausibility is identified and stored in a warning flag. (See
+section <b>Value</b> for details.)
+</p>
+</li>
+<li>
+<p> The remaining valid calendar dates are used to gauge whether the bond follows the
+End-of-Month-Rule. The resulting parameter est_EOM can take on the following values:
+</p>
+
+<dl>
+<dt>-</dt>
+<dd>
+
+<table>
+<tr>
+<td style="text-align: center;">
+         <b><em>Case 1:</em></b> </td>
+<td style="text-align: left;"> <b><code>FIPD</code> and <code>LIPD</code> are both <code>NA</code></b> </td>
+</tr>
+<tr>
+<td style="text-align: center;">
+                   ___________ </td>
+<td style="text-align: left;"> ____________________________________                  </td>
+</tr>
+<tr>
+<td style="text-align: center;">
+            <code>est_EOM = 1</code> </td>
+<td style="text-align: left;"> , if <code>Mat</code> is the last day of a month.           </td>
+</tr>
+<tr>
+<td style="text-align: center;">
+            <code>est_EOM = 0</code> </td>
+<td style="text-align: left;"> , else.                                               </td>
+</tr>
+<tr>
+<td style="text-align: center;">
+                    ========== </td>
+<td style="text-align: left;"> ================================                      </td>
+</tr>
+<tr>
+<td style="text-align: center;">
+         </td>
+</tr>
+</table>
+</dd>
+<dt>-</dt>
+<dd>
+
+<table>
+<tr>
+<td style="text-align: center;">
+         <b><em>Case 2:</em></b> </td>
+<td style="text-align: left;"> <b><code>FIPD</code> is <code>NA</code> and <code>LIPD</code> is a valid calendar date</b> </td>
+</tr>
+<tr>
+<td style="text-align: center;">
+                   ___________ </td>
+<td style="text-align: left;"> ____________________________________                                     </td>
+</tr>
+<tr>
+<td style="text-align: center;">
+            <code>est_EOM = 1</code> </td>
+<td style="text-align: left;"> , if <code>LIPD</code> is the last day of a month.                             </td>
+</tr>
+<tr>
+<td style="text-align: center;">
+            <code>est_EOM = 0</code> </td>
+<td style="text-align: left;"> , else.                                                                  </td>
+</tr>
+<tr>
+<td style="text-align: center;">
+                    ========== </td>
+<td style="text-align: left;"> ================================                                         </td>
+</tr>
+<tr>
+<td style="text-align: center;">
+         </td>
+</tr>
+</table>
+</dd>
+<dt>-</dt>
+<dd>
+
+<table>
+<tr>
+<td style="text-align: center;">
+         <b><em>Case 3:</em></b> </td>
+<td style="text-align: left;"> <b><code>FIPD</code> is a valid calendar date and <code>LIPD</code> is <code>NA</code></b> </td>
+</tr>
+<tr>
+<td style="text-align: center;">
+                   ___________ </td>
+<td style="text-align: left;"> ____________________________________                                     </td>
+</tr>
+<tr>
+<td style="text-align: center;">
+            <code>est_EOM = 1</code> </td>
+<td style="text-align: left;"> , if <code>FIPD</code> is the last day of a month.                             </td>
+</tr>
+<tr>
+<td style="text-align: center;">
+            <code>est_EOM = 0</code> </td>
+<td style="text-align: left;"> , else.                                                                  </td>
+</tr>
+<tr>
+<td style="text-align: center;">
+                    ========== </td>
+<td style="text-align: left;"> ================================                                         </td>
+</tr>
+<tr>
+<td style="text-align: center;">
+         </td>
+</tr>
+</table>
+</dd>
+<dt>-</dt>
+<dd>
+
+<table>
+<tr>
+<td style="text-align: center;">
+         <b><em>Case 4:</em></b> </td>
+<td style="text-align: left;"> <b><code>FIPD</code> and <code>LIPD</code> are valid calendar dates</b> </td>
+</tr>
+<tr>
+<td style="text-align: center;">
+                   ___________ </td>
+<td style="text-align: left;"> ____________________________________                        </td>
+</tr>
+<tr>
+<td style="text-align: center;">
+            <code>est_EOM = 1</code> </td>
+<td style="text-align: left;"> , if <code>LIPD</code> is the last day of a month.                </td>
+</tr>
+<tr>
+<td style="text-align: center;">
+            <code>est_EOM = 0</code> </td>
+<td style="text-align: left;"> , else.                                                     </td>
+</tr>
+<tr>
+<td style="text-align: center;">
+                    ========== </td>
+<td style="text-align: left;"> ================================                            </td>
+</tr>
+<tr>
+<td style="text-align: center;">
+         </td>
+</tr>
+</table>
+</dd>
+</dl>
+</li>
+<li>
+<p> If <code>EOM</code> is initially missing or <code>NA</code> or not element of <code>{0,1}</code>, <code>EOM</code>
+is set <code>est_EOM</code> with a warning.
+</p>
+</li>
+<li>
+<p> If the initially provided value of <code>EOM</code> deviates from <code>est_EOM</code>, the following two
+cases apply:
+</p>
+
+<table>
+<tr>
+<td style="text-align: center;">
+             ________ </td>
+<td style="text-align: left;"> _________________________________________                       </td>
+</tr>
+<tr>
+<td style="text-align: center;">
+              Case 1: </td>
+<td style="text-align: left;"> If <code>EOM = 0</code> and <code>est_EOM = 1</code>:                       </td>
+</tr>
+<tr>
+<td style="text-align: center;">
+                      </td>
+<td style="text-align: left;"> <code>EOM</code> is not overridden and remains <code>EOM = 0</code>         </td>
+</tr>
+<tr>
+<td style="text-align: center;">
+             ________ </td>
+<td style="text-align: left;"> _________________________________________                       </td>
+</tr>
+<tr>
+<td style="text-align: center;">
+              Case 2: </td>
+<td style="text-align: left;"> If <code>EOM = 1</code> and <code>est_EOM = 0</code>:                       </td>
+</tr>
+<tr>
+<td style="text-align: center;">
+                      </td>
+<td style="text-align: left;"> <code>EOM</code> is overridden and set <code>EOM = 0</code> with a warning. </td>
+</tr>
+<tr>
+<td style="text-align: center;">
+                      </td>
+<td style="text-align: left;"> Keeping <code>EOM = 1</code> in this case would conflict with         </td>
+</tr>
+<tr>
+<td style="text-align: center;">
+                      </td>
+<td style="text-align: left;"> the provided <code>Mat</code>, <code>FIPD</code> or <code>LIPD</code>.            </td>
+</tr>
+<tr>
+<td style="text-align: center;">
+             ________ </td>
+<td style="text-align: left;"> _________________________________________                       </td>
+</tr>
+<tr>
+<td style="text-align: center;">
+                Note: </td>
+<td style="text-align: left;"> Set the option <code>FindEOM=TRUE</code> to always use                </td>
+</tr>
+<tr>
+<td style="text-align: center;">
+                      </td>
+<td style="text-align: left;"> <code>est_EOM</code> found by the code.                               </td>
+</tr>
+<tr>
+<td style="text-align: center;">
+              ======= </td>
+<td style="text-align: left;"> ====================================                            </td>
+</tr>
+<tr>
+<td style="text-align: center;">
+              </td>
+</tr>
+</table>
+</li>
+<li>
+<p> If <code>FIPD</code> and <code>LIPD</code> are both available, the lengths of the first and final coupon
+periods are determinate and can be "regular", "long" or "short". To find the interest payment dates
+between <code>FIPD</code> and <code>LIPD</code> the following assumptions are met:
+</p>
+
+<ol>
+<li> <pre>The interest payment dates between FIPD and LIPD are
+  evenly distributed.</pre>
+</li>
+<li> <pre>The value of EOM determines the location of
+  all interest payment dates.</pre>
+</li>
+</ol>
+<p>If assumption 1 is violated, the exact locatations of the interest payment dates between
+<code>FIPD</code> and <code>LIPD</code> are ambiguous. The assumption is violated particularly, if
+</p>
+
+<ol>
+<li> <p><code>FIPD</code> and <code>LIPD</code> are in the same month of the same year but not on the same day, or
+</p>
+</li>
+<li>
+<p> the month difference between <code>FIPD</code> and <code>LIPD</code> is not a multiple of the number
+of months implied by <code>CpY</code>, or
+</p>
+</li>
+<li> <p><code>FIPD</code> and <code>LIPD</code> are not both last day in month,
+their day figures differ and the day figure difference between <code>FIPD</code>
+and <code>LIPD</code> is not due to different month lengths.
+</p>
+</li>
+</ol>
+<p>In each of the three cases, <code>FIPD</code> and <code>LIPD</code> are dropped
+with the flag <code>IPD_CpY_Corrupt = 1</code>.
+</p>
+</li>
+<li>
+<p> If neither <code>FIPD</code> nor <code>LIPD</code> are available the code
+evaluates the bond based only upon the required variables <code>Em</code> and
+<code>Mat</code> (and <code>CpY</code>, which is <code>2</code> by default). Since FIPD is
+not given, it is impossible to distinguish between a "short" and "long" odd
+first coupon period, without an assumption on the number of interest
+payment dates. Consequently the first coupon period is assumed to be either
+"regular" or "short". The locations of <code>FIPD</code> and <code>LIPD</code> are
+estimated under the following assumptions:
+</p>
+
+<ol>
+<li> <pre>The final coupon period is "regular".</pre>
+</li>
+<li> <pre>The interest payment dates between the estimated
+  FIPD and Mat are evenly distributed.</pre>
+</li>
+<li> <pre>The value of EOM determines the location of
+  all interest payment dates.</pre>
+</li>
+</ol>
+</li>
+<li>
+<p> If <code>LIPD</code> is available but <code>FIPD</code> is not, the length
+of the final coupon payment period is determined by <code>LIPD</code> and
+<code>Mat</code> and can be "regular", "long" or "short". The locations of
+the interest payment dates are estimated under the following assumptions:
+</p>
+
+<ol>
+<li> <pre>The first coupon period is either "regular" or "short".</pre>
+</li>
+<li> <pre>The interest payment dates between the estimated
+  FIPD and LIPD are evenly distributed.</pre>
+</li>
+<li> <pre>The value of EOM determines the location of
+  all interest payment dates.</pre>
+</li>
+</ol>
+</li>
+<li>
+<p> If <code>FIPD</code> is available but <code>LIPD</code> is not, the length
+of the first coupon payment period is determined by <code>Em</code> and
+<code>FIPD</code> and can be "regular", "long" or "short". The locations of
+the interest payment dates are estimated under the following assumptions:
+</p>
+
+<ol>
+<li> <pre>The final coupon period is either "regular" or "short".</pre>
+</li>
+<li> <pre>The interest payment dates between FIPD and
+  the estimated LIPD are evenly distributed.</pre>
+</li>
+<li> <pre>The value of EOM determines the location of
+  all interest payment dates.</pre>
+</li>
+</ol>
+</li>
+</ul>
+<h3>Value</h3>
+
+<p>All dates are returned irrespective of whether they are on a business day or not.
+</p>
+
+<dl>
+<dt>
+<em><b>DateVectors</b></em> (data frame)</dt>
+<dd>
+
+<dl>
+<dt>-</dt>
+<dd></dd>
+<dt><em>RealDates</em></dt>
+<dd>
+<p>A vector of Date class objects with format "%Y-%m-%d" in ascending order,
+that contains the issue date, all actual coupon payment dates and the maturity date.</p>
+</dd>
+<dt><em>RD_indexes</em></dt>
+<dd>
+<p>A vector of numerics capturing the temporal structure of the bond.</p>
+</dd>
+<dt><em>CoupDates</em></dt>
+<dd>
+<p>A vector of Date class objects with format "%Y-%m-%d" in ascending order,
+that contains all actual coupon payment dates and the maturity date.</p>
+</dd>
+<dt><em>CD_indexes</em></dt>
+<dd>
+<p>A vector of numerics capturing the temporal structure of the bond.</p>
+</dd>
+<dt><em>AnnivDates</em></dt>
+<dd>
+<p>A vector of Date class objects with format "%Y-%m-%d" in ascending order,
+that contains all theoretical coupon anniversary dates. The first value of <em>AnnivDates</em> is the
+anniversary date immediately preceding the issue date, if the bond has an irregular first coupon
+period; otherwise it is the issue date. The final value of <em>AnnivDates</em> is the anniversary
+date immediately succeeding the maturity date, if the bond has an irregular final coupon period;
+otherwise it is the maturity date.</p>
+</dd>
+<dt><em>AD_indexes</em></dt>
+<dd>
+<p>A vector of numerics capturing the temporal structure of the bond.</p>
+</dd>
+<dt>-</dt>
+<dd></dd>
+</dl>
+</dd>
+<dt>
+<em><b>PaySched</b></em> (data frame)</dt>
+<dd>
+
+<dl>
+<dt>-</dt>
+<dd></dd>
+<dt><em>CoupDates</em></dt>
+<dd>
+<p>A vector of Date class objects with format "%Y-%m-%d" in ascending order,
+that contains all actual coupon payment dates and the maturity date.</p>
+</dd>
+<dt><em>CoupPayments</em></dt>
+<dd>
+<p>A vector of class "numeric" objects, that contains the actual amounts of
+interest that the bond pays on the respective coupon payment dates. The unit of these payments is the
+same as that of <code>RV</code> that was passed to the function. <code>RV</code> is not included in the final
+interest payment.</p>
+</dd>
+<dt><b>NOTE:</b></dt>
+<dd>
+<p><code>PaySched</code> is created only if the variable <code>Coup</code> is provided.</p>
+</dd>
+<dt>-</dt>
+<dd></dd>
+</dl>
+</dd>
+<dt>
+<em><b>Traits</b></em> (data frame)</dt>
+<dd>
+
+<dl>
+<dt>-</dt>
+<dd></dd>
+<dt><em>DateOrigin</em></dt>
+<dd>
+<p>The starting point for the daycount in "Date" objects.</p>
+</dd>
+<dt><em>CpY</em></dt>
+<dd>
+<p>Number of interest payments per year.</p>
+</dd>
+<dt><em>FIAD</em></dt>
+<dd>
+<p>Date on which the interest accrual starts (so-called "dated date").</p>
+</dd>
+<dt><em>Em</em></dt>
+<dd>
+<p>The bond's issue date that was used for calculations.</p>
+</dd>
+<dt><em>Em_Orig</em></dt>
+<dd>
+<p>The bond's issue date that was entered.</p>
+</dd>
+<dt><em>FIPD</em></dt>
+<dd>
+<p>The first interest payment date after <code>Em</code> that was used for calculations.
+If the entered <code>FIPD</code> was dropped during the calculation process,
+the value is <code>NA</code>.</p>
+</dd>
+<dt><em>FIPD_Orig</em></dt>
+<dd>
+<p>The first interest payment date after <code>Em</code> that was entered.</p>
+</dd>
+<dt><em>est_FIPD</em></dt>
+<dd>
+<p>The estimated first interest payment date after <code>Em</code>. <code>NA</code>, if
+a valid <code>FIPD</code> was entered.</p>
+</dd>
+<dt><em>LIPD</em></dt>
+<dd>
+<p>The last interest payment date prior to <code>Mat</code> that was used for
+calculations. If the entered <code>LIPD</code> was dropped during the calculation
+process, the value is <code>NA</code>.</p>
+</dd>
+<dt><em>LIPD_Orig</em></dt>
+<dd>
+<p>The last interest payment date prior to <code>Mat</code> that was entered.</p>
+</dd>
+<dt><em>est_LIPD</em></dt>
+<dd>
+<p>The estimated last interest payment date prior to <code>Mat</code>. <code>NA</code>,
+if a valid <code>LIPD</code> was entered.</p>
+</dd>
+<dt><em>Mat</em></dt>
+<dd>
+<p>The maturity date that was entered.</p>
+</dd>
+<dt><em>Refer</em></dt>
+<dd>
+<p>Reference date that determines the day figures of all AnnivDates.</p>
+</dd>
+<dt><em>FCPType</em></dt>
+<dd>
+<p>A character string indicating the type of the first coupon period.
+Values: "long", "regular", "short".</p>
+</dd>
+<dt><em>FCPLength</em></dt>
+<dd>
+<p>Length of the first coupon period as a fraction of a regular coupon period.</p>
+</dd>
+<dt><em>LCPType</em></dt>
+<dd>
+<p>A character string indicating the type of the last coupon period.
+Values: "long", "regular", "short".</p>
+</dd>
+<dt><em>LCPLength</em></dt>
+<dd>
+<p>Length of the final coupon period as a fraction of a regular coupon period.</p>
+</dd>
+<dt><em>Par</em></dt>
+<dd>
+<p>The redemption value of the bond.</p>
+</dd>
+<dt><em>CouponInPercent.p.a</em></dt>
+<dd>
+<p>Nominal interest rate per year in percent.</p>
+</dd>
+<dt><em>DayCountConvention</em></dt>
+<dd>
+<p>The day count convention the bond follows.</p>
+</dd>
+<dt><em>EOM_Orig</em></dt>
+<dd>
+<p>The value of <code>EOM</code> that was entered.</p>
+</dd>
+<dt><em>est_EOM</em></dt>
+<dd>
+<p>The estimated value of <code>EOM</code>.</p>
+</dd>
+<dt><em>EOM_used</em></dt>
+<dd>
+<p>The value of <code>EOM</code> that was used in the calculations.</p>
+</dd>
+<dt>-</dt>
+<dd></dd>
+</dl>
+</dd>
+<dt>
+<em><b>Warnings</b></em> (data frame)</dt>
+<dd>
+
+<dl>
+<dt>-</dt>
+<dd>
+<p>A set of flags that indicate the occurrence of warnings during the execution.
+Below they are listed according to the hierarchical structure within the function <b>AnnivDates</b>.</p>
+</dd>
+<dt>-</dt>
+<dd>
+
+<table>
+<tr>
+<td style="text-align: right;">
+                                           </td>
+<td style="text-align: center;">     </td>
+<td style="text-align: left;">                                                                         </td>
+</tr>
+<tr>
+<td style="text-align: right;">
+                                           </td>
+<td style="text-align: center;">     </td>
+<td style="text-align: left;">                                                                         </td>
+</tr>
+<tr>
+<td style="text-align: right;">
+                                           </td>
+<td style="text-align: center;">     </td>
+<td style="text-align: left;">                                                                         </td>
+</tr>
+<tr>
+<td style="text-align: right;">
+           <b><em>Em_FIAD_differ</em></b> =  </td>
+<td style="text-align: center;">     </td>
+<td style="text-align: left;">                                                                         </td>
+</tr>
+<tr>
+<td style="text-align: right;">
+                                         1 </td>
+<td style="text-align: center;">     </td>
+<td style="text-align: left;"> , if the provided issue date (<code>Em</code>) was substituted by the first   </td>
+</tr>
+<tr>
+<td style="text-align: right;">
+                                           </td>
+<td style="text-align: center;">     </td>
+<td style="text-align: left;"> interest accrual date (<code>FIAD</code>).                                    </td>
+</tr>
+<tr>
+<td style="text-align: right;">
+                                           </td>
+<td style="text-align: center;">     </td>
+<td style="text-align: left;"> This happens, if <code>FIAD</code> is available and different from <code>Em</code>. </td>
+</tr>
+<tr>
+<td style="text-align: right;">
+                                           </td>
+<td style="text-align: center;">     </td>
+<td style="text-align: left;"> ________________________________________________                        </td>
+</tr>
+<tr>
+<td style="text-align: right;">
+                                           </td>
+<td style="text-align: center;">     </td>
+<td style="text-align: left;"> <em>Note:</em> No warning is displayed.                                   </td>
+</tr>
+<tr>
+<td style="text-align: right;">
+                       ___________________ </td>
+<td style="text-align: center;"> ___ </td>
+<td style="text-align: left;"> ________________________________________________                        </td>
+</tr>
+<tr>
+<td style="text-align: right;">
+                                         0 </td>
+<td style="text-align: center;">     </td>
+<td style="text-align: left;"> , else.                                                                 </td>
+</tr>
+<tr>
+<td style="text-align: right;">
+                         ================= </td>
+<td style="text-align: center;"> === </td>
+<td style="text-align: left;"> ===========================================                             </td>
+</tr>
+<tr>
+<td style="text-align: right;">
+         </td>
+</tr>
+</table>
+</dd>
+<dt>-</dt>
+<dd>
+
+<table>
+<tr>
+<td style="text-align: right;">
+           <b><em>EmMatMissing</em></b> =  </td>
+<td style="text-align: center;">     </td>
+<td style="text-align: left;">                                                                                        </td>
+</tr>
+<tr>
+<td style="text-align: right;">
+                                       1 </td>
+<td style="text-align: center;">     </td>
+<td style="text-align: left;"> , if either issue date (<code>Em</code>) or maturity date (<code>Mat</code>) or both               </td>
+</tr>
+<tr>
+<td style="text-align: right;">
+                                         </td>
+<td style="text-align: center;">     </td>
+<td style="text-align: left;"> are missing or <code>NA</code>.                                                              </td>
+</tr>
+<tr>
+<td style="text-align: right;">
+                                         </td>
+<td style="text-align: center;">     </td>
+<td style="text-align: left;"> ________________________________________________                                       </td>
+</tr>
+<tr>
+<td style="text-align: right;">
+                                         </td>
+<td style="text-align: center;">     </td>
+<td style="text-align: left;"> <em>Output:</em> <em>RealDates</em> <code>= NA</code>, <em>CoupDates</em> <code>= NA</code>,             </td>
+</tr>
+<tr>
+<td style="text-align: right;">
+                                         </td>
+<td style="text-align: center;">     </td>
+<td style="text-align: left;"> <em>AnnivDates</em> <code>= NA</code>, <em>FCPType</em> <code>= NA</code>, <em>LCPType</em> <code>= NA</code>. </td>
+</tr>
+<tr>
+<td style="text-align: right;">
+                     ___________________ </td>
+<td style="text-align: center;"> ___ </td>
+<td style="text-align: left;"> ________________________________________________                                       </td>
+</tr>
+<tr>
+<td style="text-align: right;">
+                                       0 </td>
+<td style="text-align: center;">     </td>
+<td style="text-align: left;"> , else.                                                                                </td>
+</tr>
+<tr>
+<td style="text-align: right;">
+                       ================= </td>
+<td style="text-align: center;"> === </td>
+<td style="text-align: left;"> ===========================================                                            </td>
+</tr>
+<tr>
+<td style="text-align: right;">
+         </td>
+</tr>
+</table>
+</dd>
+<dt>-</dt>
+<dd>
+
+<table>
+<tr>
+<td style="text-align: right;">
+           <b><em>CpYOverride</em></b> =  </td>
+<td style="text-align: center;">     </td>
+<td style="text-align: left;">                                                                                </td>
+</tr>
+<tr>
+<td style="text-align: right;">
+                                      1 </td>
+<td style="text-align: center;">     </td>
+<td style="text-align: left;"> , if number of interest periods per year (<code>CpY</code>) is missing or            </td>
+</tr>
+<tr>
+<td style="text-align: right;">
+                                        </td>
+<td style="text-align: center;">     </td>
+<td style="text-align: left;"> <code>NA</code>, or if the provided <code>CpY</code> is not element of {0,1,2,3,4,6,12}. </td>
+</tr>
+<tr>
+<td style="text-align: right;">
+                                        </td>
+<td style="text-align: center;">     </td>
+<td style="text-align: left;"> ________________________________________________                               </td>
+</tr>
+<tr>
+<td style="text-align: right;">
+                                        </td>
+<td style="text-align: center;">     </td>
+<td style="text-align: left;"> <em>Note:</em> <code>CpY</code> is set 2, and the execution continues.                 </td>
+</tr>
+<tr>
+<td style="text-align: right;">
+                                        </td>
+<td style="text-align: center;">     </td>
+<td style="text-align: left;"> ________________________________________________                               </td>
+</tr>
+<tr>
+<td style="text-align: right;">
+                                        </td>
+<td style="text-align: center;">     </td>
+<td style="text-align: left;"> <em>Output:</em> as if <code>CpY</code> = 2 was provided initially.                    </td>
+</tr>
+<tr>
+<td style="text-align: right;">
+                    ___________________ </td>
+<td style="text-align: center;"> ___ </td>
+<td style="text-align: left;"> ________________________________________________                               </td>
+</tr>
+<tr>
+<td style="text-align: right;">
+                                      0 </td>
+<td style="text-align: center;">     </td>
+<td style="text-align: left;"> , else.                                                                        </td>
+</tr>
+<tr>
+<td style="text-align: right;">
+                      ================= </td>
+<td style="text-align: center;"> === </td>
+<td style="text-align: left;"> ===========================================                                    </td>
+</tr>
+<tr>
+<td style="text-align: right;">
+         </td>
+</tr>
+</table>
+</dd>
+<dt>-</dt>
+<dd>
+
+<table>
+<tr>
+<td style="text-align: right;">
+           <b><em>RV_set100percent</em></b> =  </td>
+<td style="text-align: center;">     </td>
+<td style="text-align: left;">                                                                 </td>
+</tr>
+<tr>
+<td style="text-align: right;">
+                                           1 </td>
+<td style="text-align: center;">     </td>
+<td style="text-align: left;"> , if the redemption value (<code>RV</code>) is missing or <code>NA</code>.  </td>
+</tr>
+<tr>
+<td style="text-align: right;">
+                                             </td>
+<td style="text-align: center;">     </td>
+<td style="text-align: left;"> ________________________________________________                </td>
+</tr>
+<tr>
+<td style="text-align: right;">
+                                             </td>
+<td style="text-align: center;">     </td>
+<td style="text-align: left;"> <em>Note:</em> <code>RV</code> is set 100, and the execution continues. </td>
+</tr>
+<tr>
+<td style="text-align: right;">
+                                             </td>
+<td style="text-align: center;">     </td>
+<td style="text-align: left;"> ________________________________________________                </td>
+</tr>
+<tr>
+<td style="text-align: right;">
+                                             </td>
+<td style="text-align: center;">     </td>
+<td style="text-align: left;"> <em>Output:</em> as if <code>RV</code> = 100 was provided initially.    </td>
+</tr>
+<tr>
+<td style="text-align: right;">
+                         ___________________ </td>
+<td style="text-align: center;"> ___ </td>
+<td style="text-align: left;"> ________________________________________________                </td>
+</tr>
+<tr>
+<td style="text-align: right;">
+                                           0 </td>
+<td style="text-align: center;">     </td>
+<td style="text-align: left;"> , else.                                                         </td>
+</tr>
+<tr>
+<td style="text-align: right;">
+                           ================= </td>
+<td style="text-align: center;"> === </td>
+<td style="text-align: left;"> ===========================================                     </td>
+</tr>
+<tr>
+<td style="text-align: right;">
+         </td>
+</tr>
+</table>
+</dd>
+<dt>-</dt>
+<dd>
+
+<table>
+<tr>
+<td style="text-align: right;">
+           <b><em>NegLifeFlag</em></b> =  </td>
+<td style="text-align: center;">     </td>
+<td style="text-align: left;">                                                                                        </td>
+</tr>
+<tr>
+<td style="text-align: right;">
+                                      1 </td>
+<td style="text-align: center;">     </td>
+<td style="text-align: left;"> , if the provided maturity date (<code>Mat</code>) is before or on the                       </td>
+</tr>
+<tr>
+<td style="text-align: right;">
+                                        </td>
+<td style="text-align: center;">     </td>
+<td style="text-align: left;"> provided issue date (<code>Em</code>).                                                       </td>
+</tr>
+<tr>
+<td style="text-align: right;">
+                                        </td>
+<td style="text-align: center;">     </td>
+<td style="text-align: left;"> ________________________________________________                                       </td>
+</tr>
+<tr>
+<td style="text-align: right;">
+                                        </td>
+<td style="text-align: center;">     </td>
+<td style="text-align: left;"> <em>Output:</em> <em>RealDates</em> <code>= NA</code>, <em>CoupDates</em> <code>= NA</code>,             </td>
+</tr>
+<tr>
+<td style="text-align: right;">
+                                        </td>
+<td style="text-align: center;">     </td>
+<td style="text-align: left;"> <em>AnnivDates</em> <code>= NA</code>, <em>FCPType</em> <code>= NA</code>, <em>LCPType</em> <code>= NA</code>. </td>
+</tr>
+<tr>
+<td style="text-align: right;">
+                    ___________________ </td>
+<td style="text-align: center;"> ___ </td>
+<td style="text-align: left;"> ________________________________________________                                       </td>
+</tr>
+<tr>
+<td style="text-align: right;">
+                                      0 </td>
+<td style="text-align: center;">     </td>
+<td style="text-align: left;"> , else.                                                                                </td>
+</tr>
+<tr>
+<td style="text-align: right;">
+                      ================= </td>
+<td style="text-align: center;"> === </td>
+<td style="text-align: left;"> ===========================================                                            </td>
+</tr>
+<tr>
+<td style="text-align: right;">
+         </td>
+</tr>
+</table>
+</dd>
+<dt>-</dt>
+<dd>
+
+<table>
+<tr>
+<td style="text-align: right;">
+           <b><em>ZeroFlag</em></b> =  </td>
+<td style="text-align: center;">     </td>
+<td style="text-align: left;">                                                                                              </td>
+</tr>
+<tr>
+<td style="text-align: right;">
+                                   1 </td>
+<td style="text-align: center;">     </td>
+<td style="text-align: left;"> , if number of interest payments per year (<code>CpY</code>) is <code>0</code>.                          </td>
+</tr>
+<tr>
+<td style="text-align: right;">
+                                     </td>
+<td style="text-align: center;">     </td>
+<td style="text-align: left;"> ________________________________________________                                             </td>
+</tr>
+<tr>
+<td style="text-align: right;">
+                                     </td>
+<td style="text-align: center;">     </td>
+<td style="text-align: left;"> <em>Output:</em> <em>RealDates</em> <code>= (Em,Mat)</code>, <em>CoupDates</em> <code>= Mat</code>,            </td>
+</tr>
+<tr>
+<td style="text-align: right;">
+                                     </td>
+<td style="text-align: center;">     </td>
+<td style="text-align: left;"> <em>AnnivDates</em> <code>= (Em,Mat)</code>, <em>FCPType</em> <code>= NA</code>, <em>LCPType</em> <code>= NA</code>. </td>
+</tr>
+<tr>
+<td style="text-align: right;">
+                 ___________________ </td>
+<td style="text-align: center;"> ___ </td>
+<td style="text-align: left;"> ________________________________________________                                             </td>
+</tr>
+<tr>
+<td style="text-align: right;">
+                                   0 </td>
+<td style="text-align: center;">     </td>
+<td style="text-align: left;"> , else.                                                                                      </td>
+</tr>
+<tr>
+<td style="text-align: right;">
+                   ================= </td>
+<td style="text-align: center;"> === </td>
+<td style="text-align: left;"> ===========================================                                                  </td>
+</tr>
+<tr>
+<td style="text-align: right;">
+         </td>
+</tr>
+</table>
+</dd>
+<dt>-</dt>
+<dd>
+
+<table>
+<tr>
+<td style="text-align: right;">
+           <b><em>Em_Mat_SameMY</em></b> =  </td>
+<td style="text-align: center;">     </td>
+<td style="text-align: left;">                                                                                   </td>
+</tr>
+<tr>
+<td style="text-align: right;">
+                                        1 </td>
+<td style="text-align: center;">     </td>
+<td style="text-align: left;"> , if the issue date (<code>Em</code>) and the maturity date (<code>Mat</code>) are in the     </td>
+</tr>
+<tr>
+<td style="text-align: right;">
+                                          </td>
+<td style="text-align: center;">     </td>
+<td style="text-align: left;"> same month of the same year but not on the same day, while                        </td>
+</tr>
+<tr>
+<td style="text-align: right;">
+                                          </td>
+<td style="text-align: center;">     </td>
+<td style="text-align: left;"> <code>CpY</code> is an element of {1,2,3,4,6,12}.                                     </td>
+</tr>
+<tr>
+<td style="text-align: right;">
+                                          </td>
+<td style="text-align: center;">     </td>
+<td style="text-align: left;"> ________________________________________________                                  </td>
+</tr>
+<tr>
+<td style="text-align: right;">
+                                          </td>
+<td style="text-align: center;">     </td>
+<td style="text-align: left;"> <em>Output:</em> <em>RealDates</em> <code>= (Em,Mat)</code>, <em>CoupDates</em> <code>= Mat</code>, </td>
+</tr>
+<tr>
+<td style="text-align: right;">
+                                          </td>
+<td style="text-align: center;">     </td>
+<td style="text-align: left;"> <em>FCPType</em> <code>= short</code>, <em>LCPType</em> <code>= short</code>.                     </td>
+</tr>
+<tr>
+<td style="text-align: right;">
+                      ___________________ </td>
+<td style="text-align: center;"> ___ </td>
+<td style="text-align: left;"> ________________________________________________                                  </td>
+</tr>
+<tr>
+<td style="text-align: right;">
+                                        0 </td>
+<td style="text-align: center;">     </td>
+<td style="text-align: left;"> , else.                                                                           </td>
+</tr>
+<tr>
+<td style="text-align: right;">
+                        ================= </td>
+<td style="text-align: center;"> === </td>
+<td style="text-align: left;"> ===========================================                                       </td>
+</tr>
+<tr>
+<td style="text-align: right;">
+         </td>
+</tr>
+</table>
+</dd>
+<dt>-</dt>
+<dd>
+
+<table>
+<tr>
+<td style="text-align: right;">
+           <b><em>ChronErrorFlag</em></b> =  </td>
+<td style="text-align: center;">     </td>
+<td style="text-align: left;">                                                                                     </td>
+</tr>
+<tr>
+<td style="text-align: right;">
+                                         1 </td>
+<td style="text-align: center;">     </td>
+<td style="text-align: left;"> , if the provided dates are in a wrong chronological order.                         </td>
+</tr>
+<tr>
+<td style="text-align: right;">
+                                           </td>
+<td style="text-align: center;">     </td>
+<td style="text-align: left;"> ________________________________________________                                    </td>
+</tr>
+<tr>
+<td style="text-align: right;">
+                                           </td>
+<td style="text-align: center;">     </td>
+<td style="text-align: left;"> <em>Note:</em>                                                                        </td>
+</tr>
+<tr>
+<td style="text-align: right;">
+                                           </td>
+<td style="text-align: center;">     </td>
+<td style="text-align: left;"> The correct ascending chronological order is:                                       </td>
+</tr>
+<tr>
+<td style="text-align: right;">
+                                           </td>
+<td style="text-align: center;">     </td>
+<td style="text-align: left;"> issue date (<code>Em</code>), first interest payment date (<code>FIPD</code>),                  </td>
+</tr>
+<tr>
+<td style="text-align: right;">
+                                           </td>
+<td style="text-align: center;">     </td>
+<td style="text-align: left;"> last interest payment date (<code>LIPD</code>), maturity date (<code>Mat</code>).               </td>
+</tr>
+<tr>
+<td style="text-align: right;">
+                                           </td>
+<td style="text-align: center;">     </td>
+<td style="text-align: left;"> <code>FIPD</code> and <code>LIPD</code> are set <code>as.Date(NA)</code>.                             </td>
+</tr>
+<tr>
+<td style="text-align: right;">
+                                           </td>
+<td style="text-align: center;">     </td>
+<td style="text-align: left;"> ________________________________________________                                    </td>
+</tr>
+<tr>
+<td style="text-align: right;">
+                                           </td>
+<td style="text-align: center;">     </td>
+<td style="text-align: left;"> <em>Output:</em> as if <code>FIPD</code> and <code>LIPD</code> were not provided initially.       </td>
+</tr>
+<tr>
+<td style="text-align: right;">
+                       ___________________ </td>
+<td style="text-align: center;"> ___ </td>
+<td style="text-align: left;"> ________________________________________________                                    </td>
+</tr>
+<tr>
+<td style="text-align: right;">
+                                         0 </td>
+<td style="text-align: center;">     </td>
+<td style="text-align: left;"> , else.                                                                             </td>
+</tr>
+<tr>
+<td style="text-align: right;">
+                         ================= </td>
+<td style="text-align: center;"> === </td>
+<td style="text-align: left;"> ===========================================                                         </td>
+</tr>
+<tr>
+<td style="text-align: right;">
+         </td>
+</tr>
+</table>
+</dd>
+<dt>-</dt>
+<dd>
+
+<table>
+<tr>
+<td style="text-align: right;">
+           <b><em>FIPD_LIPD_equal</em></b> =  </td>
+<td style="text-align: center;">     </td>
+<td style="text-align: left;">                                                                                           </td>
+</tr>
+<tr>
+<td style="text-align: right;">
+                                          1 </td>
+<td style="text-align: center;">     </td>
+<td style="text-align: left;"> if <code>Em</code> &lt; <code>FIPD</code> = <code>LIPD</code> &lt; <code>Mat</code>.                                    </td>
+</tr>
+<tr>
+<td style="text-align: right;">
+                                            </td>
+<td style="text-align: center;">     </td>
+<td style="text-align: left;"> ________________________________________________                                          </td>
+</tr>
+<tr>
+<td style="text-align: right;">
+                                            </td>
+<td style="text-align: center;">     </td>
+<td style="text-align: left;"> <em>Output:</em> <em>AnnivDates</em> contains <code>FIPD</code> and has at least <code>3</code> elements. </td>
+</tr>
+<tr>
+<td style="text-align: right;">
+                                            </td>
+<td style="text-align: center;">     </td>
+<td style="text-align: left;"> <em>RealDates</em> <code>= (Em,FIPD,Mat)</code>, <em>CoupDates</em> <code>= (FIPD,Mat)</code>.            </td>
+</tr>
+<tr>
+<td style="text-align: right;">
+                                            </td>
+<td style="text-align: center;">     </td>
+<td style="text-align: left;"> <em>FCPType</em> and <em>LCPType</em> can be "short", "regular" or "long".                    </td>
+</tr>
+<tr>
+<td style="text-align: right;">
+                        ___________________ </td>
+<td style="text-align: center;"> ___ </td>
+<td style="text-align: left;"> ________________________________________________                                          </td>
+</tr>
+<tr>
+<td style="text-align: right;">
+                                          0 </td>
+<td style="text-align: center;">     </td>
+<td style="text-align: left;"> , else.                                                                                   </td>
+</tr>
+<tr>
+<td style="text-align: right;">
+                          ================= </td>
+<td style="text-align: center;"> === </td>
+<td style="text-align: left;"> ===========================================                                               </td>
+</tr>
+<tr>
+<td style="text-align: right;">
+         </td>
+</tr>
+</table>
+</dd>
+<dt>-</dt>
+<dd>
+
+<table>
+<tr>
+<td style="text-align: right;">
+           <b><em>IPD_CpY_Corrupt</em></b> =  </td>
+<td style="text-align: center;">     </td>
+<td style="text-align: left;">                                                                       </td>
+</tr>
+<tr>
+<td style="text-align: right;">
+                                          1 </td>
+<td style="text-align: center;">     </td>
+<td style="text-align: left;"> , if the provided first interest payment date (<code>FIPD</code>) and last  </td>
+</tr>
+<tr>
+<td style="text-align: right;">
+                                            </td>
+<td style="text-align: center;">     </td>
+<td style="text-align: left;"> interest payment date (<code>LIPD</code>) are inconsistent with the         </td>
+</tr>
+<tr>
+<td style="text-align: right;">
+                                            </td>
+<td style="text-align: center;">     </td>
+<td style="text-align: left;"> provided number of interest payments per year (<code>CpY</code>).           </td>
+</tr>
+<tr>
+<td style="text-align: right;">
+                                            </td>
+<td style="text-align: center;">     </td>
+<td style="text-align: left;"> ________________________________________________                      </td>
+</tr>
+<tr>
+<td style="text-align: right;">
+                                            </td>
+<td style="text-align: center;">     </td>
+<td style="text-align: left;"> <em>Note:</em>                                                          </td>
+</tr>
+<tr>
+<td style="text-align: right;">
+                                            </td>
+<td style="text-align: center;">     </td>
+<td style="text-align: left;"> Inconsistency occurs if                                               </td>
+</tr>
+<tr>
+<td style="text-align: right;">
+                                            </td>
+<td style="text-align: center;">     </td>
+<td style="text-align: left;"> 1. <code>FIPD</code> and <code>LIPD</code> are in the same month of the same year </td>
+</tr>
+<tr>
+<td style="text-align: right;">
+                                            </td>
+<td style="text-align: center;">     </td>
+<td style="text-align: left;">    but not on the same day, or                                        </td>
+</tr>
+<tr>
+<td style="text-align: right;">
+                                            </td>
+<td style="text-align: center;">     </td>
+<td style="text-align: left;"> 2. the number of months between <code>FIPD</code> and <code>LIPD</code> is not a  </td>
+</tr>
+<tr>
+<td style="text-align: right;">
+                                            </td>
+<td style="text-align: center;">     </td>
+<td style="text-align: left;">    multiple of the number of months implied by <code>CpY</code>, or         </td>
+</tr>
+<tr>
+<td style="text-align: right;">
+                                            </td>
+<td style="text-align: center;">     </td>
+<td style="text-align: left;"> 3. <code>FIPD</code> and <code>LIPD</code> are not both last day in month, their  </td>
+</tr>
+<tr>
+<td style="text-align: right;">
+                                            </td>
+<td style="text-align: center;">     </td>
+<td style="text-align: left;">    day figures differ and the day figure difference between           </td>
+</tr>
+<tr>
+<td style="text-align: right;">
+                                            </td>
+<td style="text-align: center;">     </td>
+<td style="text-align: left;">    <code>FIPD</code> and <code>LIPD</code> is not due to different month lengths. </td>
+</tr>
+<tr>
+<td style="text-align: right;">
+                                            </td>
+<td style="text-align: center;">     </td>
+<td style="text-align: left;">                                                                       </td>
+</tr>
+<tr>
+<td style="text-align: right;">
+                                            </td>
+<td style="text-align: center;">     </td>
+<td style="text-align: left;"> In each of the three cases keeping the provided values of              </td>
+</tr>
+<tr>
+<td style="text-align: right;">
+                                            </td>
+<td style="text-align: center;">     </td>
+<td style="text-align: left;"> <code>FIPD</code> and <code>LIPD</code> would violate the assumption, that the    </td>
+</tr>
+<tr>
+<td style="text-align: right;">
+                                            </td>
+<td style="text-align: center;">     </td>
+<td style="text-align: left;"> anniversary dates between <code>FIPD</code> and <code>LIPD</code> are evenly      </td>
+</tr>
+<tr>
+<td style="text-align: right;">
+                                            </td>
+<td style="text-align: center;">     </td>
+<td style="text-align: left;"> distributed.                                                          </td>
+</tr>
+<tr>
+<td style="text-align: right;">
+                                            </td>
+<td style="text-align: center;">     </td>
+<td style="text-align: left;"> ________________________________________________                      </td>
+</tr>
+<tr>
+<td style="text-align: right;">
+                                            </td>
+<td style="text-align: center;">     </td>
+<td style="text-align: left;"> <code>FIPD</code> and <code>LIPD</code> are set <code>as.Date(NA)</code>                </td>
+</tr>
+<tr>
+<td style="text-align: right;">
+                                            </td>
+<td style="text-align: center;">     </td>
+<td style="text-align: left;"> and the execution continues.                                          </td>
+</tr>
+<tr>
+<td style="text-align: right;">
+                                            </td>
+<td style="text-align: center;">     </td>
+<td style="text-align: left;"> ________________________________________________                      </td>
+</tr>
+<tr>
+<td style="text-align: right;">
+                                            </td>
+<td style="text-align: center;">     </td>
+<td style="text-align: left;"> <em>Output:</em>                                                        </td>
+</tr>
+<tr>
+<td style="text-align: right;">
+                                            </td>
+<td style="text-align: center;">     </td>
+<td style="text-align: left;"> as if <code>FIPD</code> and <code>LIPD</code> were not provided initially.        </td>
+</tr>
+<tr>
+<td style="text-align: right;">
+                        ___________________ </td>
+<td style="text-align: center;"> ___ </td>
+<td style="text-align: left;"> ________________________________________________                      </td>
+</tr>
+<tr>
+<td style="text-align: right;">
+                                          0 </td>
+<td style="text-align: center;">     </td>
+<td style="text-align: left;"> , else.                                                               </td>
+</tr>
+<tr>
+<td style="text-align: right;">
+                          ================= </td>
+<td style="text-align: center;"> === </td>
+<td style="text-align: left;"> ===========================================                           </td>
+</tr>
+<tr>
+<td style="text-align: right;">
+         </td>
+</tr>
+</table>
+</dd>
+<dt>-</dt>
+<dd>
+
+<table>
+<tr>
+<td style="text-align: right;">
+           <b><em>EOM_Deviation</em></b> =  </td>
+<td style="text-align: center;">     </td>
+<td style="text-align: left;">                                                                                  </td>
+</tr>
+<tr>
+<td style="text-align: right;">
+                                        1 </td>
+<td style="text-align: center;">     </td>
+<td style="text-align: left;"> , if the provided value of <code>EOM</code> deviates from the value that               </td>
+</tr>
+<tr>
+<td style="text-align: right;">
+                                          </td>
+<td style="text-align: center;">     </td>
+<td style="text-align: left;"> is inferred from the provided calendar dates.                                    </td>
+</tr>
+<tr>
+<td style="text-align: right;">
+                                          </td>
+<td style="text-align: center;">     </td>
+<td style="text-align: left;"> ________________________________________________                                 </td>
+</tr>
+<tr>
+<td style="text-align: right;">
+                                          </td>
+<td style="text-align: center;">     </td>
+<td style="text-align: left;"> <em>Note:</em>                                                                     </td>
+</tr>
+<tr>
+<td style="text-align: right;">
+                                          </td>
+<td style="text-align: center;">     </td>
+<td style="text-align: left;"> The program analyses the valid values of <code>Em</code>, <code>Mat</code>, <code>FIPD</code> and  </td>
+</tr>
+<tr>
+<td style="text-align: right;">
+                                          </td>
+<td style="text-align: center;">     </td>
+<td style="text-align: left;"> <code>LIPD</code> to determine the appropriate value of <code>EOM</code>.                    </td>
+</tr>
+<tr>
+<td style="text-align: right;">
+                                          </td>
+<td style="text-align: center;">     </td>
+<td style="text-align: left;">                                                                                  </td>
+</tr>
+<tr>
+<td style="text-align: right;">
+                                          </td>
+<td style="text-align: center;">     </td>
+<td style="text-align: left;"> If the initially provided value of <code>EOM</code> deviates from the value            </td>
+</tr>
+<tr>
+<td style="text-align: right;">
+                                          </td>
+<td style="text-align: center;">     </td>
+<td style="text-align: left;"> determined by the program, there might be an inconsistency                       </td>
+</tr>
+<tr>
+<td style="text-align: right;">
+                                          </td>
+<td style="text-align: center;">     </td>
+<td style="text-align: left;"> in the provided data.                                                            </td>
+</tr>
+<tr>
+<td style="text-align: right;">
+                      ___________________ </td>
+<td style="text-align: center;"> ___ </td>
+<td style="text-align: left;"> ________________________________________________                                 </td>
+</tr>
+<tr>
+<td style="text-align: right;">
+                                        0 </td>
+<td style="text-align: center;">     </td>
+<td style="text-align: left;"> , else.                                                                          </td>
+</tr>
+<tr>
+<td style="text-align: right;">
+                        ================= </td>
+<td style="text-align: center;"> === </td>
+<td style="text-align: left;"> ===========================================                                      </td>
+</tr>
+<tr>
+<td style="text-align: right;">
+                                          </td>
+<td style="text-align: center;">     </td>
+<td style="text-align: left;">                                                                                  </td>
+</tr>
+<tr>
+<td style="text-align: right;">
+         </td>
+</tr>
+</table>
+</dd>
+<dt>-</dt>
+<dd>
+
+<table>
+<tr>
+<td style="text-align: right;">
+           <b><em>EOMOverride</em></b> =  </td>
+<td style="text-align: center;">     </td>
+<td style="text-align: left;">                                                                               </td>
+</tr>
+<tr>
+<td style="text-align: right;">
+                                      1 </td>
+<td style="text-align: center;">     </td>
+<td style="text-align: left;"> , if the provided value of <code>EOM</code> is overridden by a value that           </td>
+</tr>
+<tr>
+<td style="text-align: right;">
+                                        </td>
+<td style="text-align: center;">     </td>
+<td style="text-align: left;"> is inferred from the provided calendar dates.                                 </td>
+</tr>
+<tr>
+<td style="text-align: right;">
+                                        </td>
+<td style="text-align: center;">     </td>
+<td style="text-align: left;"> ________________________________________________                              </td>
+</tr>
+<tr>
+<td style="text-align: right;">
+                                        </td>
+<td style="text-align: center;">     </td>
+<td style="text-align: left;"> <em>Note:</em>                                                                  </td>
+</tr>
+<tr>
+<td style="text-align: right;">
+                                        </td>
+<td style="text-align: center;">     </td>
+<td style="text-align: left;"> This happens automatically if <code>EOM</code> is initially missing or <code>NA</code>    </td>
+</tr>
+<tr>
+<td style="text-align: right;">
+                                        </td>
+<td style="text-align: center;">     </td>
+<td style="text-align: left;"> or not element of <code>{0,1}</code> and if the provided value of <code>EOM</code>      </td>
+</tr>
+<tr>
+<td style="text-align: right;">
+                                        </td>
+<td style="text-align: center;">     </td>
+<td style="text-align: left;"> conflicts with the provided values of <code>FIPD</code>, <code>LIPD</code> or <code>Mat</code>, </td>
+</tr>
+<tr>
+<td style="text-align: right;">
+                                        </td>
+<td style="text-align: center;">     </td>
+<td style="text-align: left;"> e.g. if <code>est_EOM = 0</code> but <code>EOM = 1</code>.                                </td>
+</tr>
+<tr>
+<td style="text-align: right;">
+                                        </td>
+<td style="text-align: center;">     </td>
+<td style="text-align: left;"> If <code>EOM_Deviation = 1</code> and the option <code>FindEOM</code> is set <code>TRUE</code>, </td>
+</tr>
+<tr>
+<td style="text-align: right;">
+                                        </td>
+<td style="text-align: center;">     </td>
+<td style="text-align: left;"> the initially provided value of <code>EOM</code> is also overridden by the          </td>
+</tr>
+<tr>
+<td style="text-align: right;">
+                                        </td>
+<td style="text-align: center;">     </td>
+<td style="text-align: left;"> value that is inferred from the provided calendar dates if                    </td>
+</tr>
+<tr>
+<td style="text-align: right;">
+                                        </td>
+<td style="text-align: center;">     </td>
+<td style="text-align: left;"> <code>est_EOM = 1</code> but <code>EOM = 0</code>.                                        </td>
+</tr>
+<tr>
+<td style="text-align: right;">
+                                        </td>
+<td style="text-align: center;">     </td>
+<td style="text-align: left;"> ________________________________________________                              </td>
+</tr>
+<tr>
+<td style="text-align: right;">
+                                        </td>
+<td style="text-align: center;">     </td>
+<td style="text-align: left;"> <em>Output:</em>                                                                </td>
+</tr>
+<tr>
+<td style="text-align: right;">
+                                        </td>
+<td style="text-align: center;">     </td>
+<td style="text-align: left;"> as if the value of <code>EOM</code> that is found by the program was                </td>
+</tr>
+<tr>
+<td style="text-align: right;">
+                                        </td>
+<td style="text-align: center;">     </td>
+<td style="text-align: left;"> provided initially.                                                           </td>
+</tr>
+<tr>
+<td style="text-align: right;">
+                    ___________________ </td>
+<td style="text-align: center;"> ___ </td>
+<td style="text-align: left;"> ________________________________________________                              </td>
+</tr>
+<tr>
+<td style="text-align: right;">
+                                      0 </td>
+<td style="text-align: center;">     </td>
+<td style="text-align: left;"> , else.                                                                       </td>
+</tr>
+<tr>
+<td style="text-align: right;">
+                      ================= </td>
+<td style="text-align: center;"> === </td>
+<td style="text-align: left;"> ===========================================                                   </td>
+</tr>
+<tr>
+<td style="text-align: right;">
+         </td>
+</tr>
+</table>
+</dd>
+<dt>-</dt>
+<dd>
+
+<table>
+<tr>
+<td style="text-align: right;">
+           <b><em>DCCOverride</em></b> =  </td>
+<td style="text-align: center;">     </td>
+<td style="text-align: left;">                                                             </td>
+</tr>
+<tr>
+<td style="text-align: right;">
+                                      1 </td>
+<td style="text-align: center;">     </td>
+<td style="text-align: left;"> if <code>DCC</code> is missing or NA or not element of c(1:16).   </td>
+</tr>
+<tr>
+<td style="text-align: right;">
+                                        </td>
+<td style="text-align: center;">     </td>
+<td style="text-align: left;"> ________________________________________________            </td>
+</tr>
+<tr>
+<td style="text-align: right;">
+                                        </td>
+<td style="text-align: center;">     </td>
+<td style="text-align: left;"> <em>Note:</em>                                                </td>
+</tr>
+<tr>
+<td style="text-align: right;">
+                                        </td>
+<td style="text-align: center;">     </td>
+<td style="text-align: left;"> If the program cannot process the provided day count        </td>
+</tr>
+<tr>
+<td style="text-align: right;">
+                                        </td>
+<td style="text-align: center;">     </td>
+<td style="text-align: left;"> identifier <code>DCC</code>, it overrides it with <code>DCC</code> = 2. </td>
+</tr>
+<tr>
+<td style="text-align: right;">
+                                        </td>
+<td style="text-align: center;">     </td>
+<td style="text-align: left;"> ________________________________________________            </td>
+</tr>
+<tr>
+<td style="text-align: right;">
+                                        </td>
+<td style="text-align: center;">     </td>
+<td style="text-align: left;"> <em>Output:</em>                                              </td>
+</tr>
+<tr>
+<td style="text-align: right;">
+                                        </td>
+<td style="text-align: center;">     </td>
+<td style="text-align: left;"> as if <code>DCC</code> = 2 was provided initially.                </td>
+</tr>
+<tr>
+<td style="text-align: right;">
+                    ___________________ </td>
+<td style="text-align: center;"> ___ </td>
+<td style="text-align: left;"> ________________________________________________            </td>
+</tr>
+<tr>
+<td style="text-align: right;">
+                                      0 </td>
+<td style="text-align: center;">     </td>
+<td style="text-align: left;"> , else.                                                     </td>
+</tr>
+<tr>
+<td style="text-align: right;">
+                      ================= </td>
+<td style="text-align: center;"> === </td>
+<td style="text-align: left;"> ===========================================                 </td>
+</tr>
+<tr>
+<td style="text-align: right;">
+         </td>
+</tr>
+</table>
+</dd>
+<dt>-</dt>
+<dd>
+
+<table>
+<tr>
+<td style="text-align: right;">
+           <b><em>NoCoups</em></b> =  </td>
+<td style="text-align: center;">     </td>
+<td style="text-align: left;">                                                                      </td>
+</tr>
+<tr>
+<td style="text-align: right;">
+                                  1 </td>
+<td style="text-align: center;">     </td>
+<td style="text-align: left;"> , if there are no coupon payments between the provided               </td>
+</tr>
+<tr>
+<td style="text-align: right;">
+                                    </td>
+<td style="text-align: center;">     </td>
+<td style="text-align: left;"> issue date (<code>Em</code>) and the maturity date (<code>Mat</code>), but the   </td>
+</tr>
+<tr>
+<td style="text-align: right;">
+                                    </td>
+<td style="text-align: center;">     </td>
+<td style="text-align: left;"> provided (<code>CpY</code>) is not zero.                                   </td>
+</tr>
+<tr>
+<td style="text-align: right;">
+                                    </td>
+<td style="text-align: center;">     </td>
+<td style="text-align: left;"> ________________________________________________                     </td>
+</tr>
+<tr>
+<td style="text-align: right;">
+                                    </td>
+<td style="text-align: center;">     </td>
+<td style="text-align: left;"> <em>Output:</em>                                                       </td>
+</tr>
+<tr>
+<td style="text-align: right;">
+                                    </td>
+<td style="text-align: center;">     </td>
+<td style="text-align: left;"> <em>RealDates</em> <code>= (Em,Mat)</code>, <em>CoupDates</em> <code>= (Mat)</code>, </td>
+</tr>
+<tr>
+<td style="text-align: right;">
+                                    </td>
+<td style="text-align: center;">     </td>
+<td style="text-align: left;"> <em>AnnivDates</em> contains <code>Mat</code> and has either                 </td>
+</tr>
+<tr>
+<td style="text-align: right;">
+                                    </td>
+<td style="text-align: center;">     </td>
+<td style="text-align: left;"> <code>2</code> or <code>3</code> elements, <em>FCPType = LCPType</em> and          </td>
+</tr>
+<tr>
+<td style="text-align: right;">
+                                    </td>
+<td style="text-align: center;">     </td>
+<td style="text-align: left;"> can be <code>"short"</code>, <code>"regular"</code> or <code>"long"</code>.            </td>
+</tr>
+<tr>
+<td style="text-align: right;">
+                ___________________ </td>
+<td style="text-align: center;"> ___ </td>
+<td style="text-align: left;"> ________________________________________________                     </td>
+</tr>
+<tr>
+<td style="text-align: right;">
+                                  0 </td>
+<td style="text-align: center;">     </td>
+<td style="text-align: left;"> , else.                                                              </td>
+</tr>
+<tr>
+<td style="text-align: right;">
+                  ================= </td>
+<td style="text-align: center;"> === </td>
+<td style="text-align: left;"> ===========================================                          </td>
+</tr>
+<tr>
+<td style="text-align: right;">
+        </td>
+</tr>
+</table>
+</dd>
+</dl>
+</dd>
+</dl>
+<h3>References</h3>
+
+
+<ol><li>
+<p>Djatschenko, Wadim, The Nitty Gritty of Bond Valuation: A Generalized Methodology for Fixed Coupon Bond Analysis Allowing for Irregular Periods and Various Day Count Conventions (November 5, 2018). Available at SSRN: https://ssrn.com/abstract=3205167.
+</p>
+</li></ol>
+<h3>Examples</h3>
+
+<pre><code class="language-R">data(SomeBonds2016)
+
+# Applying the function AnnivDates to the data frame SomeBonds2016.
+system.time(
+  FullAnalysis&lt;-apply(SomeBonds2016[,c('Issue.Date','Mat.Date','CpY.Input','FIPD.Input',
+  'LIPD.Input','FIAD.Input','RV.Input','Coup.Input','DCC.Input','EOM.Input')],1,function(y)
+  AnnivDates(y[1],y[2],y[3],y[4],y[5],y[6],y[7],y[8],y[9],y[10],RegCF.equal=1)),
+gcFirst = TRUE)
+# warnings are due to apply's conversion of the variables' classes in
+# SomeBonds2016 to class "character"
+
+# The output stored in FullAnalysis ist a nested list.
+# Lets look at what is stored in FullAnalysis for a random bond:
+randombond&lt;-sample(c(1:nrow(SomeBonds2016)),1)
+FullAnalysis[[randombond]]
+
+# Extracting the data frame Warnings:
+AllWarnings&lt;-do.call(rbind,lapply(FullAnalysis, `[[`, 1))
+summary(AllWarnings)
+# binding the Warnings to the bonds
+BondsWithWarnings&lt;-cbind(SomeBonds2016,AllWarnings)
+
+# Extracting the data frame Traits:
+AllTraits&lt;-do.call(rbind,lapply(FullAnalysis, `[[`, 2))
+summary(AllTraits)
+# binding the Traits to the bonds
+BondsWithTraits&lt;-cbind(SomeBonds2016,AllTraits)
+
+# Extracting the data frame AnnivDates:
+AnnivDates&lt;-lapply(lapply(FullAnalysis, `[[`, 3), `[[`, 5)
+AnnivDates&lt;-lapply(AnnivDates, `length&lt;-`, max(lengths(AnnivDates)))
+AnnivDates&lt;-as.data.frame(do.call(rbind, AnnivDates))
+AnnivDates&lt;-as.data.frame(lapply(AnnivDates, as.Date, as.Date(AllTraits$DateOrigin[1])))
+# binding the AnnivDates to the bonds:
+BondsWithAnnivDates&lt;-cbind(SomeBonds2016,AnnivDates)
+
+# Extracting the data frames PaySched for each bond and creating a panel:
+CoupSched&lt;-lapply(FullAnalysis, `[[`, 4)
+CoupSchedPanel&lt;-SomeBonds2016[rep(row.names(SomeBonds2016),sapply(CoupSched, nrow)),]
+CoupSched&lt;-as.data.frame(do.call(rbind, CoupSched))
+CoupSchedPanel&lt;-cbind(CoupSchedPanel,CoupSched)
+
+
+</code></pre>
+
+
+</div>

@@ -1,0 +1,116 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>get.rege0.prediction</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>
+Accessing Subnational Prediction Objects
+</h2>
+
+<h3>Description</h3>
+
+<p>Retrieve subnational (regional) prediction results produced by <code>e0.predict.subnat</code>, either for one country or for all available countries.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">get.rege0.prediction(sim.dir, country = NULL, method = "ar1", joint.male = FALSE)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>sim.dir</code></td>
+<td>
+<p>Simulation directory of the subnational predictions. It corresponds to the argument <code>output.dir</code> in <code>e0.predict.subnat</code>.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>country</code></td>
+<td>
+<p>Numerical country code. If it is not given, all available subnational predictions are retrieved.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>method</code></td>
+<td>
+<p>Method used for generating the projections. It corresponds to the <code>method</code> argument in <code>e0.predict.subnat</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>joint.male</code></td>
+<td>
+<p>Logical. If <code>TRUE</code>, the function is applied to a male prediction that was generated using the joint female-male gap model implemented in the function <code>e0.jmale.predict.subnat</code>.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>Predictions for country <code class="reqn">x</code> are assumed to be stored in “<code>sim.dir</code>/subnat_<code>method</code>/c<code class="reqn">x</code>”.
+</p>
+
+
+<h3>Value</h3>
+
+<p>If argument <code>country</code> is given, the function returns an object of class <code>bayesLife.prediction</code>. If it is <code>NULL</code>, it returns a list of such objects. Names of the list items are the country codes.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>e0.predict.subnat</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R"># Subnational example data
+my.sube0.file &lt;- file.path(find.package("bayesLife"), 'extdata', 'subnational_e0_template.txt')
+sube0 &lt;- read.delim(my.sube0.file, check.names = FALSE)
+countries &lt;- unique(sube0[, c("country_code", "country_name")])
+
+# Directory with national projections (contains 30 trajectories for each country)
+nat.dir &lt;- file.path(find.package("bayesLife"), "ex-data", "bayesLife.output")
+
+# Subnational projections for all three countries,
+# including male projections where female 
+# data is used only for demonstration purposes
+# (my.e0M.file should contain male e0).
+subnat.dir &lt;- tempfile()
+e0.predict.subnat(countries$country_code, my.e0.file = my.sube0.file,
+    sim.dir = nat.dir, output.dir = subnat.dir, start.year = 2013,
+    predict.jmale = TRUE, my.e0M.file = my.sube0.file)
+    
+# Retrieve results for all countries
+preds &lt;- get.rege0.prediction(subnat.dir)
+names(preds)
+
+# View tables of subregions for each country
+for(i in 1:nrow(countries)) {
+  cat("\n\n", countries$country_name[i], "\n")
+  print(get.countries.table(preds[[as.character(countries$country_code[i])]]))
+}
+# Quantiles for individual subregions for female
+e0.trajectories.table(preds[["36"]], "Victoria")
+
+# Retrieve results for one country (Canada)
+pred &lt;- get.rege0.prediction(subnat.dir, 124)
+e0.trajectories.plot(pred, "Quebec", both.sexes = TRUE)
+
+# Retrieve only male results
+predM &lt;- get.rege0.prediction(subnat.dir, 124, joint.male = TRUE)
+e0.trajectories.table(predM, "Quebec")
+
+# cleanup
+unlink(subnat.dir)
+
+# See more examples in ?e0.predict.subnat
+</code></pre>
+
+
+</div>

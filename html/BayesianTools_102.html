@@ -1,0 +1,287 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>VSEM</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Very simple ecosystem model</h2>
+
+<h3>Description</h3>
+
+<p>A very simple ecosystem model, based on three carbon pools and a basic LUE model
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">VSEM(
+  pars = c(KEXT = 0.5, LAR = 1.5, LUE = 0.002, GAMMA = 0.4, tauV = 1440, tauS = 27370,
+    tauR = 1440, Av = 0.5, Cv = 3, Cs = 15, Cr = 3),
+  PAR,
+  C = TRUE
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>pars</code></td>
+<td>
+<p>a parameter vector with parameters and initial states</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>PAR</code></td>
+<td>
+<p>Forcing, photosynthetically active radiation (PAR) MJ /m2 /day</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>C</code></td>
+<td>
+<p>switch to choose whether to use the C or R version of the model. C is much faster.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>This Very Simple Ecosystem Model (VSEM) is a 'toy' model designed to be very simple but yet bear some resemblance to deterministic processed based ecosystem models (PBMs) that are commonly used in forest modelling.
+</p>
+<p>The model determines the accumulation of carbon in the plant and soil from the growth of the plant via photosynthesis and senescence to the soil which respires carbon back to the atmosphere.
+</p>
+<p>The model calculates Gross Primary Productivity (GPP) using a very simple light-use efficiency (LUE) formulation multiplied by light interception. Light interception is calculated via Beer's law with a constant light extinction coefficient operating on Leaf Area Index (LAI).
+</p>
+<p>A parameter (GAMMA) determines the fraction of GPP that is autotrophic respiration. The Net Primary Productivity (NPP) is then allocated to above and below-ground vegetation via a fixed allocation fraction. Carbon is lost from the plant pools to a single soil pool via fixed turnover rates. Heterotropic respiration in the soil is determined via a soil turnover rate.
+</p>
+<p>The model equations are
+</p>
+<p>– Photosynthesis
+</p>
+<p style="text-align: center;"><code class="reqn">LAI = LAR*Cv</code>
+</p>
+
+<p style="text-align: center;"><code class="reqn">GPP = PAR * LUE * (1 - \exp^{(-KEXT * LAI)})</code>
+</p>
+
+<p style="text-align: center;"><code class="reqn">NPP = (1-GAMMA) * GPP</code>
+</p>
+
+<p>– State equations
+</p>
+<p style="text-align: center;"><code class="reqn">dCv/dt  = Av * NPP - Cv/tauV</code>
+</p>
+
+<p style="text-align: center;"><code class="reqn">dCr/dt  = (1.0-Av) * NPP - Cr/tauR</code>
+</p>
+
+<p style="text-align: center;"><code class="reqn">dCs/dt  = Cr/tauR + Cv/tauV - Cs/tauS</code>
+</p>
+
+<p>The model time-step is daily.
+</p>
+<p>– VSEM inputs:
+</p>
+<p>PAR    Photosynthetically active radiation (PAR) MJ /m2 /day
+</p>
+<p>– VSEM parameters:
+</p>
+<p>KEXT   Light extinction coefficient m2 ground area / m2 leaf area
+</p>
+<p>LAR    Leaf area ratio m2 leaf area / kg aboveground vegetation
+</p>
+<p>LUE    Light-Use Efficiency (kg C MJ-1 PAR)
+</p>
+<p>GAMMA  Autotrophic respiration as a fraction of GPP
+</p>
+<p>tauV   Longevity of aboveground vegetation days
+</p>
+<p>tauR   Longevity of belowground vegetation days
+</p>
+<p>tauS   Residence time of soil organic matter d
+</p>
+<p>– VSEM states:
+</p>
+<p>Cv     Above-ground vegetation pool kg C / m2
+</p>
+<p>Cr     Below-ground vegetation pool kg C / m2
+</p>
+<p>Cs     Carbon in organic matter kg C / m2
+</p>
+<p>– VSEM fluxes:
+</p>
+<p>G     Gross Primary Productivity kg C /m2 /day
+</p>
+<p>NPP   Net Primary Productivity kg C /m2 /day
+</p>
+<p>NEE   Net Ecosystem Exchange kg C /m2 /day
+</p>
+
+
+<h3>Value</h3>
+
+<p>a matrix with colums NEE, CV, CR and CS units and explanations see details
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>David Cameron, R and C implementation by Florian Hartig
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>VSEMgetDefaults</code>, <code>VSEMcreatePAR</code>, , <code>VSEMcreateLikelihood</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+  
+## This example shows how to run and calibrate the VSEM model 
+
+library(BayesianTools)
+
+# Create input data for the model
+PAR &lt;- VSEMcreatePAR(1:1000)
+plot(PAR, main = "PAR (driving the model)", xlab = "Day")
+
+# load reference parameter definition (upper, lower prior)
+refPars &lt;- VSEMgetDefaults()
+# this adds one additional parameter for the likelihood standard deviation (see below)
+refPars[12,] &lt;- c(2, 0.1, 4) 
+rownames(refPars)[12] &lt;- "error-sd"
+head(refPars)
+
+# create some simulated test data 
+# generally recommended to start with simulated data before moving to real data
+referenceData &lt;- VSEM(refPars$best[1:11], PAR) # model predictions with reference parameters  
+referenceData[,1] = 1000 * referenceData[,1] 
+# this adds the error - needs to conform to the error definition in the likelihood
+obs &lt;- referenceData + rnorm(length(referenceData), sd = refPars$best[12])
+oldpar &lt;- par(mfrow = c(2,2))
+for (i in 1:4) plotTimeSeries(observed = obs[,i], 
+                              predicted = referenceData[,i], main = colnames(referenceData)[i])
+
+# Best to program in a way that we can choose easily which parameters to calibrate
+parSel = c(1:6, 12)
+
+# here is the likelihood 
+likelihood &lt;- function(par, sum = TRUE){
+  # set parameters that are not calibrated on default values 
+  x = refPars$best
+  x[parSel] = par
+  predicted &lt;- VSEM(x[1:11], PAR) # replace here VSEM with your model 
+  predicted[,1] = 1000 * predicted[,1] # this is just rescaling
+  diff &lt;- c(predicted[,1:4] - obs[,1:4]) # difference betweeno observed and predicted
+  # univariate normal likelihood. Note that there is a parameter involved here that is fit
+  llValues &lt;- dnorm(diff, sd = x[12], log = TRUE)  
+  if (sum == FALSE) return(llValues)
+  else return(sum(llValues))
+}
+
+# optional, you can also directly provide lower, upper in the createBayesianSetup, see help
+prior &lt;- createUniformPrior(lower = refPars$lower[parSel], 
+                            upper = refPars$upper[parSel], best = refPars$best[parSel])
+
+bayesianSetup &lt;- createBayesianSetup(likelihood, prior, names = rownames(refPars)[parSel])
+
+# settings for the sampler, iterations should be increased for real applicatoin
+settings &lt;- list(iterations = 2000, nrChains = 2)
+
+out &lt;- runMCMC(bayesianSetup = bayesianSetup, sampler = "DEzs", settings = settings)
+
+## Not run: 
+
+plot(out)
+summary(out)
+marginalPlot(out)
+gelmanDiagnostics(out) # should be below 1.05 for all parameters to demonstrate convergence 
+
+# Posterior predictive simulations
+
+# Create a prediction function
+createPredictions &lt;- function(par){
+  # set the parameters that are not calibrated on default values 
+  x = refPars$best
+  x[parSel] = par
+  predicted &lt;- VSEM(x[1:11], PAR) # replace here VSEM with your model 
+  return(predicted[,1] * 1000)
+}
+
+# Create an error function
+createError &lt;- function(mean, par){
+  return(rnorm(length(mean), mean = mean, sd = par[7]))
+}
+
+# plot prior predictive distribution and prior predictive simulations
+plotTimeSeriesResults(sampler = out, model = createPredictions, observed = obs[,1],
+                      error = createError, prior = TRUE, main = "Prior predictive")
+
+# plot posterior predictive distribution and posterior predictive simulations
+plotTimeSeriesResults(sampler = out, model = createPredictions, observed = obs[,1],
+                      error = createError, main = "Posterior predictive")
+
+
+########################################################
+# Demonstrating the updating of the prior from old posterior
+# Note that it is usually more exact to rerun the MCMC 
+# with all (old and new) data, instead of updating the prior
+# because likely some information is lost when approximating the
+# Posterior by a multivariate normal 
+
+settings &lt;- list(iterations = 5000, nrChains = 2)
+
+out &lt;- runMCMC(bayesianSetup = bayesianSetup, sampler = "DEzs", settings = settings)
+
+plot(out)
+correlationPlot(out, start = 1000)
+
+newPrior = createPriorDensity(out, method = "multivariate",
+                              eps = 1e-10,
+                              lower = refPars$lower[parSel],
+                              upper = refPars$upper[parSel], start= 1000)
+
+bayesianSetup &lt;- createBayesianSetup(likelihood = likelihood,
+                                     prior = newPrior,
+                                     names = rownames(refPars)[parSel] )
+
+# check boundaries are correct set
+bayesianSetup$prior$sampler() &lt; refPars$lower[parSel]
+bayesianSetup$prior$sampler() &gt; refPars$upper[parSel]
+
+# check prior looks similar to posterior
+x = bayesianSetup$prior$sampler(2000)
+correlationPlot(x, thin = F)
+
+out &lt;- runMCMC(bayesianSetup = bayesianSetup, sampler = "DEzs", settings = settings)
+
+plot(out)
+correlationPlot(out)
+
+plotTimeSeriesResults(sampler = out,
+                      model = createPredictions,
+                      observed = obs[,1],
+                      error = createError,
+                      prior = F, main = "Posterior predictive")
+
+plotTimeSeriesResults(sampler = out,
+                      model = createPredictions,
+                      observed = obs[,1],
+                      error = createError,
+                      prior = T, main = "Prior predictive")
+
+
+
+
+
+## End(Not run)
+
+par(oldpar)
+</code></pre>
+
+
+</div>

@@ -1,0 +1,172 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>enrichment_analysis</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Prognostic Enrichment with Real Data</h2>
+
+<h3>Description</h3>
+
+<p>Evaluating biomarkers for prognostic enrichment of clinical trials using real data
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">enrichment_analysis(formula, data, family = binomial(link = logit),
+  reduction.under.treatment, cost.screening = NULL, cost.keeping = NULL,
+  do.bootstrap = TRUE, n.bootstrap = 1000, smooth.roc = FALSE,
+  power = 0.9, alpha = 0.025, alternative = c("one.sided", "two.sided"),
+  selected.biomarker.quantiles = seq(from = 0, to = 0.95, by = 0.05))
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>formula</code></td>
+<td>
+<p>Object of class "formula", in the form "outcome ~ predictors", where the outcome is a binary indicator with a value of 1 in cases and a value of 0 in controls.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+<p>Data frame containing the outcome and predictors specified in the “formula” argument. Observations with a missing value of the outcome or of any predictor are dropped.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>family</code></td>
+<td>
+<p>Character object or call to the family() function specifying the link function that is passed to 'glm' to estimate a risk score when more than one predictor is specified. Defaults to binomial(link = "logit"), which yields logistic regression.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>reduction.under.treatment</code></td>
+<td>
+<p>Number between 0 and 1 indicating the percent reduction in event rate under treatment that the trial should be able to detect with the specified power</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>cost.screening</code></td>
+<td>
+<p>Number indicating the cost of screening a patient to determine trial eligibility, This argument is optional; if both the “cost.screening” and “cost.keeping” arguments are specified, then the total cost of the trial based on each screening threshold is estimated and returned.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>cost.keeping</code></td>
+<td>
+<p>Number indicating the cost of retaining a patient in the trial after enrolling. This argument is optional; if both the “cost.screening” and “cost.keeping” arguments are specified, then the total cost of the trial based on each screening threshold is estimated and returned.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>do.bootstrap</code></td>
+<td>
+<p>Logical indicating whether bootstrap 95% confidence intervals should be computed. Defaults to TRUE.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>n.bootstrap</code></td>
+<td>
+<p>Number of bootstrap samples to draw, if “do.bootstrap” is set to TRUE. Defaults to 1000.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>smooth.roc</code></td>
+<td>
+<p>Logical indicating the “smooth” argument passed to the roc() function from the ‘pROC’ package when a single biomarker is given. Defaults to FALSE.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>power</code></td>
+<td>
+<p>Number between 0 and 1 giving the power the trial should have to reject the null hypothesis that there is no treatment effect. Defaults to 0.9.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>alpha</code></td>
+<td>
+<p>Number between 0 and 1 giving the type I error rate for testing the null hypothesis that there is no treatment effect.  Defaults to 0.025.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>alternative</code></td>
+<td>
+<p>Character specifying whether the alternative hypothesis is one-sided with a higher event rate in the treatment group (“one.sided”) or two-sided (“two.sided”). Defaults to “one.sided”.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>selected.biomarker.quantiles</code></td>
+<td>
+<p>Numeric vector specifying the quantiles of the biomarker measured in controls that will be used to screen trial participants. Defaults to 0, 0.05, ..., 0.95. All entries must be between at least 0 and less than 1.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>A list with components
+</p>
+
+<ul>
+<li>
+<p> estimates: A data frame with the following summary measures for each biomarker threshold that is used to screen trial participants: ‘selected.biomarker.quantiles’: quantiles of observed biomarker values used for screening. ‘biomarker.screening.thresholds’: the values of the biomarker corresponding to the quantiles, ‘event.rate’: post-screening event rate, ‘NNS’: The estimated number of patients needed to screen to identify one patient eligible for the trial, ‘SS’: The sample size in a clinical trial enrolling only patients whose biomarker-based disease risk is above the level used for screening, ‘N.screen’: The total number of individuals whose biomarker values are screened to determine whether they should be enrolled in the trial, ‘N.screen.increase.percentage’: Percentage in N.screen relative to a trail that does not based on the biomarker. ‘total.cost’: The estimated total cost of running the trial if the biomarker were used for prognostic enrichment (if cost.screening and cost.keeping are specified), ‘cost.reduction.percentage’: The reduction in total cost relative to a trial that does not screen based on the biomarker.
+</p>
+</li>
+<li>
+<p> estimates.min.total.cost: The row of the estimates data frame corresponding the screening strategy that results in the lowest total cost.
+</p>
+</li>
+<li>
+<p> bootstrap.CIs: 95% bootstrap-based CIs for reported summary measures (if do.bootstrap=TRUE).
+</p>
+</li>
+<li>
+<p> simulation: A logical indicating whether data were simulated.
+</p>
+</li>
+<li>
+<p> bootstrap.CIs: 95% bootstrap-based CIs for reported summary measures (if do.bootstrap=TRUE).
+</p>
+</li>
+<li>
+<p> biomarker: Biomarker from the given dataset, either the single biomarker specified or the predicted values from logistic regression if multiple biomarkers are specified).
+</p>
+</li>
+<li>
+<p> response: Response variable specified in the dataset.
+</p>
+</li>
+</ul>
+<h3>See Also</h3>
+
+<p><code>enrichment_simulation</code>, <code>plot_enrichment_summaries</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">data(dcaData)
+
+## using a single biomarker in the dataset
+analysis.single.marker &lt;- enrichment_analysis(Cancer ~ Marker1,
+data=dcaData,
+reduction.under.treatment=0.3,
+cost.screening=100,
+cost.keeping=1000)
+head(analysis.single.marker$estimates)
+head(analysis.single.marker$bootstrap.CIs)
+
+## combining two biomarkers in the dataset
+analysis.two.markers &lt;- enrichment_analysis(Cancer ~ Marker1 + Marker2,
+data=dcaData,
+reduction.under.treatment=0.3,
+cost.screening=100,
+cost.keeping=1000)
+head(analysis.two.markers$estimates)
+head(analysis.two.markers$bootstrap.CIs)
+</code></pre>
+
+
+</div>

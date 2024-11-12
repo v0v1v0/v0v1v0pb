@@ -1,0 +1,256 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>BAYSTAR</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2> Threshold Autoregressive model: Bayesian approach </h2>
+
+<h3>Description</h3>
+
+<p>Bayesian estimation and one-step-ahead forecasting for two-regime
+TAR model, as well as monitoring MCMC convergence. One may want to
+allow for higher-order AR models in the different regimes.
+Parsimonious subset AR could be assigned in each regime in the
+BAYSTAR function rather than a full AR model (i.e. the
+autoregressive orders could be not a continuous series).</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">
+BAYSTAR(x, lagp1, lagp2, Iteration, Burnin, constant, d0, 
+        step.thv, thresVar, mu01, v01, mu02, v02, v0, lambda0, refresh,tplot)
+
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p> A vector of time series. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>lagp1</code></td>
+<td>
+<p> A vector of non-zero autoregressive lags for the lower regime (regime one).
+For example, an AR model with p1=3 in lags 1,3, and 5 would be set
+as <code>lagp1&lt;-c(1,3,5)</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>lagp2</code></td>
+<td>
+<p> A vector of non-zero autoregressive lags for the upper regime (regime two).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Iteration</code></td>
+<td>
+<p> The number of MCMC iterations.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Burnin</code></td>
+<td>
+<p> The number of burn-in iterations for the sampler.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>constant</code></td>
+<td>
+<p> The intercepts include in the model for each regime, if <code>constant</code>=1.
+Otherwise, if <code>constant</code>=0. (Default: <code>constant</code>=1)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>d0</code></td>
+<td>
+<p> The maximum delay lag considered. (Default: <code>d0</code> = 3)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>step.thv</code></td>
+<td>
+<p> Step size of tuning parameter for the Metropolis-Hasting algorithm. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>thresVar</code></td>
+<td>
+<p> A vector of time series for the threshold variable. (if missing, the series x is used.) </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>mu01</code></td>
+<td>
+<p> The prior mean of <code class="reqn">\phi</code> in regime one.
+This setting can be a scalar or a column vector with dimension equal
+to the number of <code class="reqn">\phi</code>. If this sets a scalar value, then
+the prior mean for all of <code class="reqn">\phi</code> are this value. (Default:
+a vector of zeros)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>v01</code></td>
+<td>
+<p> The prior covariance matrix of <code class="reqn">\phi</code> in regime one.
+This setting can either be a scalar or a square matrix with
+dimensions equal to the number of <code class="reqn">\phi</code>. If this sets a
+scalar value, then prior covariance matrix of <code class="reqn">\phi</code> is
+that value times an identity matrix.  (Default: a diagonal matrix
+are set to 0.1)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>mu02</code></td>
+<td>
+<p> The prior mean of <code class="reqn">\phi</code> in regime two.
+This setting can be a scalar or a column vector with dimension equal
+to the number of <code class="reqn">\phi</code>. If this sets a scalar value, then
+the prior mean for all of <code class="reqn">\phi</code> are this value. (Default:
+a vector of zeros)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>v02</code></td>
+<td>
+<p> The prior covariance matrix of <code class="reqn">\phi</code> in regime two.
+This setting can either be a scalar or a square matrix with
+dimensions equal to the number of <code class="reqn">\phi</code>. If this sets a
+scalar value, then prior covariance matrix of <code class="reqn">\phi</code> is
+that value times an identity matrix.  (Default: a diagonal matrix
+are set to 0.1)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>v0</code></td>
+<td>
+ <p><code>v0</code>/2 is the shape parameter for Inverse-Gamma prior of <code class="reqn">\sigma^2</code>.
+(Default: <code>v0</code> = 3)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>lambda0</code></td>
+<td>
+ <p><code>lambda0</code>*<code>v0</code>/2 is the scale parameter for Inverse-Gamma prior of
+<code class="reqn">\sigma^2</code>. (Default: <code>lambda0</code> = the residual
+mean squared error of fitting an AR(p1) model to the data.)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>refresh</code></td>
+<td>
+<p> Each <code>refresh</code> iteration for monitoring MCMC output. (Default: <code>refresh</code>=<code>Iteration</code>/2)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>tplot</code></td>
+<td>
+<p> Trace plots and ACF plots for all parameter estimates. (Default: <code>tplot</code>=FALSE )</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>Given the maximum AR orders p1 and p2, the two-regime SETAR(2:p1;p2) model is specified as:
+</p>
+<p style="text-align: center;"><code class="reqn">x_{t} = ( \phi _0^{(1)} + \phi _1^{(1)} x_{t - 1} + \ldots + \phi _{p1 }^{(1)} x_{t - p1 } + 
+      a_t^{(1)} ) I( z_{t-d} &lt;= th) + ( \phi _0^{(2)}  + \phi _1^{(2)} x_{t - 1} + \ldots + 
+      \phi _{p2 }^{(2)} x_{t - p2 } + a_t^{(2)} I( z_{t-d} &gt; th) </code>
+</p>
+
+<p>where <code class="reqn">th</code> is the threshold value for regime switching;
+<code class="reqn">z_{t}</code> is the threshold variable; <code class="reqn">d</code> is the delay lag
+of threshold variable; and the error term <code class="reqn">a_t^{(j)}</code>, <code class="reqn">j,
+(j=1,2)</code>, for each regime is assumed to be an i.i.d. Gaussian
+white noise process with mean zero and variance <code class="reqn">sigma_j^2,
+j=1,2</code>. I(A) is an indicator function. Event A will occur if
+I(A)=1 and otherwise if I(A)=0. One may want to allow parsimonious
+subset AR model in each regime rather than a full AR model.
+</p>
+
+
+<h3>Value</h3>
+
+<p>A list of output with containing the following components:
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>mcmc </code></td>
+<td>
+<p>All MCMC iterations.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>posterior </code></td>
+<td>
+<p>The initial <code>Burnin</code> iterations are discarded as a burn-in sample, the final sample of (<code>Iteration-Burnin</code>) iterates is used for posterior inference.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>coef </code></td>
+<td>
+<p>Summary Statistics of parameter estimation based on the final sample of (<code>Iteration-Burnin</code>) iterates.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>residual </code></td>
+<td>
+<p>Residuals from the estimated model.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>lagd </code></td>
+<td>
+<p>The mode of time delay lag of the threshold variable.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>DIC </code></td>
+<td>
+<p>The deviance information criterion (DIC); a Bayesian method for model comparison (Spiegelhalter et al, 2002)</p>
+</td>
+</tr>
+</table>
+<h3>Author(s)</h3>
+
+<p> Cathy W. S. Chen, Edward M.H. Lin, F.C. Liu, and Richard Gerlach  </p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+set.seed(989981)
+## Set the true values of all parameters
+nob&lt;- 200                ## No. of observations
+lagd&lt;- 1                  ## delay lag of threshold variable
+r&lt;- 0.4                   ## r is the threshold value
+sig.1&lt;- 0.8; sig.2&lt;- 0.5  ## variances of error distributions for two regimes
+p1&lt;- 2; p2&lt;- 1            ## No. of covariate in two regimes
+ph.1&lt;- c(0.1,-0.4,0.3)    ## mean coefficients for regime 1
+ph.2&lt;- c(0.2,0.6)     ## mean coefficients for regime 2
+lagp1&lt;-1:2
+lagp2&lt;-1:1
+
+yt&lt;- TAR.simu(nob,p1,p2,ph.1,ph.2,sig.1,sig.2,lagd,r,lagp1,lagp2)
+
+
+## Total MCMC iterations and burn-in iterations
+Iteration &lt;- 500
+Burnin    &lt;- 200
+
+
+## A RW (random walk) MH algorithm is used in simulating the threshold value
+## Step size for the RW MH
+step.thv&lt;- 0.08
+
+out &lt;- BAYSTAR(yt,lagp1,lagp2,Iteration,Burnin,constant=1,step.thv=step.thv,tplot=TRUE)
+</code></pre>
+
+
+</div>

@@ -1,0 +1,110 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>BstrapTest</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Bootstrap test for a single change-point</h2>
+
+<h3>Description</h3>
+
+<p>Tests whether the underlying signal is smooth or contains at least one change-point. The smooth alternative is estimated by a (crossvalidated) kernel smoother. The single change-point alternative is estimated by <code>estimateSingleCp</code>. Its estimated jump size is used as a test statistic and the critical value is obtained by bootstrapping. More details can be found in the vignette.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">BstrapTest(y, bandwidth, nbandwidth = 30L, B = 500L, alpha = 0.05,
+           kernel = c("epanechnikov", "gaussian", "rectangular",
+                      "triangular", "biweight", "silverman"))
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>y</code></td>
+<td>
+<p>a numeric vector containing the data points</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>bandwidth</code></td>
+<td>
+<p>the bandwidth, i.e. a numeric with values between <code>1 / length(y)</code> and <code>0.5</code>. If missing  <code>exp(seq(log(10 / length(y)), log(0.25), length.out = nbandwidth))</code> will be used. Crossvalidation will be performed if it is not a single numeric. Note that the test has almost no power when the bandwidth for the kernel smoother is too small, since then a change-point can be approximated well by a quickly changing smooth function.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nbandwidth</code></td>
+<td>
+<p>a single integer giving the number of bandwidths (see above) if <code>bandwidth</code> is missing</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>B</code></td>
+<td>
+<p>a single integer giving the number of bootstrap samples</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>alpha</code></td>
+<td>
+<p>a probability, i.e. a single numeric between 0 and 1, giving the significance level of the test</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>kernel</code></td>
+<td>
+<p>the kernel function, i.e. either a string or a function that takes a single numeric vector and returns the values of the kernel at those locations</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>a <code>list</code> with the following components:<br>
+- piecewiseSignal: the estimated signal with a single change-point<br>
+- cp: the estimated change-point location<br>
+- size: the estimated jump size<br>
+- bandwidth: the selected bandwidth for the piecewise signal<br>
+- bandwidthSmooth: the selected bandwidth for the smooth signal<br>
+- smoothSignal: the estimated smooth signal<br>
+- critVal: the by bootstrapping obtained critical value<br>
+- pValue: the p-Value of the test<br>
+- outcome: a boolean saying whether the test rejects the hypothesis of a smooth signal
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">n &lt;- 100
+signal &lt;- sin(2 * pi * 1:n / n)
+signal[51:100] &lt;- signal[51:100] + 5
+
+y &lt;- rnorm(n) + signal
+
+# default bandwidth and kernel
+test &lt;- BstrapTest(y = y)
+
+if (test$outcome) {
+  # null hypothesis of a smooth signal is rejected
+  estimatedSignal &lt;- test$piecewiseSignal
+} else {
+  # null hypothesis of a smooth signal is accepted
+  estimatedSignal &lt;- test$smoothSignal
+}
+
+plot(y)
+lines(signal)
+lines(estimatedSignal, col = "red")
+
+# fixed bandwidth
+test &lt;- BstrapTest(y = y, bandwidth = 0.1)
+
+# user specified kernel
+kernel &lt;- function(x) 1 - abs(x) # triangular kernel
+test &lt;- BstrapTest(y = y, kernel = kernel)
+</code></pre>
+
+
+</div>

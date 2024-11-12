@@ -1,0 +1,113 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>bidag2codalist</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Converting multiple BiDAG chains to mcmc.list</h2>
+
+<h3>Description</h3>
+
+<p>This function converts a list of objects of classes
+'orderMCMC' or 'partitionMCMC' to an object of class 'mcmc.list'. This object can
+be further used for convergence and mixing diagnostics implemented in the R-package coda.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">bidag2codalist(
+  MCMClist,
+  edges = FALSE,
+  pdag = TRUE,
+  p = 0.1,
+  burnin = 0.2,
+  window = 10,
+  cumulative = FALSE
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>MCMClist</code></td>
+<td>
+<p>a list of objects of classes <code>orderMCMC</code> or <code>partitionMCMC</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>edges</code></td>
+<td>
+<p>logical, when FALSE (default), then only DAG score trace is extracted; when TRUE, a trace of posterior probabilities is extracted for every edge (based on the sampled DAGs defined by parameters 'window' and 'cumulative') resulting in up to n^2 trace vectors, where n is the number of nodes in the network</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>pdag</code></td>
+<td>
+<p>logical, when edges=TRUE, defines if the DAGs are converted to CPDAGs prior to computing posterior probabilities; ignored otherwise</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>p</code></td>
+<td>
+<p>numeric, between 0 and 1; defines the minimum probability for including posterior traces in the returned objects (for probabilities close to 0, PRSF diagnostics maybe too conservative; the threshold above 0 is recommended)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>burnin</code></td>
+<td>
+<p>numeric between <code>0</code> and <code>1</code>, indicates the percentage of the samples which will be discarded as 'burn-in' of the MCMC chain; the rest  of the samples will be used to calculate the posterior probabilities; 0.2 by default</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>window</code></td>
+<td>
+<p>integer, defines a number of DAG samples for averaging and computing edges' posterior probabilities; ignored when edges=FALSE</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>cumulative</code></td>
+<td>
+<p>logical, indicates if posterior probabilities should be calculated based on a cumulative sample of DAGs, where 25% of the first samples are discarded</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>Object of class <code>mcmc.list</code> from the package <span class="pkg">coda</span>
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Polina Suter
+</p>
+
+
+<h3>References</h3>
+
+<p>Robert J. B. Goudie and Sach Mukherjee (2016). A Gibbs Sampler for Learning DAGs. J Mach Learn Res. 2016 Apr; 17(30): 1–39.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## Not run: 
+library(coda)
+scoreBoston&lt;-scoreparameters("bge",Boston)
+ordershort&lt;-list()
+#run very short chains -&gt; convergence issues
+ordershort[[1]] &lt;- sampleBN(scoreBoston, algorithm = "order", iterations=2000)
+ordershort[[2]] &lt;- sampleBN(scoreBoston, algorithm = "order", iterations=2000)
+codashort_edges&lt;-bidag2codalist(ordershort,edges=TRUE,pdag=TRUE,p=0.05,burnin=0.2,window=10)
+gd_short&lt;-gelman.diag(codashort_edges, transform=FALSE, autoburnin=FALSE, multivariate=FALSE)
+length(which(gd_short$psrf[,1]&gt;1.1))/(length(gd_short$psrf[,1]))
+#=&gt;more MCMC iterations are needed, try 100000
+
+## End(Not run)
+</code></pre>
+
+
+</div>

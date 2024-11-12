@@ -1,0 +1,154 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>fitMarginals</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Fit two 4-parameter log-logistic functions for a synergy experiment</h2>
+
+<h3>Description</h3>
+
+<p>This function uses dose-response data for two compounds and estimates
+coefficients for monotherapy models of both of these compounds such that they
+share a common baseline. Currently, these coefficients are estimated by
+default using a non-linear least squares approximation. Although entire
+dose-response data can be provided, estimation will subset the part of data
+where at least one of the compounds is dosed at zero, i.e. on-axis data.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">fitMarginals(
+  data,
+  transforms = NULL,
+  start = NULL,
+  constraints = NULL,
+  fixed = NULL,
+  method = c("nlslm", "nls", "optim"),
+  names = NULL,
+  ...
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+<p>Dose-response dataframe. Marginal data will be extracted from
+it automatically.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>transforms</code></td>
+<td>
+<p>Transformation functions. If non-null, <code>transforms</code> is
+a list containing 5 elements, namely biological and power transformations
+along with their inverse functions and <code>compositeArgs</code> which is a list
+with argument values shared across the 4 functions. See vignette for more
+information.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>start</code></td>
+<td>
+<p>Starting parameter values. If not specified, they will be
+obtained from <code>initialMarginal</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>constraints</code></td>
+<td>
+<p>List of constraint matrix and vector which will be passed
+to <code>constructFormula</code>. If <code>constraints = NULL</code>, no
+constraints on parameter estimation will be imposed.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>fixed</code></td>
+<td>
+<p>This arguments provides a user-friendly alternative to impose a
+fixed value for marginal parameters. It must be a named vector with names
+contained in <code>c("h1", "h2", "b", "m1", "m2", "e1", "e2")</code>. For
+example, <code>fixed = c("m1" = 1, "h1" = 1)</code> will automatically generate
+appropriate constraint matrix and vector to set the maximal response and
+the Hill coefficient of the first compound to 1. If both <code>constraints</code>
+and <code>fixed</code> arguments are passed, then only <code>fixed</code> will be used.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>method</code></td>
+<td>
+<p>Which estimation method should be used to obtain the estimates.
+If <code>method = "nls"</code>, simple non-linear least squares
+<code>nls</code> will be used. If <code>method = "nlslm"</code>
+Levenberg-Marquardt non-linear least squares
+<code>nlsLM</code> is used instead (default). If <code>method
+= "optim"</code>, residual sum of squares will be minimized using general purpose
+optimization based on Nelder-Mean algorithm in <code>optim</code>.
+This method can be noticeably slower than the non-linear least squares
+methods.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>names</code></td>
+<td>
+<p>Compound names to be used on the plot labels.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Further arguments that are passed to the optimizer function, 
+such as <code>lower</code> or <code>upper</code> (for the "nlslm" method), or 
+<code>control</code>.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>Model formula is specified as <code>effect ~ fn(h1, h2, ...)</code> where <code>fn</code>
+is a hard-coded function which fits two 4-parameter log-logistic functions
+simultaneously so that the baseline can be shared. If transformation
+functions are provided, <code>fn</code> is consequently adjusted to account for
+them.
+</p>
+
+
+<h3>Value</h3>
+
+<p>This function returns a <code>MarginalFit</code> object with monotherapy
+coefficient estimates and diverse information regarding monotherapy
+estimation. <code>MarginalFit</code> object is essentially a list with
+appropriately named elements.
+</p>
+<p>Among these list elements, <code>"coef"</code> is a named vector with parameter
+estimates. <code>h1</code> and <code>h2</code> are Hill's slope coefficients for each
+of the compounds, <code>m1</code> and <code>m2</code> are their maximal response levels
+whereas <code>b</code> is the shared baseline. Lastly, <code>e1</code> and <code>e2</code>
+are log-transformed EC50 values.
+</p>
+<p><code>"sigma"</code> is standard deviation of residuals for the estimated
+monotherapy model and <code>"df"</code> is the degrees of freedom for the
+residuals. <code>"vcov"</code> is the variance-covariance matrix of the estimated
+parameters.
+</p>
+<p>Return object also contains information regarding data, biological and
+power transformations used in this estimation as well as model construct
+and method of estimation.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">  data &lt;- subset(directAntivirals, experiment == 1)
+  ## Data must contain d1, d2 and effect columns
+  transforms &lt;- getTransformations(data)
+  fitMarginals(data, transforms)
+</code></pre>
+
+
+</div>

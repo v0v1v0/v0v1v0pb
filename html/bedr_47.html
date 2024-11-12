@@ -1,0 +1,201 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>test.region.similarity</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>
+Compare sets of regions via jaccard and relative distance using permutation
+</h2>
+
+<h3>Description</h3>
+
+<p>Compare sets of regions via jaccard and relative distance using permutation to get an empirical p-value.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">test.region.similarity(
+	x,
+	y,
+	n = 1000,
+	stratify.by.chr = FALSE,
+	species = "human",
+	build = "hg19",
+	mask.gaps = FALSE,
+	mask.repeats = FALSE,
+	gaps.file = NULL,
+	repeats.file = NULL,
+	check.zero.based = TRUE,
+	check.chr = TRUE,
+	check.valid = TRUE,
+	verbose = TRUE
+	)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>first region to be compared. this is the region that is permuted</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>y</code></td>
+<td>
+<p>second region to be compared</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>n</code></td>
+<td>
+<p>the number of iterations to permute</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>stratify.by.chr</code></td>
+<td>
+<p>Should the permutation be happen separetely for each chromosome.  That is are chromosomes exchangeable.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>species</code></td>
+<td>
+<p>species</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>build</code></td>
+<td>
+<p>the build of the reference</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>mask.gaps</code></td>
+<td>
+<p>should the gaps (Ns) in the human reference be ignored as potential start points.  This drammatically increases memory and run time but is more appropriate in almost all settings.  By default it's off.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>mask.repeats</code></td>
+<td>
+<p>should the repeats from repeatMasker be ignored as potential start points.  This drammatically increases memory and run time but is more appropriate in almost all settings.  By default it's off.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>gaps.file</code></td>
+<td>
+<p>database file of gaps. Defaults to Homo sapiens Hg19 gap.txt.gz file available through UCSC</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>repeats.file</code></td>
+<td>
+<p>database file of repeats as supplied by UCSC containing RepMasker data e.g rmsk.txt.gz</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>check.zero.based</code></td>
+<td>
+<p>should 0 based coordinates be checked</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>check.chr</code></td>
+<td>
+<p>should chr prefix be checked</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>check.valid</code></td>
+<td>
+<p>should the region be checkded for integerity</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>verbose</code></td>
+<td>
+<p>should log messages and checking take place</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>Iteratively permutes intervals and recalculates jaccard and reldist statistics.
+</p>
+
+
+<h3>Value</h3>
+
+<p>A list of results
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Daryl Waggott
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+if (check.binary("bedtools")) {
+
+index &lt;- get.example.regions();
+
+a &lt;- index[[1]];
+b &lt;- index[[2]];
+a &lt;- bedr(engine = "bedtools", input = list(i = a), method = "sort", params = "");
+b &lt;- bedr(engine = "bedtools", input = list(i = b), method = "sort", params = "");
+
+# a simple example
+test.region.similarity(a, b, n = 8)
+
+# note you can set the cores available to parallelize
+options(cores = 4);
+system.time(test.region.similarity(a, b, n = 8));
+
+# a real example comparing the distribution of mRNA vs ncRNA genes in RefSeq
+## Not run: 
+
+# more core
+options(cores = 8);
+
+# load refgene
+refgene &lt;- query.ucsc("refGene")
+refgene &lt;- refgene[,c("chrom","txStart","txEnd","name","name2","strand")]
+
+# only include canonical chr
+chr &lt;- paste0("chr", c(1:22,"X","Y")); 
+refgene &lt;- refgene[refgene$chrom 
+
+# remove genes with multiple positions
+duplicated.gene &lt;- duplicated(refgene$name2) | duplicated(rev(refgene$name2));
+refgene &lt;- refgene[!duplicated.gene,];
+
+# only select pr coding genes
+refgene.nm &lt;- refgene[grepl("^NM",refgene$name),];
+# only select non protein coding rna genes	
+refgene.nr &lt;- refgene[grepl("^NR",refgene$name),];
+
+# sort and merge
+refgene.nm &lt;- bedr.snm.region(refgene.nm,check.chr = FALSE);
+refgene.nr &lt;- bedr.snm.region(refgene.nr,check.chr = FALSE);
+
+test.region.similarity(refgene.nm, refgene.nr, mask.unmapped = TRUE );
+
+option(core = 1)
+
+## End(Not run)
+
+}
+
+</code></pre>
+
+
+</div>

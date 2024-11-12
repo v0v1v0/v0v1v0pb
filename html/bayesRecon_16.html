@@ -1,0 +1,137 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>reconc_gaussian</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Analytical reconciliation of Gaussian base forecasts</h2>
+
+<h3>Description</h3>
+
+<p>Closed form computation of the reconciled forecasts in case of Gaussian base forecasts.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">reconc_gaussian(A, base_forecasts.mu, base_forecasts.Sigma)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>A</code></td>
+<td>
+<p>aggregation matrix (n_upper x n_bottom).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>base_forecasts.mu</code></td>
+<td>
+<p>a vector containing the means of the base forecasts.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>base_forecasts.Sigma</code></td>
+<td>
+<p>a matrix containing the covariance matrix of the base forecasts.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>In the vector of the means of the base forecasts the order must be: first the upper,
+then the bottom; the order within the uppers is given by the rows of A,
+the order within the bottoms by the columns of A.
+The order of the rows of the covariance matrix of the base forecasts is the same.
+</p>
+<p>The function returns only the reconciled parameters of the bottom variables.
+The reconciled upper parameters and the reconciled samples for the entire hierarchy
+can be obtained from the reconciled bottom parameters.
+See the example section.
+</p>
+
+
+<h3>Value</h3>
+
+<p>A list containing the bottom reconciled forecasts. The list has the following named elements:
+</p>
+
+<ul>
+<li> <p><code>bottom_reconciled_mean</code>: reconciled mean for the bottom forecasts;
+</p>
+</li>
+<li> <p><code>bottom_reconciled_covariance</code>: reconciled covariance for the bottom forecasts.
+</p>
+</li>
+</ul>
+<h3>References</h3>
+
+<p>Corani, G., Azzimonti, D., Augusto, J.P.S.C., Zaffalon, M. (2021).
+<em>Probabilistic Reconciliation of Hierarchical Forecast via Bayes' Rule</em>.
+ECML PKDD 2020. Lecture Notes in Computer Science, vol 12459.
+<a href="https://doi.org/10.1007/978-3-030-67664-3_13">doi:10.1007/978-3-030-67664-3_13</a>.
+</p>
+<p>Zambon, L., Agosto, A., Giudici, P., Corani, G. (2024).
+<em>Properties of the reconciled distributions for Gaussian and count forecasts</em>.
+International Journal of Forecasting (in press).
+<a href="https://doi.org/10.1016/j.ijforecast.2023.12.004">doi:10.1016/j.ijforecast.2023.12.004</a>.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>reconc_BUIS()</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+library(bayesRecon)
+
+# Create a minimal hierarchy with 2 bottom and 1 upper variable
+A &lt;- get_reconc_matrices(agg_levels=c(1,2), h=2)$A
+
+#Set the parameters of the Gaussian base forecast distributions
+mu1 &lt;- 2
+mu2 &lt;- 4
+muY &lt;- 9
+mus &lt;- c(muY,mu1,mu2)
+
+sigma1 &lt;- 2
+sigma2 &lt;- 2
+sigmaY &lt;- 3
+sigmas &lt;- c(sigmaY,sigma1,sigma2)
+
+Sigma &lt;- diag(sigmas^2)  # need to transform into covariance matrix
+analytic_rec &lt;- reconc_gaussian(A, base_forecasts.mu = mus,
+                               base_forecasts.Sigma = Sigma)
+
+bottom_mu_reconc &lt;- analytic_rec$bottom_reconciled_mean
+bottom_Sigma_reconc &lt;- analytic_rec$bottom_reconciled_covariance
+
+# Obtain reconciled mu and Sigma for the upper variable
+upper_mu_reconc &lt;- A %*% bottom_mu_reconc
+upper_Sigma_reconc &lt;- A %*% bottom_Sigma_reconc %*% t(A)
+
+# Obtain reconciled mu and Sigma for the entire hierarchy
+S &lt;- rbind(A, diag(2))  # first, get summing matrix S
+Y_mu_reconc &lt;- S %*% bottom_mu_reconc
+Y_Sigma_reconc &lt;- S %*% bottom_Sigma_reconc %*% t(S)  # note that this is a singular matrix
+
+# Obtain reconciled samples for the entire hierarchy:
+# i.e., sample from the reconciled bottoms and multiply by S
+chol_decomp = chol(bottom_Sigma_reconc) # Compute the Cholesky Decomposition
+Z = matrix(stats::rnorm(n = 2000), nrow = 2) # Sample from standard normal
+B = t(chol_decomp) %*% Z + matrix(rep(bottom_mu_reconc, 1000), nrow=2) # Apply the transformation
+
+U = S %*% B
+Y_reconc = rbind(U, B)
+
+</code></pre>
+
+
+</div>

@@ -1,0 +1,173 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>predictODX</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Estimate the Overall and Per Screen Overdiagnosis Rates</h2>
+
+<h3>Description</h3>
+
+<p>Using the posterior parameter distributions, calculates the infinite
+population estimates of the probability of overdiagnosis at 
+each screening episode due to indolence and/or death by other causes.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">predictODX(
+  object,
+  screening.schedule,
+  other.cause.rates,
+  groups.rateP = NULL,
+  screen.type = NULL,
+  burnin = 1000L,
+  verbose = TRUE
+)
+
+## S3 method for class 'baclava.ODX.pred'
+plot(x, y, ...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>object</code></td>
+<td>
+<p>An object of S3 class 'baclava'. The value object returned
+by <code>fit_baclava()</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>screening.schedule</code></td>
+<td>
+<p>A numeric vector object. A vector of ages at
+which screenings occur.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>other.cause.rates</code></td>
+<td>
+<p>A data.frame object. Must contain columns "Rate"
+and "Age".</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>groups.rateP</code></td>
+<td>
+<p>An integer scalar object. If model included groups with
+different sojourn parameters, the group for which overdiagnosis is to
+be estimated. Must be one of <code>object$setup$groups.rateP</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>screen.type</code></td>
+<td>
+<p>An integer scalar object. If model included screen-type,
+specific sensitivity parameters, the screen-type for which
+overdiagnosis is to be estimated. Must be one of <code>object$setup$groups.beta</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>burnin</code></td>
+<td>
+<p>An integer object. Optional. The number of burn-in samples.
+Used only for <code>type = "trace"</code>. One trace plot is generated for
+the burnin iterations; a second for the post-burnin iterations. Note, this
+refers to the kept (thinned) samples.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>verbose</code></td>
+<td>
+<p>A logical object. If TRUE, progress bars will be displayed.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>A an object of S3 class 'baclava.PDX.pred' as returned by <code>predictODX()</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>y</code></td>
+<td>
+<p>Ignored.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Ignored.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>Provided birth cohort life table is an all cause tables obtained from the 
+CDC Life Tables. Vital Statistics of the United States, 1974 Life Tables, 
+Vol. II, Section 5. 1976. Estimated "other cause" mortality will thus be 
+overestimated when using these tables. It is recommended that user provide 
+data that has been corrected to exclude death due to the disease under analysis.
+</p>
+
+
+<h3>Value</h3>
+
+<p>A list object. For each screen in <code>screening.schedule</code>,
+a matrix providing the mean total overdiagnosis and the mean overdiagnosis
+due to indolent/progressive tumors, as well as their 95
+Similarly, element <code>overall</code> provides these estimates for the full
+screening schedule.
+</p>
+
+
+<h3>Functions</h3>
+
+
+<ul><li> <p><code>plot(baclava.ODX.pred)</code>: Generate column plot of predicted overdiagnosis for each screen.
+</p>
+</li></ul>
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+data(screen_data)
+
+theta_0 &lt;- list("rate_H" = 7e-4, "shape_H" = 2.0,
+                "rate_P" = 0.5  , "shape_P" = 1.0,
+                "beta" = 0.9, psi = 0.4)
+prior &lt;- list("rate_H" = 0.01, "shape_H" = 1,
+              "rate_P" = 0.01, "shape_P" = 1,
+              "a_psi" = 1/2 , "b_psi" = 1/2,
+              "a_beta" = 38.5, "b_beta" = 5.8)
+
+# This is for illustration only -- the number of MCMC samples should be
+# significantly larger and the epsilon values should be tuned.
+example &lt;- fit_baclava(data.assess = data.screen,
+                       data.clinical = data.clinical,
+                       t0 = 30.0,
+                       theta_0 = theta_0,
+                       prior = prior)
+                       
+# if rates are not available, an all cause dataset is provided in the package
+# NOTE: these predictions will be over-estimated
+           
+data(all_cause_rates)
+all_cause_rates &lt;- all_cause_rates[, c("Age", "both")]
+colnames(all_cause_rates) &lt;- c("Age", "Rate")
+
+# using single screen for example speed
+predicted_odx &lt;- predictODX(object = example, 
+                            other.cause.rates = all_cause_rates,
+                            screening.schedule = 40, 
+                            burnin = 10)
+
+plot(predicted_odx)
+
+</code></pre>
+
+
+</div>

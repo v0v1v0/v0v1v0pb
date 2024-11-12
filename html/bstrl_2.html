@@ -1,0 +1,130 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>bipartiteRL</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Perform baseline bipartite record linkage before streaming updates</h2>
+
+<h3>Description</h3>
+
+<p>This function establishes a baseline linkage between two files which can be
+built upon with streaming updates adding more files. It outsources the linkage
+work to the BRL package and appends information to the object which will allow
+streaming record linkage to continue
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">bipartiteRL(
+  df1,
+  df2,
+  flds = NULL,
+  flds1 = NULL,
+  flds2 = NULL,
+  types = NULL,
+  breaks = c(0, 0.25, 0.5),
+  nIter = 1000,
+  burn = round(nIter * 0.1),
+  a = 1,
+  b = 1,
+  aBM = 1,
+  bBM = 1,
+  seed = 0
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>df1, df2</code></td>
+<td>
+<p>Files 1 and 2 as dataframes where each row is a record and
+each column is a field.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>flds</code></td>
+<td>
+<p>Names of the fields on which to compare the records in each file</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>flds1, flds2</code></td>
+<td>
+<p>Allows specifying field names differently for each file.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>types</code></td>
+<td>
+<p>Types of comparisons to use for each field</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>breaks</code></td>
+<td>
+<p>Breaks to use for Levenshtein distance on string fields</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nIter, burn</code></td>
+<td>
+<p>MCMC run length parameters. The returned number of samples
+is nIter - burn.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>a, b</code></td>
+<td>
+<p>Prior parameters for m and u, respectively.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>aBM, bBM</code></td>
+<td>
+<p>Prior parameters for beta-linkage prior.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>seed</code></td>
+<td>
+<p>Random seed to set at beginning of MCMC run</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>A list with class "bstrlstate" which can be passed to future streaming
+updates.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">data(geco_small)
+
+# Names of the columns on which to perform linkage
+fieldnames &lt;- c("given.name", "surname", "age", "occup",
+                "extra1", "extra2", "extra3", "extra4", "extra5", "extra6")
+
+# How to compare each of the fields
+# First name and last name use normalized edit distance
+# All others binary equal/unequal
+types &lt;- c("lv", "lv",
+           "bi", "bi", "bi", "bi", "bi", "bi", "bi", "bi")
+# Break continuous difference measures into 4 levels using these split points
+breaks &lt;- c(0, 0.25, 0.5)
+
+res.twofile &lt;- bipartiteRL(geco_small[[1]], geco_small[[2]],
+                           flds = fieldnames, types = types, breaks = breaks,
+                           nIter = 10, burn = 5, # Very small number of samples
+                           seed = 0)
+
+</code></pre>
+
+
+</div>

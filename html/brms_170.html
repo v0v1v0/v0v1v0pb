@@ -1,0 +1,201 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>gp</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Set up Gaussian process terms in <span class="pkg">brms</span>
+</h2>
+
+<h3>Description</h3>
+
+<p>Set up a Gaussian process (GP) term in <span class="pkg">brms</span>. The function does not
+evaluate its arguments – it exists purely to help set up a model with
+GP terms.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">gp(
+  ...,
+  by = NA,
+  k = NA,
+  cov = "exp_quad",
+  iso = TRUE,
+  gr = TRUE,
+  cmc = TRUE,
+  scale = TRUE,
+  c = 5/4
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>One or more predictors for the GP.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>by</code></td>
+<td>
+<p>A numeric or factor variable of the same length as
+each predictor. In the numeric vector case, the elements multiply
+the values returned by the GP. In the factor variable
+case, a separate GP is fitted for each factor level.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>k</code></td>
+<td>
+<p>Optional number of basis functions for computing Hilbert-space
+approximate GPs. If <code>NA</code> (the default), exact GPs are computed.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>cov</code></td>
+<td>
+<p>Name of the covariance kernel. Currently supported are
+<code>"exp_quad"</code> (exponentiated-quadratic kernel; default),
+<code>"matern32"</code> (Matern 3/2 kernel), <code>"matern52"</code> (Matern 5/2 kernel),
+and <code>"exponential"</code> (exponential kernel).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>iso</code></td>
+<td>
+<p>A flag to indicate whether an isotropic (<code>TRUE</code>; the
+default) or a non-isotropic GP should be used.
+In the former case, the same amount of smoothing is applied to all
+predictors. In the latter case, predictors may have different smoothing.
+Ignored if only a single predictor is supplied.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>gr</code></td>
+<td>
+<p>Logical; Indicates if auto-grouping should be used (defaults
+to <code>TRUE</code>). If enabled, observations sharing the same
+predictor values will be represented by the same latent variable
+in the GP. This will improve sampling efficiency
+drastically if the number of unique predictor combinations is small
+relative to the number of observations.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>cmc</code></td>
+<td>
+<p>Logical; Only relevant if <code>by</code> is a factor. If <code>TRUE</code>
+(the default), cell-mean coding is used for the <code>by</code>-factor, that is
+one GP per level is estimated. If <code>FALSE</code>, contrast GPs are estimated
+according to the contrasts set for the <code>by</code>-factor.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>scale</code></td>
+<td>
+<p>Logical; If <code>TRUE</code> (the default), predictors are
+scaled so that the maximum Euclidean distance between two points
+is 1. This often improves sampling speed and convergence.
+Scaling also affects the estimated length-scale parameters
+in that they resemble those of scaled predictors (not of the original
+predictors) if <code>scale</code> is <code>TRUE</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>c</code></td>
+<td>
+<p>Numeric value only used in approximate GPs. Defines the
+multiplicative constant of the predictors' range over which
+predictions should be computed. A good default could be <code>c = 5/4</code>
+but we are still working on providing better recommendations.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>A GP is a stochastic process, which
+describes the relation between one or more predictors
+<code class="reqn">x = (x_1, ..., x_d)</code> and a response <code class="reqn">f(x)</code>, where
+<code class="reqn">d</code> is the number of predictors. A GP is the
+generalization of the multivariate normal distribution
+to an infinite number of dimensions. Thus, it can be
+interpreted as a prior over functions. The values of <code class="reqn">f( )</code>
+at any finite set of locations are jointly multivariate
+normal, with a covariance matrix defined by the covariance
+kernel <code class="reqn">k_p(x_i, x_j)</code>, where <code class="reqn">p</code> is the vector of parameters
+of the GP:
+</p>
+<p style="text-align: center;"><code class="reqn">(f(x_1), \ldots f(x_n) \sim MVN(0, (k_p(x_i, x_j))_{i,j=1}^n) .</code>
+</p>
+
+<p>The smoothness and general behavior of the function <code class="reqn">f</code>
+depends only on the choice of covariance kernel.
+For a more detailed introduction to Gaussian processes,
+see <a href="https://en.wikipedia.org/wiki/Gaussian_process">https://en.wikipedia.org/wiki/Gaussian_process</a>.
+</p>
+<p>For mathematical details on the supported kernels, please see the Stan manual:
+<a href="https://mc-stan.org/docs/functions-reference/matrix_operations.html">https://mc-stan.org/docs/functions-reference/matrix_operations.html</a>
+under "Gaussian Process Covariance Functions".
+</p>
+
+
+<h3>Value</h3>
+
+<p>An object of class <code>'gp_term'</code>, which is a list
+of arguments to be interpreted by the formula
+parsing functions of <span class="pkg">brms</span>.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>brmsformula</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## Not run: 
+# simulate data using the mgcv package
+dat &lt;- mgcv::gamSim(1, n = 30, scale = 2)
+
+# fit a simple GP model
+fit1 &lt;- brm(y ~ gp(x2), dat, chains = 2)
+summary(fit1)
+me1 &lt;- conditional_effects(fit1, ndraws = 200, spaghetti = TRUE)
+plot(me1, ask = FALSE, points = TRUE)
+
+# fit a more complicated GP model and use an approximate GP for x2
+fit2 &lt;- brm(y ~ gp(x0) + x1 + gp(x2, k = 10) + x3, dat, chains = 2)
+summary(fit2)
+me2 &lt;- conditional_effects(fit2, ndraws = 200, spaghetti = TRUE)
+plot(me2, ask = FALSE, points = TRUE)
+
+# fit a multivariate GP model with Matern 3/2 kernel
+fit3 &lt;- brm(y ~ gp(x1, x2, cov = "matern32"), dat, chains = 2)
+summary(fit3)
+me3 &lt;- conditional_effects(fit3, ndraws = 200, spaghetti = TRUE)
+plot(me3, ask = FALSE, points = TRUE)
+
+# compare model fit
+loo(fit1, fit2, fit3)
+
+# simulate data with a factor covariate
+dat2 &lt;- mgcv::gamSim(4, n = 90, scale = 2)
+
+# fit separate gaussian processes for different levels of 'fac'
+fit4 &lt;- brm(y ~ gp(x2, by = fac), dat2, chains = 2)
+summary(fit4)
+plot(conditional_effects(fit4), points = TRUE)
+
+## End(Not run)
+
+</code></pre>
+
+
+</div>

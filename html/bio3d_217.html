@@ -1,0 +1,350 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>nma.pdb</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2> Normal Mode Analysis </h2>
+
+<h3>Description</h3>
+
+<p>Perform elastic network model (ENM) C-alpha normal modes calculation
+of a protein structure.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">## S3 method for class 'pdb'
+nma(pdb, inds = NULL, ff = 'calpha', pfc.fun = NULL,
+                  mass = TRUE, temp = 300.0, keep = NULL, hessian = NULL,
+                  outmodes = NULL, ... )
+
+build.hessian(xyz, pfc.fun, fc.weights = NULL, pdb = NULL, ...)
+
+## S3 method for class 'nma'
+print(x, nmodes=6, ...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>pdb</code></td>
+<td>
+<p> an object of class <code>pdb</code> as obtained from
+function <code>read.pdb</code>. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>inds</code></td>
+<td>
+<p> atom and xyz coordinate indices obtained from
+<code>atom.select</code> that selects the elements of <code>pdb</code>
+upon which the calculation should be based. If not provided the
+function will attempt to select the calpha atoms automatically
+(based on function <code>atom.select</code>). </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ff</code></td>
+<td>
+<p> character string specifying the force field to use:
+‘calpha’, ‘anm’, ‘pfanm’, 
+‘reach’, or ‘sdenm’. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>pfc.fun</code></td>
+<td>
+<p> customized pair force constant (‘pfc’)
+function. The provided function should take a vector of distances as
+an argument to return a vector of force constants. If provided,
+'pfc.fun' will override argument <code>ff</code>. See examples below. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>mass</code></td>
+<td>
+<p> logical, if TRUE the Hessian will be mass-weighted. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>temp</code></td>
+<td>
+<p> numerical, temperature for which the amplitudes for
+scaling the atomic displacement vectors are calculated. Set
+‘temp=NULL’ to avoid scaling. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>keep</code></td>
+<td>
+<p> numerical, final number of modes to be stored. Note that
+all subsequent analyses are limited to this subset of modes. This
+option is useful for very large structures and cases where memory
+may be limiting. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>hessian</code></td>
+<td>
+<p> hessian matrix as obtained from
+<code>build.hessian</code>. For internal purposes and generally not
+intended for public use. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>outmodes</code></td>
+<td>
+<p> atom indices as obtained from <code>atom.select</code>) 
+specifying the atoms to include in the resulting mode object. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>xyz</code></td>
+<td>
+<p> a numeric vector of Cartesian coordinates. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>fc.weights</code></td>
+<td>
+<p> a numeric matrix of size NxN (where N is the number
+of calpha atoms) containg scaling factors for the pariwise force
+constants. See examples below. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p> an <code>nma</code> object obtained from <code>nma.pdb</code>. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nmodes</code></td>
+<td>
+<p> numeric, number of modes to be printed. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p> additional arguments to <code>build.hessian</code>,
+<code>aa2mass</code>, <code>pfc.fun</code>, and <code>print</code>. One
+useful option here for dealing with unconventional residues is
+‘mass.custom’, see the <code>aa2mass</code> function for details. </p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>This function calculates the normal modes of a C-alpha model of a
+protein structure. A number of force fields are implemented all of
+whhich employ the elastic network model (ENM).
+</p>
+<p>The ‘calpha’ force field - originally developed by Konrad
+Hinsen - is the recommended one for most applications. It employs a
+spring force constant differentiating between nearest-neighbour pairs
+along the backbone and all other pairs. The force constant function
+was parameterized by fitting to a local minimum of a crambin model
+using the AMBER94 force field.
+</p>
+<p>See <code>load.enmff</code> for details of the different force fields.
+</p>
+<p>By default <code>nma.pdb</code> will diagonalize the mass-weighted Hessian
+matrix. The resulting mode vectors are moreover scaled by the thermal
+fluctuation amplitudes.
+</p>
+<p>The implementation under default arguments reproduces the calculation
+of normal modes (VibrationalModes) in the Molecular Modeling Toolkit
+(MMTK) package. To reproduce ANM modes set <code>ff='anm'</code>,
+<code>mass=FALSE</code>, and <code>temp=NULL</code>.
+</p>
+
+
+<h3>Value</h3>
+
+<p>Returns an object of class ‘nma’ with the following components:
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>modes</code></td>
+<td>
+<p> numeric matrix with columns containing the normal mode
+vectors. Mode vectors are converted to unweighted Cartesian
+coordinates  when <code>mass=TRUE</code>. Note that the 6 first trivial
+eigenvectos appear in columns one to six. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>frequencies</code></td>
+<td>
+<p> numeric vector containing the vibrational
+frequencies corresponding to each mode (for <code>mass=TRUE</code>). </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>force.constants</code></td>
+<td>
+<p> numeric vector containing the force constants
+corresponding to each mode (for <code>mass=FALSE)</code>). </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>fluctuations</code></td>
+<td>
+<p> numeric vector of atomic fluctuations. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>U</code></td>
+<td>
+<p> numeric matrix with columns containing the raw
+eigenvectors. Equals to the <code>modes</code> component when
+<code>mass=FALSE</code> and <code>temp=NULL</code>. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>L</code></td>
+<td>
+<p> numeric vector containing the raw eigenvalues. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>xyz</code></td>
+<td>
+<p> numeric matrix of class <code>xyz</code> containing the
+Cartesian coordinates in which the calculation was performed. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>mass</code></td>
+<td>
+<p> numeric vector containing the residue masses used for the
+mass-weighting. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>temp</code></td>
+<td>
+<p> numerical, temperature for which the amplitudes for
+scaling the atomic displacement vectors are calculated. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>triv.modes</code></td>
+<td>
+<p> number of trivial modes. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>natoms</code></td>
+<td>
+<p> number of C-alpha atoms. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>call</code></td>
+<td>
+<p> the matched call. </p>
+</td>
+</tr>
+</table>
+<h3>Note</h3>
+
+<p>The current version provides an efficent implementation of NMA with
+execution time comparable to similar software (when the entire Hessian
+is diagonalized).
+</p>
+<p>The main (speed related) bottleneck is currently the diagonalization
+of the Hessian matrix which is performed with the core R function
+<code>eigen</code>. For computing a few (5-20) approximate modes the user
+can consult package ‘irlba’.
+</p>
+<p>NMA is memory extensive and users should be cautions when running
+larger proteins (&gt;3000 residues). Use ‘keep’ to reduce the
+amount of memory needed to store the final ‘nma’ object (the
+full 3Nx3N Hessian matrix still needs to be allocated).
+</p>
+<p>We thank Edvin Fuglebakk for valuable discussions on the
+implementation as well as for contributing with testing.
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p> Lars Skjaerven </p>
+
+
+<h3>References</h3>
+
+<p>Skjaerven, L. et al. (2014) <em>BMC Bioinformatics</em> <b>15</b>, 399.
+Grant, B.J. et al. (2006) <em>Bioinformatics</em> <b>22</b>, 2695–2696.
+Hinsen, K. et al. (2000) <em>Chemical Physics</em> <b>261</b>, 25–37.
+</p>
+
+
+<h3>See Also</h3>
+
+ <p><code>fluct.nma</code>, <code>mktrj.nma</code>,
+<code>dccm.nma</code>, <code>overlap</code>, <code>rmsip</code>,
+<code>load.enmff</code>. </p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## Fetch stucture
+pdb &lt;- read.pdb( system.file("examples/1hel.pdb", package="bio3d") )
+
+## Calculate normal modes
+modes &lt;- nma(pdb)
+
+## Print modes
+print(modes)
+
+## Plot modes
+plot(modes)
+
+## Visualize modes
+#m7 &lt;- mktrj.nma(modes, mode=7, file="mode_7.pdb")
+
+## Not run: 
+## Use Anisotropic Network Model
+modes &lt;- nma(pdb, ff="anm", mass=FALSE, temp=NULL, cutoff=15)
+
+## Use SSE information and SS-bonds
+sse      &lt;- dssp(pdb, resno=FALSE, full=TRUE)
+ss.bonds &lt;- matrix(c(76,94, 64,80, 30,115, 6,127),
+                   ncol=2, byrow=TRUE)
+
+
+## User defined energy function
+## Note: Must take a vector of distances
+"my.ff" &lt;- function(r) {
+   ifelse( r&gt;15, 0, 1 )
+}
+
+## Modes with a user defined energy function
+modes &lt;- nma(pdb, pfc.fun=my.ff)
+
+
+## A more manual approach
+sele &lt;- atom.select(pdb, chain='A', elety='CA')
+xyz &lt;- pdb$xyz[sele$xyz]
+
+hessian &lt;- build.hessian(xyz, my.ff)
+modes &lt;- eigen(hessian)
+
+## Dealing with unconventional residues
+pdb &lt;- read.pdb("1xj0")
+
+## nma(pdb)
+#modes &lt;- nma(pdb, mass.custom=list(CSX=121.166))
+
+## End(Not run)
+</code></pre>
+
+
+</div>

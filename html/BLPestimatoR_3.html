@@ -1,0 +1,105 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>dstddelta_wrap</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Calculates derivatives of all shares with respect to all mean utilities in a given market.</h2>
+
+<h3>Description</h3>
+
+<p>Calculates derivatives of all shares with respect to all mean utilities in a given market.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">dstddelta_wrap(blp_data, par_theta2, market, printLevel = 1)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>blp_data</code></td>
+<td>
+<p>data object created by the function <code>BLP_data</code>,</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>par_theta2</code></td>
+<td>
+<p>matrix with column and rownames providing a starting value for the optimization routine (see details),</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>market</code></td>
+<td>
+<p>character specifying the market in which derivatives are calculated,</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>printLevel</code></td>
+<td>
+<p>level of output information (default = 1)</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>NA's in <code>par_theta2</code> entries indicate the exclusion from estimation, i.e. the coefficient is assumed to be zero.
+If only unobserved heterogeneity is used (no demographics), the column name of <code>par_theta2</code> must be "unobs_sd".
+With demographics the colnames must match the names of provided demographics (as in <code>demographic_draws</code>) and "unobs_sd".
+Row names of <code>par_theta2</code> must match random coefficients as specified in <code>model</code>. Constants must be named "(Intercept)".
+</p>
+
+
+<h3>Value</h3>
+
+<p>Returns a numeric matrix with derivatives.
+Cell in row i and col j is the derivative of share i with respect to mean utility j.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">K&lt;-2 #number of random coefficients
+data &lt;- simulate_BLP_dataset(nmkt = 25, nbrn = 20,
+                        Xlin = c("price", "x1", "x2", "x3", "x4", "x5"),
+                        Xexo = c("x1", "x2", "x3", "x4", "x5"),
+                        Xrandom = paste0("x",1:K),instruments = paste0("iv",1:10),
+                        true.parameters = list(Xlin.true.except.price = rep(0.2,5),
+                                               Xlin.true.price = -0.2,
+                                               Xrandom.true = rep(2,K),
+                                               instrument.effects = rep(2,10),
+                                               instrument.Xexo.effects = rep(1,5)),
+                        price.endogeneity = list( mean.xi = -2,
+                                                  mean.eita = 0,
+                                                  cov = cbind( c(1,0.7), c(0.7,1))),
+                        printlevel = 0, seed = 234234 )
+
+
+model &lt;- as.formula("shares ~  price + x1 + x2 + x3 + x4 + x5 |
+                    x1 + x2 + x3 + x4 + x5 |
+                    0+ x1 + x2 |
+                    iv1 + iv2 + iv3 + iv4 + iv5 + iv6 + iv7 + iv8 +iv9 +iv10" )
+
+blp_data &lt;- BLP_data(model = model, market_identifier="cdid",
+                     product_id = "prod_id",
+                     productData = data,
+                     integration_method = "MLHS" ,
+                     integration_accuracy = 40,
+                     integration_seed = 1)
+
+theta2 &lt;- matrix(c(0.5,2), nrow=2)
+rownames(theta2) &lt;- c("x1","x2")
+colnames(theta2) &lt;- "unobs_sd"
+
+derivatives2 &lt;- dstddelta_wrap(  blp_data=blp_data,
+                                  par_theta2 = theta2,
+                                 market = 2)
+</code></pre>
+
+
+</div>

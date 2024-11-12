@@ -1,0 +1,139 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>bdplyr</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Compatibility with dplyr verbs without using SQL language</h2>
+
+<h3>Description</h3>
+
+<p>Allow you to explore and perform operation with Base dos Dados' datasets
+without using SQL language. The <code>bdplyr()</code> function creates <code>lazy</code> variables
+that will be connected directly to the desired table from Base dos Dados at
+Google BigQuery and can be handled with the dplyr::dplyr-package's verbs
+as traditionally done as local bases. See also: bigrquery::src_bigquery.
+</p>
+<p>Therefore, it is possible (without using <code>SQL</code>) to perform, for example,
+column selection with <code>dplyr::select()</code>, filter rows with <code>dplyr::filter()</code>,
+operations with <code>dplyr::mutate()</code>, joins with <code>dplyr::left_join()</code> and
+other vebs from <code>{dplyr}</code> package.
+</p>
+<p>The data will be automatically be downloaded from Google BigQuery in the
+background as it if necessary, but wille not be loaded into your virtual
+memory nor recorded on disk unless expressly requested.
+</p>
+<p>For this, the functions such as <code>bd_collect()</code> or <code>bd_write()</code> should be
+used. To load the data handled locally in your virtual memory, use
+<code>bd_collect()</code>. To save the result in disk use the broader function
+<code>bd_write()</code> or its derivatives <code>bd_write_csv()</code> or <code>bd_write_rds()</code> to
+save, respectively in <code>.csv</code> or <code>.rds</code> format.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">bdplyr(
+  table,
+  billing_project_id = basedosdados::get_billing_id(),
+  query_project_id = "basedosdados"
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>table</code></td>
+<td>
+<p>String in the format <code>(dataset_name)</code>.<code>(table_name)</code>. You can optionally input a project before the dataset name.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>billing_project_id</code></td>
+<td>
+<p>a string containing your billing project id.
+If you've run <code>set_billing_id()</code> then feel free to leave this empty.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>query_project_id</code></td>
+<td>
+<p>The project name at GoogleBigQuery. By default
+<code>basedosdados</code>. You do not need to inform this if project is uset
+on <code>table</code> parameter.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>A <code style="white-space: pre;">⁠lazy tibble⁠</code>, which can be handled (almost) as if were a local
+database. After satisfactorily handled, the result must be loaded into
+memory using <code>bd_collect()</code> or written to disk using <code>bd_write()</code> or its
+derivatives.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>bd_collect()</code>, <code>bd_write()</code>, <code>bd_write_rds()</code>, <code>bd_write_rds()</code>,
+bigrquery::src_bigquery
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+## Not run: 
+
+# set project billing id
+basedosdados::set_billing_id("avalidprojectbillingid")
+
+# connects to the remote table I want
+base_sim &lt;- bdplyr("br_ms_sim.municipio_causa_idade")
+
+# connects to another remote table
+municipios &lt;- bdplyr("br_bd_diretorios_brasil.municipio")
+
+# explore data
+base_sim %&gt;%
+  dplyr::glimpse()
+
+# use normal `{dplyr}` operations
+municipios %&gt;%
+  head()
+
+# filter
+base_sim_acre &lt;- base_sim %&gt;%
+ dplyr::mutate(ano = as.numeric(ano)) %&gt;%
+  dplyr::filter(sigla_uf == "AC", ano &gt;= 2018)
+
+municipios_acre &lt;- municipios %&gt;%
+  dplyr::filter(sigla_uf == "AC") %&gt;%
+  dplyr::select(id_municipio, municipio, regiao)
+
+
+# join
+base_junta &lt;- base_sim_acre %&gt;%
+  dplyr::left_join(municipios_acre,
+                   by = "id_municipio")
+
+# tests whether the result is satisfactory
+base_junta
+
+# collect the result
+base_final &lt;- base_junta %&gt;%
+  basedosdados::bd_collect()
+
+# alternatively, write in disk the result
+
+base_final %&gt;%
+  basedosdados::bd_write_rds(path = "data-raw/data.rds")
+
+
+## End(Not run)
+</code></pre>
+
+
+</div>

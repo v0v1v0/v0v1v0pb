@@ -1,0 +1,136 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>predict.bvar</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Predict method for Bayesian VARs</h2>
+
+<h3>Description</h3>
+
+<p>Retrieves / calculates forecasts for Bayesian VARs generated via
+<code>bvar</code>. If a forecast is already present and no settings are
+supplied it is simply retrieved, otherwise it will be calculated.
+To store the results you may want to assign the output using the setter
+function (<code>predict(x) &lt;- predict(x)</code>). May also be used to update
+confidence bands.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">## S3 method for class 'bvar'
+predict(object, ..., conf_bands, n_thin = 1L, newdata)
+
+predict(object) &lt;- value
+
+## S3 method for class 'bvar_fcast'
+summary(object, vars = NULL, ...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>object</code></td>
+<td>
+<p>A <code>bvar</code> object, obtained from <code>bvar</code>.
+Summary and print methods take in a <code>bvar_fcast</code> object.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>A <code>bv_fcast</code> object or parameters to be fed into
+<code>bv_fcast</code>. Contains settings for the forecast.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>conf_bands</code></td>
+<td>
+<p>Numeric vector of confidence bands to apply.
+E.g. for bands at 5%, 10%, 90% and 95% set this to <code>c(0.05, 0.1)</code>.
+Note that the median, i.e. 0.5 is always included.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>n_thin</code></td>
+<td>
+<p>Integer scalar. Every <em>n_thin</em>'th draw in <em>object</em>
+is used to predict, others are dropped.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>newdata</code></td>
+<td>
+<p>Optional numeric matrix or dataframe. Used to base the
+prediction on.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>value</code></td>
+<td>
+<p>A <code>bvar_fcast</code> object to assign.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>vars</code></td>
+<td>
+<p>Optional numeric or character vector. Used to subset the summary
+to certain variables by position or name (must be available). Defaults to
+<code>NULL</code>, i.e. all variables.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>Returns a list of class <code>bvar_fcast</code> including forecasts
+at desired confidence bands.
+The summary method returns a numeric array of forecast paths at the
+specified confidence bands.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>plot.bvar_fcast</code>; <code>bv_fcast</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+# Access a subset of the fred_qd dataset
+data &lt;- fred_qd[, c("CPIAUCSL", "UNRATE", "FEDFUNDS")]
+# Transform it to be stationary
+data &lt;- fred_transform(data, codes = c(5, 5, 1), lag = 4)
+
+# Estimate a BVAR using one lag, default settings and very few draws
+x &lt;- bvar(data, lags = 1, n_draw = 1000L, n_burn = 200L, verbose = FALSE)
+
+# Calculate a forecast with an increased horizon
+y &lt;- predict(x, horizon = 20)
+
+# Add some confidence bands and store the forecast
+predict(x) &lt;- predict(x, conf_bands = c(0.05, 0.16))
+
+# Recalculate with different settings and increased thinning
+predict(x, bv_fcast(24L), n_thin = 10L)
+
+# Simulate some new data to predict on
+predict(x, newdata = matrix(rnorm(300), ncol = 3))
+
+# Calculate a conditional forecast (with a constrained second variable).
+predict(x, cond_path = c(1, 1, 1, 1, 1, 1), cond_var = 2)
+
+# Get a summary of the stored forecast
+summary(x)
+
+# Only get the summary for variable #2
+summary(x, vars = 2L)
+
+</code></pre>
+
+
+</div>

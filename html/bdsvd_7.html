@@ -1,0 +1,146 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>hcsvd</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Hierarchical Variable Clustering Using Singular Vectors (HC-SVD).</h2>
+
+<h3>Description</h3>
+
+<p>Performs HC-SVD to reveal the hierarchical variable structure as descried in Bauer (202Xb). For this divise approach, each cluster is split into two clusters iteratively. Potential splits
+are identified by the first sparse loadings (which are sparse approximations of the first right singular vectors, i.e., vectors with many zero values) that
+mirror the masked shape of the correlation matrix. This procedure is continued until each variable lies in a single cluster.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">hcsvd(X, k = "all", linkage = "single", reliability, R, max.iter, trace = TRUE)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>X</code></td>
+<td>
+<p>Data matrix of dimension <code class="reqn">n x p</code>. The data matrix is standardized during the analysis by <code>hcsvd</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>k</code></td>
+<td>
+<p>Number of sparse loadings to be used. This should be <code>"all"</code> for all sparse loadings, or <code>"Kaiser"</code> for as many sparse loadings as
+there are eigenvalues larger or equal to one (see Bauer (202Xb) for details). Selecting <code>"Kaiser"</code> reduces computation time.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>linkage</code></td>
+<td>
+<p>The linkage function to be used. This should be one of <code>"average"</code>, <code>"single"</code>, or
+<code>"RV"</code> (for RV-coefficient).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>reliability</code></td>
+<td>
+<p>By default, the value of each cluster equals the distance calculated by the chosen linkage function.
+If preferred, the value of each cluster can be assigned by its reliability. When <code>reliability = spectral</code>, the reliability is
+calculated by the averaged spectral norm.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>R</code></td>
+<td>
+<p>Sample correlation matrix of <code>X</code>. By default, <code>R &lt;- cov(X)</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>max.iter</code></td>
+<td>
+<p>How many iterations should be performed for computing the sparse loadings.
+Default is <code>200</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>trace</code></td>
+<td>
+<p>Print out progress as <code class="reqn">p-1</code> iterations for divisive hierarchical clustering are performed.
+Default is <code>TRUE</code>.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The sparse loadings are computed using the method by Shen &amp; Huang (2008), implemented in
+the <code>irlba</code> package.
+</p>
+
+
+<h3>Value</h3>
+
+<p>A list with two components:
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>dist.matrix</code></td>
+<td>
+
+<p>The ultrametric distance matrix (cophenetic matrix) of the HC-SVD structure as an object of class <code>dist</code>.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>u.cor</code></td>
+<td>
+
+<p>The ultrametric correlation matrix of <code class="reqn">X</code> obtained by HC-SVD as an object of class <code>matrix</code>.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>k.p</code></td>
+<td>
+
+<p>A vector of length <code class="reqn">p-1</code> containing the ratio <code class="reqn">k_i/p_i</code> of the <code class="reqn">k_i</code> sparse loadings used relative to all sparse
+loadings <code class="reqn">p_i</code> for the split of each cluster. The ratio is set to <code>NA</code> if the cluster contains only two variables as the search
+for sparse loadings that reflect the split is not required in this case.
+</p>
+</td>
+</tr>
+</table>
+<h3>References</h3>
+
+<p><cite>Bauer, J.O. (202Xb). Hierarchical variable clustering using singular vectors.</cite>
+</p>
+<p><cite>Shen, H. and Huang, J.Z. (2008). Sparse principal component analysis via regularized low rank matrix approximation, J. Multivar. Anal. 99, 1015–1034.</cite>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">#We replicate the simulation study in Bauer (202Xb)
+
+## Not run: 
+p &lt;- 100
+n &lt;- 300
+b &lt;- 5
+design &lt;- "a"
+
+Rho &lt;- hcsvd.cor.sim(p = p, b = b, design = "a")
+X &lt;- scale(mvtnorm::rmvnorm(300, mean=rep(0,100), sigma=Rho, checkSymmetry = FALSE))
+colnames(X) = 1:ncol(X)
+hcsvd.obj &lt;- hcsvd(X, k = "Kaiser")
+
+#The dendrogram can be obtained from the ultrametric distance matrix:
+plot(hclust(hcsvd.obj$dist.matrix))
+
+## End(Not run)
+
+
+</code></pre>
+
+
+</div>

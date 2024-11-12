@@ -1,0 +1,152 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>reconstructNetwork</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>
+Reconstruct a Boolean network from time series of measurements
+</h2>
+
+<h3>Description</h3>
+
+<p>Reconstructs a Boolean network from a set of time series or from a transition table using the best-fit extension algorithm or the REVEAL algorithm.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">reconstructNetwork(measurements, 
+                   method = c("bestfit", "reveal"), 
+                   maxK = 5, 
+                   requiredDependencies = NULL, 
+                   excludedDependencies = NULL, 
+                   perturbations=NULL,
+                   readableFunctions=FALSE, 
+                   allSolutions=FALSE, 
+                   returnPBN=FALSE)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>measurements</code></td>
+<td>
+
+<p>This can either be an object of class <code>TransitionTable</code> as returned by <code>getTransitionTable</code>, or a set of time series of measurements. In this case, <code>measurements</code> must be a list of matrices, each corresponding to one time series. Each row of these matrices contains measurements for one gene on a time line, i. e. column <code>i+1</code> contains the successor states of column <code>i</code>. The genes must be the same for all matrices in the list. Real-valued time series can be binarized using <code>binarizeTimeSeries</code>.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>method</code></td>
+<td>
+
+<p>This specifies the reconstruction algorithm to be used. If set to "bestfit", Laehdesmaeki's Best-Fit Extension algorithm is employed. This algorithm is an improvement of the algorithm by Akutsu et al. with a lower runtime complexity. It determines the functions with a minimal error for each gene. If set to "reveal", Liang's REVEAL algorithm is used. This algorithm searches for relevant input genes using the mutual information between the input genes and the output gene. 
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>maxK</code></td>
+<td>
+
+<p>The maximum number of input genes for one gene to be tested. Defaults to 5.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>requiredDependencies</code></td>
+<td>
+<p>An optional specification of known dependencies that must be included in reconstructed networks. This is a named list containing a vector of gene names (regulators) for each target.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>excludedDependencies</code></td>
+<td>
+<p>Analogous to <code>requiredDependencies</code>, this is an optional specification of dependencies that must not be included in reconstructed networks. This is a named list containing a vector of gene names (prohibited regulators) for each target.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>perturbations</code></td>
+<td>
+<p>If <code>measurements</code> contains data obtained from perturbation experiments (i.e. different targeted knock-outs and overexpressions), this optional parameter is a matrix with one column for each entry in <code>measurements</code> and a row for each gene. A matrix entry is 0 for a knock-out of the corresponding gene in the corresponding time series, 1 for overexpression, and NA or -1 for no perturbation. If <code>measurements</code> has an element <code>perturbations</code> and this argument is not specified, the element of <code>measurements</code> is taken. 
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>readableFunctions</code></td>
+<td>
+
+<p>If this is true, readable DNF representations of the truth tables of the functions are generated. These DNF are displayed when the network is printed. The DNF representations are not minimized and can thus be very long. If set to FALSE, the truth table result column is displayed.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>allSolutions</code></td>
+<td>
+
+<p>If this is true, all solutions with the minimum error and up to <code>maxK</code> inputs are returned. By default, <code>allSolutions=FALSE</code>, which means that only the solutions with both minimum error and minimum <code>k</code> are returned.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>returnPBN</code></td>
+<td>
+<p>Specifies the way unknown values in the truth tables of the transition functions ("don't care" values) are processed. If <code>returnPBN=TRUE</code>, all possible functions are enumerated recursively, and an object of class <code>ProbabilisticBooleanNetwork</code> is returned. This can consume a high amount of memory and computation time. If <code>returnPBN=FALSE</code>, the transition functions may contain "don't care" (*) values, and an object of class <code>BooleanNetworkCollection</code> is returned. <code>returnPBN=TRUE</code> corresponds to the behaviour prior to version 2.0. The default value is <code>returnPBN=FALSE</code>.
+</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>Both algorithms iterate over all possible input combinations. While Best-Fit Extension is capable of returning functions that do not perfectly explain the measurements (for example, if there are inconsistent measurements or if <code>maxK</code> was specified too small), REVEAL only finds functions that explain all measurements. For more information, please refer to the cited publications.
+</p>
+
+
+<h3>Value</h3>
+
+<p>If <code>returnPBN=TRUE</code>, the function returns an object of class <code>ProbabilisticBooleanNetwork</code>, with each alternative function of a gene having the same probability. The structure is described in detail in <code>loadNetwork</code>. In addition to the standard components, each alternative transition function has a component <code>error</code> which stores the error of the function on the input time series data.
+If <code>returnPBN=FALSE</code>, the function returns an object of class <code>BooleanNetworkCollection</code> that has essentially the same structure as <code>ProbabilisticBooleanNetwork</code>, but does not store probabilities and keeps "don't care" values in the functions. Due to the "don't care" (*) values, this collection cannot be simulated directly. However, a specific Boolean network of class <code>BooleanNetwork</code> can be extracted from both <code>BooleanNetworkCollection</code> and <code>ProbabilisticBooleanNetwork</code> structures using <code>chooseNetwork</code>.
+</p>
+
+
+<h3>References</h3>
+
+<p>H. Laehdesmaeki, I. Shmulevich and O. Yli-Harja (2003), On Learning Gene-Regulatory Networks Under the Boolean Network Model. Machine Learning 52:147–167.
+</p>
+<p>T. Akutsu, S. Miyano and S. Kuhara (2000). Inferring qualitative relations in genetic networks and metabolic pathways. Bioinformatics 16(8):727–734.
+</p>
+<p>S. Liang, S. Fuhrman and R. Somogyi (1998), REVEAL, a general reverse engineering algorithm for inference of genetic network architectures. Pacific Symposium on Biocomputing 3:18–29.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>generateTimeSeries</code>, <code>binarizeTimeSeries</code>, <code>chooseNetwork</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## Not run: 
+# load example data
+data(yeastTimeSeries)
+
+# perform binarization with k-means
+bin &lt;- binarizeTimeSeries(yeastTimeSeries)
+
+# reconstruct networks from binarized measurements
+net &lt;- reconstructNetwork(bin$binarizedMeasurements, method="bestfit", maxK=3, returnPBN=TRUE)
+
+# print reconstructed net
+print(net)
+
+# plot reconstructed net
+plotNetworkWiring(net)
+
+## End(Not run)
+</code></pre>
+
+
+</div>

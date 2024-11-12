@@ -1,0 +1,101 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>axe-rpart</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Axing a rpart.</h2>
+
+<h3>Description</h3>
+
+<p>rpart objects are created from the <span class="pkg">rpart</span> package, which
+is used for recursive partitioning for classification, regression and
+survival trees.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">## S3 method for class 'rpart'
+axe_call(x, verbose = FALSE, ...)
+
+## S3 method for class 'rpart'
+axe_ctrl(x, verbose = FALSE, ...)
+
+## S3 method for class 'rpart'
+axe_data(x, verbose = FALSE, ...)
+
+## S3 method for class 'rpart'
+axe_env(x, verbose = FALSE, ...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>A model object.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>verbose</code></td>
+<td>
+<p>Print information each time an axe method is executed.
+Notes how much memory is released and what functions are
+disabled. Default is <code>FALSE</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Any additional arguments related to axing.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>Axed rpart object.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+# Load libraries
+library(parsnip)
+library(rsample)
+library(rpart)
+
+# Load data
+set.seed(1234)
+split &lt;- initial_split(mtcars, prop = 9/10)
+car_train &lt;- training(split)
+
+# Create model and fit
+rpart_fit &lt;- decision_tree(mode = "regression") %&gt;%
+  set_engine("rpart") %&gt;%
+  fit(mpg ~ ., data = car_train, minsplit = 5, cp = 0.1)
+
+out &lt;- butcher(rpart_fit, verbose = TRUE)
+
+# Another rpart object
+wrapped_rpart &lt;- function() {
+  some_junk_in_environment &lt;- runif(1e6)
+  fit &lt;- rpart(Kyphosis ~ Age + Number + Start,
+               data = kyphosis,
+               x = TRUE, y = TRUE)
+  return(fit)
+}
+
+# Remove junk
+cleaned_rpart &lt;- axe_env(wrapped_rpart(), verbose = TRUE)
+
+# Check size
+lobstr::obj_size(cleaned_rpart)
+
+</code></pre>
+
+
+</div>

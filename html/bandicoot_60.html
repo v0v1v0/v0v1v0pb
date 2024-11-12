@@ -1,0 +1,137 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>super</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Get the parent class (the next class based on the method resolution order)</h2>
+
+<h3>Description</h3>
+
+<p>This function gets the parent class or the next class based on the method
+resolution order. This is useful when one wants to access the overwritten
+parent class method or the overwritten parent class attribute.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">super(self_name = "self", mro_current_name = "..mro_current..", where = NULL)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>self_name</code></td>
+<td>
+<p>Character. The name of the self reference.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>mro_current_name</code></td>
+<td>
+<p>Character. The name of the variable storing
+the current class. This is used to determine the next class.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>where</code></td>
+<td>
+<p>Environment/Character. The target environment to search for the
+parent class. If <code>where == NULL</code>, the parent environment of self will be used.
+If a character value is provided, the package with the same name will be used.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>Note that this function assumes the parent class can be found in the
+parent environment of the current object. If one wants to find the
+parent class from a package, it needs to be specified via the <code>where</code>
+argument.
+</p>
+
+
+<h3>Value</h3>
+
+<p>A <code>bandicoot</code> object which is an environment.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+# Define class O
+O &lt;- new_class(class_name = "O")
+register_method(O, foo = function() {
+  print("Calling class O `foo` method")
+  print(paste0("Self is ", self$my_name))
+  print(paste0("Next class is ", super()$..type..))
+})
+
+# Define class F
+F &lt;- new_class(O, class_name = "F")
+register_method(F, foo = function() {
+  print("Calling class F `foo` method")
+  print(paste0("Self is ", self$my_name))
+  print(paste0("Next class is ", super()$..type..))
+  use_method(self, super()$foo)()
+})
+
+# Define class E
+E &lt;- new_class(O, class_name = "E")
+register_method(E, foo = function() {
+  print("Calling class E `foo` method")
+  print(paste0("Next class is ", super()$..type..))
+  use_method(self, super()$foo)()
+})
+
+# Define class D
+D &lt;- new_class(O, class_name = "D")
+register_method(D, foo = function() {
+  print("Calling class D `foo` method")
+  print(paste0("Self is ", self$my_name))
+  print(paste0("Next class is ", super()$..type..))
+  use_method(self, super()$foo)()
+})
+
+# Define class C
+C &lt;- new_class(D, F, class_name = "C")
+register_method(C, foo = function() {
+  print("Calling class C `foo` method")
+  print(paste0("Self is ", self$my_name))
+  print(paste0("Next class is ", super()$..type..))
+  use_method(self, super()$foo)()
+})
+
+# Define class B
+B &lt;- new_class(E, D, class_name = "B")
+register_method(B, foo = function() {
+  print("Calling class B `foo` method")
+  print(paste0("Self is ", self$my_name))
+  print(paste0("Next class is ", super()$..type..))
+  use_method(self, super()$foo)()
+})
+
+# Define class A
+A &lt;- new_class(B, C, class_name = "A")
+register_method(A, foo = function() {
+  print("Calling class A `foo` method")
+  print(paste0("Self is ", self$my_name))
+  print(paste0("Next class is ", super()$..type..))
+  use_method(self, super()$foo)()
+})
+
+# To understand why the order is A, B, E, C, D, F, O,
+# please check [https://www.python.org/download/releases/2.3/mro/].
+a &lt;- A$instantiate()
+a$my_name &lt;- "a"
+a$foo()
+
+
+</code></pre>
+
+
+</div>

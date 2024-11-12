@@ -1,0 +1,112 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>AUC</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>AUC</h2>
+
+<h3>Description</h3>
+
+<p>Compute the Area Under the ROC Curve (AUC) of a predictor
+and possibly its 95% confidence interval.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">AUC(pred, target, digits = NULL)
+
+AUCBoot(pred, target, nboot = 10000, seed = NA, digits = NULL)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>pred</code></td>
+<td>
+<p>Vector of predictions.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>target</code></td>
+<td>
+<p>Vector of true labels (must have exactly two levels,
+no missing values).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>digits</code></td>
+<td>
+<p>See round. Default doesn't use rounding.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nboot</code></td>
+<td>
+<p>Number of bootstrap samples used to evaluate the 95% CI.
+Default is <code>1e4</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>seed</code></td>
+<td>
+<p>See set.seed. Use it for reproducibility.
+Default doesn't set any seed.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>Other packages provide ways to compute the AUC (see this
+<a href="https://stats.stackexchange.com/a/146174/135793">answer</a>).
+I chose to compute the AUC through its statistical definition as a
+probability: </p>
+<p style="text-align: center;"><code class="reqn">P(score(x_{case}) &gt; score(x_{control})).</code>
+</p>
+
+<p>Note that I consider equality between scores as a 50%-probability of
+one being greater than the other.
+</p>
+
+
+<h3>Value</h3>
+
+<p>The AUC, a probability, and possibly its 2.5% and 97.5% quantiles
+(95% CI).
+</p>
+
+
+<h3>See Also</h3>
+
+<p>wilcox.test
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">set.seed(1)
+
+AUC(c(0, 0), 0:1) # Equality of scores
+AUC(c(0.2, 0.1, 1), c(0, 0, 1)) # Perfect AUC
+x &lt;- rnorm(100)
+z &lt;- rnorm(length(x), x, abs(x))
+y &lt;- as.numeric(z &gt; 0)
+print(AUC(x, y))
+print(AUCBoot(x, y))
+
+# Partial AUC
+pAUC &lt;- function(pred, target, p = 0.1) {
+  val.min &lt;- min(target)
+  q &lt;- quantile(pred[target == val.min], probs = 1 - p)
+  ind &lt;- (target != val.min) | (pred &gt; q)
+  bigstatsr::AUC(pred[ind], target[ind]) * p
+}
+pAUC(x, y)
+pAUC(x, y, 0.2)
+</code></pre>
+
+
+</div>

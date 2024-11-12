@@ -1,0 +1,201 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>dlm</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Dynamic Linear Model for mortality table graduation</h2>
+
+<h3>Description</h3>
+
+<p>This function fits a Dynamic Linear Model (DLM) for mortality data following
+a Bayesian framework using Forward Filtering Backward Sampling algorithm to compute the posterior distribution.
+The response variable is the log of the mortality rate, and it is modeled specifying the matrices Ft and Gt from the DLM equations.
+Furthermore, the discount factor is used to control the smoothness of the fitted model. By default, a
+linear growth model is specified.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">dlm(y, Ft = matrix(c(1,0), nrow = 1), Gt = matrix(c(1,0,1,1), 2), delta = 0.85,
+    prior = list(m0 = rep(0, nrow(Gt)), C0 = diag(100, nrow(Gt))),
+    prior.sig2 = list(a = 0, b = 0), M = 2000, ages = 0:(length(y)-1))
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>y</code></td>
+<td>
+<p>Numeric vector of log mortality rates.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Ft</code></td>
+<td>
+<p>1xp Matrix that specifies the observation equation, where p is the number of parameters. By default, 'Ft = matrix(c(1,0), nrow = 1)'.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Gt</code></td>
+<td>
+<p>pxp Matrix that specifies the system equations. By default, Gt = matrix(c(1,0,1,1), 2).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>delta</code></td>
+<td>
+<p>Positive real value or real vector of the same length as y with values in the '(0, 1)' interval specifying the discount factor for each age. A higher value of delta results in a higher smoothness of the fitted curve. If a single value is defined, this same value is used for all ages. By default, delta is '0.85'.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>prior</code></td>
+<td>
+<p>A list with the prior mean vector <code class="reqn">(m_0)</code> and covariance matrix <code class="reqn">(C_0)</code> of <code class="reqn">\theta_0</code> (state vector at time (age) t = 0). By default mean of zeros and diagonal matrix with a common variance 100 is used. Each element of the list must be named accordingly with the parameter (m0 for mean vector and C0 for covariance matrix).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>prior.sig2</code></td>
+<td>
+<p>A list with the prior parameters (a, b) of Inverted Gamma distribution for <code class="reqn">\sigma^2</code>. Each element of the list must be named accordingly with the parameter (a for shape parameter and b for scale parameter).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>M</code></td>
+<td>
+<p>Positive integer that indicates the sampling size from the posterior distributions. The default value is 2000.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ages</code></td>
+<td>
+<p>Numeric vector of the ages fitted. Default is '0:(length(y)-1)'.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>Let <code class="reqn">Y_t</code> be the log mortality rate at age <code class="reqn">t</code>. A DLM is specified as follows:
+</p>
+<p>For <code class="reqn">t = 0</code>:
+</p>
+<p><code class="reqn">\theta_0 \sim N_p (m_0, C_0)</code>
+</p>
+<p>Now, for <code class="reqn">t \geq 1</code>:
+</p>
+<p>The observation equation:
+</p>
+<p><code class="reqn">Y_t = F_t \theta_t + v_t</code>
+</p>
+<p>The system equation:
+</p>
+<p><code class="reqn">\theta_t = G_t \theta_{t-1} + w_t</code>
+</p>
+<p>Where <code class="reqn">F_t</code> and <code class="reqn">G_t</code> are known matrices. <code class="reqn">v_t</code> and <code class="reqn">w_t</code> are independent
+random errors with <code class="reqn">v_t \sim N(0, \sigma^2)</code> and <code class="reqn">w_t \sim N(0, \sigma^2 W_t)</code>. We
+use the discount factors <code class="reqn">\delta</code> to specify <code class="reqn">W_t</code> as <code class="reqn">W_t = C_t(1-\delta)/\delta</code>,
+where <code class="reqn">C_t</code> is the conditional covariance matrix of <code class="reqn">\theta_t</code>. So, if
+<code class="reqn">\delta = 0</code> there is no loss information as <code class="reqn">t</code> increase (completely reducing the
+smoothness of the fitted curve). <code class="reqn">\delta</code> can be specified as a single value for all ages
+or as a vector in which each element is associated with an age.
+</p>
+<p>A scheme described by (Petris et al, 2009) for conjugated inference is used.
+For more details, see (Petris et al, 2009).
+</p>
+
+
+<h3>Value</h3>
+
+<p>A DLM class object.
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>mu</code></td>
+<td>
+<p>Posterior samples from <code class="reqn">\mu_t = F_t \theta_t</code>, for all t.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>theta</code></td>
+<td>
+<p>Posterior samples from <code class="reqn">\theta_t</code>, for all t.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>sig2</code></td>
+<td>
+<p>Posterior samples from <code class="reqn">\sigma^2</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>param</code></td>
+<td>
+<p>A list with the states parameters for filtering distribution (mt, Ct), predictive distribution (ft, Qt), smoothing distribution (as, Rs), and parameters of the posterior distribution for variance (alpha, beta).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>info</code></td>
+<td>
+<p>A list with some informations of the fitted model: the specification of <code class="reqn">F_t</code> and <code class="reqn">G_t</code> matrices, the data y and the ages, the discount factor <code class="reqn">delta</code> value specified and priors informations.</p>
+</td>
+</tr>
+</table>
+<h3>References</h3>
+
+<p>Campagnoli, P., Petris, G., and Petrone, S. (2009). <em>Dynamic linear models with R</em>. Springer-Verlag New York.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>fitted.DLM()</code>, <code>predict.DLM()</code>, <code>plot.DLM()</code>, <code>print.DLM()</code> and <code>summary.DLM()</code> for <code>DLM</code> methods to native R functions <code>fitted()</code>,
+<code>plot()</code>, <code>print()</code> and <code>summary()</code>.
+</p>
+<p><code>expectancy.DLM()</code> and <code>Heatmap.DLM()</code> for <code>DLM</code> methods to compute and visualise the truncated life expectancy
+via <code>expectancy()</code> and <code>Heatmap()</code> functions.
+</p>
+<p><code>dlm_close()</code> for close methods to expand the life tables.
+</p>
+<p><code>plot_chain()</code> to visualise the markov chains, respectively.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## Importing mortality data from the USA available on the Human Mortality Database (HMD):
+data(USA)
+
+## Selecting the log mortality rate of the 2010 male population ranging from 0 to 100 years old
+USA2010 = USA[USA$Year == 2010,]
+x = 0:100
+Ex = USA2010$Ex.Male[x+1]
+Dx = USA2010$Dx.Male[x+1]
+y = log(Dx/Ex)
+
+## Fitting DLM
+fit = dlm(y)
+print(fit)
+summary(fit)
+
+## Using other functions available in the package:
+## plotting (See "?plot.DLM" in the BayesMortality package for more options):
+plot(fit)
+
+## qx estimation (See "?fitted.DLM" in the BayesMortality package for more options):
+fitted(fit)
+
+## chain's plot (See "?plot_chain" for more options):
+plot_chain(fit, param = c("mu[0]", "mu[100]"))
+
+## Varying discount factor
+fit2 = dlm(y, delta = c(rep(0.8, 36), rep(0.9, 65)))
+plot(fit2)
+
+
+</code></pre>
+
+
+</div>

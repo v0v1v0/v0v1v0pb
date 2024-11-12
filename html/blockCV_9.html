@@ -1,0 +1,131 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>cv_similarity</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Compute similarity measures to evaluate possible extrapolation in testing folds</h2>
+
+<h3>Description</h3>
+
+<p>This function computes multivariate environmental similarity surface (MESS) as described
+in Elith et al. (2010). MESS represents how similar a point in a testing fold is to a training
+fold (as a reference set of points), with respect to a set of predictor variables in <code>r</code>.
+The negative values are the sites where at least one variable has a value that is outside
+the range of environments over the reference set, so these are novel environments.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">cv_similarity(
+  cv,
+  x,
+  r,
+  num_plot = seq_along(cv$folds_list),
+  jitter_width = 0.1,
+  points_size = 2,
+  points_alpha = 0.7,
+  points_colors = NULL,
+  progress = TRUE
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>cv</code></td>
+<td>
+<p>a blockCV cv_* object; a <code>cv_spatial</code>, <code>cv_cluster</code>, <code>cv_buffer</code>
+or <code>cv_nndm</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>a simple features (sf) or SpatialPoints object of the spatial sample data used for creating
+the <code>cv</code> object.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>r</code></td>
+<td>
+<p>a terra SpatRaster object of environmental predictor that are going to be used for modelling. This
+is used to calculate similarity between the training and testing points.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>num_plot</code></td>
+<td>
+<p>a vector of indices of folds.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>jitter_width</code></td>
+<td>
+<p>numeric; the width of jitter points.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>points_size</code></td>
+<td>
+<p>numeric; the size of points.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>points_alpha</code></td>
+<td>
+<p>numeric; the opacity of points</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>points_colors</code></td>
+<td>
+<p>character; a character vector of colours for points</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>progress</code></td>
+<td>
+<p>logical; whether to shows a progress bar for random fold selection.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>a ggplot object
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+library(blockCV)
+
+# import presence-absence species data
+points &lt;- read.csv(system.file("extdata/", "species.csv", package = "blockCV"))
+# make an sf object from data.frame
+pa_data &lt;- sf::st_as_sf(points, coords = c("x", "y"), crs = 7845)
+
+# load raster data
+path &lt;- system.file("extdata/au/", package = "blockCV")
+files &lt;- list.files(path, full.names = TRUE)
+covars &lt;- terra::rast(files)
+
+# hexagonal spatial blocking by specified size and random assignment
+sb &lt;- cv_spatial(x = pa_data,
+                 column = "occ",
+                 size = 450000,
+                 k = 5,
+                 iteration = 1)
+
+# compute extrapolation
+cv_similarity(cv = sb, r = covars, x = pa_data)
+
+
+</code></pre>
+
+
+</div>

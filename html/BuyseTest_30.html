@@ -1,0 +1,176 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>CasinoTest</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Multi-group GPC (EXPERIMENTAL)</h2>
+
+<h3>Description</h3>
+
+<p>Perform Generalized Pairwise Comparisons (GPC) for two or more groups.
+Can handle one or several binary, continuous and time-to-event endpoints.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">CasinoTest(
+  formula,
+  data,
+  type = "unweighted",
+  add.halfNeutral = NULL,
+  method.inference = "u-statistic",
+  conf.level = NULL,
+  transformation = NULL,
+  alternative = NULL,
+  method.multcomp = "none",
+  seed = NA
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>formula</code></td>
+<td>
+<p>[formula] a symbolic description of the GPC model, see the <code>BuyseTest</code> function</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+<p>[data.frame] dataset.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>type</code></td>
+<td>
+<p>[character] Type of estimator: can be <code>"unweighted"</code> or <code>"weighted"</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>add.halfNeutral</code></td>
+<td>
+<p>[logical] should half of the neutral score be added to the favorable and unfavorable scores?</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>method.inference</code></td>
+<td>
+<p>[character] method used to compute confidence intervals and p-values.
+Can be <code>"none"</code>, <code>"u-statistic"</code>, or <code>"rank"</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>conf.level</code></td>
+<td>
+<p>[numeric] confidence level for the confidence intervals.
+Default value read from <code>BuyseTest.options()</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>transformation</code></td>
+<td>
+<p>[logical]  should the CI be computed on the inverse hyperbolic tangent scale / log scale for the net benefit / win ratio and backtransformed.
+Otherwise they are computed without any transformation.
+Default value read from <code>BuyseTest.options()</code>. Not relevant when using permutations or percentile bootstrap.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>alternative</code></td>
+<td>
+<p>[character] the type of alternative hypothesis: <code>"two.sided"</code>, <code>"greater"</code>, or <code>"less"</code>.
+Default value read from <code>BuyseTest.options()</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>method.multcomp</code></td>
+<td>
+<p>[character] method used to adjust for multiple comparisons.
+Can be any element of ‘p.adjust.methods’ (e.g. "holm"), "maxT-integration", or "maxT-simulation".</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>seed</code></td>
+<td>
+<p>[integer, &gt;0] Random number generator (RNG) state used when adjusting for multiple comparisons.
+If <code>NULL</code> no state is set.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>Require to have installed the package riskRegression and BuyseTest
+</p>
+<p>Setting argument <code>method.inference</code> to <code>"rank"</code> uses a U-statistic approach with a small sample correction to match the variance estimator derived in Result 4.16 page 228 of Brunner (2018).
+</p>
+
+
+<h3>Value</h3>
+
+<p>An S3 object of class <code>CasinoTest</code> that inherits from data.frame.
+</p>
+
+
+<h3>References</h3>
+
+<p>Edgar Brunner, Arne C Bathke, and Frank Konietschke (2018). <b>Rank and pseudo-rank procedures for independent observations in factorial designs</b>. Springer.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">library(data.table)
+library(BuyseTest)
+
+#### simulate data ####
+set.seed(11)
+n &lt;- 4
+dt &lt;- rbind(data.table(score = rnorm(n), group = "A"),
+            data.table(score = rnorm(2*n), group = "B"),
+            data.table(score = rnorm(3*n), group = "C"))
+dt$index &lt;- 1:NROW(dt)
+
+#### estimation ####
+score.casino &lt;- dt$score
+
+## naive casino (by hand)
+M.score &lt;- outer(dt[group=="A",score],score.casino,function(x,y){x&gt;y+0.5*(x==y)})
+mean(M.score)
+
+## naive casino (via BuyseTest)
+CasinoTest(group ~ cont(score), data = dt, type = "weighted")
+
+## harmonic casino (by hand)
+hweight &lt;- unlist(tapply(dt$group, dt$group, function(x){rep(1/length(x),length(x))}))
+M.scoreW &lt;- sweep(M.score, MARGIN = 2, FUN = "*", STATS = NROW(dt)*hweight/3)
+mean(M.scoreW)
+
+## harmonic casino (via BuyseTest)
+CasinoTest(group ~ cont(score), data = dt, type = "unweighted")
+
+#### Relative liver weights data (Brunner 2018, table 4.1, page 183) ####
+liverW &lt;- rbind(
+  data.frame(value = c(3.78, 3.40, 3.29, 3.14, 3.55, 3.76, 3.23, 3.31),
+             group = "Placebo"),
+  data.frame(value = c(3.46,3.98,3.09,3.49,3.31,3.73,3.23),
+             group = "Dose 1"),
+  data.frame(value = c(3.71, 3.36, 3.38, 3.64, 3.41, 3.29, 3.61, 3.87),
+             group = "Dose 2"),
+  data.frame(value = c(3.86,3.80,4.14,3.62,3.95,4.12,4.54),
+             group = "Dose 3"),
+  data.frame(value = c(4.14,4.11,3.89,4.21,4.81,3.91,4.19, 5.05),
+             group = "Dose 4")
+)
+liverW$valueU &lt;- liverW$value + (1:NROW(liverW))/1e6
+
+## same as table 4.1, page 183 in Brunner et al (2018)
+CasinoTest(group ~ cont(value), data = liverW, type = "weighted", add.halfNeutral = TRUE)
+CasinoTest(group ~ cont(valueU), data = liverW, type = "unweighted", add.halfNeutral = TRUE)
+</code></pre>
+
+
+</div>

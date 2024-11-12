@@ -1,0 +1,209 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>draw_all_admix</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Simulate random allele frequencies and genotypes from the BN-PSD admixture model</h2>
+
+<h3>Description</h3>
+
+<p>This function returns simulated ancestral, intermediate, and individual-specific allele frequencies and genotypes given the admixture structure, as determined by the admixture proportions and the vector or tree of intermediate subpopulation FST values.
+The function is a wrapper around <code>draw_p_anc()</code>, <code>draw_p_subpops()</code>/<code>draw_p_subpops_tree()</code>, <code>make_p_ind_admix()</code>, and <code>draw_genotypes_admix()</code> with additional features such as requiring polymorphic loci.
+Importantly, by default fixed loci (where all individuals were homozygous for the same allele) are re-drawn from the start (starting from the ancestral allele frequencies) so no fixed loci are in the output and no biases are introduced by re-drawing genotypes conditional on any of the previous allele frequencies (ancestral, intermediate, or individual-specific).
+Below <code>m_loci</code> (also <code>m</code>) is the number of loci, <code>n</code> is the number of individuals, and <code>k</code> is the number of intermediate subpopulations.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">draw_all_admix(
+  admix_proportions,
+  inbr_subpops = NULL,
+  m_loci,
+  tree_subpops = NULL,
+  want_genotypes = TRUE,
+  want_p_ind = FALSE,
+  want_p_subpops = FALSE,
+  want_p_anc = TRUE,
+  verbose = FALSE,
+  require_polymorphic_loci = TRUE,
+  maf_min = 0,
+  beta = NA,
+  p_anc = NULL,
+  p_anc_distr = NULL
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>admix_proportions</code></td>
+<td>
+<p>The <code>n</code>-by-<code>k</code> matrix of admixture proportions.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>inbr_subpops</code></td>
+<td>
+<p>The length-<code>k</code> vector (or scalar) of intermediate subpopulation FST values.
+Either this or <code>tree_subpops</code> must be provided (but not both).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>m_loci</code></td>
+<td>
+<p>The number of loci to draw.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>tree_subpops</code></td>
+<td>
+<p>The coancestry tree relating the <code>k</code> intermediate subpopulations.
+Must be a <code>phylo</code> object from the <code>ape</code> package (see <code>ape::read.tree()</code>).
+Either this or <code>inbr_subpops</code> must be provided (but not both).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>want_genotypes</code></td>
+<td>
+<p>If <code>TRUE</code> (default), includes the matrix of random genotypes in the return list.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>want_p_ind</code></td>
+<td>
+<p>If <code>TRUE</code> (NOT default), includes the matrix of individual-specific allele frequencies in the return list.
+Note that by default <code>p_ind</code> is not constructed in full at all, instead a fast low-memory algorithm constructs it in parts as needed only; beware that setting <code>want_p_ind = TRUE</code> increases memory usage in comparison.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>want_p_subpops</code></td>
+<td>
+<p>If <code>TRUE</code> (NOT default), includes the matrix of random intermediate subpopulation allele frequencies in the return list.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>want_p_anc</code></td>
+<td>
+<p>If <code>TRUE</code> (default), includes the vector of random ancestral allele frequencies in the return list.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>verbose</code></td>
+<td>
+<p>If <code>TRUE</code>, prints messages for every stage in the algorithm.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>require_polymorphic_loci</code></td>
+<td>
+<p>If <code>TRUE</code> (default), returned genotype matrix will not include any fixed loci (loci that happened to be fixed are drawn again, starting from their ancestral allele frequencies, and checked iteratively until no fixed loci remain, so that the final number of polymorphic loci is exactly <code>m_loci</code>).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>maf_min</code></td>
+<td>
+<p>The minimum minor allele frequency (default zero), to extend the working definition of "fixed" above to include rare variants.
+This helps simulate a frequency-based locus ascertainment bias.
+Loci with minor allele frequencies less than or <em>equal</em> to this value are treated as fixed (passed to <code>fixed_loci()</code>).
+This parameter has no effect if <code>require_polymorphic_loci</code> is <code>FALSE</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>beta</code></td>
+<td>
+<p>Shape parameter for a symmetric Beta for ancestral allele frequencies <code>p_anc</code>.
+If <code>NA</code> (default), <code>p_anc</code> is uniform with range in [0.01, 0.5].
+Otherwise, <code>p_anc</code> has a symmetric Beta distribution with range in [0, 1].
+Has no effect if either <code>p_anc</code> or <code>p_anc_distr</code> options are non-<code>NULL</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>p_anc</code></td>
+<td>
+<p>If provided, it is used as the ancestral allele frequencies (instead of drawing random ones).  Must either be a scalar or a length-<code>m_loci</code> vector.
+If scalar and <code>want_p_anc = TRUE</code>, then the returned <code>p_anc</code> is the scalar value repeated <code>m_loci</code> times (it is always a vector).
+If a locus was fixed and has to be redrawn, the ancestral allele frequency in <code>p_anc</code> is retained and only downstream allele frequencies and genotypes are redrawn (contrast to <code>p_anc_distr</code> below).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>p_anc_distr</code></td>
+<td>
+<p>If provided, ancestral allele frequencies are drawn with replacement from this vector (which may have any length) or function, instead of from <code>draw_p_anc()</code>.
+If a function, must accept a single parameter specifying the number of loci to draw.
+If a locus was fixed and has to be redrawn, the ancestral allele frequency is redrawn from the distribution (contrast to <code>p_anc</code> above).</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>As a precaution, function stops if both the column names of <code>admix_proportions</code> and the names in <code>inbr_subpops</code> or <code>tree_subpops</code> exist and disagree, which might be because these two data are not aligned or there is some other inconsistency.
+</p>
+
+
+<h3>Value</h3>
+
+<p>A named list with the following items (which may be missing depending on options):
+</p>
+
+<ul>
+<li> <p><code>X</code>: An <code>m</code>-by-<code>n</code> matrix of genotypes.
+Included if <code>want_genotypes = TRUE</code>.
+</p>
+</li>
+<li> <p><code>p_anc</code>: A length-<code>m</code> vector of ancestral allele frequencies.
+Included if <code>want_p_anc = TRUE</code>.
+</p>
+</li>
+<li> <p><code>p_subpops</code>: An <code>m</code>-by-<code>k</code> matrix of intermediate subpopulation allele frequencies
+Included if <code>want_p_subpops = TRUE</code>.
+</p>
+</li>
+<li> <p><code>p_ind</code>: An <code>m</code>-by-<code>n</code> matrix of individual-specific allele frequencies.
+Included if <code>want_p_ind = TRUE</code>.
+</p>
+</li>
+</ul>
+<h3>Examples</h3>
+
+<pre><code class="language-R"># dimensions
+# number of loci
+m_loci &lt;- 10
+# number of individuals
+n_ind &lt;- 5
+# number of intermediate subpops
+k_subpops &lt;- 2
+
+# define population structure
+# FST values for k = 2 subpopulations
+inbr_subpops &lt;- c(0.1, 0.3)
+# admixture proportions from 1D geography
+admix_proportions &lt;- admix_prop_1d_linear(n_ind, k_subpops, sigma = 1)
+
+# draw all random allele freqs and genotypes
+out &lt;- draw_all_admix(admix_proportions, inbr_subpops, m_loci)
+
+# return value is a list with these items:
+
+# genotypes
+X &lt;- out$X
+
+# ancestral AFs
+p_anc &lt;- out$p_anc
+
+# # these are excluded by default, but would be included if ...
+# # ... `want_p_subpops == TRUE`
+# # intermediate subpopulation AFs
+# p_subpops &lt;- out$p_subpops
+# 
+# # ... `want_p_ind == TRUE`
+# # individual-specific AFs
+# p_ind &lt;- out$p_ind
+
+</code></pre>
+
+
+</div>

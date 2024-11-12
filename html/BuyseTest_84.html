@@ -1,0 +1,162 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>sensitivity</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Sensitivity Analysis for the Choice of the Thresholds</h2>
+
+<h3>Description</h3>
+
+<p>Evaluate a summary statistic (net benefit, win ratio, ...) using GPC along various thresholds of clinical relevance.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">sensitivity(object, ...)
+
+## S4 method for signature 'S4BuyseTest'
+sensitivity(
+  object,
+  threshold,
+  statistic = NULL,
+  band = FALSE,
+  conf.level = NULL,
+  null = NULL,
+  transformation = NULL,
+  alternative = NULL,
+  adj.p.value = FALSE,
+  trace = TRUE,
+  cpus = 1,
+  ...
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>object</code></td>
+<td>
+<p>an <span style="font-family: Courier New, Courier; color: #666666;"><b>R</b></span> object of class <code>S4BuyseTest</code>, i.e., output of <code>BuyseTest</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>argument passsed to the function <code>transformCIBP</code> of the riskRegression package.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>threshold</code></td>
+<td>
+<p>[list] a list containing for each endpoint the thresholds to be considered.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>statistic</code></td>
+<td>
+<p>[character] the statistic summarizing the pairwise comparison:
+<code>"netBenefit"</code> displays the net benefit, as described in Buyse (2010) and Peron et al. (2016)),
+<code>"winRatio"</code> displays the win ratio, as described in Wang et al. (2016),
+<code>"favorable"</code> displays the proportion in favor of the treatment (also called Mann-Whitney parameter), as described in Fay et al. (2018).
+<code>"unfavorable"</code> displays the proportion in favor of the control.
+Default value read from <code>BuyseTest.options()</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>band</code></td>
+<td>
+<p>[logical] should simulateneous confidence intervals be computed?</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>conf.level</code></td>
+<td>
+<p>[numeric] confidence level for the confidence intervals.
+Default value read from <code>BuyseTest.options()</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>null</code></td>
+<td>
+<p>[numeric] right hand side of the null hypothesis (used for the computation of the p-value).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>transformation</code></td>
+<td>
+<p>[logical]  should the CI be computed on the logit scale / log scale for the net benefit / win ratio and backtransformed.
+Otherwise they are computed without any transformation.
+Default value read from <code>BuyseTest.options()</code>. Not relevant when using permutations or percentile bootstrap.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>alternative</code></td>
+<td>
+<p>[character] the type of alternative hypothesis: <code>"two.sided"</code>, <code>"greater"</code>, or <code>"less"</code>.
+Default value read from <code>BuyseTest.options()</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>adj.p.value</code></td>
+<td>
+<p>[logical] should p-value adjusted for multiple comparisons be computed?</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>trace</code></td>
+<td>
+<p>[logical] Should the execution of the function be traced?</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>cpus</code></td>
+<td>
+<p>[integer, &gt;0] the number of CPU to use. Default value is 1.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>Simulateneous confidence intervals and adjusted p-values are computed using a single-step max-test approach via the function <code>transformCIBP</code> of the riskRegression package.
+</p>
+
+
+<h3>Value</h3>
+
+<p>An S3 object of class <code>S3sensitivity</code>.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+## Not run: 
+require(ggplot2)
+
+## simulate data
+set.seed(10)
+df.data &lt;- simBuyseTest(1e2, n.strata = 2)
+
+## with one endpoint
+ff1 &lt;- treatment ~ TTE(eventtime, status = status, threshold = 0.1)
+BT1 &lt;- BuyseTest(ff1, data= df.data)
+se.BT1 &lt;- sensitivity(BT1, threshold = seq(0,2,0.25), band = TRUE)
+plot(se.BT1)
+
+## with two endpoints
+ff2 &lt;- update(ff1, .~. + cont(score, threshold = 1))
+BT2 &lt;- BuyseTest(ff2, data= df.data)
+se.BT2 &lt;- sensitivity(BT2, threshold = list(eventtime = seq(0,2,0.25), score = 0:2),
+                      band = TRUE)
+plot(se.BT2)
+plot(se.BT2, col = NA)
+
+## End(Not run)
+</code></pre>
+
+
+</div>

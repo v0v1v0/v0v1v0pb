@@ -1,0 +1,288 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>sane</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2> Solving Large-Scale Nonlinear System of Equations</h2>
+
+<h3>Description</h3>
+
+<p>Non-Monotone spectral approach for Solving Large-Scale 
+Nonlinear Systems of Equations</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">  sane(par, fn, method=2, control=list(),
+       quiet=FALSE, alertConvergence=TRUE, ...) 
+ </code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>fn</code></td>
+<td>
+<p>a function that takes a real vector as argument and returns 
+a real vector of same length (see details).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>par</code></td>
+<td>
+<p>A real vector argument to <code>fn</code>, indicating the 
+initial guess for the root of the nonlinear system.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>method</code></td>
+<td>
+<p>An integer (1, 2, or 3) specifying which Barzilai-Borwein 
+steplength to use.  The default is 2.  See *Details*.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>control</code></td>
+<td>
+<p>A list of control parameters. See *Details*.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>quiet</code></td>
+<td>
+<p>A logical variable (TRUE/FALSE). If <code>TRUE</code> warnings 
+and some additional information printing are suppressed.  
+Default is <code>quiet = FALSE</code>
+Note that <code>quiet</code> and the <code>control</code> variable <code>trace</code> 
+affect different printing, so if <code>trace</code> is not set to <code>FALSE</code> 
+there will be considerable printed output.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>alertConvergence</code></td>
+<td>
+<p>A logical variable. With the default <code>TRUE</code>
+a warning is issued if convergence is not obtained. When set to <code>FALSE</code>
+the warning is suppressed.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Additional arguments passed to <code>fn</code>.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The function <code>sane</code> implements a non-monotone spectral residual method 
+for finding a root of nonlinear systems.  It stands for "spectral approach 
+for nonlinear equations".  
+It differs from the function <code>dfsane</code> in that it requires an 
+approximation of a directional derivative at every iteration of the merit 
+function <code class="reqn">F(x)^t F(x)</code>.
+</p>
+<p>R adaptation, with significant modifications, by Ravi Varadhan, 
+Johns Hopkins University (March 25, 2008), from the original FORTRAN code 
+of La Cruz and Raydan (2003).  
+</p>
+<p>A major modification in our R adaptation of the original FORTRAN code is the 
+availability of 3 different options for Barzilai-Borwein (BB) steplengths: 
+<code>method = 1</code> is the BB 
+steplength used in LaCruz and Raydan (2003);  <code>method = 2</code> is equivalent to
+the other steplength proposed in Barzilai and Borwein's (1988) original paper. 
+Finally, <code>method = 3</code>, is a new steplength, which is equivalent to that 
+first proposed in Varadhan and Roland (2008) for accelerating the EM algorithm.
+In fact, Varadhan and Roland (2008) considered 3 equivalent steplength schemes 
+in their EM acceleration work.  Here, we have chosen <code>method = 2</code> 
+as the "default" method, as it generally performed better than the other 
+schemes in our numerical experiments.  
+</p>
+<p>Argument <code>control</code> is a list specifing any changes to default values of 
+algorithm control parameters.  Note that the names of these must be 
+specified completely.  Partial matching will not work.
+Argument <code>control</code> has the following components:
+</p>
+
+<dl>
+<dt>M</dt>
+<dd>
+<p>A positive integer, typically between 5-20, that controls the 
+monotonicity of the algorithm.  <code>M=1</code> would enforce strict monotonicity 
+in the reduction of L2-norm of <code>fn</code>, whereas larger values allow for 
+more non-monotonicity.  Global convergence under non-monotonicity is ensured 
+by enforcing the Grippo-Lampariello-Lucidi condition (Grippo et al. 1986) in a 
+non-monotone line-search algorithm.  Values of <code>M</code> between 5 to 20 are 
+generally good, although some problems may require a much larger M.  
+The default is <code>M = 10</code>.</p>
+</dd> 
+<dt>maxit</dt>
+<dd>
+<p>The maximum number of iterations.  The default is 
+<code>maxit = 1500</code>.</p>
+</dd>
+<dt>tol</dt>
+<dd>
+<p>The absolute convergence tolerance on the residual L2-norm 
+of <code>fn</code>.  Convergence is declared 
+when <code class="reqn">\|F(x)\| / \sqrt(npar) &lt; \mbox{tol}</code>.  
+Default is <code>tol = 1.e-07</code>.</p>
+</dd>
+<dt>trace</dt>
+<dd>
+<p>A logical variable (TRUE/FALSE).  If <code>TRUE</code>, information on 
+the progress of solving the system is produced.  
+Default is <code>trace = !quiet</code>.</p>
+</dd>
+<dt>triter</dt>
+<dd>
+<p>An integer that controls the frequency of tracing 
+when <code>trace=TRUE</code>. Default is <code>triter=10</code>, which means that
+the L2-norm of <code>fn</code> is printed at every 10-th iteration.</p>
+</dd>
+<dt>noimp</dt>
+<dd>
+<p>An integer. Algorithm is terminated when no progress has been 
+made in reducing the merit function for <code>noimp</code> consecutive iterations.  
+Default is <code>noimp=100</code>.</p>
+</dd>
+<dt>NM</dt>
+<dd>
+<p>A logical variable that dictates whether the Nelder-Mead algorithm 
+in <code>optim</code> will be called upon to improve user-specified starting value. 
+Default is <code>NM=FALSE</code>.</p>
+</dd>
+<dt>BFGS</dt>
+<dd>
+<p>A logical variable that dictates whether the low-memory L-BFGS-B 
+algorithm in <code>optim</code> will be called after certain types of unsuccessful 
+termination of <code>sane</code>. Default is <code>BFGS=FALSE</code>.</p>
+</dd>
+</dl>
+<h3>Value</h3>
+
+<p>A list with the following components:
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>par</code></td>
+<td>
+<p>The best set of parameters that solves the nonlinear system.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>residual</code></td>
+<td>
+<p>L2-norm of the function evaluated at <code>par</code>, divided 
+by <code>sqrt(npar)</code>, where "npar" is the number of parameters.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>fn.reduction</code></td>
+<td>
+<p>Reduction in the L2-norm of the function from the 
+initial L2-norm.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>feval</code></td>
+<td>
+<p>Number of times <code>fn</code> was evaluated.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>iter</code></td>
+<td>
+<p>Number of iterations taken by the algorithm.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>convergence</code></td>
+<td>
+<p>An integer code indicating type of convergence. 
+<code>0</code> indicates successful convergence, in which case the <code>resid</code> 
+is smaller than 
+<code>tol</code>. Error codes are <code>1</code> indicates that the iteration 
+limit <code>maxit</code> has been reached.  
+<code>2</code> indicates error in function evaluation;  
+<code>3</code> is failure due to exceeding 100 steplength reductions in line-search; 
+<code>4</code> denotes failure due to an anomalous iteration; and 
+<code>5</code> indicates lack of improvement in objective function over <code>noimp</code> 
+consecutive iterations.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>message</code></td>
+<td>
+<p>A text message explaining which termination criterion was used.</p>
+</td>
+</tr>
+</table>
+<h3>References</h3>
+
+ 
+<p>J Barzilai, and JM Borwein  (1988),  Two-point step size gradient 
+methods, <em>IMA J Numerical Analysis</em>, 8, 141-148. 
+</p>
+<p>L Grippo, F Lampariello, and S Lucidi (1986),  A nonmonotone line search technique 
+for Newton's method,  <em>SIAM J on Numerical Analysis</em>, 23, 707-716. 
+</p>
+<p>W LaCruz, and M Raydan (2003),  Nonmonotone spectral methods for large-scale
+nonlinear systems, <em>Optimization Methods and Software</em>, 18, 583-599. 
+</p>
+<p>R Varadhan and C Roland (2008),  Simple and globally-convergent methods for 
+accelerating the convergence of any EM algorithm,  
+<em>Scandinavian J Statistics</em>. 
+</p>
+<p>R Varadhan and PD Gilbert (2009),  BB: An R Package for Solving a Large System of Nonlinear Equations and for Optimizing a High-Dimensional Nonlinear Objective Function, <em>J. Statistical Software</em>, 32:4, <a href="http://www.jstatsoft.org/v32/i04/">http://www.jstatsoft.org/v32/i04/</a>
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>BBsolve</code>,
+<code>dfsane</code>,
+<code>spg</code>,
+<code>grad</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">  trigexp &lt;- function(x) {
+# Test function No. 12 in the Appendix of LaCruz and Raydan (2003)
+    n &lt;- length(x)
+    F &lt;- rep(NA, n)
+    F[1] &lt;- 3*x[1]^2 + 2*x[2] - 5 + sin(x[1] - x[2]) * sin(x[1] + x[2])
+    tn1 &lt;- 2:(n-1)
+    F[tn1] &lt;- -x[tn1-1] * exp(x[tn1-1] - x[tn1]) + x[tn1] * ( 4 + 3*x[tn1]^2) +
+        2 * x[tn1 + 1] + sin(x[tn1] - x[tn1 + 1]) * sin(x[tn1] + x[tn1 + 1]) - 8 
+    F[n] &lt;- -x[n-1] * exp(x[n-1] - x[n]) + 4*x[n] - 3
+    F
+    }
+
+    p0 &lt;- rnorm(50)
+    sane(par=p0, fn=trigexp)
+    sane(par=p0, fn=trigexp, method=1)    
+######################################
+brent &lt;- function(x) {
+  n &lt;- length(x)
+  tnm1 &lt;- 2:(n-1)
+  F &lt;- rep(NA, n)
+  F[1] &lt;- 3 * x[1] * (x[2] - 2*x[1]) + (x[2]^2)/4 
+  F[tnm1] &lt;- 3 * x[tnm1] * (x[tnm1+1] - 2 * x[tnm1] + x[tnm1-1]) + 
+               ((x[tnm1+1] - x[tnm1-1])^2) / 4   
+  F[n] &lt;- 3 * x[n] * (20 - 2 * x[n] + x[n-1]) +  ((20 - x[n-1])^2) / 4
+  F
+  }
+  
+  p0 &lt;- sort(runif(50, 0, 10))
+  sane(par=p0, fn=brent, control=list(trace=FALSE))
+  sane(par=p0, fn=brent, control=list(M=200, trace=FALSE))
+</code></pre>
+
+
+</div>

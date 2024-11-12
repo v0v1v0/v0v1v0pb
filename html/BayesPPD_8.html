@@ -1,0 +1,313 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>power.glm.random.a0</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Power/type I error calculation for generalized linear models with random a0</h2>
+
+<h3>Description</h3>
+
+<p>Power/type I error calculation using normalized power priors for generalized linear models with random <code class="reqn">a_0</code>
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">power.glm.random.a0(
+  data.type,
+  data.link,
+  data.size,
+  n = 1,
+  treat.assign.prob = 0.5,
+  borrow.treat = FALSE,
+  historical,
+  nullspace.ineq = "&gt;",
+  samp.prior.beta,
+  samp.prior.var,
+  prior.beta.var = rep(10, 50),
+  prior.a0.shape1 = rep(1, 10),
+  prior.a0.shape2 = rep(1, 10),
+  a0.coefficients,
+  lower.limits = NULL,
+  upper.limits = NULL,
+  slice.widths = rep(0.1, 50),
+  delta = 0,
+  gamma = 0.95,
+  nMC = 10000,
+  nBI = 250,
+  N = 10000
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>data.type</code></td>
+<td>
+<p>Character string specifying the type of response. The options are "Normal", "Bernoulli", "Binomial", "Poisson" and "Exponential".</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>data.link</code></td>
+<td>
+<p>Character string specifying the link function. The options are "Logistic", "Probit", "Log", "Identity-Positive", "Identity-Probability" and "Complementary Log-Log". Does not apply if <code>data.type</code> is "Normal".</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>data.size</code></td>
+<td>
+<p>Sample size of the simulated datasets.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>n</code></td>
+<td>
+<p>(For binomial data only) vector of integers specifying the number of subjects who have a particular value of the covariate vector. If the data is binary and all covariates are discrete, collapsing Bernoulli data into a binomial structure can make the slice sampler much faster.
+The sum of <code>n</code> should be equal to <code>data.size</code>. The length of <code>n</code> should be equal to the number of rows of <code>x0</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>treat.assign.prob</code></td>
+<td>
+<p>Probability of being assigned to the treatment group. The default value is 0.5. Only applies if <code>borrow.treat=FALSE</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>borrow.treat</code></td>
+<td>
+<p>Logical value indicating whether the historical information is used to inform the treatment effect parameter. The default value is FALSE. If TRUE, the first column of the historical covariate matrix must be the treatment indicator.
+If FALSE, the historical covariate matrix must NOT have the treatment indicator, since the historical data is assumed to be from the control group only.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>historical</code></td>
+<td>
+<p>List of historical dataset(s). East historical dataset is stored in a list which contains two <em>named</em> elements: <code>y0</code> and <code>x0</code>.
+</p>
+
+<ul>
+<li> <p><code>y0</code> is a vector of responses.
+</p>
+</li>
+<li> <p><code>x0</code> is a matrix of covariates. If <code>borrow.treat</code> is FALSE (the default), <code>x0</code> should NOT have the treatment indicator.
+If <code>borrow.treat</code> is TRUE, the first column of <code>x0</code> must be the treatment indicator.
+</p>
+</li>
+</ul>
+<p>For binomial data, an additional element <code>n0</code> is required.
+</p>
+
+<ul><li> <p><code>n0</code> is vector of integers specifying the number of subjects who have a particular value of the covariate vector.
+The length of <code>n0</code> should be equal to the number of rows of <code>x0</code>.
+</p>
+</li></ul>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nullspace.ineq</code></td>
+<td>
+<p>Character string specifying the inequality of the null hypothesis. The options are "&gt;" and "&lt;". If "&gt;" is specified, the null hypothesis is <code class="reqn">H_0</code>: <code class="reqn">\beta_1</code> <code class="reqn">\ge</code> <code class="reqn">\delta</code>. If "&lt;" is specified, the null hypothesis is <code class="reqn">H_0</code>: <code class="reqn">\beta_1</code> <code class="reqn">\le</code> <code class="reqn">\delta</code>. The default choice is "&gt;".</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>samp.prior.beta</code></td>
+<td>
+<p>Matrix of possible values of <code class="reqn">\beta</code> to sample (with replacement) from. Each row is a possible <code class="reqn">\beta</code> vector (a realization from the sampling prior for <code class="reqn">\beta</code>), where the first element is the coefficient for the intercept and the second element is the coefficient for the treatment indicator.
+The length of the vector should be equal to the total number of parameters. If P is the number of columns of <code>x0</code> in <code>historical</code>, the total number of parameters is P+2 if <code>borrow.treat=FALSE</code>, and is P+1 if <code>borrow.treat=TRUE</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>samp.prior.var</code></td>
+<td>
+<p>Vector of possible values of <code class="reqn">\sigma^2</code> to sample (with replacement) from. Only applies if <code>data.type</code> is "Normal". The vector contains realizations from the sampling prior (e.g. inverse-gamma distribution) for <code class="reqn">\sigma^2</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>prior.beta.var</code></td>
+<td>
+<p>Vector of variances of the independent normal initial priors on <code class="reqn">\beta</code> with mean zero. The length of the vector should be equal to the length of <code class="reqn">\beta</code>. The default variance is 10.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>prior.a0.shape1</code></td>
+<td>
+<p>Vector of the first shape parameters of the independent beta priors for <code class="reqn">a_0</code>. The length of the vector should be equal to the number of historical datasets. The default is a vector of one's.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>prior.a0.shape2</code></td>
+<td>
+<p>Vector of the second shape parameters of the independent beta priors for <code class="reqn">a_0</code>. The length of the vector should be equal to the number of historical datasets. The default is a vector of one's.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>a0.coefficients</code></td>
+<td>
+<p>Vector of coefficients for <code class="reqn">a_0</code> returned by the function <code>normalizing.constant</code>. This is necessary for estimating the normalizing constant for the normalized power prior. Does not apply if <code>data.type</code> is "Normal".</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>lower.limits</code></td>
+<td>
+<p>Vector of lower limits for parameters to be used by the slice sampler. If <code>data.type</code> is "Normal", slice sampling is used for <code class="reqn">a_0</code>, and the length of the vector should be equal to the number of historical datasets.
+For all other data types, slice sampling is used for <code class="reqn">\beta</code> and <code class="reqn">a_0</code>. The first P+1 elements apply to the sampling of <code class="reqn">\beta</code> and the rest apply to the sampling of <code class="reqn">a_0</code>.
+The length of the vector should be equal to the sum of the total number of parameters (i.e. P+1 where P is the number of covariates) and the number of historical datasets.
+The default is -100 for <code class="reqn">\beta</code> and 0 for <code class="reqn">a_0</code> (may not be appropriate for all situations).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>upper.limits</code></td>
+<td>
+<p>Vector of upper limits for parameters to be used by the slice sampler. If <code>data.type</code> is "Normal", slice sampling is used for <code class="reqn">a_0</code>, and the length of the vector should be equal to the number of historical datasets.
+For all other data types, slice sampling is used for <code class="reqn">\beta</code> and <code class="reqn">a_0</code>. The first P+1 elements apply to the sampling of <code class="reqn">\beta</code> and the rest apply to the sampling of <code class="reqn">a_0</code>.
+The length of the vector should be equal to the sum of the total number of parameters (i.e. P+1 where P is the number of covariates) and the number of historical datasets.
+The default is 100 for <code class="reqn">\beta</code> and 1 for <code class="reqn">a_0</code>  (may not be appropriate for all situations).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>slice.widths</code></td>
+<td>
+<p>Vector of initial slice widths used by the slice sampler. If <code>data.type</code> is "Normal", slice sampling is used for <code class="reqn">a_0</code>, and the length of the vector should be equal to the number of historical datasets.
+For all other data types, slice sampling is used for <code class="reqn">\beta</code> and <code class="reqn">a_0</code>. The first P+1 elements apply to the sampling of <code class="reqn">\beta</code> and the rest apply to the sampling of <code class="reqn">a_0</code>.
+The length of the vector should be equal to the sum of the total number of parameters (i.e. P+1 where P is the number of covariates) and the number of historical datasets.
+The default is 0.1 for all parameter (may not be appropriate for all situations).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>delta</code></td>
+<td>
+<p>Prespecified constant that defines the boundary of the null hypothesis. The default is zero.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>gamma</code></td>
+<td>
+<p>Posterior probability threshold for rejecting the null. The null hypothesis is rejected if posterior probability is greater <code>gamma</code>. The default is 0.95.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nMC</code></td>
+<td>
+<p>Number of iterations (excluding burn-in samples) for the slice sampler or Gibbs sampler. The default is 10,000.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nBI</code></td>
+<td>
+<p>Number of burn-in samples for the slice sampler or Gibbs sampler. The default is 250.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>N</code></td>
+<td>
+<p>Number of simulated datasets to generate. The default is 10,000.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The user should use the function <code>normalizing.constant</code> to obtain <code>a0.coefficients</code> (does not apply if <code>data.type</code> is "Normal").
+</p>
+<p>The sampling prior for the treatment parameter can be generated from a normal distribution (see examples).
+For example, suppose one wants to compute the power for the hypotheses <code class="reqn">H_0: \beta_1 \ge 0</code> and <code class="reqn">H_1: \beta_1 &lt; 0.</code>
+To approximate the sampling prior for <code class="reqn">\beta_1</code>, one can simply sample from a normal distribution with negative mean,
+so that the mass of the prior falls in the alternative space. Conversely, to compute the type I error rate, one can
+sample from a normal distribution with positive mean, so that the mass of the prior falls in the null space.
+The sampling prior for the other parameters can be generated by using the <code>glm.fixed.a0</code> function with <code>current.data</code> set to FALSE.
+The posterior samples based on only historical data can be used as a discrete approximation to the sampling prior.
+</p>
+<p><code>samp.prior.var</code> is necessary for generating normally distributed data.
+</p>
+<p>If <code>data.type</code> is "Normal", the response <code class="reqn">y_i</code> is assumed to follow <code class="reqn">N(x_i'\beta, \tau^{-1})</code> where <code class="reqn">x_i</code> is the vector of covariates for subject <code class="reqn">i</code>.
+Historical datasets are assumed to have the same precision parameter as the current dataset for computational simplicity.
+The initial prior for <code class="reqn">\tau</code> is the Jeffery's prior, <code class="reqn">\tau^{-1}</code>.
+Independent normal priors with mean zero and variance <code>prior.beta.var</code> are used for <code class="reqn">\beta</code> to ensure the propriety of the normalized power prior. Posterior samples for <code class="reqn">\beta</code> and <code class="reqn">\tau</code> are obtained through Gibbs sampling.
+Independent beta(<code>prior.a0.shape1</code>, <code>prior.a0.shape1</code>) priors are used for <code class="reqn">a_0</code>. Posterior samples for <code class="reqn">a_0</code> are obtained through slice sampling.
+</p>
+<p>For all other data types, posterior samples are obtained through slice sampling.
+The default lower limits are -100 for <code class="reqn">\beta</code> and 0 for <code class="reqn">a_0</code>. The default upper limits
+for the parameters are 100 for <code class="reqn">\beta</code> and 1 for <code class="reqn">a_0</code>. The default slice widths for the parameters are 0.1.
+The defaults may not be appropriate for all situations, and the user can specify the appropriate limits
+and slice width for each parameter.
+</p>
+<p>If a sampling prior with support in the null space is used, the value returned is a Bayesian type I error rate.
+If a sampling prior with support in the alternative space is used, the value returned is a Bayesian power.
+</p>
+<p>Because running <code>power.glm.fixed.a0()</code> and <code>power.glm.random.a0()</code> is potentially time-consuming,
+an approximation method based on asymptotic theory has been implemented for the model with fixed <code class="reqn">a_0</code>.
+In order to attain the exact sample size needed for the desired power, the user can start with the approximation
+to get a rough estimate of the sample size required, using <code>power.glm.fixed.a0()</code> with <code>approximate=TRUE</code>.
+</p>
+
+
+<h3>Value</h3>
+
+<p>The function returns a S3 object with a <code>summary</code> method. Power or type I error is returned, depending on the sampling prior used.
+The posterior probabilities of the alternative hypothesis are returned.
+The average posterior mean of <code class="reqn">\beta</code> and its corresponding bias are returned.
+The average posterior mean of <code class="reqn">a_0</code> is returned.
+If <code>data.type</code> is "Normal", the average posterior mean of <code class="reqn">\tau</code> is also returned.
+The first element of the average posterior means of <code class="reqn">\beta</code> is the average posterior mean of the intercept.
+The second element is the average posterior mean of <code class="reqn">\beta_1</code>, the parameter for the treatment indicator.
+</p>
+
+
+<h3>References</h3>
+
+<p>Chen, Ming-Hui, et al. "Bayesian design of noninferiority trials for medical devices using historical data." Biometrics 67.3 (2011): 1163-1170.
+</p>
+<p>Neal, Radford M. Slice sampling. Ann. Statist. 31 (2003), no. 3, 705–767.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>normalizing.constant</code> and <code>glm.random.a0</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+data.type &lt;- "Bernoulli"
+data.link &lt;- "Logistic"
+data.size &lt;- 100
+
+# Simulate two historical datasets
+p &lt;- 3
+historical &lt;- list(list(y0=rbinom(data.size,size=1,prob=0.2),
+                        x0=matrix(rnorm(p*data.size),ncol=p,nrow=data.size)),
+                   list(y0=rbinom(data.size, size=1, prob=0.5),
+                        x0=matrix(rnorm(p*data.size),ncol=p,nrow=data.size)))
+
+# Generate sampling priors
+
+# The null hypothesis here is H0: beta_1 &gt;= 0. To calculate power,
+# we can provide samples of beta_1 such that the mass of beta_1 &lt; 0.
+# To calculate type I error, we can provide samples of beta_1 such that
+# the mass of beta_1 &gt;= 0.
+samp.prior.beta1 &lt;- rnorm(100, mean=-3, sd=1)
+# Here, mass is put on the alternative region, so power is calculated.
+samp.prior.beta &lt;- cbind(rnorm(100), samp.prior.beta1, matrix(rnorm(100*p), 100, p))
+
+# Please see function "normalizing.constant" for how to obtain a0.coefficients
+# Here, suppose one-degree polynomial regression is chosen by the "normalizing.constant"
+# function. The coefficients are obtained for the intercept, a0_1 and a0_2.
+a0.coefficients &lt;- c(1, 0.5, -1)
+
+nMC &lt;- 100 # nMC should be larger in practice
+nBI &lt;- 50
+N &lt;- 3 # N should be larger in practice
+result &lt;- power.glm.random.a0(data.type=data.type, data.link=data.link,
+                              data.size=data.size, historical=historical,
+                              samp.prior.beta=samp.prior.beta, a0.coefficients=a0.coefficients,
+                              delta=0, nMC=nMC, nBI=nBI, N=N)
+summary(result)
+
+</code></pre>
+
+
+</div>

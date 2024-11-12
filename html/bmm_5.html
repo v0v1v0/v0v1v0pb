@@ -1,0 +1,238 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>bmm</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Fit Bayesian Measurement Models</h2>
+
+<h3>Description</h3>
+
+<p>Fit a Bayesian measurement model using <strong>brms</strong> as a
+backend interface to Stan.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">bmm(
+  formula,
+  data,
+  model,
+  prior = NULL,
+  sort_data = getOption("bmm.sort_data", "check"),
+  silent = getOption("bmm.silent", 1),
+  backend = getOption("brms.backend", NULL),
+  file = NULL,
+  file_compress = TRUE,
+  file_refit = getOption("bmm.file_refit", FALSE),
+  ...
+)
+
+fit_model(
+  formula,
+  data,
+  model,
+  prior = NULL,
+  sort_data = getOption("bmm.sort_data", "check"),
+  silent = getOption("bmm.silent", 1),
+  backend = getOption("brms.backend", NULL),
+  ...
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>formula</code></td>
+<td>
+<p>An object of class <code>bmmformula</code>. A symbolic description of the
+model to be fitted.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+<p>An object of class data.frame, containing data of all variables
+used in the model. The names of the variables must match the variable names
+passed to the <code>bmmodel</code> object for required argurments.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>model</code></td>
+<td>
+<p>A description of the model to be fitted. This is a call to a
+<code>bmmodel</code> such as <code>mixture3p()</code> function. Every model function has a
+number of required arguments which need to be specified within the function
+call. Call <code>supported_models()</code> to see the list of supported models and
+their required arguments</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>prior</code></td>
+<td>
+<p>One or more <code>brmsprior</code> objects created by <code>brms::set_prior()</code>
+or related functions and combined using the c method or the + operator. See
+also <code>default_prior()</code> for more help. Not necessary for the default model
+fitting, but you can provide prior constraints to model parameters</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>sort_data</code></td>
+<td>
+<p>Logical. If TRUE, the data will be sorted by the predictor
+variables for faster sampling. If FALSE, the data will not be sorted, but
+sampling will be slower. If "check" (the default), <code>bmm()</code> will check if
+the data is sorted, and ask you via a console prompt if it should be
+sorted. You can set the default value for this option using global
+<code style="white-space: pre;">⁠options(bmm.sort_data = TRUE/FALSE/"check)⁠</code>)<code style="white-space: pre;">⁠or via⁠</code>bmm_options(sort_data)'</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>silent</code></td>
+<td>
+<p>Verbosity level between 0 and 2. If 1 (the default), most of the
+informational messages of compiler and sampler are suppressed. If 2, even
+more messages are suppressed. The actual sampling progress is still
+printed. Set refresh = 0 to turn this off as well. If using backend =
+"rstan" you can also set open_progress = FALSE to prevent opening
+additional progress bars.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>backend</code></td>
+<td>
+<p>Character. The backend to use for fitting the model. Can be
+"rstan" or "cmdstanr". If NULL (the default), "cmdstanr" will be used if
+the cmdstanr package is installed, otherwise "rstan" will be used. You can
+set the default backend using global <code>options(brms.backend = "rstan"/"cmdstanr")</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>file</code></td>
+<td>
+<p>Either <code>NULL</code> or a character string. If a string, the fitted
+model object is saved via saveRDS in a file named after the string. The
+<code style="white-space: pre;">⁠.rds extension is added automatically. If the file already exists, ⁠</code>bmm<code style="white-space: pre;">⁠will load and return the saved model object. Unless you specify the⁠</code>file_refit<code style="white-space: pre;">⁠argument as well, the existing files won't be overwritten, you have to manually remove the file in order to refit and save the model under an existing file name. The file name is stored in the⁠</code>bmmfit' object for
+later usage. If the directory of the file does not exist, it will be created.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>file_compress</code></td>
+<td>
+<p>Logical or a character string, specifying one of the
+compression algorithms supported by saveRDS when saving
+the fitted model object.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>file_refit</code></td>
+<td>
+<p>Logical. Modifies when the fit stored via the <code>file</code> argument is
+re-used. Can be set globally for the current <span style="font-family: Courier New, Courier; color: #666666;"><b>R</b></span> session via the
+<code>"bmm.file_refit"</code> option (see options). If <code>TRUE</code> (the default), the
+model is re-used if the file exists. If <code>FALSE</code>, the model is re-fitted. Note
+that unlike <code>brms</code>, there is no "on_change" option</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Further arguments passed to <code>brms::brm()</code> or Stan. See the
+description of <code>brms::brm()</code> for more details</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>An object of class brmsfit which contains the posterior draws along
+with many other useful information about the model. Use methods(class =
+"brmsfit") for an overview on available methods.
+</p>
+
+
+<h3>Supported Models</h3>
+
+<p>The following models are supported:
+</p>
+
+<ul>
+<li>
+<p> imm(resp_error, nt_features, nt_distances, set_size, regex, version)
+</p>
+</li>
+<li>
+<p> mixture2p(resp_error)
+</p>
+</li>
+<li>
+<p> mixture3p(resp_error, nt_features, set_size, regex)
+</p>
+</li>
+<li>
+<p> sdm(resp_error, version)
+</p>
+</li>
+</ul>
+<p>Type  ?modelname  to get information about a specific model, e.g.  ?imm
+</p>
+
+
+<h3>bmmformula syntax</h3>
+
+<p>see <a href="https://venpopov.github.io/bmm/articles/bmm_bmmformula.html">this online article</a> for a detailed description of the syntax and how
+it differs from the syntax for <strong>brmsformula</strong>
+</p>
+
+
+<h3>Default priors, Stan code and Stan data</h3>
+
+<p>For more information about the default priors in <strong>bmm</strong> and about who to extract the Stan code and data generated by bmm and #'   brms, see <a href="https://venpopov.github.io/bmm/articles/bmm_extract_info.html">the online article</a>.
+</p>
+
+
+<h3>Miscellaneous</h3>
+
+<p>Type <code>help(package=bmm)</code> for a full list of available help topics.
+</p>
+<p><strong>fit_model()</strong> is a deprecated alias for <strong>bmm()</strong>.
+</p>
+
+
+<h3>References</h3>
+
+<p>Frischkorn, G. T., &amp; Popov, V. (2023). A tutorial for estimating
+mixture models for visual working memory tasks in brms: Introducing the
+Bayesian Measurement Modeling  (bmm) package for R.
+https://doi.org/10.31234/osf.io/umt57
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>supported_models()</code>, <code>brms::brm()</code>, default_prior(), <code>bmmformula()</code>, stancode(), standata()
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+# generate artificial data from the Signal Discrimination Model
+dat &lt;- data.frame(y = rsdm(2000))
+
+# define formula
+ff &lt;- bmmformula(c ~ 1, kappa ~ 1)
+
+# fit the model
+fit &lt;- bmm(formula = ff,
+           data = dat,
+           model = sdm(resp_error = "y"),
+           cores = 4,
+           backend = 'cmdstanr')
+
+</code></pre>
+
+
+</div>

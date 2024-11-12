@@ -1,0 +1,138 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>pisa</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Student data from 2000-2018 PISA OECD data</h2>
+
+<h3>Description</h3>
+
+<p>A subset of PISA data, containing scores and other information
+from the triennial testing of 15 year olds around
+the globe. Original data available from
+<a href="https://www.oecd.org/pisa/data/">https://www.oecd.org/pisa/data/</a>. Data derived from
+<a href="https://github.com/kevinwang09/learningtower">https://github.com/kevinwang09/learningtower</a>.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">pisa
+</code></pre>
+
+
+<h3>Format</h3>
+
+<p>A tibble of the following variables
+</p>
+
+<ul>
+<li>
+<p> year the year of measurement
+</p>
+</li>
+<li>
+<p> country the three letter country code. This data contains Australia,
+New Zealand, and Indonesia. The full data from learningtower contains
+99 countries.
+</p>
+</li>
+<li>
+<p> school_id The unique school identification number
+</p>
+</li>
+<li>
+<p> student_id The student identification number
+</p>
+</li>
+<li>
+<p> gender recorded gender - 1 female or 2 male or missing
+</p>
+</li>
+<li>
+<p> math Simulated score in mathematics
+</p>
+</li>
+<li>
+<p> read Simulated score in reading
+</p>
+</li>
+<li>
+<p> science Simulated score in science
+</p>
+</li>
+<li>
+<p> stu_wgt The final survey weight score for the student score
+</p>
+</li>
+</ul>
+<p>Understanding a bit more about the PISA data, the <code>school_id</code> and
+<code>student_id</code> are not unique across time. This means the longitudinal element
+is the country within a given year.
+</p>
+<p>We can cast <code>pisa</code> as a <code>tsibble</code>, but we need to aggregate the data to each
+year and country. In doing so, it is important that we provide some summary
+statistics of each of the scores - we want to include the mean, and minimum
+and maximum of the math, reading, and science scores, so that we do not lose
+the information of the individuals.
+</p>
+<p>The example code below does this, first grouping by year and country, then
+calculating the weighted mean for math, reading, and science. This can be
+done using the student weight variable <code>stu_wgt</code>, to get the survey weighted
+mean. The minimum and maximum are then calculated.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">pisa
+
+library(dplyr)
+# Let's identify
+
+#1.  The **key**, the individual, who would have repeated measurements. 
+#2.  The **index**, the time component.
+#3.  The **regularity** of the time interval (index). 
+
+# Here it looks like the key is the student_id, which is nested within
+# school_id #' and country,
+
+# And the index is year, so we would write the following
+
+as_tsibble(pisa, 
+           key = country,
+           index = year)
+
+# We can assess the regularity of the year like so:
+
+index_regular(pisa, year)
+index_summary(pisa, year)
+
+# We can now convert this into a `tsibble`:
+
+pisa_ts &lt;- as_tsibble(pisa,
+           key = country,
+           index = year,
+           regular = TRUE)
+
+pisa_ts
+pisa_ts_au_nz &lt;- pisa_ts %&gt;% filter(country %in% c("AUS", "NZL", "QAT"))
+
+library(ggplot2)
+ggplot(pisa_ts_au_nz, 
+       aes(x = year, 
+           y = math_mean,
+           group = country,
+           colour = country)) +
+  geom_ribbon(aes(ymin = math_min, 
+                  ymax = math_max), 
+              fill = "grey70") +
+  geom_line(size = 1) +
+  lims(y = c(0, 1000)) +
+  labs(y = "math") +
+facet_wrap(~country)
+</code></pre>
+
+
+</div>

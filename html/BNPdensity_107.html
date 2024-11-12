@@ -1,0 +1,103 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>qgeneric</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Generic function to find quantiles of a distribution</h2>
+
+<h3>Description</h3>
+
+<p>Computes quantiles.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">qgeneric(pdist, p, ...)
+</code></pre>
+
+
+<h3>Details</h3>
+
+<p>For internal use
+</p>
+
+
+<h3>Note</h3>
+
+<p>Taken from msm R-package.
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Christopher Jackson
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+## The function is currently defined as
+function(pdist, p, ...) {
+  args &lt;- list(...)
+  if (is.null(args$log.p)) {
+    args$log.p &lt;- FALSE
+  }
+  if (is.null(args$lower.tail)) {
+    args$lower.tail &lt;- TRUE
+  }
+  if (is.null(args$lbound)) {
+    args$lbound &lt;- -Inf
+  }
+  if (is.null(args$ubound)) {
+    args$ubound &lt;- Inf
+  }
+  if (args$log.p) {
+    p &lt;- exp(p)
+  }
+  if (!args$lower.tail) {
+    p &lt;- 1 - p
+  }
+  ret &lt;- numeric(length(p))
+  ret[p == 0] &lt;- args$lbound
+  ret[p == 1] &lt;- args$ubound
+  args[c("lower.tail", "log.p", "lbound", "ubound")] &lt;- NULL
+  maxlen &lt;- max(sapply(c(args, p = list(p)), length))
+  for (i in seq(along = args)) {
+    args[[i]] &lt;- rep(args[[i]],
+      length.out = maxlen
+    )
+  }
+  p &lt;- rep(p, length.out = maxlen)
+  ret[p &lt; 0 | p &gt; 1] &lt;- NaN
+  ind &lt;- (p &gt; 0 &amp; p &lt; 1)
+  if (any(ind)) {
+    hind &lt;- seq(along = p)[ind]
+    h &lt;- function(y) {
+      args &lt;- lapply(args, function(x) x[hind[i]])
+      p &lt;- p[hind[i]]
+      args$q &lt;- y
+      (do.call(pdist, args) - p)
+    }
+    ptmp &lt;- numeric(length(p[ind]))
+    for (i in 1:length(p[ind])) {
+      interval &lt;- c(-1, 1)
+      while (h(interval[1]) * h(interval[2]) &gt;= 0) {
+        interval &lt;- interval + c(-1, 1) * 0.5 * (interval[2] -
+          interval[1])
+      }
+      ptmp[i] &lt;- uniroot(h, interval, tol = .Machine$double.eps)$root
+    }
+    ret[ind] &lt;- ptmp
+  }
+  if (any(is.nan(ret))) {
+    warning("NaNs produced")
+  }
+  ret
+}
+</code></pre>
+
+
+</div>

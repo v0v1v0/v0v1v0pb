@@ -1,0 +1,459 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>GLM</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Fit General Linear Models at each vertex of a graph</h2>
+
+<h3>Description</h3>
+
+<p><code>brainGraph_GLM</code> specifies and fits a General Linear Model (GLM) at each
+vertex for a given vertex measure (e.g. <em>degree</em>) or at the graph-level
+(e.g., <em>global efficiency</em>). Given a contrast matrix or list of
+contrast(s), and contrast type (for t- or F-contrast(s), respectively) it
+will calculate the associated statistic(s) for the given contrast(s).
+</p>
+<p>The <code>summary</code> method prints the results, only for which
+<code class="reqn">p &lt; \alpha</code>, where <code>alpha</code> comes from the <code>bg_GLM</code> object.
+“Simple” P-values are used by default, but you may change this to the
+FDR-adjusted or permutation P-values via the function argument <code>p.sig</code>.
+You may also choose to subset by <em>contrast</em>.
+</p>
+<p>The <code>plot</code> method plots the GLM diagnostics (similar to that of
+<code>plot.lm</code>). There are a total of 6 possible plots,
+specified by the <code>which</code> argument; the behavior is the same as in
+<code>plot.lm</code>. Please see the help for that function.
+</p>
+<p>The <code>[</code> method allows you to select observations (i.e., rows of <code>X</code>
+and <code>y</code>) and independent variables (i.e., columns of <code>X</code>) from a
+<code>bg_GLM</code> object.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">brainGraph_GLM(g.list, covars, measure, contrasts, con.type = c("t",
+  "f"), outcome = NULL, X = NULL, con.name = NULL,
+  alternative = c("two.sided", "less", "greater"), alpha = 0.05,
+  level = c("vertex", "graph"), permute = FALSE,
+  perm.method = c("freedmanLane", "terBraak", "smith", "draperStoneman",
+  "manly", "stillWhite"), part.method = c("beckmann", "guttman",
+  "ridgway"), N = 5000, perms = NULL, long = FALSE, ...)
+
+## S3 method for class 'bg_GLM'
+print(x, ...)
+
+## S3 method for class 'bg_GLM'
+summary(object, p.sig = c("p", "p.fdr", "p.perm"),
+  contrast = NULL, alpha = object$alpha, digits = max(3L,
+  getOption("digits") - 2L), print.head = TRUE, ...)
+
+## S3 method for class 'bg_GLM'
+plot(x, region = NULL, which = c(1L:3L, 5L),
+  ids = TRUE, ...)
+
+## S3 method for class 'bg_GLM'
+x[i, j]
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>g.list</code></td>
+<td>
+<p>A <code>brainGraphList</code> object</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>covars</code></td>
+<td>
+<p>A <code>data.table</code> of covariates</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>measure</code></td>
+<td>
+<p>Character string of the graph measure of interest</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>contrasts</code></td>
+<td>
+<p>Numeric matrix (for T statistics) or list of matrices (for F
+statistics) specifying the contrast(s) of interest; if only one contrast is
+desired, you can supply a vector (for T statistics)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>con.type</code></td>
+<td>
+<p>Character string; either <code>'t'</code> or <code>'f'</code> (for t or
+F-statistics). Default: <code>'t'</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>outcome</code></td>
+<td>
+<p>Character string specifying the name of the outcome variable,
+if it differs from the graph metric (<code>measure</code>)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>X</code></td>
+<td>
+<p>Numeric matrix, if you wish to supply your own design matrix.
+Ignored if <code>outcome != measure</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>con.name</code></td>
+<td>
+<p>Character vector of the contrast name(s); if <code>contrasts</code>
+has row/list names, those will be used for reporting results</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>alternative</code></td>
+<td>
+<p>Character string, whether to do a two- or one-sided test.
+Default: <code>'two.sided'</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>alpha</code></td>
+<td>
+<p>Numeric; the significance level. Default: 0.05</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>level</code></td>
+<td>
+<p>Character string; either <code>vertex</code> (default) or
+<code>graph</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>permute</code></td>
+<td>
+<p>Logical indicating whether or not to permute group labels.
+Default: <code>FALSE</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>perm.method</code></td>
+<td>
+<p>Character string indicating the permutation method.
+Default: <code>'freedmanLane'</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>part.method</code></td>
+<td>
+<p>Character string; the method of partitioning the design
+matrix into covariates of interest and nuisance. Default: <code>'beckmann'</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>N</code></td>
+<td>
+<p>Integer; number of permutations to create. Default: <code>5e3</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>perms</code></td>
+<td>
+<p>Matrix of permutations, if you would like to provide your own.
+Default: <code>NULL</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>long</code></td>
+<td>
+<p>Logical indicating whether or not to return all permutation
+results. Default: <code>FALSE</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Arguments passed to <code>brainGraph_GLM_design</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>object, x</code></td>
+<td>
+<p>A <code>bg_GLM</code> object</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>p.sig</code></td>
+<td>
+<p>Character string specifying which P-value to use for displaying
+significant results (default: <code>p</code>)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>contrast</code></td>
+<td>
+<p>Integer specifying the contrast to plot/summarize; defaults
+to showing results for all contrasts</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>digits</code></td>
+<td>
+<p>Integer specifying the number of digits to display for P-values</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>print.head</code></td>
+<td>
+<p>Logical indicating whether or not to print only the first
+and last 5 rows of the statistics tables (default: <code>TRUE</code>)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>region</code></td>
+<td>
+<p>Character string specifying which region's results to
+plot; only relevant if <code>level='vertex'</code>. Default: <code>NULL</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>which</code></td>
+<td>
+<p>Integer vector indicating which of the 6 plots to print to the
+plot device. Default: <code>c(1:3, 5)</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ids</code></td>
+<td>
+<p>Logical indicating whether to plot subject ID's for outliers.
+Otherwise plots the integer index</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>i</code></td>
+<td>
+<p>Integer/character vector; the observation number(s) or row names to
+select or remove</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>j</code></td>
+<td>
+<p>Integer/character vector; the design matrix column number(s) or
+names to select or remove</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The <code>measure</code> argument will be the graph- or vertex-level measure of
+interest. Often, this will serve as the model's <em>outcome</em> (or dependent,
+or response) variable; i.e., the variable typically denoted by <em>y</em> in
+GLMs. In other cases, you may wish to choose some other variable as the
+outcome; e.g., IQ, age, etc. Then you could test for a direct association
+between the network measure and outcome of interest, or test for another
+association while adjusting for the network metric. For these applications,
+you must provide the variable name via the <code>outcome</code> argument. This is
+analogous to <code>-evperdat</code> in FSL's PALM and to <code>--pvr</code> in
+FreeSurfer.
+</p>
+
+
+<h3>Value</h3>
+
+<p>An object of class <code>bg_GLM</code> containing some input-specific
+variables (<code>level</code>, <code>outcome</code>, <code>measure</code>, <code>con.type</code>,
+<code>contrasts</code>, <code>con.name</code>, <code>alt</code>, <code>alpha</code>,
+<code>permute</code>, <code>perm.method</code>, <code>part.method</code>, <code>N</code>) in
+addition to:
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>DT.Xy</code></td>
+<td>
+<p>A data table from which the design matrices are created and
+the outcome variable, for all regions.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>X</code></td>
+<td>
+<p>A named numeric matrix or a 3D array of the design matrix.
+Rownames are subject IDs, column names are predictor variables, and
+dimnames along the 3rd dimension are region names (if applicable). This
+is a 3D array only if <code>outcome != measure</code> and <code>level ==
+    'vertex'</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>y</code></td>
+<td>
+<p>A named numeric matrix of the outcome variable. Rownames are Study
+IDs and column names are regions. There will be multiple columns only if
+<code>outcome == measure</code> and <code>level == 'vertex'</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>DT</code></td>
+<td>
+<p>A data table with an entry for each vertex (region) containing
+statistics of interest</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>removed.subs</code></td>
+<td>
+<p>A named integer vector in which the names are subject
+ID's of those removed due to incomplete data (if any). The integers
+correspond to the row number in the input <code>covars</code> table.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>runX</code></td>
+<td>
+<p>If <code>outcome != measure</code> and <code>level == 'vertex'</code>, this
+will be a character vector of the regions for which the design matrix is
+invertible. Otherwise, it is <code>NULL</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>runY</code></td>
+<td>
+<p>Character vector of the regions for which the outcome variable
+has 0 variability. For example, if <code>level='vertex'</code> and
+<code>measure='degree'</code>, some regions may be disconnected or have the
+same degree for all subjects.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>atlas</code></td>
+<td>
+<p>Character string of the atlas used (guessed based on the
+vertex count).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>perm</code></td>
+<td>
+<p>A list containing: <em>null.dist</em> (the null distribution of
+maximum statistics), <em>thresh</em> (the statistic value corresponding
+to the <code class="reqn">100 \times (1 - \alpha)</code>th% percentile of the null
+distribution)</p>
+</td>
+</tr>
+</table>
+<p>The <code>plot</code> method returns a <em>list</em> of <code>ggplot</code> objects
+(if installed) or writes the plots to a PDF in the current directory named
+<code>bg_GLM_diagnostics.pdf</code>
+</p>
+<p>A <code>bg_GLM</code> object with the specified row(s) selected or removed
+from both <code>X</code> and <code>y</code>, and column(s) selected/removed from
+<code>X</code>
+</p>
+
+
+<h3>Design matrix</h3>
+
+<p>The GLM's <em>design matrix</em> will often be identical to the <em>model
+matrix</em> associated with <code>lm</code> objects (if “dummy” coding, the
+default, is used) and is created from the input <code>data.table</code> and
+arguments passed to <code>brainGraph_GLM_design</code>. The first column
+should have the name of <code>getOption('bg.subject_id')</code> and its values
+must match the <em>name</em> graph-level attribute of the input graphs. The
+covariates table must be supplied even if you provide your own design matrix
+<code>X</code>.  If <code>level='vertex'</code> and <code>outcome == measure</code>, there will
+be a single design for all regions but a separate model for each region
+(since the graph measure varies by region). If <code>level='vertex'</code> and
+<code>outcome != measure</code>, there will be a separate design (and, therefore, a
+separate model) for each region even though the outcome is the same in all
+models.
+</p>
+
+
+<h3>Contrasts and statistics</h3>
+
+<p>Either t- or F-contrasts can be calculated (specified by <code>con.type</code>).
+Multiple t-contrasts can be specified by passing a multi-row <em>matrix</em> to
+<code>contrasts</code>. Multiple F-contrasts can be specified by passing a
+<em>list</em> of matrices; all matrices must have the same number of columns.
+All F-contrasts are necessarily <em>two-sided</em>; t-contrasts can be any
+direction, but only one can be chosen per function call.
+If you choose <code>con.type="f"</code>, the calculated effect size is represented
+by the <code>ESS</code> (“extra sum of squares”), the additional variance
+explained for by the model parameters of interest (as determined by the
+contrast matrix). The standard error for F-contrasts is the sum of squared
+errors of the <em>full model</em>.
+</p>
+
+
+<h3>Non-parametric permutation tests</h3>
+
+<p>You can calculate permutations of the data to build a null distribution of
+the maximum statistic which corrects for multiple testing. To account for
+complex designs, the design matrix must be <em>partitioned</em> into covariates
+of interest and nuisance; the default method is the <em>Beckmann</em> method.
+The default permutation strategy is that of Freedman &amp; Lane (1983), and is
+the same as that in FSL's <em>randomise</em>. See <code>randomise</code>.
+</p>
+
+
+<h3>Note</h3>
+
+<p>The <code>[</code> method is used when calculating <em>studentized
+residuals</em> and other “leave-one-out” diagnostics, and typically should
+not be called directly by the user.
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Christopher G. Watson, <a href="mailto:cgwatson@bu.edu">cgwatson@bu.edu</a>
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>plot.lm</code>
+</p>
+<p>Other GLM functions: <code>GLM design</code>,
+<code>GLM fits</code>, <code>mtpc</code>
+</p>
+<p>Other Group analysis functions: <code>Bootstrapping</code>,
+<code>Mediation</code>, <code>NBS</code>,
+<code>brainGraph_permute</code>, <code>mtpc</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## Not run: 
+conmat &lt;- matrix(c(0, 0, 0, 1), nrow=1)
+rownames(conmat) &lt;- 'Control &gt; Patient'
+
+res.lm &lt;- brainGraph_GLM(g[[6]], covars=covars.all[tract == 1],
+  measure='strength', contrasts=conmat, alt='greater', permute=TRUE, long=TRUE)
+
+## End(Not run)
+## Not run: 
+## Save objects and then to multipage PDF
+lmPlots &lt;- plot(x)
+ggsave('lmPlots.pdf', lmPlots)
+
+## Save all the GLM sub-objects from MTPC analysis
+res.mtpc &lt;- mtpc(...)
+glmPlots &lt;- lapply(res.mtpc$res.glm, plot, which=1:6)
+ml &lt;- marrangeGrob(glmPlots, nrow=1, ncol=1)
+ggsave('glmPlots.pdf', ml, width=8.5, height=11)
+
+## End(Not run)
+</code></pre>
+
+
+</div>

@@ -1,0 +1,71 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>gs5cens2</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Conditional posterior distribution of sigma in the case of censoring</h2>
+
+<h3>Description</h3>
+
+<p>This function simulates from the conditional posterior distribution of
+sigma.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">gs5cens2(
+  sigma,
+  xleft,
+  xright,
+  censor_code,
+  y,
+  distr = 1,
+  asigma = 1,
+  bsigma = 2,
+  delta = 4
+)
+</code></pre>
+
+
+<h3>Details</h3>
+
+<p>For internal use
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+## The function is currently defined as
+function(sigma, xleft, xright, censor_code, y, distr = 1, asigma = 1,
+         bsigma = 2, delta = 4) {
+  sigmaStar &lt;- rgamma(1, shape = delta, rate = delta / sigma)
+  sigmaT &lt;- sigma
+  qgammas &lt;- sigmaT / sigmaStar
+  Qgammas &lt;- sigmaStar / sigmaT
+  Term2 &lt;- qgammas^(2 * delta - 1) * exp(-delta * (qgammas -
+    Qgammas))
+  Kgamma &lt;- Qgammas^(asigma - 1) * exp(-bsigma * (sigmaStar -
+    sigmaT))
+  Prod &lt;- 1
+  for (i in seq_along(xleft)) {
+    Prod &lt;- Prod * dkcens2_1val(
+      xleft = xleft[i], xright = xright[i],
+      c_code = censor_code[i], distr = distr, mu = y[i],
+      sigma = sigmaStar
+    ) / dkcens2_1val(
+      xleft = xleft[i],
+      xright = xright[i], c_code = censor_code[i], distr = distr,
+      mu = y[i], sigma = sigmaT
+    )
+  }
+  q3 &lt;- min(1, Kgamma * Prod * Term2)
+  sigma &lt;- ifelse(runif(1) &lt;= q3, sigmaStar, sigmaT)
+  return(sigma)
+}
+</code></pre>
+
+
+</div>

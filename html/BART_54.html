@@ -1,0 +1,265 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>recur.pre.bart</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Data construction for recurrent events with BART</h2>
+
+<h3>Description</h3>
+
+<p>Recurrent event data contained in <code class="reqn">(t_1,\delta_1, ..., t_k,\delta_k, x)</code> must be translated to data
+suitable for the BART model; see <code>recur.bart</code> for more details.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">recur.pre.bart( times, delta, x.train=NULL, tstop=NULL, last.value=TRUE )
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>times</code></td>
+<td>
+
+<p>Matrix of time to event or right-censoring.<br></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>delta</code></td>
+<td>
+
+<p>Matrix of event indicators: 1 is an event while 0 is censored.<br></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>x.train</code></td>
+<td>
+
+<p>Explanatory variables for training (in sample) data.<br>
+If provided, must be a matrix
+with (as usual) rows corresponding to observations and columns to variables.<br></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>tstop</code></td>
+<td>
+<p> For non-instantaneous events, this the matrix of event
+stop times, i.e., between <code>times[i, j]</code> and <code>tstop[i, j]</code>
+subject <code>i</code> is not in the risk set for a recurrent event.
+N.B. This is NOT for counting process notation. <br></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>last.value</code></td>
+<td>
+<p>If <code>last.value=TRUE</code>, then the sojourn time,
+<code>v</code>, and the number of previous events, <code>N</code>, are carried
+forward assuming that no new events occur beyond censoring.
+If <code>last.value=FALSE</code>, then these variables are coded <code>NA</code>
+for easy identification allowing replacement with the desired values.
+</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p><code>recur.pre.bart</code> returns a list.
+Besides the items listed below, the list has
+a <code>times</code> component giving the unique times and <code>K</code> which is the number of
+unique times.
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>y.train</code></td>
+<td>
+<p>A vector of binary responses.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>tx.train</code></td>
+<td>
+<p>A matrix with the rows of the training data.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>tx.test</code></td>
+<td>
+<p>Generated from <code>x.train</code> (see discussion above included in
+the argument <code>last.value</code>).</p>
+</td>
+</tr>
+</table>
+<h3>See Also</h3>
+
+<p><code>recur.bart</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+data(bladder)
+subset &lt;- -which(bladder1$stop==0)
+bladder0 &lt;- bladder1[subset, ]
+id &lt;- unique(sort(bladder0$id))
+N &lt;- length(id)
+L &lt;- max(bladder0$enum)
+
+times &lt;- matrix(0, nrow=N, ncol=L)
+dimnames(times)[[1]] &lt;- paste0(id)
+
+delta &lt;- matrix(0, nrow=N, ncol=L)
+dimnames(delta)[[1]] &lt;- paste0(id)
+
+x.train &lt;- matrix(NA, nrow=N, ncol=3+2*L) ## add time-dependent cols too
+dimnames(x.train)[[1]] &lt;- paste0(id)
+dimnames(x.train)[[2]] &lt;- c('Pl', 'B6', 'Th', rep(c('number', 'size'), L))
+
+for(i in 1:N) {
+    h &lt;- id[i]
+
+    for(j in 1:L) {
+        k &lt;- which(bladder0$id==h &amp; bladder0$enum==j)
+
+        if(length(k)==1) {
+            times[i, j] &lt;- bladder0$stop[k]
+            delta[i, j] &lt;- (bladder0$status[k]==1)*1
+
+            if(j==1) {
+                x.train[i, 1] &lt;- as.numeric(bladder0$treatment[k])==1
+                x.train[i, 2] &lt;- as.numeric(bladder0$treatment[k])==2
+                x.train[i, 3] &lt;- as.numeric(bladder0$treatment[k])==3
+                x.train[i, 4] &lt;- bladder0$number[k]
+                x.train[i, 5] &lt;- bladder0$size[k]
+            }
+            else if(delta[i, j]==1) {
+                if(bladder0$rtumor[k]!='.')
+                    x.train[i, 2*j+2] &lt;- as.numeric(bladder0$rtumor[k])
+                if(bladder0$rsize[k]!='.')
+                    x.train[i, 2*j+3] &lt;- as.numeric(bladder0$rsize[k])
+            }
+        }
+    }
+}
+
+pre &lt;- recur.pre.bart(times=times, delta=delta, x.train=x.train)
+
+J &lt;- nrow(pre$tx.train)
+for(j in 1:J) {
+    if(pre$tx.train[j, 3]&gt;0) {
+        pre$tx.train[j, 7] &lt;- pre$tx.train[j, 7+pre$tx.train[j, 3]*2]
+        pre$tx.train[j, 8] &lt;- pre$tx.train[j, 8+pre$tx.train[j, 3]*2]
+    }
+}
+pre$tx.train &lt;- pre$tx.train[ , 1:8]
+
+K &lt;- pre$K
+NK &lt;- N*K
+for(j in 1:NK) {
+    if(pre$tx.test[j, 3]&gt;0) {
+        pre$tx.test[j, 7] &lt;- pre$tx.test[j, 7+pre$tx.test[j, 3]*2]
+        pre$tx.test[j, 8] &lt;- pre$tx.test[j, 8+pre$tx.test[j, 3]*2]
+    }
+}
+pre$tx.test &lt;- pre$tx.test[ , 1:8]
+
+
+## in bladder1 both number and size are recorded as integers
+## from 1 to 8 however they are often missing for recurrences
+## at baseline there are no missing and 1 is the mode of both
+pre$tx.train[which(is.na(pre$tx.train[ , 7])), 7] &lt;- 1
+pre$tx.train[which(is.na(pre$tx.train[ , 8])), 8] &lt;- 1
+pre$tx.test[which(is.na(pre$tx.test[ , 7])), 7] &lt;- 1
+pre$tx.test[which(is.na(pre$tx.test[ , 8])), 8] &lt;- 1
+
+## it is a good idea to explore more sophisticated methods
+## such as imputing the missing data with Sequential BART
+## Xu, Daniels and Winterstein.  Sequential BART for imputation of missing
+## covariates.  Biostatistics 2016 doi: 10.1093/biostatistics/kxw009
+## http://biostatistics.oxfordjournals.org/content/early/2016/03/15/biostatistics.kxw009/suppl/DC1
+## https://cran.r-project.org/package=sbart
+## library(sbart)
+## set.seed(21)
+## train &lt;- seqBART(xx=pre$tx.train, yy=NULL, datatype=rep(0, 6),
+##                type=0, numskip=20, burn=1000)
+## coarsen the imputed data same way as observed example data
+## train$imputed5[which(train$imputed5[ , 7]&lt;1), 7] &lt;- 1
+## train$imputed5[which(train$imputed5[ , 7]&gt;8), 7] &lt;- 8
+## train$imputed5[ , 7] &lt;- round(train$imputed5[ , 7])
+## train$imputed5[which(train$imputed5[ , 8]&lt;1), 8] &lt;- 1
+## train$imputed5[which(train$imputed5[ , 8]&gt;8), 8] &lt;- 8
+## train$imputed5[ , 8] &lt;- round(train$imputed5[ , 8])
+
+## for Friedman's partial dependence, we need to estimate the whole cohort
+## at each treatment assignment (and, average over those)
+pre$tx.test &lt;- rbind(pre$tx.test, pre$tx.test, pre$tx.test)
+pre$tx.test[ , 4] &lt;- c(rep(1, NK), rep(0, 2*NK))          ## Pl
+pre$tx.test[ , 5] &lt;- c(rep(0, NK), rep(1, NK), rep(0, NK))## B6
+pre$tx.test[ , 6] &lt;- c(rep(0, 2*NK), rep(1, NK))          ## Th
+
+## Not run: 
+## set.seed(99)
+## post &lt;- recur.bart(y.train=pre$y.train, x.train=pre$tx.train, x.test=pre$tx.test)
+## depending on your performance, you may want to run in parallel if available
+post &lt;- mc.recur.bart(y.train=pre$y.train, x.train=pre$tx.train,
+                      x.test=pre$tx.test, mc.cores=8, seed=99)
+
+M &lt;- nrow(post$yhat.test)
+RI.B6.Pl &lt;- matrix(0, nrow=M, ncol=K)
+RI.Th.Pl &lt;- matrix(0, nrow=M, ncol=K)
+RI.Th.B6 &lt;- matrix(0, nrow=M, ncol=K)
+
+for(j in 1:K) {
+    h &lt;- seq(j, NK, K)
+    RI.B6.Pl[ , j] &lt;- apply(post$prob.test[ , h+NK]/
+                            post$prob.test[ , h], 1, mean)
+    RI.Th.Pl[ , j] &lt;- apply(post$prob.test[ , h+2*NK]/
+                            post$prob.test[ , h], 1, mean)
+    RI.Th.B6[ , j] &lt;- apply(post$prob.test[ , h+2*NK]/
+                            post$prob.test[ , h+NK], 1, mean)
+}
+
+RI.B6.Pl.mu &lt;- apply(RI.B6.Pl, 2, mean)
+RI.B6.Pl.025 &lt;- apply(RI.B6.Pl, 2, quantile, probs=0.025)
+RI.B6.Pl.975 &lt;- apply(RI.B6.Pl, 2, quantile, probs=0.975)
+
+RI.Th.Pl.mu &lt;- apply(RI.Th.Pl, 2, mean)
+RI.Th.Pl.025 &lt;- apply(RI.Th.Pl, 2, quantile, probs=0.025)
+RI.Th.Pl.975 &lt;- apply(RI.Th.Pl, 2, quantile, probs=0.975)
+
+RI.Th.B6.mu &lt;- apply(RI.Th.B6, 2, mean)
+RI.Th.B6.025 &lt;- apply(RI.Th.B6, 2, quantile, probs=0.025)
+RI.Th.B6.975 &lt;- apply(RI.Th.B6, 2, quantile, probs=0.975)
+
+plot(post$times, RI.Th.Pl.mu, col='blue',
+     log='y', main='Bladder cancer ex: Thiotepa vs. Placebo',
+     type='l', ylim=c(0.1, 10), ylab='RI(t)', xlab='t (months)')
+lines(post$times, RI.Th.Pl.025, col='red')
+lines(post$times, RI.Th.Pl.975, col='red')
+abline(h=1)
+
+plot(post$times, RI.B6.Pl.mu, col='blue',
+     log='y', main='Bladder cancer ex: Vitamin B6 vs. Placebo',
+     type='l', ylim=c(0.1, 10), ylab='RI(t)', xlab='t (months)')
+lines(post$times, RI.B6.Pl.025, col='red')
+lines(post$times, RI.B6.Pl.975, col='red')
+abline(h=1)
+
+plot(post$times, RI.Th.B6.mu, col='blue',
+     log='y', main='Bladder cancer ex: Thiotepa vs. Vitamin B6',
+     type='l', ylim=c(0.1, 10), ylab='RI(t)', xlab='t (months)')
+lines(post$times, RI.Th.B6.025, col='red')
+lines(post$times, RI.Th.B6.975, col='red')
+abline(h=1)
+
+
+## End(Not run)
+</code></pre>
+
+
+</div>

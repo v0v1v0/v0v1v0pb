@@ -1,0 +1,166 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>BIFIEdata2svrepdesign</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>
+Conversion of a <code>BIFIEdata</code> Object into a <code>svyrep</code> Object in the
+<span class="pkg">survey</span> Package (and the other way around)
+</h2>
+
+<h3>Description</h3>
+
+<p>The function <code>BIFIEdata2svrepdesign</code> converts of a <code>BIFIEdata</code> object into a
+<code>svyrep</code> object in the <span class="pkg">survey</span> package.
+</p>
+<p>The function <code>svrepdesign2BIFIEdata</code> converts a
+<code>svyrep</code> object in the <span class="pkg">survey</span> package into an object of class <code>BIFIEdata</code>.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">BIFIEdata2svrepdesign(bifieobj, varnames=NULL, impdata.index=NULL)
+
+svrepdesign2BIFIEdata(svrepdesign, varnames=NULL, cdata=FALSE)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>bifieobj</code></td>
+<td>
+
+<p>Object of class <code>BIFIEdata</code>
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>varnames</code></td>
+<td>
+<p>Optional vector with variable names</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>impdata.index</code></td>
+<td>
+
+<p>Selected indices of imputed datasets
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>svrepdesign</code></td>
+<td>
+<p>Object of class <code>svyrep.design</code> or <code>svyimputationList</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>cdata</code></td>
+<td>
+<p>Logical inducating whether <code>BIFIEdata</code> object should be
+saved in compact format</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>Function <code>BIFIEdata2svrepdesign</code>:
+Object of class <code>svyrep.design</code> or <code>svyimputationList</code> <br></p>
+<p>Function <code>svrepdesign2BIFIEdata</code>: Object of class <code>BIFIEdata</code>
+</p>
+
+
+<h3>See Also</h3>
+
+<p>See the <code>BIFIE.data</code> function for creating objects of class
+<code>BIFIEdata</code> in <span class="pkg">BIFIEsurvey</span>.
+</p>
+<p>See the <code>survey::svrepdesign</code> function in
+the <span class="pkg">survey</span> package.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## Not run: 
+#############################################################################
+# EXAMPLE 1: One dataset, TIMSS replication design
+#############################################################################
+
+data(data.timss3)
+data(data.timssrep)
+
+#--- create BIFIEdata object
+bdat3 &lt;- BIFIEsurvey::BIFIE.data.jack(data.timss3, jktype="JK_TIMSS")
+summary(bdat3)
+
+#--- create survey object directly in survey package
+dat3a &lt;- as.data.frame( cbind( data.timss3, data.timssrep ) )
+RR &lt;- ncol(data.timssrep) - 1       # number of jackknife zones
+svydes3a &lt;- survey::svrepdesign(data=dat3a, weights=~TOTWGT,type="JKn",
+                 repweights='w_fstr[0-9]', scale=1,  rscales=rep(1,RR), mse=TRUE )
+print(svydes3a)
+
+#--- create survey object by converting the BIFIEdata object to survey
+svydes3b &lt;- BIFIEsurvey::BIFIEdata2svrepdesign(bdat3)
+
+#--- convert survey object into BIFIEdata object
+bdat3e &lt;- BIFIEsurvey::svrepdesign2BIFIEdata(svrepdesign=svydes3b)
+
+#*** compare results for the mean in Mathematics scores
+mod1a &lt;- BIFIEsurvey::BIFIE.univar( bdat3, vars="ASMMAT1")
+mod1b &lt;- survey::svymean( ~ ASMMAT1, design=svydes3a )
+mod1c &lt;- survey::svymean( ~ ASMMAT1, design=svydes3b )
+lavmodel &lt;- "ASMMAT1 ~ 1"
+mod1d &lt;- BIFIEsurvey::BIFIE.lavaan.survey(lavmodel, svyrepdes=svydes3b)
+
+#- coefficients
+coef(mod1a); coef(mod1b); coef(mod1c); coef(mod1d)[1]
+#- standard errors
+survey::SE(mod1a); survey::SE(mod1b); survey::SE(mod1c); sqrt(vcov(mod1d)[1,1])
+
+#############################################################################
+# EXAMPLE 2: Multiply imputed datasets, TIMSS replication design
+#############################################################################
+
+data(data.timss2)
+data(data.timssrep)
+
+#--- create BIFIEdata object
+bdat4 &lt;- BIFIEsurvey::BIFIE.data( data=data.timss2, wgt="TOTWGT",
+              wgtrep=data.timssrep[,-1], fayfac=1)
+print(bdat4)
+
+#--- create object with imputed datasets in survey
+datL &lt;- mitools::imputationList( data.timss2 )
+RR &lt;- ncol(data.timssrep) - 1
+weights &lt;- data.timss2[[1]]$TOTWGT
+repweights &lt;-  data.timssrep[,-1]
+svydes4a &lt;- survey::svrepdesign(data=datL, weights=weights, type="other",
+               repweights=repweights, scale=1,  rscales=rep(1,RR), mse=TRUE)
+print(svydes4a)
+
+#--- create BIFIEdata object with conversion function
+svydes4b &lt;- BIFIEsurvey::BIFIEdata2svrepdesign(bdat4)
+
+#--- reconvert survey object into BIFIEdata object
+bdat4c &lt;- BIFIEsurvey::svrepdesign2BIFIEdata(svrepdesign=svydes4b)
+
+#*** compare results for a mean
+mod1a &lt;- BIFIEsurvey::BIFIE.univar(bdat4, vars="ASMMAT")
+mod1b &lt;- mitools::MIcombine( with(svydes4a, survey::svymean( ~ ASMMAT, design=svydes4a )))
+mod1c &lt;- mitools::MIcombine( with(svydes4b, survey::svymean( ~ ASMMAT, design=svydes4b )))
+
+# results
+coef(mod1a); coef(mod1b); coef(mod1c)
+survey::SE(mod1a); survey::SE(mod1b); survey::SE(mod1c)
+
+## End(Not run)
+</code></pre>
+
+
+</div>

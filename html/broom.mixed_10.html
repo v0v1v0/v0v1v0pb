@@ -1,0 +1,88 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>augment.ranef.mer</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Augmentation for random effects (for caterpillar plots etc.)</h2>
+
+<h3>Description</h3>
+
+<p>Augmentation for random effects (for caterpillar plots etc.)
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">## S3 method for class 'ranef.mer'
+augment(x, ci.level = 0.9, reorder = TRUE, order.var = 1, ...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>ranef (conditional mode) information from an lme4 fit, using <code>ranef(.,condVar=TRUE)</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ci.level</code></td>
+<td>
+<p>level for confidence intervals</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>reorder</code></td>
+<td>
+<p>reorder levels by conditional mode values?</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>order.var</code></td>
+<td>
+<p>numeric or character: which variable to use for ordering levels?</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>additional arguments (unused: for generic consistency)</p>
+</td>
+</tr>
+</table>
+<h3>Examples</h3>
+
+<pre><code class="language-R">if (require("lme4")) {
+   load(system.file("extdata","lme4_example.rda",package="broom.mixed"))
+   rr &lt;- ranef(lmm1,condVar=TRUE)
+   aa &lt;- broom::augment(rr)
+   ## Q-Q plot:
+   if (require(ggplot2) &amp;&amp; require(dplyr)) {
+      g0 &lt;- ggplot(aa,aes(estimate,qq,xmin=lb,xmax=ub))+
+          geom_errorbarh(height=0)+
+          geom_point()+facet_wrap(~variable,scale="free_x")
+      ## regular caterpillar plot:
+      g1 &lt;- ggplot(aa,aes(estimate,level,xmin=lb,xmax=ub))+
+         geom_errorbarh(height=0)+
+         geom_vline(xintercept=0,lty=2)+
+         geom_point()+facet_wrap(~variable,scale="free_x")
+      ## emphasize extreme values
+      aa2 &lt;- group_by(aa,grp,level)
+      aa3 &lt;- mutate(aa2, keep=any(estimate/std.error&gt;2))
+      ## Update caterpillar plot with extreme levels highlighted
+      ##  (highlight all groups with *either* extreme intercept *or*
+      ##   extreme slope)
+      ggplot(aa3, aes(estimate,level,xmin=lb,xmax=ub,colour=factor(keep)))+
+         geom_errorbarh(height=0)+
+         geom_vline(xintercept=0,lty=2)+
+         geom_point()+facet_wrap(~variable,scale="free_x")+
+         scale_colour_manual(values=c("black","red"), guide=FALSE)
+   }
+}
+</code></pre>
+
+
+</div>

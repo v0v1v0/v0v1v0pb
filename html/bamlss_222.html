@@ -1,0 +1,113 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>trans_AR1</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>
+AR1 Transformer Function
+</h2>
+
+<h3>Description</h3>
+
+<p>The transformer function takes a <code>bamlss.frame</code> object and transforms
+the response and the design matrices to account for lag 1 autocorrelation. The method
+is also known as Prais-Winsten estimation.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">trans_AR1(rho = 0.1)
+AR1(rho = 0.1)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table><tr style="vertical-align: top;">
+<td><code>rho</code></td>
+<td>
+<p>Specifies the correlation parameter at lag 1.</p>
+</td>
+</tr></table>
+<h3>Value</h3>
+
+<p>A transformer function which can be used in the <code>bamlss</code> call.
+</p>
+
+
+<h3>References</h3>
+
+<p>Johnston, John (1972). Econometric Methods (2nd ed.). New York: McGraw-Hill. pp. 259–265.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>bamlss.frame</code>, <code>bamlss</code>, <code>smooth2random</code>.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## Not run: ## Simulate AR1 data.
+set.seed(111)
+
+n &lt;- 240
+d &lt;- data.frame("t" = 1:n)
+
+## Nonlinear function.
+f &lt;- function(x) {
+  2 + sin(x / n * 2 * pi - pi)
+}
+
+## Correlated errors.
+rho &lt;- 0.8
+e &lt;- rnorm(n, sd = 0.1)
+u &lt;- c(e[1], rep(NA, n - 1))
+for(i in 2:n){
+  u[i] &lt;- rho * u[i - 1] + e[i]
+}
+
+## Response.
+d$y &lt;- f(d$t) + u
+
+## Plot time-series data.
+plot(d, type = "l")
+
+## Estimate models without and with AR1 transformation.
+b0 &lt;- bamlss(y ~ s(t,k=20), data = d, criterion = "BIC")
+b1 &lt;- bamlss(y ~ s(t,k=20), data = d, criterion = "BIC",
+  transform = AR1(rho = 0.8))
+
+## Estimate full AR1 model.
+b2 &lt;- bamlss(y ~ s(t,k=20), data = d, criterion = "BIC",
+  family = "AR1")
+rho &lt;- predict(b2, model = "rho", type = "parameter")
+print(range(rho))
+
+## Estimated standard deviations.
+sd0 &lt;- predict(b0, model = "sigma", type = "parameter")
+sd1 &lt;- predict(b1, model = "sigma", type = "parameter")
+sd2 &lt;- predict(b2, model = "sigma", type = "parameter")
+print(round(c(sd0[1], sd1[1], sd2[1]), 2))
+
+## Plot fitted trends.
+p0 &lt;- predict(b0, model = "mu")
+p1 &lt;- predict(b1, model = "mu")
+p2 &lt;- predict(b2, model = "mu")
+
+plot(d, type = "l")
+lines(f(d$t) ~ d$t, col = 2, lwd = 2)
+lines(p0 ~ d$t, col = 4, lwd = 2)
+lines(p1 ~ d$t, col = 3, lwd = 3)
+lines(p2 ~ d$t, col = 5, lwd = 3)
+legend("topleft",
+  c("no trans", "with trans", "AR1 model", "truth"),
+  lwd = 2, col = c(4, 3, 5, 2), bty = "n")
+
+## End(Not run)</code></pre>
+
+
+</div>

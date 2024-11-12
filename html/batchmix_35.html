@@ -1,0 +1,122 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>processMCMCChains</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Process MCMC chains</h2>
+
+<h3>Description</h3>
+
+<p>Applies a burn in to and finds a point estimate for each of the
+chains outputted from “runMCMCChains“.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">processMCMCChains(mcmc_lst, burn, point_estimate_method = "median")
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>mcmc_lst</code></td>
+<td>
+<p>Output from “runMCMCChains“</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>burn</code></td>
+<td>
+<p>The number of MCMC samples to drop as part of a burn in.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>point_estimate_method</code></td>
+<td>
+<p>Summary statistic used to define the point
+estimate. Must be “'mean'“ or “'median'“. “'median'“ is the default.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>A named list similar to the output of
+“batchSemiSupervisedMixtureModel“ with some additional entries:
+</p>
+<p>* “mean_est“:  $(P x K)$ matrix. The point estimate of the cluster
+means with columns  corresponding to clusters.
+</p>
+<p>* “cov_est“:  $(P x P x K)$ array. The point estimate of the
+cluster covariance matrices with slices corresponding to clusters.
+</p>
+<p>* “shift_est“:  $(P x B)$ matrix. The point estimate of the batch
+shift effect with columns  corresponding to batches.
+</p>
+<p>* “scale_est“:  $(P x B)$ matrix. The point estimate of the batch
+scale effects. The $bth$ column contains the diagonal entries of the scaling
+matrix for the $bth£ batch.
+</p>
+<p>* “mean_sum_est“:  $(P x K x B)$ array. The point estimate of the
+sum of the cluster  means and the batch shift effect with columns
+corresponding to clusters and slices to batches.
+</p>
+<p>* “cov_comb_est“:  List of length $B$, with each entry being a
+$(P x P x K)$ array. The point estimate of the combination of the
+cluster covariance matrices and the batch scale effect with list entries
+corresponding to batches and slices of each array corresponding to clusters.
+</p>
+<p>* “inferred_dataset“:  $(N x P)$ matrix. The inferred “batch-free”
+dataset.
+</p>
+<p>* “allocation_probability“:  $(N x K)$ matrix. The point estimate of
+the allocation probabilities for each data point to each class.
+</p>
+<p>* “prob“:  $N$ vector. The point estimate of the probability of being
+allocated to the class with the highest probability.
+</p>
+<p>* “pred“:  $N$ vector. The predicted class for each sample.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+# Data in a matrix format
+X &lt;- matrix(c(rnorm(100, 0, 1), rnorm(100, 3, 1)), ncol = 2, byrow = TRUE)
+
+# Initial labelling
+labels &lt;- c(
+  rep(1, 10),
+  sample(c(1, 2), size = 40, replace = TRUE),
+  rep(2, 10),
+  sample(c(1, 2), size = 40, replace = TRUE)
+)
+
+fixed &lt;- c(rep(1, 10), rep(0, 40), rep(1, 10), rep(0, 40))
+
+# Batch
+batch_vec &lt;- sample(seq(1, 5), replace = TRUE, size = 100)
+
+# Sampling parameters
+R &lt;- 1000
+burn &lt;- 250
+thin &lt;- 50
+n_chains &lt;- 4
+
+# MCMC samples
+samples &lt;- runMCMCChains(X, n_chains, R, thin, batch_vec, "MVN",
+  initial_labels = labels,
+  fixed = fixed
+)
+
+# Process the MCMC samples
+processed_samples &lt;- processMCMCChains(samples, burn)
+
+</code></pre>
+
+
+</div>

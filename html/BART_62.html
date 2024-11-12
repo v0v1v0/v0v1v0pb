@@ -1,0 +1,602 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>surv.bart</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Survival analysis with BART</h2>
+
+<h3>Description</h3>
+
+<p>Here we have implemented a simple and direct approach to utilize BART in
+survival analysis that is very flexible, and is akin to discrete-time
+survival analysis.  Following the capabilities of BART, we allow for
+maximum flexibility in modeling the dependence of survival times on
+covariates.  In particular, we do not impose proportional hazards.
+</p>
+<p>To elaborate, consider data in the usual form:
+<code class="reqn">(t_i, \delta_i, {x}_i)</code> where <code class="reqn">t_i</code> is the event time,
+<code class="reqn">\delta_i</code> is an indicator distinguishing events
+(<code class="reqn">\delta=1</code>) from right-censoring
+(<code class="reqn">\delta=0</code>), <code class="reqn">{x}_i</code> is a vector of covariates, and
+<code class="reqn">i=1, ..., N</code>
+indexes subjects.
+</p>
+<p>We denote the <code class="reqn">K</code> distinct event/censoring times by
+<code class="reqn">0&lt;t_{(1)}&lt;...&lt;t_{(K)}&lt;\infty</code> thus
+taking <code class="reqn">t_{(j)}</code> to be the <code class="reqn">j^{th}</code> order
+statistic among distinct observation times and, for convenience,
+<code class="reqn">t_{(0)}=0</code>. Now consider event indicators <code class="reqn">y_{ij}</code>
+for each subject <code class="reqn">i</code> at each distinct time <code class="reqn">t_{(j)}</code>
+up to and including the subject's observation time
+<code class="reqn">t_i=t_{(n_i)}</code> with
+<code class="reqn">n_i=\sum_j I[t_{(j)}\leq t_i]</code>.
+This means <code class="reqn">y_{ij}=0</code> if <code class="reqn">j&lt;n_i</code> and
+<code class="reqn">y_{in_i}=\delta_i</code>.
+</p>
+<p>We then denote by <code class="reqn">p_{ij}</code> the probability
+of an event at time <code class="reqn">t_{(j)}</code> conditional on no previous event. We
+now write the model for <code class="reqn">y_{ij}</code> as a nonparametric probit
+regression of <code class="reqn">y_{ij}</code> on the time <code class="reqn">t_{(j)}</code> and the covariates
+<code class="reqn">{x}_i</code>, and then utilize BART for binary responses.  Specifically,
+<code class="reqn"> y_{ij}\ =\ \delta_i I[t_i=t_{(j)}],\ j=1, ..., n_i </code>; we have
+<code class="reqn">p_{ij} = F(\mu_{ij}),\ \mu_{ij} = \mu_0+f(t_{(j)}, {x}_i)</code> where <code class="reqn">F</code> denotes the standard normal cdf (probit link).
+As in the binary
+response case, <code class="reqn">f</code> is the sum of many tree models.  </p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">
+surv.bart( x.train=matrix(0,0,0),
+           y.train=NULL, times=NULL, delta=NULL,
+           x.test=matrix(0,0,0),
+           K=NULL, events=NULL, ztimes=NULL, zdelta=NULL,
+           sparse=FALSE, theta=0, omega=1,
+           a=0.5, b=1, augment=FALSE, rho=NULL,
+           xinfo=matrix(0,0,0), usequants=FALSE,
+           
+           rm.const=TRUE, type='pbart',
+           ntype=as.integer(
+               factor(type, levels=c('wbart', 'pbart', 'lbart'))),
+           k=2, power=2, base=.95,
+           offset=NULL, tau.num=c(NA, 3, 6)[ntype], 
+           ntree=50, numcut=100, ndpost=1000, nskip=250,
+           keepevery = 10L,
+           
+           
+           
+           
+           printevery=100L, 
+           
+           id=NULL,    ## surv.bart only
+           seed=99,    ## mc.surv.bart only
+           mc.cores=2, ## mc.surv.bart only
+           nice=19L    ## mc.surv.bart only
+         )
+
+mc.surv.bart( x.train=matrix(0,0,0),
+              y.train=NULL, times=NULL, delta=NULL, 
+              x.test=matrix(0,0,0), 
+              K=NULL, events=NULL, ztimes=NULL, zdelta=NULL,
+              sparse=FALSE, theta=0, omega=1,
+              a=0.5, b=1, augment=FALSE, rho=NULL,
+              xinfo=matrix(0,0,0), usequants=FALSE,
+              
+              rm.const=TRUE, type='pbart',
+              ntype=as.integer(
+                  factor(type, levels=c('wbart', 'pbart', 'lbart'))),
+              k=2, power=2, base=.95,
+              offset=NULL, tau.num=c(NA, 3, 6)[ntype], 
+              ntree=50, numcut=100, ndpost=1000, nskip=250,
+              keepevery = 10L,
+              
+              
+              
+              
+              printevery=100L, 
+              
+              id=NULL,    ## surv.bart only
+              seed=99,    ## mc.surv.bart only
+              mc.cores=2, ## mc.surv.bart only
+              nice=19L    ## mc.surv.bart only
+            )
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>x.train</code></td>
+<td>
+<p> Explanatory variables for training (in sample)
+data.<br> Must be a matrix with (as usual) rows corresponding to
+observations and columns to variables.<br><code>surv.bart</code> will generate
+draws of <code class="reqn">f(t, x)</code> for each <code class="reqn">x</code> which is a row of x.train (note
+that the definition of <code>x.train</code> is dependent on whether
+<code>y.train</code> has been specified; see below).  </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>y.train</code></td>
+<td>
+
+<p>Binary response dependent variable for training (in sample) data.<br>
+If <code>y.train</code> is <code>NULL</code>, then <code>y.train</code> (<code>x.train</code> and
+<code>x.test</code>, if specified) are generated
+by a call to <code>surv.pre.bart</code> (which require that <code>times</code> and <code>delta</code> be
+provided: see below); otherwise, <code>y.train</code> (<code>x.train</code> and
+<code>x.test</code>, if specified)
+are utilized as given assuming that the data construction has already been performed.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>times</code></td>
+<td>
+
+<p>The time of event or right-censoring.<br>
+If <code>y.train</code> is <code>NULL</code>, then <code>times</code> (and <code>delta</code>)
+must be provided.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>delta</code></td>
+<td>
+
+<p>The event indicator: 1 is an event while 0 is censored.<br>
+If <code>y.train</code> is <code>NULL</code>, then <code>delta</code> (and <code>times</code>)
+must be provided.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>x.test</code></td>
+<td>
+
+<p>Explanatory variables for test (out of sample) data.<br>
+Must be a matrix and have the same structure as x.train.<br><code>surv.bart</code> will generate draws of <code class="reqn">f(t, x)</code> for each <code class="reqn">x</code> which is a row of x.test.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>K</code></td>
+<td>
+
+<p>If provided, then coarsen <code>times</code> per the quantiles
+<code class="reqn">1/K, 2/K, ..., K/K</code>.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>events</code></td>
+<td>
+
+<p>If provided, then use for the grid of time points.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ztimes</code></td>
+<td>
+
+<p>If provided, then these columns of <code>x.train</code> (and
+<code>x.test</code> if any) are the times for time-dependent covariates.
+They will be transformed into time-dependent covariate sojourn times.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>zdelta</code></td>
+<td>
+
+<p>If provided, then these columns of <code>x.train</code> (and
+<code>x.test</code> if any) are the delta for time-dependent covariates.
+They will be transformed into time-dependent covariate binary events.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>sparse</code></td>
+<td>
+<p>Whether to perform variable selection based on a
+sparse Dirichlet prior rather than simply uniform; see Linero 2016.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>theta</code></td>
+<td>
+<p>Set <code class="reqn">theta</code> parameter; zero means random.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>omega</code></td>
+<td>
+<p>Set <code class="reqn">omega</code> parameter; zero means random.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>a</code></td>
+<td>
+<p>Sparse parameter for <code class="reqn">Beta(a, b)</code> prior:
+<code class="reqn">0.5&lt;=a&lt;=1</code> where lower values inducing more sparsity.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>b</code></td>
+<td>
+<p>Sparse parameter for <code class="reqn">Beta(a, b)</code> prior; typically,
+<code class="reqn">b=1</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>rho</code></td>
+<td>
+<p>Sparse parameter: typically <code class="reqn">rho=p</code> where <code class="reqn">p</code> is the
+number of covariates under consideration.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>augment</code></td>
+<td>
+<p>Whether data augmentation is to be performed in sparse
+variable selection.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>xinfo</code></td>
+<td>
+<p> You can provide the cutpoints to BART or let BART
+choose them for you.  To provide them, use the <code>xinfo</code>
+argument to specify a list (matrix) where the items (rows) are the
+covariates and the contents of the items (columns) are the
+cutpoints.  </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>usequants</code></td>
+<td>
+<p> If <code>usequants=FALSE</code>, then the
+cutpoints in <code>xinfo</code> are generated uniformly; otherwise,
+if <code>TRUE</code>, uniform quantiles are used for the cutpoints. </p>
+</td>
+</tr>
+</table>
+<table>
+<tr style="vertical-align: top;">
+<td><code>rm.const</code></td>
+<td>
+<p> Whether or not to remove constant variables.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>type</code></td>
+<td>
+<p> Whether to employ Albert-Chib, <code>'pbart'</code>, or
+Holmes-Held, <code>'lbart'</code>. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ntype</code></td>
+<td>
+<p> The integer equivalent of <code>type</code> where
+<code>'wbart'</code> is 1, <code>'pbart'</code> is 2 and
+<code>'lbart'</code> is 3.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>k</code></td>
+<td>
+
+<p>k is the number of prior standard deviations <code class="reqn">f(t, x)</code> is away from +/-3.
+The bigger k is, the more conservative the fitting will be.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>power</code></td>
+<td>
+
+<p>Power parameter for tree prior.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>base</code></td>
+<td>
+
+<p>Base parameter for tree prior.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>offset</code></td>
+<td>
+<p>  With binary
+BART, the centering is <code class="reqn">P(Y=1 | x) = F(f(x) + offset)</code> where
+<code>offset</code> defaults to <code>F^{-1}(mean(y.train))</code>.  You can use
+the <code>offset</code> parameter to over-ride these defaults.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>tau.num</code></td>
+<td>
+<p> The numerator in the <code>tau</code> definition, i.e.,
+<code>tau=tau.num/(k*sqrt(ntree))</code>. </p>
+</td>
+</tr>
+</table>
+<table>
+<tr style="vertical-align: top;">
+<td><code>ntree</code></td>
+<td>
+
+<p>The number of trees in the sum.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ndpost</code></td>
+<td>
+
+<p>The number of posterior draws returned.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nskip</code></td>
+<td>
+
+<p>Number of MCMC iterations to be treated as burn in.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>printevery</code></td>
+<td>
+
+<p>As the MCMC runs, a message is printed every printevery draws.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>keepevery</code></td>
+<td>
+
+<p>Every keepevery draw is kept to be returned to the user.<br>
+A “draw” will consist of values <code class="reqn">f^*(t, x)</code>
+at <code class="reqn">x</code> = rows from the train(optionally) and test data, where <code class="reqn">f^*</code> denotes
+the current draw of <code class="reqn">f</code>.
+</p>
+</td>
+</tr>
+</table>
+<table><tr style="vertical-align: top;">
+<td><code>numcut</code></td>
+<td>
+
+<p>The number of possible values of c (see usequants).
+If a single number if given, this is used for all variables.
+Otherwise a vector with length equal to ncol(x.train) is required,
+where the <code class="reqn">i^{th}</code> element gives the number of c used for
+the <code class="reqn">i^{th}</code> variable in x.train.
+If usequants is false, numcut equally spaced cutoffs
+are used covering the range of values in the corresponding
+column of x.train.  If usequants is true, then  min(numcut, the number of unique values in the
+corresponding columns of x.train - 1) c values are used.
+</p>
+</td>
+</tr></table>
+<table>
+<tr style="vertical-align: top;">
+<td><code>id</code></td>
+<td>
+
+<p><code>surv.bart</code> only: unique identifier added to returned list.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>seed</code></td>
+<td>
+
+<p><code>mc.surv.bart</code> only: seed required for reproducible MCMC.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>mc.cores</code></td>
+<td>
+
+<p><code>mc.surv.bart</code> only: number of cores to employ in parallel.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nice</code></td>
+<td>
+
+<p><code>mc.surv.bart</code> only: set the job niceness.  The default
+niceness is 19: niceness goes from 0 (highest) to 19 (lowest).
+</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p><code>surv.bart</code> returns an object of type <code>survbart</code> which is
+essentially a list.  Besides the items listed
+below, the list has a <code>binaryOffset</code> component giving the value
+used, a <code>times</code> component giving the unique times, <code>K</code>
+which is the number of unique times, <code>tx.train</code> and
+<code>tx.test</code>, if any.
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>yhat.train</code></td>
+<td>
+
+<p>A matrix with ndpost rows and nrow(x.train) columns.
+Each row corresponds to a draw <code class="reqn">f^*</code> from the posterior of <code class="reqn">f</code>
+and each column corresponds to a row of x.train.
+The <code class="reqn">(i,j)</code> value is <code class="reqn">f^*(t, x)</code> for the <code class="reqn">i^{th}</code> kept draw of <code class="reqn">f</code>
+and the <code class="reqn">j^{th}</code> row of x.train.<br>
+Burn-in is dropped.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>yhat.test</code></td>
+<td>
+<p>Same as yhat.train but now the x's are the rows of the test data.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>surv.test</code></td>
+<td>
+<p>The survival function, <code class="reqn">S(t|x)</code>, where x's are the rows of the test data.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>yhat.train.mean</code></td>
+<td>
+<p>train data fits = mean of yhat.train columns.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>yhat.test.mean</code></td>
+<td>
+<p>test data fits = mean of yhat.test columns.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>surv.test.mean</code></td>
+<td>
+<p>mean of surv.test columns.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>varcount</code></td>
+<td>
+<p>a matrix with ndpost rows and nrow(x.train) columns.
+Each row is for a draw. For each variable (corresponding to the columns),
+the total count of the number of times
+that variable is used in a tree decision rule (over all trees) is given.</p>
+</td>
+</tr>
+</table>
+<p>Note that yhat.train and yhat.test are
+<code class="reqn">f(t, x)</code> + <code>binaryOffset</code>.  If you want draws of the probability
+<code class="reqn">P(Y=1 | t, x)</code> you need to apply the normal cdf (<code>pnorm</code>)
+to these values.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>surv.pre.bart</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+## load survival package for the advanced lung cancer example
+data(lung)
+
+N &lt;- length(lung$status)
+
+table(lung$ph.karno, lung$pat.karno)
+
+## if physician's KPS unavailable, then use the patient's
+h &lt;- which(is.na(lung$ph.karno))
+lung$ph.karno[h] &lt;- lung$pat.karno[h]
+
+times &lt;- lung$time
+delta &lt;- lung$status-1 ##lung$status: 1=censored, 2=dead
+##delta: 0=censored, 1=dead
+
+## this study reports time in days rather than weeks or months
+## coarsening from days to weeks or months will reduce the computational burden
+##times &lt;- ceiling(times/30)
+times &lt;- ceiling(times/7)  ## weeks
+
+table(times)
+table(delta)
+
+## matrix of observed covariates
+x.train &lt;- cbind(lung$sex, lung$age, lung$ph.karno)
+
+## lung$sex:        Male=1 Female=2
+## lung$age:        Age in years
+## lung$ph.karno:   Karnofsky performance score (dead=0:normal=100:by=10)
+##                  rated by physician
+
+dimnames(x.train)[[2]] &lt;- c('M(1):F(2)', 'age(39:82)', 'ph.karno(50:100:10)')
+
+table(x.train[ , 1])
+summary(x.train[ , 2])
+table(x.train[ , 3])
+
+##test BART with token run to ensure installation works
+set.seed(99)
+post &lt;- surv.bart(x.train=x.train, times=times, delta=delta,
+                  nskip=1, ndpost=1, keepevery=1)
+
+## Not run: 
+## run one long MCMC chain in one process
+## set.seed(99)
+## post &lt;- surv.bart(x.train=x.train, times=times, delta=delta, x.test=x.test)
+
+## in the interest of time, consider speeding it up by parallel processing
+## run "mc.cores" number of shorter MCMC chains in parallel processes
+post &lt;- mc.surv.bart(x.train=x.train, times=times, delta=delta,
+                     mc.cores=8, seed=99)
+
+pre &lt;- surv.pre.bart(times=times, delta=delta, x.train=x.train,
+                     x.test=x.train)
+
+K &lt;- pre$K
+M &lt;- nrow(post$yhat.train)
+
+pre$tx.test &lt;- rbind(pre$tx.test, pre$tx.test)
+pre$tx.test[ , 2] &lt;- c(rep(1, N*K), rep(2, N*K))
+## sex pushed to col 2, since time is always in col 1
+
+pred &lt;- predict(post, newdata=pre$tx.test, mc.cores=8)
+
+pd &lt;- matrix(nrow=M, ncol=2*K)
+
+for(j in 1:K) {
+    h &lt;- seq(j, N*K, by=K)
+    pd[ , j] &lt;- apply(pred$surv.test[ , h], 1, mean)
+    pd[ , j+K] &lt;- apply(pred$surv.test[ , h+N*K], 1, mean)
+}
+
+pd.mu  &lt;- apply(pd, 2, mean)
+pd.025 &lt;- apply(pd, 2, quantile, probs=0.025)
+pd.975 &lt;- apply(pd, 2, quantile, probs=0.975)
+
+males &lt;- 1:K
+females &lt;- males+K
+
+plot(c(0, pre$times), c(1, pd.mu[males]), type='s', col='blue',
+     ylim=0:1, ylab='S(t, x)', xlab='t (weeks)',
+     main=paste('Advanced Lung Cancer ex. (BART::lung)',
+                "Friedman's partial dependence function",
+                'Male (blue) vs. Female (red)', sep='\n'))
+lines(c(0, pre$times), c(1, pd.025[males]), col='blue', type='s', lty=2)
+lines(c(0, pre$times), c(1, pd.975[males]), col='blue', type='s', lty=2)
+lines(c(0, pre$times), c(1, pd.mu[females]), col='red', type='s')
+lines(c(0, pre$times), c(1, pd.025[females]), col='red', type='s', lty=2)
+lines(c(0, pre$times), c(1, pd.975[females]), col='red', type='s', lty=2)
+
+
+
+## End(Not run)
+</code></pre>
+
+
+</div>

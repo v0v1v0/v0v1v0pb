@@ -1,0 +1,168 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>HinksEtAl2010</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>JIA example data</h2>
+
+<h3>Description</h3>
+
+<p>Log odds ratios indicating association of a genetic variant
+(CCR5) with juvenile idiopathic arthritis (JIA).</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">data("HinksEtAl2010")</code></pre>
+
+
+<h3>Format</h3>
+
+<p>The data frame contains the following columns:
+</p>
+
+<table>
+<tr>
+<td style="text-align: left;">
+    <b>study</b>     </td>
+<td style="text-align: left;"> <code>character</code> </td>
+<td style="text-align: left;"> publication identifier </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+    <b>year</b>      </td>
+<td style="text-align: left;"> <code>numeric</code>   </td>
+<td style="text-align: left;"> publication year </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+    <b>country</b>   </td>
+<td style="text-align: left;"> <code>character</code> </td>
+<td style="text-align: left;"> country </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+    <b>or</b>        </td>
+<td style="text-align: left;"> <code>numeric</code>   </td>
+<td style="text-align: left;"> odds ratio (OR)</td>
+</tr>
+<tr>
+<td style="text-align: left;">
+    <b>or.lower</b>  </td>
+<td style="text-align: left;"> <code>numeric</code>   </td>
+<td style="text-align: left;"> lower 95 percent confidence bound for OR </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+    <b>or.upper</b>  </td>
+<td style="text-align: left;"> <code>numeric</code>   </td>
+<td style="text-align: left;"> upper 95 percent confidence bound for OR </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+    <b>log.or</b>    </td>
+<td style="text-align: left;"> <code>numeric</code>   </td>
+<td style="text-align: left;"> logarithmic OR </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+    <b>log.or.se</b> </td>
+<td style="text-align: left;"> <code>numeric</code>   </td>
+<td style="text-align: left;"> standard error of logarithmic OR </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+  </td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>Results from a genetic association study (Hinks et al, 2010) were
+combined with data from two additional studies (Prahalad et al., 2006;
+Lindner et al., 2007) in order to determine the combined evidence
+regarding the association of a particular genetic marker (CCR5) with
+juvenile idiopathic arthritis (JIA).
+</p>
+
+
+<h3>Source</h3>
+
+<p>A. Hinks et al.
+Association of the CCR5 gene with juvenile idiopathic arthritis.
+<em>Genes and Immunity</em>, <b>11</b>(7):584-589, 2010.
+<a href="https://doi.org/10.1038/gene.2010.25">doi:10.1038/gene.2010.25</a>.
+</p>
+
+
+<h3>References</h3>
+
+<p>S. Prahalad et al.
+Association of two functional polymorphisms in the CCR5 gene with
+juvenile rheumatoid arthritis.
+<em>Genes and Immunity</em>, <b>7</b>:468-475, 2006.
+<a href="https://doi.org/10.1038/sj.gene.6364317">doi:10.1038/sj.gene.6364317</a>.
+</p>
+<p>E. Lindner et al.
+Lack of association between the chemokine receptor 5 polymorphism
+CCR5delta32 in rheumatoid arthritis and juvenile idiopathic arthritis.
+<em>BMC Medical Genetics</em>, <b>8</b>:33, 2007.
+<a href="https://doi.org/10.1186/1471-2350-8-33">doi:10.1186/1471-2350-8-33</a>.
+</p>
+<p>C. Roever, G. Knapp, T. Friede.
+Hartung-Knapp-Sidik-Jonkman approach and its modification for
+random-effects meta-analysis with few studies.
+<em>BMC Medical Research Methodology</em>, 15:99, 2015.
+<a href="https://doi.org/10.1186/s12874-015-0091-1">doi:10.1186/s12874-015-0091-1</a>.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">data("HinksEtAl2010")
+
+## Not run: 
+# perform meta analysis based on weakly informative half-normal prior:
+bma01 &lt;- bayesmeta(y      = HinksEtAl2010$log.or,
+                   sigma  = HinksEtAl2010$log.or.se,
+                   labels = HinksEtAl2010$study,
+                   tau.prior = function(t){dhalfnormal(t,scale=1.0)})
+
+# perform meta analysis based on slightly more informative half-normal prior:
+bma02 &lt;- bayesmeta(y      = HinksEtAl2010$log.or,
+                   sigma  = HinksEtAl2010$log.or.se,
+                   labels = HinksEtAl2010$study,
+                   tau.prior = function(t){dhalfnormal(t,scale=0.5)})
+
+# show heterogeneity posteriors:
+par(mfrow=c(2,1))
+plot(bma01, which=4, prior=TRUE, taulim=c(0,1))
+plot(bma02, which=4, prior=TRUE, taulim=c(0,1))
+par(mfrow=c(1,1))
+
+# show heterogeneity estimates:
+rbind("half-normal(1.0)"=bma01$summary[,"tau"],
+      "half-normal(0.5)"=bma02$summary[,"tau"])
+# show q-profile confidence interval for tau in comparison:
+require("metafor")
+ma03 &lt;- rma.uni(yi=log.or, sei=log.or.se, slab=study, data=HinksEtAl2010)
+confint(ma03)$random["tau",c("ci.lb","ci.ub")]
+# show I2 values in the relevant range:
+tau &lt;- seq(0, 0.7, by=0.1)
+cbind("tau"=tau,
+      "I2" =bma01$I2(tau=tau))
+
+# show effect estimates:
+round(rbind("half-normal(1.0)" = bma01$summary[,"mu"],
+            "half-normal(0.5)" = bma02$summary[,"mu"]), 5)
+
+# show forest plot:
+forestplot(bma02)
+# show shrinkage estimates:
+bma02$theta
+
+## End(Not run)
+</code></pre>
+
+
+</div>

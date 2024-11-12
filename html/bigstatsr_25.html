@@ -1,0 +1,230 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>big_randomSVD</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Randomized partial SVD</h2>
+
+<h3>Description</h3>
+
+<p>An algorithm for partial SVD (or PCA) of a Filebacked Big Matrix based on the
+algorithm in RSpectra (by Yixuan Qiu and Jiali Mei).<br>
+This algorithm is linear in time in all dimensions and is very
+memory-efficient. Thus, it can be used on very large big.matrices.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">big_randomSVD(
+  X,
+  fun.scaling = big_scale(center = FALSE, scale = FALSE),
+  ind.row = rows_along(X),
+  ind.col = cols_along(X),
+  k = 10,
+  tol = 1e-04,
+  verbose = FALSE,
+  ncores = 1,
+  fun.prod = big_prodVec,
+  fun.cprod = big_cprodVec
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>X</code></td>
+<td>
+<p>An object of class FBM.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>fun.scaling</code></td>
+<td>
+<p>A function with parameters <code>X</code>, <code>ind.row</code> and <code>ind.col</code>,
+and that returns a data.frame with <code style="white-space: pre;">⁠$center⁠</code> and <code style="white-space: pre;">⁠$scale⁠</code> for the columns
+corresponding to <code>ind.col</code>, to scale each of their elements such as followed:
+</p>
+<p style="text-align: center;"><code class="reqn">\frac{X_{i,j} - center_j}{scale_j}.</code>
+</p>
+<p> Default doesn't use any scaling.
+You can also provide your own <code>center</code> and <code>scale</code> by using <code>as_scaling_fun()</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ind.row</code></td>
+<td>
+<p>An optional vector of the row indices that are used.
+If not specified, all rows are used. <strong>Don't use negative indices.</strong></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ind.col</code></td>
+<td>
+<p>An optional vector of the column indices that are used.
+If not specified, all columns are used. <strong>Don't use negative indices.</strong></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>k</code></td>
+<td>
+<p>Number of singular vectors/values to compute. Default is <code>10</code>.
+<strong>This algorithm should be used to compute only a few singular vectors/values.</strong></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>tol</code></td>
+<td>
+<p>Precision parameter of svds. Default is <code>1e-4</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>verbose</code></td>
+<td>
+<p>Should some progress be printed? Default is <code>FALSE</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ncores</code></td>
+<td>
+<p>Number of cores used. Default doesn't use parallelism.
+You may use nb_cores.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>fun.prod</code></td>
+<td>
+<p>Function that takes 6 arguments (in this order):
+</p>
+
+<ul>
+<li>
+<p> a matrix-like object <code>X</code>,
+</p>
+</li>
+<li>
+<p> a vector <code>x</code>,
+</p>
+</li>
+<li>
+<p> a vector of row indices <code>ind.row</code> of <code>X</code>,
+</p>
+</li>
+<li>
+<p> a vector of column indices <code>ind.col</code> of <code>X</code>,
+</p>
+</li>
+<li>
+<p> a vector of column centers (corresponding to <code>ind.col</code>),
+</p>
+</li>
+<li>
+<p> a vector of column scales (corresponding to <code>ind.col</code>),
+and compute the product of <code>X</code> (subsetted and scaled) with <code>x</code>.
+</p>
+</li>
+</ul>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>fun.cprod</code></td>
+<td>
+<p>Same as <code>fun.prod</code>, but for the <em>transpose</em> of <code>X</code>.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>A named list (an S3 class "big_SVD") of
+</p>
+
+<ul>
+<li> <p><code>d</code>, the singular values,
+</p>
+</li>
+<li> <p><code>u</code>, the left singular vectors,
+</p>
+</li>
+<li> <p><code>v</code>, the right singular vectors,
+</p>
+</li>
+<li> <p><code>niter</code>, the number of the iteration of the algorithm,
+</p>
+</li>
+<li> <p><code>nops</code>, number of Matrix-Vector multiplications used,
+</p>
+</li>
+<li> <p><code>center</code>, the centering vector,
+</p>
+</li>
+<li> <p><code>scale</code>, the scaling vector.
+</p>
+</li>
+</ul>
+<p>Note that to obtain the Principal Components, you must use
+predict on the result. See examples.
+</p>
+
+
+<h3>Note</h3>
+
+<p>The idea of using this Implicitly Restarted Arnoldi Method algorithm
+comes from G. Abraham, Y. Qiu, and M. Inouye,
+FlashPCA2: principal component analysis of biobank-scale genotype datasets,
+bioRxiv: <a href="https://doi.org/10.1101/094714">doi:10.1101/094714</a>.
+<br>
+It proved to be faster than our implementation of the "blanczos" algorithm
+in Rokhlin, V., Szlam, A., &amp; Tygert, M. (2010).
+A Randomized Algorithm for Principal Component Analysis.
+SIAM Journal on Matrix Analysis and Applications, 31(3), 1100-1124.
+<a href="https://doi.org/10.1137/080736417">doi:10.1137/080736417</a>.
+</p>
+
+
+<h3>See Also</h3>
+
+<p>svds
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">set.seed(1)
+
+X &lt;- big_attachExtdata()
+K &lt;- 10
+
+# Using only half of the data for "training"
+n &lt;- nrow(X)
+ind &lt;- sort(sample(n, n/2))
+test &lt;- big_randomSVD(X, fun.scaling = big_scale(), ind.row = ind, k = K)
+str(test)
+
+pca &lt;- prcomp(X[ind, ], center = TRUE, scale. = TRUE)
+
+# same scaling
+all.equal(test$center, pca$center)
+all.equal(test$scale,  pca$scale)
+
+# use this function to predict scores
+class(test)
+scores &lt;- predict(test)
+# scores and loadings are the same or opposite
+plot(scores, pca$x[, 1:K])
+plot(test$v, pca$rotation[, 1:K])
+plot(test$u)
+plot(test, type = "scores")
+
+# projecting on new data
+ind2 &lt;- setdiff(rows_along(X), ind)
+scores.test2 &lt;- predict(test, X, ind.row = ind2)
+scores.test3 &lt;- predict(pca, X[-ind, ])
+plot(scores.test2, scores.test3[, 1:K])
+
+</code></pre>
+
+
+</div>

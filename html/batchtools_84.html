@@ -1,0 +1,318 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>makeRegistry</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Registry Constructor</h2>
+
+<h3>Description</h3>
+
+<p><code>makeRegistry</code> constructs the inter-communication object for all functions in <code>batchtools</code>.
+All communication transactions are processed via the file system:
+All information required to run a job is stored as <code>JobCollection</code> in a file in the
+a subdirectory of the <code>file.dir</code> directory.
+Each jobs stores its results as well as computational status information (start time, end time, error message, ...)
+also on the file system which is regular merged parsed by the master using <code>syncRegistry</code>.
+After integrating the new information into the Registry, the Registry is serialized to the file system via <code>saveRegistry</code>.
+Both <code>syncRegistry</code> and <code>saveRegistry</code> are called whenever required internally.
+Therefore it should be safe to quit the R session at any time.
+Work can later be resumed by calling <code>loadRegistry</code> which de-serializes the registry from
+the file system.
+</p>
+<p>The registry created last is saved in the package namespace (unless <code>make.default</code> is set to
+<code>FALSE</code>) and can be retrieved via <code>getDefaultRegistry</code>.
+</p>
+<p>Canceled jobs and jobs submitted multiple times may leave stray files behind.
+These can be swept using <code>sweepRegistry</code>.
+<code>clearRegistry</code> completely erases all jobs from a registry, including log files and results,
+and thus allows you to start over.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">makeRegistry(
+  file.dir = "registry",
+  work.dir = getwd(),
+  conf.file = findConfFile(),
+  packages = character(0L),
+  namespaces = character(0L),
+  source = character(0L),
+  load = character(0L),
+  seed = NULL,
+  make.default = TRUE
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>file.dir</code></td>
+<td>
+<p>[<code>character(1)</code>]<br>
+Path where all files of the registry are saved.
+Default is directory “registry” in the current working directory.
+The provided path will get normalized unless it is given relative to the home directory
+(i.e., starting with “~”). Note that some templates do not handle relative paths well.
+</p>
+<p>If you pass <code>NA</code>, a temporary directory will be used.
+This way, you can create disposable registries for <code>btlapply</code> or examples.
+By default, the temporary directory <code>tempdir()</code> will be used.
+If you want to use another directory, e.g. a directory which is shared between nodes,
+you can set it in your configuration file by setting the variable <code>temp.dir</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>work.dir</code></td>
+<td>
+<p>[<code>character(1)</code>]<br>
+Working directory for R process for running jobs.
+Defaults to the working directory currently set during Registry construction (see <code>getwd</code>).
+<code>loadRegistry</code> uses the stored <code>work.dir</code>, but you may also explicitly overwrite it,
+e.g., after switching to another system.
+</p>
+<p>The provided path will get normalized unless it is given relative to the home directory
+(i.e., starting with “~”). Note that some templates do not handle relative paths well.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>conf.file</code></td>
+<td>
+<p>[<code>character(1)</code>]<br>
+Path to a configuration file which is sourced while the registry is created.
+In the configuration file you can define how <span class="pkg">batchtools</span> interacts with the system via <code>ClusterFunctions</code>.
+Separating the configuration of the underlying host system from the R code allows to easily move computation to another site.
+</p>
+<p>The file lookup is implemented in the internal (but exported) function <code>findConfFile</code> which returns the first file found of the following candidates:
+</p>
+
+<ol>
+<li>
+<p>File “batchtools.conf.R” in the path specified by the environment variable “R_BATCHTOOLS_SEARCH_PATH”.
+</p>
+</li>
+<li>
+<p>File “batchtools.conf.R” in the current working directory.
+</p>
+</li>
+<li>
+<p>File “config.R” in the user configuration directory as reported by <code>rappdirs::user_config_dir("batchtools", expand = FALSE)</code> (depending on OS, e.g., on linux this usually resolves to “~/.config/batchtools/config.R”).
+</p>
+</li>
+<li>
+<p>“.batchtools.conf.R” in the home directory (“~”).
+</p>
+</li>
+<li>
+<p>“config.R” in the site config directory as reported by <code>rappdirs::site_config_dir("batchtools")</code> (depending on OS). This file can be used for admins to set sane defaults for a computation site.
+</p>
+</li>
+</ol>
+<p>Set to <code>NA</code> if you want to suppress reading any configuration file.
+If a configuration file is found, it gets sourced inside the environment of the registry after the defaults for all variables are set.
+Therefore you can set and overwrite slots, e.g. <code>default.resources = list(walltime = 3600)</code> to set default resources or “max.concurrent.jobs” to
+limit the number of jobs allowed to run simultaneously on the system.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>packages</code></td>
+<td>
+<p>[<code>character</code>]<br>
+Packages that will always be loaded on each node.
+Uses <code>require</code> internally.
+Default is <code>character(0)</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>namespaces</code></td>
+<td>
+<p>[<code>character</code>]<br>
+Same as <code>packages</code>, but the packages will not be attached.
+Uses <code>requireNamespace</code> internally.
+Default is <code>character(0)</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>source</code></td>
+<td>
+<p>[<code>character</code>]<br>
+Files which should be sourced on the slaves prior to executing a job.
+Calls <code>sys.source</code> using the <code>.GlobalEnv</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>load</code></td>
+<td>
+<p>[<code>character</code>]<br>
+Files which should be loaded on the slaves prior to executing a job.
+Calls <code>load</code> using the <code>.GlobalEnv</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>seed</code></td>
+<td>
+<p>[<code>integer(1)</code>]<br>
+Start seed for jobs. Each job uses the (<code>seed</code> + <code>job.id</code>) as seed.
+Default is a random integer between 1 and 32768.
+Note that there is an additional seeding mechanism to synchronize instantiation of
+<code>Problem</code>s in a <code>ExperimentRegistry</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>make.default</code></td>
+<td>
+<p>[<code>logical(1)</code>]<br>
+If set to <code>TRUE</code>, the created registry is saved inside the package
+namespace and acts as default registry. You might want to switch this
+off if you work with multiple registries simultaneously.
+Default is <code>TRUE</code>.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>Currently <span class="pkg">batchtools</span> understands the following options set via the configuration file:
+</p>
+
+<dl>
+<dt>
+<code>cluster.functions</code>:</dt>
+<dd>
+<p>As returned by a constructor, e.g. <code>makeClusterFunctionsSlurm</code>.</p>
+</dd>
+<dt>
+<code>default.resources</code>:</dt>
+<dd>
+<p>List of resources to use. Will be overruled by resources specified via <code>submitJobs</code>.</p>
+</dd>
+<dt>
+<code>temp.dir</code>:</dt>
+<dd>
+<p>Path to directory to use for temporary registries.</p>
+</dd>
+<dt>
+<code>sleep</code>:</dt>
+<dd>
+<p>Custom sleep function. See <code>waitForJobs</code>.</p>
+</dd>
+<dt>
+<code>expire.after</code>:</dt>
+<dd>
+<p>Number of iterations before treating jobs as expired in <code>waitForJobs</code>.</p>
+</dd>
+<dt>
+<code>compress</code>:</dt>
+<dd>
+<p>Compression algorithm to use via <code>saveRDS</code>.</p>
+</dd>
+</dl>
+<h3>Value</h3>
+
+<p>[<code>environment</code>] of class “Registry” with the following slots:
+</p>
+
+<dl>
+<dt>
+<code>file.dir</code> [path]:</dt>
+<dd>
+<p>File directory.</p>
+</dd>
+<dt>
+<code>work.dir</code> [path]:</dt>
+<dd>
+<p>Working directory.</p>
+</dd>
+<dt>
+<code>temp.dir</code> [path]:</dt>
+<dd>
+<p>Temporary directory. Used if <code>file.dir</code> is <code>NA</code> to create temporary registries.</p>
+</dd>
+<dt>
+<code>packages</code> [character()]:</dt>
+<dd>
+<p>Packages to load on the slaves.</p>
+</dd>
+<dt>
+<code>namespaces</code> [character()]:</dt>
+<dd>
+<p>Namespaces to load on the slaves.</p>
+</dd>
+<dt>
+<code>seed</code> [integer(1)]:</dt>
+<dd>
+<p>Registry seed. Before each job is executed, the seed <code>seed + job.id</code> is set.</p>
+</dd>
+<dt>
+<code>cluster.functions</code> [cluster.functions]:</dt>
+<dd>
+<p>Usually set in your <code>conf.file</code>. Set via a call to <code>makeClusterFunctions</code>. See example.</p>
+</dd>
+<dt>
+<code>default.resources</code> [named list()]:</dt>
+<dd>
+<p>Usually set in your <code>conf.file</code>. Named list of default resources.</p>
+</dd>
+<dt>
+<code>max.concurrent.jobs</code> [integer(1)]:</dt>
+<dd>
+<p>Usually set in your <code>conf.file</code>. Maximum number of concurrent jobs for a single user and current registry on the system.
+<code>submitJobs</code> will try to respect this setting. The resource “max.concurrent.jobs” has higher precedence.</p>
+</dd>
+<dt>
+<code>defs</code> [data.table]:</dt>
+<dd>
+<p>Table with job definitions (i.e. parameters).</p>
+</dd>
+<dt>
+<code>status</code> [data.table]:</dt>
+<dd>
+<p>Table holding information about the computational status. Also see <code>getJobStatus</code>.</p>
+</dd>
+<dt>
+<code>resources</code> [data.table]:</dt>
+<dd>
+<p>Table holding information about the computational resources used for the job. Also see <code>getJobResources</code>.</p>
+</dd>
+<dt>
+<code>tags</code> [data.table]:</dt>
+<dd>
+<p>Table holding information about tags. See Tags.</p>
+</dd>
+<dt>
+<code>hash</code> [character(1)]:</dt>
+<dd>
+<p>Unique hash which changes each time the registry gets saved to the file system. Can be utilized to invalidate the cache of <span class="pkg">knitr</span>.</p>
+</dd>
+</dl>
+<h3>See Also</h3>
+
+<p>Other Registry: 
+<code>clearRegistry()</code>,
+<code>getDefaultRegistry()</code>,
+<code>loadRegistry()</code>,
+<code>removeRegistry()</code>,
+<code>saveRegistry()</code>,
+<code>sweepRegistry()</code>,
+<code>syncRegistry()</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+tmp = makeRegistry(file.dir = NA, make.default = FALSE)
+print(tmp)
+
+# Set cluster functions to interactive mode and start jobs in external R sessions
+tmp$cluster.functions = makeClusterFunctionsInteractive(external = TRUE)
+
+# Change packages to load
+tmp$packages = c("MASS")
+saveRegistry(reg = tmp)
+</code></pre>
+
+
+</div>

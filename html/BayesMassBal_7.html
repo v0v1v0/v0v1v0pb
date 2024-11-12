@@ -1,0 +1,120 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>ssEst</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Steady State Estimate</h2>
+
+<h3>Description</h3>
+
+<p>Allows for the estimation of process steady state of a single stream for a process using flow rate data.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">ssEst(y, BTE = c(100, 1000, 1), stationary = FALSE)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>y</code></td>
+<td>
+<p>Vector of mass flow rate observations.  Must be specified sequentially with <code>y[1]</code> as the initial observation.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>BTE</code></td>
+<td>
+<p>Numeric vector giving <code>c(Burn-in, Total-iterations, and Every)</code> for MCMC approximation of target distributions. The function <code>BMB</code> produces a total number of samples of <code class="reqn">(T - B)/E</code>.  <code class="reqn">E</code> specifies that only one of every <code class="reqn">E</code> draws are saved. <code class="reqn">E &gt; 1</code> reduces autocorrelation between obtained samples at the expense of computation time.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>stationary</code></td>
+<td>
+<p>Logical indicating if stationarity will be imposed when generating posterior draws.  See Details.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The model of the following form is fit to the data:
+</p>
+<p style="text-align: center;"><code class="reqn">y_t = \mu + \alpha y_{t-1} + \epsilon</code>
+</p>
+
+<p>Where <code class="reqn">\epsilon \sim \mathcal{N}(0,\sigma^2)</code> and <code class="reqn">t</code> indexes the time step.
+</p>
+<p>A time series is stationary, and predictable, when <code class="reqn">|\alpha|&lt; 1</code>.  Stationarity can be enforced, using the argument setting <code>stationary = TRUE</code>.  This setting utilizes the priors <code class="reqn">p(\alpha) \sim \mathcal{N}</code>(0, 1000) truncated at (-1,1), and <code class="reqn">p(\mu) \sim \mathcal{N}</code>(0, <code>var(y)*100</code>) for inference, producing a posterior distribution for <code class="reqn">\alpha</code> constrained to be within (-1,1).
+</p>
+<p>When fitting a model where stationarity is not enforced, the Jeffreys prior of <code class="reqn">p(\mu,\alpha)\propto 1</code> is used.
+</p>
+<p>The Jeffreys prior of <code class="reqn">p(\sigma^2)\propto 1/\sigma^2</code> is used for all inference of <code class="reqn">\sigma^2</code>
+</p>
+<p>A stationary time series will have an expected value of:
+</p>
+<p style="text-align: center;"><code class="reqn">\frac{\mu}{1-\alpha}</code>
+</p>
+
+<p>Samples of this expectation are included in the output if <code>stationary = TRUE</code> or if none of the samples of <code class="reqn">\alpha</code> lie outside of (-1,1).
+</p>
+<p>The output list is a <code>BMB</code> object, passing the output to <code>plot.BayesMassBal</code> allows for observation of the results.
+</p>
+
+
+<h3>Value</h3>
+
+<p>Returns a list of outputs
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>samples</code></td>
+<td>
+<p>List of vectors containing posterior draws of model parameters</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>stationary</code></td>
+<td>
+<p>Logical indicating the setting of the <code>stationary</code> argument provided to the <code>ssEst</code> function</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>y</code></td>
+<td>
+<p>Vector of observations initially passed to the <code>ssEst</code> function.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>type</code></td>
+<td>
+<p>Character string giving details of the model fit.  Primarily included for use with <code>plot.BayesMassBal</code></p>
+</td>
+</tr>
+</table>
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+## Generating Data
+y &lt;- rep(NA, times = 21)
+
+y[1] &lt;- 0
+mu &lt;- 3
+alpha &lt;- 0.3
+sig &lt;- 2
+for(i in 2:21){
+ y[i] &lt;- mu + alpha*y[i-1] + rnorm(1)*sig
+}
+
+## Generating draws of model parameters
+
+fit &lt;- ssEst(y, BTE = c(100,500,1))
+
+</code></pre>
+
+
+</div>

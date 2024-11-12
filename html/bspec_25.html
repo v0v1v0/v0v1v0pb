@@ -1,0 +1,320 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>matchedfilter</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Filter a noisy time series for a signal of given shape</h2>
+
+<h3>Description</h3>
+
+<p>Computes the maximized likelihood ratio (as a test- or
+detection-statistic) of "<em>signal</em>" vs. "<em>noise only</em>"
+hypotheses. The signal is modelled as a linear combination of
+orthogonal basis vectors of unknown amplitude and arrival time. The
+noise is modelled either as Gaussian or Student-t-distributed, and
+coloured.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">matchedfilter(data, signal, noisePSD, timerange = NA,
+    reconstruct = TRUE, two.sided = FALSE)
+
+studenttfilter(data, signal, noisePSD, df = 10, timerange = NA,
+    deltamax = 1e-06, itermax = 100,
+    reconstruct = TRUE, two.sided = FALSE) 
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+<p>the data to be filtered, a time series (<code>ts</code>) object.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>signal</code></td>
+<td>
+<p>the signal waveform to be filtered for. May be a vector,
+a matrix, a time series (<code>ts</code>) or a multivariate time
+series (<code>mts</code>) object.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>noisePSD</code></td>
+<td>
+<p>the noise power spectral density. May be a vector of
+appropriate length (<code>length(data)/2+1</code>) or a function of frequency.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>df</code></td>
+<td>
+<p>the number of degrees-of-freedom (<code class="reqn">\nu_j</code>) for
+each frequency bin. May be a vector of appropriate length
+(<code>length(data)/2+1</code>) or a function of frequency.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>timerange</code></td>
+<td>
+<p>the range of times (with respect to the <code>data</code>
+argument's time scale) to maximize the likelihood ratio over.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>deltamax</code></td>
+<td>
+<p>the minimal difference in logarithmic likelihoods to
+be aimed for in the EM-iterations (termination criterion).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>itermax</code></td>
+<td>
+<p>the maximum number of EM-iterations to be performed.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>reconstruct</code></td>
+<td>
+<p>a <code>logical</code> flag indicating whether the
+output is supposed to include the best-fitting signal waveform.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>two.sided</code></td>
+<td>
+<p>a <code>logical</code> flag indicating whether the
+<code>noisePSD</code> argument is to be interpreted as a one-sided or a
+two-sided spectrum.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The time series data <code class="reqn">d(t)</code> is modelled as a
+superposition of signal <code class="reqn">s(\beta,t_0,t)</code> and noise
+<code class="reqn">n(t)</code>:
+</p>
+<p style="text-align: center;"><code class="reqn">d(t)=s(\beta,t-t_0)+n(t),</code>
+</p>
+
+<p>where the signal is a linear combination of orthogonal (!) basis
+vectors <code class="reqn">s_i(t)</code>, and whose time-of-arrival is given by
+the parameter <code class="reqn">t_0</code>:
+</p>
+<p style="text-align: center;"><code class="reqn">s(\beta,t-t_0)=\sum_{i=1}^k \beta_i s_i(t-t_0).</code>
+</p>
+
+<p>The noise is modelled as either Gaussian (<code>matchedfilter()</code>) or
+Student-t distributed (<code>studenttfilter()</code>) with given power
+spectral density and, for the latter model only, degrees-of-freedom
+parameters.
+</p>
+<p>The filtering functions perform a likelihood maximization over the
+time-of-arrival <code class="reqn">t_0</code> and coefficients <code class="reqn">\beta</code>. In
+the Gaussian model, the conditional likelihood, conditional on
+<code class="reqn">t_0</code>, can be maximized analytically, while the maximization
+over <code class="reqn">t_0</code> is done numerically via a brute-force search. In
+the Student-t model, likelihood maximization is implemented using an
+EM-algorithm. The maximization over <code class="reqn">t_0</code> is restricted to the
+range specified via the <code>timerange</code> argument.
+</p>
+<p>What is returned is the maximized (logarithmic)
+likelihood ratio of "signal" versus "noise-only" hypotheses (the
+result's <code>$maxLLR</code> component), and the corresponding
+ML-estimates <code class="reqn">\hat{t}_0</code> and
+<code class="reqn">\hat{\beta}</code>, as well as the ML-fitted signal
+("<code>$reconstruction</code>").
+</p>
+
+
+<h3>Value</h3>
+
+<p>A list containing the following elements:
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>maxLLR</code></td>
+<td>
+<p>the maximized likelihood ratio of <em>signal</em>
+vs. <em>noise only</em> hypotheses.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>timerange</code></td>
+<td>
+<p>the range of times to maximize the likelihood ratio
+over (see the <code>timerange</code> input argument).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>betaHat</code></td>
+<td>
+<p>the ML-estimated vector of coefficients.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>tHat</code></td>
+<td>
+<p>the ML-estimated signal arrival time.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>reconstruction</code></td>
+<td>
+<p>the ML-fitted signal (a time series
+(<code>ts</code>) object).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>call</code></td>
+<td>
+<p>an object of class <code>call</code> giving the
+function call that generated the result.</p>
+</td>
+</tr>
+</table>
+<p>elements only for the <code>matchedfilter()</code> function:
+</p>
+<table><tr style="vertical-align: top;">
+<td><code>maxLLRseries</code></td>
+<td>
+<p>the time series of (conditionally) maximized
+likelihood ratio for each given time point (the <em>profile
+likelihood</em>).</p>
+</td>
+</tr></table>
+<p>elements only for the <code>studenttfilter()</code> function:
+</p>
+<table><tr style="vertical-align: top;">
+<td><code>EMprogress</code></td>
+<td>
+<p>a <code>matrix</code> indicating the progress of the EM-fitting.</p>
+</td>
+</tr></table>
+<h3>Author(s)</h3>
+
+<p>Christian Roever, <a href="mailto:christian.roever@med.uni-goettingen.de">christian.roever@med.uni-goettingen.de</a></p>
+
+
+<h3>References</h3>
+
+<p>  Roever, C.
+A Student-t based filter for robust signal detection.
+<em>Physical Review D</em>, <b>84</b>(12):122004, 2011.
+doi: <a href="https://doi.org/10.1103/PhysRevD.84.122004">10.1103/PhysRevD.84.122004</a>.
+See also <a href="https://arxiv.org/abs/1109.0442">arXiv preprint 1109.0442</a>.
+</p>
+<p>Roever, C., Meyer, R., Christensen, N.
+Modelling coloured residual noise in gravitational-wave signal processing.
+<em>Classical and Quantum Gravity</em>, <b>28</b>(1):015010, 2011.
+doi: <a href="https://doi.org/10.1088/0264-9381/28/1/015010">10.1088/0264-9381/28/1/015010</a>.
+See also <a href="https://arxiv.org/abs/0804.3853">arXiv preprint 0804.3853</a>.</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R"># sample size and sampling resolution:
+deltaT  &lt;- 0.001
+N       &lt;- 1000
+
+# For the coloured noise, use some AR(1) process;
+# AR noise process parameters:
+sigmaAR &lt;- 1.0
+phiAR   &lt;- 0.9
+
+# generate non-white noise
+# (autoregressive AR(1) low-frequency noise):
+noiseSample &lt;- rnorm(10*N)
+for (i in 2:length(noiseSample))
+  noiseSample[i] &lt;- phiAR*noiseSample[i-1] + noiseSample[i]
+noiseSample &lt;- ts(noiseSample, deltat=deltaT)
+
+# estimate the noise spectrum:
+PSDestimate &lt;- welchPSD(noiseSample, seglength=1,
+                        windowingPsdCorrection=FALSE)
+
+# show noise and noise PSD:
+par(mfrow=c(2,1))
+  plot(noiseSample, main="noise sample")
+  plot(PSDestimate$freq, PSDestimate$pow, log="y", type="l",
+       main="noise PSD", xlab="frequency", ylab="power")
+par(mfrow=c(1,1))
+
+# generate actual data:
+noise &lt;- rnorm(N)
+for (i in 2:length(noise))
+  noise[i] &lt;- phiAR*noise[i-1] + noise[i]
+noise &lt;- ts(noise, start=0, deltat=deltaT)
+
+# the "sine-Gaussian" signal to be injected into the noise:
+t0    &lt;- 0.6
+phase &lt;- 1.0
+signal &lt;- exp(-(time(noise)-t0)^2/(2*0.01^2)) * sin(2*pi*150*(time(noise)-t0)+phase)
+plot(signal)
+
+t &lt;- seq(-0.1, 0.1, by=deltaT)
+# the signal's orthogonal (sine- and cosine-) basis waveforms:
+signalSine   &lt;- exp(-t^2/(2*0.01^2)) * sin(2*pi*150*t)
+signalCosine &lt;- exp(-t^2/(2*0.01^2)) * sin(2*pi*150*t+pi/2)
+signalBasis &lt;- ts(cbind("sine"=signalSine, "cosine"=signalCosine),
+                  start=-0.1, deltat=deltaT)
+plot(signalBasis[,1], col="red", main="the signal basis")
+lines(signalBasis[,2], col="green")
+# (the sine- and cosine- components allow to span
+#  signals of arbitrary phase)
+# Note that "signalBasis" may be shorter than "data",
+# but must be of the same time resolution.
+
+
+# compute the signal's signal-to-noise ration (SNR):
+signalSnr &lt;- snr(signal, psd=PSDestimate$pow)
+
+# scale signal to SNR = 6:
+rho &lt;- 6
+data &lt;- noise + signal * (rho/signalSnr)
+data &lt;- data * tukeywindow(length(data))
+# Note that the data has (and should have!)
+# the same resolution, size, and windowing applied
+# as in the PSD estimation step.
+
+# compute filters:
+f1 &lt;- matchedfilter(data, signalBasis, PSDestimate$power)
+f2 &lt;- studenttfilter(data, signalBasis, PSDestimate$power)
+
+# illustrate the results:
+par(mfrow=c(3,1))
+  plot(data, ylab="", main="data")
+  lines(signal* (rho/signalSnr), col="green")
+  legend(0,max(data),c("noise + signal","signal only"),
+         lty="solid", col=c("black","green"), bg="white")
+
+  plot(signal * (rho/signalSnr), xlim=c(0.55, 0.65), ylab="",
+       main="original &amp; recovered signals")
+  lines(f1$reconstruction, col="red")
+  lines(f2$reconstruction, col="blue")
+  abline(v=c(f1$tHat,f2$tHat), col=c("red", "blue"), lty="dashed")
+  legend(0.55, max(signal*(rho/signalSnr)),
+         c("injected signal","best-fitting signal (Gaussian model)",
+           "best-fitting signal (Student-t model)"),
+         lty="solid", col=c("black","red","blue"), bg="white")
+
+  plot(f1$maxLLRseries, type="n", ylim=c(0, f1$maxLLR),
+       main="profile likelihood (Gaussian model)",
+       ylab="maximized (log-) likelihood ratio")
+  lines(f1$maxLLRseries, col="grey")
+  lines(window(f1$maxLLRseries, start=f1$timerange[1], end=f1$timerange[2]))
+  abline(v=f1$timerange, lty="dotted")
+  lines(c(f1$tHat,f1$tHat,-1), c(0,f1$maxLLR,f1$maxLLR), col="red", lty="dashed")
+par(mfrow=c(1,1))
+</code></pre>
+
+
+</div>

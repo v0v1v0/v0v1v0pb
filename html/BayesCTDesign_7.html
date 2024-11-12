@@ -1,0 +1,386 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>historic_sim</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Two Arm Bayesian Clinical Trial Simulation with Historical Data</h2>
+
+<h3>Description</h3>
+
+<p><code>historic_sim()</code> returns an S3 object of class <code>bayes_ctd_array</code>, which
+will contain simulation results for power, statistic estimation, bias,
+variance, and mse as requested by user.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">historic_sim(
+  trial_reps = 100,
+  outcome_type = "weibull",
+  subj_per_arm = c(50, 100, 150, 200, 250),
+  a0_vals = c(0, 0.33, 0.67, 1),
+  effect_vals = c(0.6, 1, 1.4),
+  rand_control_diff = c(0.8, 1, 1.2),
+  hist_control_data = NULL,
+  time_vec = NULL,
+  censor_value = NULL,
+  alpha = 0.05,
+  get_var = FALSE,
+  get_bias = FALSE,
+  get_mse = FALSE,
+  seedval = NULL,
+  quietly = TRUE
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>trial_reps</code></td>
+<td>
+<p>Number of trials to replicate within each combination of
+<code>a0_vals</code>, <code>subj_per_arm</code>, <code>effect_vals</code>, and <code>rand_control_parms</code>.
+As the number of trials increases, the precision of the estimate will increase.
+Default is 100.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>outcome_type</code></td>
+<td>
+<p>Outcome distribution. Must be equal to <code>weibull</code>,
+<code>lognormal</code>, <code>pwe</code> (Piecewise Exponential), <code>gaussian</code>,
+<code>bernoulli</code>, or <code>poisson</code>.  Default is <code>weibull</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>subj_per_arm</code></td>
+<td>
+<p>A vector of sample sizes, all of which must be positive
+integers.  Default is <code>c(50, 100, 150, 200, 250)</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>a0_vals</code></td>
+<td>
+<p>A vector of power prior parameters ranging from 0 to 1, where 0
+implies no information from historical data should be used, and 1 implies all of
+the information from historical data should be used.  A value between 0 and 1
+implies that a proportion of the information from historical data will be used.
+Default is <code>c(0, 0.33, 0.67, 1)</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>effect_vals</code></td>
+<td>
+<p>A vector of effects that should be reasonable for the
+outcome_type being studied, hazard ratios for Weibull, odds ratios for
+Bernoulli, mean ratios for Poisson, etc..  When <code>effect_vals</code> contain
+the null effect for a given <code>outcome_type</code>, the <code>power</code> component
+of <code>data</code> will contain an estimate of Type One Error.  In order to
+have a good set of Type One Error estimates, <code>trial_reps</code> need to be
+at least 10,000.  In such a case, if the total number of combinations
+made up from <code>subj_per_arm</code>, <code>a0_vals</code>, <code>effect_vals</code>, and
+<code>rand_control_diff</code> is very large, the time to complete the simulation
+can be substantial.  Default is <code>c(0.6, 1, 1.4)</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>rand_control_diff</code></td>
+<td>
+<p>For piecewise exponential and Weibull outcomes, this is
+a vector of hazard ratios (randomized controls over historical controls)
+representing differences between historical and randomized controls.  For
+lognormal and Poisson outcomes, this is a vector of mean ratios (randomized
+controls over historical controls).  For a Bernoulli outcome, this is a vector
+of odds ratios (randomized controls over historical controls).  For a Gaussian
+outcome, this is a vector of mean differences (randomized minus historical
+controls). Default is <code>c(0.8, 1, 1.2)</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>hist_control_data</code></td>
+<td>
+<p>A dataset of historical data.  Default is <code>NULL</code>.
+For survival outcomes, historical datasets must have 4 columns: id, treatment,
+event_time, and status.  The value of treatment should be 0.  For other
+outcomes, historical datasets must have columns: id, treatment, and y.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>time_vec</code></td>
+<td>
+<p>A vector of time values which are used to create time periods
+within which the exponential hazard is constant.  Only used for piecewise
+exponential models.  Default is <code>NULL</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>censor_value</code></td>
+<td>
+<p>A single value at which right censoring occurs when
+simulating randomized subject outcomes.  Used with survival outcomes.
+Default is <code>NULL</code>, where <code>NULL</code> implies no right censoring.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>alpha</code></td>
+<td>
+<p>A number ranging between 0 and 1 that defines the acceptable Type 1
+error rate. Default is 0.05.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>get_var</code></td>
+<td>
+<p>A TRUE/FALSE indicator of whether an array of variance
+estimates will be returned.  Default is <code>FALSE</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>get_bias</code></td>
+<td>
+<p>A TRUE/FALSE indicator of whether an array of bias
+estimates will be returned.  Default is <code>FALSE</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>get_mse</code></td>
+<td>
+<p>A TRUE/FALSE indicator of whether an array of MSE
+estimates will be returned.  Default is <code>FALSE</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>seedval</code></td>
+<td>
+<p>A seed value for pseudo-random number generation.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>quietly</code></td>
+<td>
+<p>A TRUE/FALSE indicator of whether notes are printed
+to output about simulation progress as the simulation runs.  If
+running interactively in RStudio or running in the R console,
+<code>quietly</code> can be set to FALSE.  If running in a Notebook or
+knitr document, <code>quietly</code> needs to be set to TRUE.  Otherwise
+each note will be printed on a separate line and it will take up
+a lot of output space.  Default is <code>TRUE</code>.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The object <code>bayes_ctd_array</code> has 6 elements: a list containing simulation
+results (<code>data</code>), copies of the 4 function arguments <code>subj_per_arm</code>,
+<code>a0_vals</code>, <code>effect_vals</code>, and <code>rand_control_diff</code>, and finally
+a <code>objtype</code> value indicating that <code>historic_sim()</code> was used. Each element of
+<code>data</code> is a four-dimensional array, where each dimension is determined by the
+length of parameters <code>subj_per_arm</code>, <code>a0_vals</code>, <code>effect_vals</code>, and
+<code>rand_control_diff</code>. The size of <code>data</code> depends on which results are
+requested by the user. At a minimum, at least one of <code>subj_per_arm</code>,
+<code>a0_vals</code>, <code>effect_vals</code>, or <code>rand_control_diff</code> must contain at
+least 2 values, while the other three must contain at least 1 value. The <code>data</code>
+list will always contain two elements: an array of power results (<code>power</code>) and
+an array of estimation results (<code>est</code>). In addition to <code>power</code> and
+<code>est</code>, data may also contain elements <code>var</code>, <code>bias</code>, or <code>mse</code>,
+depending on the values of <code>get_var</code>, <code>get_bias</code>, and <code>get_mse</code>. The
+values returned in <code>est</code> are in the form of hazard ratios, mean ratios, odds
+ratios, or mean differences depending on the value of <code>outcome_type</code>.  For a
+Gaussian outcome, the estimation results are differences in group means (experimental
+group minus control group). For a logistic outcome, the estimation results are odds
+ratios (experimental group over control group). For lognormal and Poisson outcomes,
+the estimation results are mean ratios (experimental group over control group). For a
+piecewise exponential or a Weibull outcome, the estimation results are hazard
+ratios (experimental group over control group).  The values returned in <code>bias</code>,
+<code>var</code>, and <code>mse</code> are on the scale of the values returned in
+<code>est</code>.
+</p>
+<p>The object <code>bayes_ctd_array</code> has two primary methods, <code>print()</code> and
+<code>plot()</code>, for printing and plotting slices of the arrays contained in
+<code>bayes_ctd_array$data</code>.
+</p>
+<p>As dimensions of the four dimensional array increases, the time required to complete
+the simulation will increase; however, it will be faster than a similar simulation
+based on repeated calls to MCMC routines to analyze each simulated trial.
+</p>
+<p>The meaning of the estimation results, and the test used to generate power results,
+depends on the outcome used. In all cases, power is based on a two-sided test
+involving a (1-alpha)100% credible interval, where the interval is used to determine
+if the null hypothesis should be rejected (null value outside of the interval) or
+not rejected (null value inside the interval). For a Gaussian outcome, the 95%
+credible interval is an interval for the difference in group means
+(experimental group minus control group), and the test determines if 0 is in or
+outside of the interval. For a Bernoulli outcome, the 95% credible interval
+is an interval for the odds ratio (experimental group over control group),
+and the test determines if 1 is in or outside of the interval. For a lognormal or
+a Poisson outcome, the 95% credible interval is an interval for the mean ratio
+(experimental group over control group), and the test determines if 1 is in or
+outside of the interval. Finally, for a piecewise exponential or a Weibull outcome,
+the 95% credible interval is an interval for the hazard ratio (experimental group
+over control group), and the test determines if 1 is in or outside of the interval.
+</p>
+<p>Please refer to the examples for illustration of package use.
+</p>
+
+
+<h3>Value</h3>
+
+<p><code>historic_sim()</code> returns an S3 object of class <code>bayes_ctd_array</code>.
+As noted in details, an object of class <code>bayes_ctd_array </code>has 6 elements: a
+list of simulation results (<code>data</code>), copies of the 4 function arguments
+<code>subj_per_arm</code>, <code>a0_vals</code>, <code>effect_vals</code>, and
+<code>rand_control_diff</code>, and finally <code>objtype</code> indicating that <code>historic_sim()</code>
+was used. See details for a discussion about the contents of
+<code>data</code>. Results from the simulation contained in the <code>bayes_ctd_array</code>
+object can be printed or plotted using the <code>print()</code> and
+<code>plot()</code> methods. The results can also be accessed using basic list
+element identification and array slicing. For example, to get the 4-dimensional
+array of power results from a simulation, one could use the code
+<code>bayes_ctd_array$data$power</code>, where <code>bayes_ctd_array</code> is replaced
+with the name of the variable containing the <code>bayes_ctd_array</code> object. If
+one wanted a table of power for sample size by a0, while holding effect equal to
+the first considered value and control differences equal to the second considered
+value, then the code is <code>bayes_ctd_array$data$power[,,1,2]</code>, where
+<code>bayes_ctd_array</code> is replaced with the name of the variable containing the
+<code>bayes_ctd_array</code> object.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">#Generate a sample of historical data for use in example.
+set.seed(2250)
+SampleHistData &lt;- genweibulldata(sample_size=60, scale1=2.82487,
+                                 hazard_ratio=0.6, common_shape=3,
+                                 censor_value=3)
+histdata &lt;- subset(SampleHistData, subset=(treatment==0))
+histdata$id &lt;- histdata$id+10000
+
+#Run a Weibull simulation, using historic_sim().
+#For meaningful results, trial_reps needs to be much larger than 2.
+weibull_test &lt;- historic_sim(trial_reps = 2, outcome_type = "weibull",
+                             subj_per_arm = c(50, 100, 150),
+                             a0_vals = c(0, 0.50, 1),
+                             effect_vals = c(0.6, 1),
+                             rand_control_diff = c(0.8, 1),
+                             hist_control_data = histdata, time_vec = NULL,
+                             censor_value = 3, alpha = 0.05, get_var = TRUE,
+                             get_bias = TRUE, get_mse = TRUE, seedval=123,
+                             quietly=TRUE)
+
+#Tabulate the simulation results for power.
+test_table &lt;- print(x=weibull_test, measure="power",
+                    tab_type="WX|YZ", effect_val=0.6,
+                    rand_control_diff_val=1.0)
+print(test_table)
+
+
+#Create a plot of the power simulation results.
+plot(x=weibull_test, measure="power", tab_type="WX|YZ",
+     smooth=FALSE, plot_out=TRUE, effect_val=0.6,
+     rand_control_diff_val=1.0)
+#Create a plot of the estimated hazard ratio simulation results.
+plot(x=weibull_test, measure="est", tab_type="WX|YZ",
+     smooth=FALSE, plot_out=TRUE, effect_val=0.6,
+     rand_control_diff_val=1.0)
+#Create a plot of the hazard ratio variance simulation results.
+plot(x=weibull_test, measure="var", tab_type="WX|YZ",
+     smooth=FALSE, plot_out=TRUE, effect_val=0.6,
+     rand_control_diff_val=1.0)
+#Create a plot of the hazard ratio bias simulation results.
+plot(x=weibull_test, measure="bias", tab_type="WX|YZ",
+     smooth=FALSE, plot_out=TRUE, effect_val=0.6,
+     rand_control_diff_val=1.0)
+#Create a plot of the hazard ratio mse simulation results.
+plot(x=weibull_test, measure="mse", tab_type="WX|YZ",
+     smooth=FALSE, plot_out=TRUE, effect_val=0.6,
+     rand_control_diff_val=1.0)
+
+#Create other power plots using different values for tab_type
+plot(x=weibull_test, measure="power", tab_type="XY|WZ",
+     smooth=FALSE, plot_out=TRUE, subj_per_arm_val=150,
+     rand_control_diff_val=1.0)
+
+plot(x=weibull_test, measure="power", tab_type="XZ|WY",
+     smooth=FALSE, plot_out=TRUE, subj_per_arm_val=150, effect_val=0.6)
+
+plot(x=weibull_test, measure="power", tab_type="YZ|WX",
+     smooth=FALSE, plot_out=TRUE, subj_per_arm_val=150, a0_val=0.5)
+
+plot(x=weibull_test, measure="power", tab_type="WY|XZ",
+     smooth=FALSE, plot_out=TRUE, rand_control_diff_val=1, a0_val=0.5)
+
+plot(x=weibull_test, measure="power", tab_type="WZ|XY",
+     smooth=FALSE, plot_out=TRUE, effect_val=0.6, a0_val=0.5)
+
+
+
+#Run Poisson simulation, using historic_sim(), but set two design characteristic
+# parameters to only 1 value.
+#Note: historic_sim() can take a while to run.
+#Generate a sample of historical poisson data for use in example.
+set.seed(2250)
+samplehistdata &lt;- genpoissondata(sample_size=60, mu1=1, mean_ratio=1.0)
+histdata &lt;- subset(samplehistdata, subset=(treatment==0))
+histdata$id &lt;- histdata$id+10000
+
+#For meaningful results, trial_reps needs to be larger than 100.
+poisson_test &lt;- historic_sim(trial_reps = 100, outcome_type = "poisson",
+                              subj_per_arm = c(50, 75, 100, 125, 150, 175, 200, 225, 250),
+                              a0_vals = c(1),
+                              effect_vals = c(0.6),
+                              rand_control_diff = c(0.6, 1, 1.6),
+                              hist_control_data = histdata, time_vec = NULL,
+                              censor_value = 3, alpha = 0.05, get_var = TRUE,
+                              get_bias = TRUE, get_mse = TRUE, seedval=123,
+                              quietly=TRUE)
+
+#Tabulate the simulation results for power.
+test_table &lt;- print(x=poisson_test, measure="power",
+                    tab_type=NULL)
+print(test_table)
+
+#Create a plot of the power simulation results.
+plot(x=poisson_test, measure="power", tab_type=NULL,
+     smooth=FALSE, plot_out=TRUE)
+
+
+
+#At least one of subj_per_arm, a0_vals, effect_vals, or rand_control_diff
+#must contain at least 2 values.
+#Generate a sample of historical lognormal data for use in example.
+set.seed(2250)
+samplehistdata &lt;- genlognormaldata(sample_size=60, mu1=1.06, mean_ratio=0.6, common_sd=1.25,
+                                   censor_value=3)
+histdata &lt;- subset(samplehistdata, subset=(treatment==0))
+histdata$id &lt;- histdata$id+10000
+
+#Run a Lognormal simulation, using historic_sim().
+#For meaningful results, trial_reps needs to be larger than 100.
+lognormal_test &lt;- historic_sim(trial_reps = 100, outcome_type = "lognormal",
+                               subj_per_arm = c(25,50,75,100,125,150,175,200,225,250),
+                               a0_vals = c(1.0),
+                               effect_vals = c(0.6),
+                               rand_control_diff = c(1.8),
+                               hist_control_data = histdata, time_vec = NULL,
+                               censor_value = 3, alpha = 0.05, get_var = TRUE,
+                               get_bias = TRUE, get_mse = TRUE, seedval=123,
+                               quietly=TRUE)
+
+test_table &lt;- print(x=lognormal_test, measure="power",
+                    tab_type=NULL)
+print(test_table)
+#Create a plot of the power simulation results.
+plot(x=lognormal_test, measure="power", tab_type=NULL,
+     smooth=TRUE, plot_out=TRUE)
+
+
+</code></pre>
+
+
+</div>

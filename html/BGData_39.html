@@ -1,0 +1,130 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>summarize</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Generates Various Summary Statistics</h2>
+
+<h3>Description</h3>
+
+<p>Computes the frequency of missing values, the (minor) allele frequency, and
+standard deviation of each column of <code>X</code>.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">summarize(X, i = seq_len(nrow(X)), j = seq_len(ncol(X)),
+  chunkSize = 5000L, nCores = getOption("mc.cores", 2L),
+  verbose = FALSE)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>X</code></td>
+<td>
+
+<p>A matrix-like object, typically the genotypes of a <code>BGData</code>
+object.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>i</code></td>
+<td>
+
+<p>Indicates which rows of <code>X</code> should be used. Can be integer,
+boolean, or character. By default, all rows are used.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>j</code></td>
+<td>
+
+<p>Indicates which columns of <code>X</code> should be used. Can be integer,
+boolean, or character. By default, all columns are used.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>chunkSize</code></td>
+<td>
+
+<p>The number of columns of <code>X</code> that are brought into physical memory
+for processing per core. If <code>NULL</code>, all elements in <code>j</code> are
+used. Defaults to 5000.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nCores</code></td>
+<td>
+
+<p>The number of cores (passed to <code>mclapply</code>). Defaults to the
+number of cores as detected by <code>detectCores</code>.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>verbose</code></td>
+<td>
+
+<p>Whether progress updates will be posted. Defaults to <code>FALSE</code>.
+</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>A <code>data.frame</code> with three columns: <code>freq_na</code> for frequencies of
+missing values, <code>allele_freq</code> for allele frequencies of the counted
+allele, and <code>sd</code> for standard deviations.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>file-backed-matrices</code> for more information on file-backed
+matrices. <code>multi-level-parallelism</code> for more information on
+multi-level parallelism. <code>BGData-class</code> for more information on
+the <code>BGData</code> class.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R"># Restrict number of cores to 1 on Windows
+if (.Platform$OS.type == "windows") {
+    options(mc.cores = 1)
+}
+
+# Load example data
+bg &lt;- BGData:::loadExample()
+
+# Summarize the whole dataset
+sum1 &lt;- summarize(X = geno(bg))
+
+# Summarize the first 50 individuals
+sum2 &lt;- summarize(X = geno(bg), i = 1:50)
+
+# Summarize the first 1000 markers (useful for distributed computing)
+sum3 &lt;- summarize(X = geno(bg), j = 1:100)
+
+# Summarize the first 50 individuals on the first 1000 markers
+sum4 &lt;- summarize(X = geno(bg), i = 1:50, j = 1:100)
+
+# Summarize by names
+sum5 &lt;- summarize(X = geno(bg), j = c("snp81233_C", "snp81234_C", "snp81235_T"))
+
+# Convert to minor allele frequencies (useful if the counted alleles are not
+# the minor alleles)
+maf &lt;- ifelse(sum1$allele_freq &gt; 0.5, 1 - sum1$allele_freq, sum1$allele_freq)
+</code></pre>
+
+
+</div>

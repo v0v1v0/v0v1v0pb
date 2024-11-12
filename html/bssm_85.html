@@ -1,0 +1,120 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>svm</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Stochastic Volatility Model</h2>
+
+<h3>Description</h3>
+
+<p>Constructs a simple stochastic volatility model with Gaussian errors and
+first order autoregressive signal. See the main vignette for details.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">svm(y, mu, rho, sd_ar, sigma)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>y</code></td>
+<td>
+<p>A numeric vector or a <code>ts</code> object of observations.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>mu</code></td>
+<td>
+<p>A prior for mu parameter of transition equation.
+Should be an object of class <code>bssm_prior</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>rho</code></td>
+<td>
+<p>A prior for autoregressive coefficient.
+Should be an object of class <code>bssm_prior</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>sd_ar</code></td>
+<td>
+<p>A prior for the standard deviation of noise of the AR-process.
+Should be an object of class <code>bssm_prior</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>sigma</code></td>
+<td>
+<p>A prior for sigma parameter of observation equation, internally
+denoted as phi. Should be an object of class <code>bssm_prior</code>.
+Ignored if <code>mu</code> is provided. Note that typically
+parametrization using mu is preferred due to better numerical properties and
+availability of better Gaussian approximation.
+Most notably the global approximation approach does not work with sigma
+parameterization as sigma is not a parameter of the resulting approximate
+model.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>An object of class <code>svm</code>.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+data("exchange")
+y &lt;- exchange[1:100] # for faster CRAN check
+model &lt;- svm(y, rho = uniform(0.98, -0.999, 0.999),
+ sd_ar = halfnormal(0.15, 5), sigma = halfnormal(0.6, 2))
+
+obj &lt;- function(pars) {
+   -logLik(svm(y, 
+     rho = uniform(pars[1], -0.999, 0.999),
+     sd_ar = halfnormal(pars[2], 5),
+     sigma = halfnormal(pars[3], 2)), particles = 0)
+}
+opt &lt;- optim(c(0.98, 0.15, 0.6), obj, 
+  lower = c(-0.999, 1e-4, 1e-4),
+  upper = c(0.999, 10, 10), method = "L-BFGS-B")
+pars &lt;- opt$par
+model &lt;- svm(y, 
+  rho = uniform(pars[1],-0.999,0.999),
+  sd_ar = halfnormal(pars[2], 5),
+  sigma = halfnormal(pars[3], 2))
+
+# alternative parameterization  
+model2 &lt;- svm(y, rho = uniform(0.98,-0.999, 0.999),
+ sd_ar = halfnormal(0.15, 5), mu = normal(0, 0, 1))
+
+obj2 &lt;- function(pars) {
+   -logLik(svm(y, 
+     rho = uniform(pars[1], -0.999, 0.999),
+     sd_ar = halfnormal(pars[2], 5),
+     mu = normal(pars[3], 0, 1)), particles = 0)
+}
+opt2 &lt;- optim(c(0.98, 0.15, 0), obj2, lower = c(-0.999, 1e-4, -Inf),
+  upper = c(0.999, 10, Inf), method = "L-BFGS-B")
+pars2 &lt;- opt2$par
+model2 &lt;- svm(y, 
+  rho = uniform(pars2[1],-0.999,0.999),
+  sd_ar = halfnormal(pars2[2], 5),
+  mu = normal(pars2[3], 0, 1))
+
+# sigma is internally stored in phi
+ts.plot(cbind(model$phi * exp(0.5 * fast_smoother(model)), 
+  exp(0.5 * fast_smoother(model2))), col = 1:2)
+
+</code></pre>
+
+
+</div>

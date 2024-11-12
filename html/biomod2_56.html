@@ -1,0 +1,665 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>BIOMOD_Modeling</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Run a range of species distribution models</h2>
+
+<h3>Description</h3>
+
+<p>This function allows to calibrate and evaluate a range of modeling techniques 
+for a given species distribution. The dataset can be split up in calibration/validation parts,
+and the predictive power of the different models can be estimated using a range of evaluation 
+metrics (see Details).
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">BIOMOD_Modeling(
+  bm.format,
+  modeling.id = as.character(format(Sys.time(), "%s")),
+  models = c("ANN", "CTA", "FDA", "GAM", "GBM", "GLM", "MARS", "MAXENT", "MAXNET", "RF",
+    "SRE", "XGBOOST"),
+  models.pa = NULL,
+  CV.strategy = "random",
+  CV.nb.rep = 1,
+  CV.perc = NULL,
+  CV.k = NULL,
+  CV.balance = NULL,
+  CV.env.var = NULL,
+  CV.strat = NULL,
+  CV.user.table = NULL,
+  CV.do.full.models = TRUE,
+  OPT.data.type = "binary",
+  OPT.strategy = "default",
+  OPT.user.val = NULL,
+  OPT.user.base = "bigboss",
+  OPT.user = NULL,
+  bm.options,
+  nb.rep,
+  data.split.perc,
+  data.split.table,
+  do.full.models,
+  weights = NULL,
+  prevalence = NULL,
+  metric.eval = c("KAPPA", "TSS", "ROC"),
+  var.import = 0,
+  scale.models = FALSE,
+  nb.cpu = 1,
+  seed.val = NULL,
+  do.progress = TRUE
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>bm.format</code></td>
+<td>
+<p>a <code>BIOMOD.formated.data</code> or <code>BIOMOD.formated.data.PA</code> 
+object returned by the <code>BIOMOD_FormatingData</code> function</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>modeling.id</code></td>
+<td>
+<p>a <code>character</code> corresponding to the name (ID) of the simulation set 
+(<em>a random number by default</em>)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>models</code></td>
+<td>
+<p>a <code>vector</code> containing model names to be computed, must be among 
+<code>ANN</code>, <code>CTA</code>, <code>FDA</code>, <code>GAM</code>, <code>GBM</code>, <code>GLM</code>, <code>MARS</code>, 
+<code>MAXENT</code>, <code>MAXNET</code>, <code>RF</code>, <code>SRE</code>, <code>XGBOOST</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>models.pa</code></td>
+<td>
+<p>(<em>optional, default</em> <code>NULL</code>) <br> 
+A <code>list</code> containing for each model a <code>vector</code> defining which pseudo-absence datasets 
+are to be used, must be among <code>colnames(bm.format@PA.table)</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>CV.strategy</code></td>
+<td>
+<p>a <code>character</code> corresponding to the cross-validation selection strategy, 
+must be among <code>random</code>, <code>kfold</code>, <code>block</code>, <code>strat</code>, <code>env</code> or 
+<code>user.defined</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>CV.nb.rep</code></td>
+<td>
+<p>(<em>optional, default</em> <code>0</code>) <br>
+If <code>strategy = 'random'</code> or <code>strategy = 'kfold'</code>, an <code>integer</code> corresponding 
+to the number of sets (repetitions) of cross-validation points that will be drawn</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>CV.perc</code></td>
+<td>
+<p>(<em>optional, default</em> <code>0</code>) <br>
+If <code>strategy = 'random'</code>, a <code>numeric</code> between <code>0</code> and <code>1</code> defining the 
+percentage of data that will be kept for calibration</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>CV.k</code></td>
+<td>
+<p>(<em>optional, default</em> <code>0</code>) <br>
+If <code>strategy = 'kfold'</code> or <code>strategy = 'strat'</code> or <code>strategy = 'env'</code>, an 
+<code>integer</code> corresponding to the number of partitions</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>CV.balance</code></td>
+<td>
+<p>(<em>optional, default</em> <code>'presences'</code>) <br>
+If <code>strategy = 'strat'</code> or <code>strategy = 'env'</code>, a <code>character</code> corresponding 
+to how data will be balanced between partitions, must be either <code>presences</code> or
+<code>absences</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>CV.env.var</code></td>
+<td>
+<p>(<em>optional</em>) <br> If <code>strategy = 'env'</code>, a <code>character</code> 
+corresponding to the environmental variables used to build the partition. <code>k</code> partitions 
+will be built for each environmental variables. By default the function uses all 
+environmental variables available.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>CV.strat</code></td>
+<td>
+<p>(<em>optional, default</em> <code>'both'</code>) <br>
+If <code>strategy = 'env'</code>, a <code>character</code> corresponding to how data will partitioned 
+along gradient, must be among <code>x</code>, <code>y</code>, <code>both</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>CV.user.table</code></td>
+<td>
+<p>(<em>optional, default</em> <code>NULL</code>) <br>
+If <code>strategy = 'user.defined'</code>, a <code>matrix</code> or <code>data.frame</code> defining for each 
+repetition (in columns) which observation lines should be used for models calibration 
+(<code>TRUE</code>) and validation (<code>FALSE</code>)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>CV.do.full.models</code></td>
+<td>
+<p>(<em>optional, default</em> <code>TRUE</code>) <br>
+A <code>logical</code> value defining whether models should be also calibrated and validated over 
+the whole dataset (and pseudo-absence datasets) or not</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>OPT.data.type</code></td>
+<td>
+<p>a <code>character</code> corresponding to the data type to be used, must be 
+either <code>binary</code>, <code>binary.PA</code>, <code>abundance</code>, <code>compositional</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>OPT.strategy</code></td>
+<td>
+<p>a <code>character</code> corresponding to the method to select models' 
+parameters values, must be either <code>default</code>, <code>bigboss</code>, <code>user.defined</code>, 
+<code>tuned</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>OPT.user.val</code></td>
+<td>
+<p>(<em>optional, default</em> <code>NULL</code>) <br>
+A <code>list</code> containing parameters values for some (all) models</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>OPT.user.base</code></td>
+<td>
+<p>(<em>optional, default</em> <code>bigboss</code>) <br> A character, 
+<code>default</code> or <code>bigboss</code> used when <code>OPT.strategy = 'user.defined'</code>. 
+It sets the bases of parameters to be modified by user defined values.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>OPT.user</code></td>
+<td>
+<p>(<em>optional, default</em> <code>TRUE</code>) <br>
+A <code>BIOMOD.models.options</code> object returned by the <code>bm_ModelingOptions</code> 
+function</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>bm.options</code></td>
+<td>
+<p>a <code>BIOMOD.models.options</code> object returned by the
+<code>bm_ModelingOptions</code> function</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nb.rep</code></td>
+<td>
+<p><em>deprecated</em>, now called <code>CV.nb.rep</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>data.split.perc</code></td>
+<td>
+<p><em>deprecated</em>, now called <code>CV.perc</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>data.split.table</code></td>
+<td>
+<p><em>deprecated</em>, now called <code>CV.user.table</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>do.full.models</code></td>
+<td>
+<p><em>deprecated</em>, now called <code>CV.do.full.models</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>weights</code></td>
+<td>
+<p>(<em>optional, default</em> <code>NULL</code>) <br> 
+A <code>vector</code> of <code>numeric</code> values corresponding to observation weights (one per 
+observation, see Details)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>prevalence</code></td>
+<td>
+<p>(<em>optional, default</em> <code>NULL</code>) <br> 
+A <code>numeric</code> between <code>0</code> and <code>1</code> corresponding to the species prevalence to 
+build '<em>weighted response weights</em>' (see Details)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>metric.eval</code></td>
+<td>
+<p>a <code>vector</code> containing evaluation metric names to be used, must 
+be among <code>POD</code>, <code>FAR</code>, <code>POFD</code>, <code>SR</code>, <code>ACCURACY</code>, <code>BIAS</code>, 
+<code>ROC</code>, <code>TSS</code>, <code>KAPPA</code>, <code>OR</code>, <code>ORSS</code>, <code>CSI</code>, <code>ETS</code>, 
+<code>BOYCE</code>, <code>MPA</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>var.import</code></td>
+<td>
+<p>(<em>optional, default</em> <code>NULL</code>) <br> 
+An <code>integer</code> corresponding to the number of permutations to be done for each variable to 
+estimate variable importance</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>scale.models</code></td>
+<td>
+<p>(<em>optional, default</em> <code>FALSE</code>) <br> 
+A <code>logical</code> value defining whether all models predictions should be scaled with a 
+binomial GLM or not</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nb.cpu</code></td>
+<td>
+<p>(<em>optional, default</em> <code>1</code>) <br> 
+An <code>integer</code> value corresponding to the number of computing resources to be used to 
+parallelize the single models computation</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>seed.val</code></td>
+<td>
+<p>(<em>optional, default</em> <code>NULL</code>) <br> 
+An <code>integer</code> value corresponding to the new seed value to be set</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>do.progress</code></td>
+<td>
+<p>(<em>optional, default</em> <code>TRUE</code>) <br> 
+A <code>logical</code> value defining whether the progress bar is to be rendered or not</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+
+<dl>
+<dt>bm.format</dt>
+<dd>
+<p>If pseudo absences have been added to the original dataset (see 
+<code>BIOMOD_FormatingData</code>), <br><code>PA.nb.rep *(nb.rep + 1)</code> models will be 
+created.</p>
+</dd>
+<dt>models</dt>
+<dd>
+<p>The set of models to be calibrated on the data. 12 modeling techniques 
+are currently available :
+</p>
+
+<ul>
+<li> <p><code>ANN</code> : Artificial Neural Network (<code>nnet</code>)
+</p>
+</li>
+<li> <p><code>CTA</code> : Classification Tree Analysis (<code>rpart</code>)
+</p>
+</li>
+<li> <p><code>FDA</code> : Flexible Discriminant Analysis (<code>fda</code>)
+</p>
+</li>
+<li> <p><code>GAM</code> : Generalized Additive Model (<code>gam</code>, <code>gam</code> 
+or <code>bam</code>) <br> 
+(see <code>bm_ModelingOptions for details on algorithm selection</code>)
+</p>
+</li>
+<li> <p><code>GBM</code> : Generalized Boosting Model, or usually called Boosted Regression Trees 
+(<code>gbm</code>)
+</p>
+</li>
+<li> <p><code>GLM</code> : Generalized Linear Model (<code>glm</code>)
+</p>
+</li>
+<li> <p><code>MARS</code> : Multiple Adaptive Regression Splines (<code>earth</code>)
+</p>
+</li>
+<li> <p><code>MAXENT</code> : Maximum Entropy 
+(<a href="https://biodiversityinformatics.amnh.org/open_source/maxent/">https://biodiversityinformatics.amnh.org/open_source/maxent/</a>)
+</p>
+</li>
+<li> <p><code>MAXNET</code> : Maximum Entropy (<code>maxnet</code>)
+</p>
+</li>
+<li> <p><code>RF</code> : Random Forest (<code>randomForest</code>)
+</p>
+</li>
+<li> <p><code>SRE</code> : Surface Range Envelop or usually called BIOCLIM (<code>bm_SRE</code>)
+</p>
+</li>
+<li> <p><code>XGBOOST</code> : eXtreme Gradient Boosting Training (<code>xgboost</code>)
+</p>
+</li>
+</ul>
+</dd>
+<dt>models.pa</dt>
+<dd>
+<p>Different models might respond differently to different numbers of 
+pseudo-absences. It is possible to create sets of pseudo-absences with different numbers 
+of points (see <code>BIOMOD_FormatingData</code>) and to assign only some of these 
+datasets to each single model.
+</p>
+</dd>
+<dt>CV.[...] parameters</dt>
+<dd>
+<p>Different methods are available to calibrate/validate the 
+single models (see <code>bm_CrossValidation</code>).</p>
+</dd>
+<dt>OPT.[...] parameters</dt>
+<dd>
+<p>Different methods are available to parameterize the 
+single models (see <code>bm_ModelingOptions</code> and 
+<code>BIOMOD.options.dataset</code>). Note that only <code>binary</code> data type is 
+allowed currently.
+</p>
+
+<ul>
+<li> <p><code>default</code> : only default parameter values of default parameters of the single 
+models functions are retrieved. Nothing is changed so it might not give good results.
+</p>
+</li>
+<li> <p><code>bigboss</code> : uses parameters pre-defined by <span class="pkg">biomod2</span> team and that are 
+available in the dataset <code>OptionsBigboss</code>. <br><em>to be optimized in near future</em>
+</p>
+</li>
+<li> <p><code>user.defined</code> : updates default or bigboss parameters with some parameters 
+values defined by the user (but matching the format of a 
+<code>BIOMOD.models.options</code> object)
+</p>
+</li>
+<li> <p><code>tuned</code> : calling the <code>bm_Tuning</code> function to try and optimize 
+some default values
+</p>
+</li>
+</ul>
+</dd>
+<dt>weights &amp; prevalence</dt>
+<dd>
+<p>More or less weight can be given to some specific observations.
+</p>
+
+<ul>
+<li>
+<p> If <code>weights = prevalence = NULL</code>, each observation (presence or absence) will 
+have the same weight, no matter the total number of presences and absences.
+</p>
+</li>
+<li>
+<p> If <code>prevalence = 0.5</code>, presences and absences will be weighted equally 
+(<em>i.e. the weighted sum of presences equals the weighted sum of absences</em>). 
+</p>
+</li>
+<li>
+<p> If <code>prevalence</code> is set below (<em>above</em>) <code>0.5</code>, more weight will be 
+given to absences (<em>presences</em>).
+</p>
+</li>
+<li>
+<p> If <code>weights</code> is defined, <code>prevalence</code> argument will be ignored, and each 
+observation will have its own weight.
+</p>
+</li>
+<li>
+<p> If pseudo-absences have been generated (<code>PA.nb.rep &gt; 0</code> in 
+<code>BIOMOD_FormatingData</code>), weights are by default calculated such that 
+<code>prevalence = 0.5</code>. <em>Automatically created <code>weights</code> will be <code>integer</code> 
+values to prevent some modeling issues.</em>
+</p>
+</li>
+</ul>
+</dd>
+<dt>metric.eval</dt>
+<dd>
+
+<dl>
+<dt>simple</dt>
+<dd>
+
+<ul>
+<li> <p><code>POD</code> : Probability of detection (hit rate)
+</p>
+</li>
+<li> <p><code>FAR</code> : False alarm ratio
+</p>
+</li>
+<li> <p><code>POFD</code> : Probability of false detection (fall-out)
+</p>
+</li>
+<li> <p><code>SR</code> : Success ratio
+</p>
+</li>
+<li> <p><code>ACCURACY</code> : Accuracy (fraction correct)
+</p>
+</li>
+<li> <p><code>BIAS</code> : Bias score (frequency bias)
+</p>
+</li>
+</ul>
+</dd>
+<dt>complex</dt>
+<dd>
+
+<ul>
+<li> <p><code>ROC</code> : Relative operating characteristic
+</p>
+</li>
+<li> <p><code>TSS</code> : True skill statistic (Hanssen and Kuipers discriminant, Peirce's 
+skill score)
+</p>
+</li>
+<li> <p><code>KAPPA</code> : Cohen's Kappa (Heidke skill score)
+</p>
+</li>
+<li> <p><code>OR</code> : Odds Ratio
+</p>
+</li>
+<li> <p><code>ORSS</code> : Odds ratio skill score (Yule's Q)
+</p>
+</li>
+<li> <p><code>CSI</code> : Critical success index (threat score)
+</p>
+</li>
+<li> <p><code>ETS</code> : Equitable threat score (Gilbert skill score)
+</p>
+</li>
+</ul>
+</dd>
+<dt>presence-only</dt>
+<dd>
+
+<ul>
+<li> <p><code>BOYCE</code> : Boyce index
+</p>
+</li>
+<li> <p><code>MPA</code> : Minimal predicted area (cutoff optimising MPA to predict 90% of 
+presences)
+</p>
+</li>
+</ul>
+</dd>
+</dl>
+<p>Optimal value of each method can be obtained with the <code>get_optim_value</code> 
+function. Several evaluation metrics can be selected. <em>Please refer to the 
+<a href="https://www.cawcr.gov.au/projects/verification/">CAWRC website (section "Methods for 
+dichotomous forecasts")</a> to get detailed description of each metric.</em>
+Results after modeling can be obtained through the <code>get_evaluations</code> function. <br> 
+Evaluation metric are calculated on the calibrating data (column <code>calibration</code>), on 
+the cross-validation data (column <code>validation</code>) or on the evaluation data 
+(column <code>evaluation</code>). <br><em>For cross-validation data, see <code>CV.[...]</code> 
+parameters in <code>BIOMOD_Modeling</code> function ; for evaluation data, see 
+<code>eval.[...]</code> parameters in <code>BIOMOD_FormatingData</code>.</em>
+</p>
+</dd>
+<dt>var.import</dt>
+<dd>
+<p>A value caracterizing how much each variable has an impact on each model 
+predictions can be calculated by randomizing the variable of interest and computing the 
+correlation between original and shuffled variables (see <code>bm_VariablesImportance</code>).</p>
+</dd>
+<dt>scale.models</dt>
+<dd>
+<p><b>This parameter is quite experimental and it is recommended 
+not to use it. It may lead to reduction in projection scale amplitude.</b> Some categorical 
+models always have to be scaled (<code>FDA</code>, <code>ANN</code>), but it may be interesting to 
+scale all computed models to ensure comparable predictions (<code>0-1000</code> range). It might 
+be particularly useful when doing ensemble forecasting to remove the scale prediction effect 
+(<em>the more extended projections are, the more they influence ensemble forecasting 
+results</em>).
+</p>
+</dd>
+</dl>
+<h3>Value</h3>
+
+<p>A <code>BIOMOD.models.out</code> object containing models outputs, or links to saved outputs. <br>
+Models outputs are stored out of <span style="font-family: Courier New, Courier; color: #666666;"><b>R</b></span> (for memory storage reasons) in 2 different folders 
+created in the current working directory :
+</p>
+
+<ol>
+<li>
+<p> a <em>models</em> folder, named after the <code>resp.name</code> argument of 
+<code>BIOMOD_FormatingData</code>, and containing all calibrated models for each 
+repetition and pseudo-absence run
+</p>
+</li>
+<li>
+<p> a <em>hidden</em> folder, named <code>.BIOMOD_DATA</code>, and containing outputs related 
+files (original dataset, calibration lines, pseudo-absences selected, predictions, 
+variables importance, evaluation values...), that can be retrieved with 
+<a href="https://biomodhub.github.io/biomod2/reference/getters.out.html"><code>get_[...]</code></a> 
+or <code>load</code> functions, and used by other <span class="pkg">biomod2</span> functions, like 
+<code>BIOMOD_Projection</code> or <code>BIOMOD_EnsembleModeling</code>
+</p>
+</li>
+</ol>
+<h3>Author(s)</h3>
+
+<p>Wilfried Thuiller, Damien Georges, Robin Engler
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>glm</code>, <code>gam</code>,
+<code>gam</code>, <code>bam</code>, <code>gbm</code>,
+<code>rpart</code>, <code>nnet</code>,
+<code>fda</code>, <code>earth</code>,
+<code>randomForest</code>, <code>maxnet</code>,
+<code>xgboost</code>, <code>BIOMOD_FormatingData</code>,
+<code>bm_ModelingOptions</code>, <code>bm_Tuning</code>, 
+<code>bm_CrossValidation</code>,
+<code> bm_VariablesImportance</code>, <code>BIOMOD_Projection</code>,
+<code>BIOMOD_EnsembleModeling</code>, <code>bm_PlotEvalMean</code>,
+<code>bm_PlotEvalBoxplot</code>, <code>bm_PlotVarImpBoxplot</code>,
+<code>bm_PlotResponseCurves</code>
+</p>
+<p>Other Main functions: 
+<code>BIOMOD_EnsembleForecasting()</code>,
+<code>BIOMOD_EnsembleModeling()</code>,
+<code>BIOMOD_FormatingData()</code>,
+<code>BIOMOD_LoadModels()</code>,
+<code>BIOMOD_Projection()</code>,
+<code>BIOMOD_RangeSize()</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">library(terra)
+
+# Load species occurrences (6 species available)
+data(DataSpecies)
+head(DataSpecies)
+
+# Select the name of the studied species
+myRespName &lt;- 'GuloGulo'
+
+# Get corresponding presence/absence data
+myResp &lt;- as.numeric(DataSpecies[, myRespName])
+
+# Get corresponding XY coordinates
+myRespXY &lt;- DataSpecies[, c('X_WGS84', 'Y_WGS84')]
+
+# Load environmental variables extracted from BIOCLIM (bio_3, bio_4, bio_7, bio_11 &amp; bio_12)
+data(bioclim_current)
+myExpl &lt;- terra::rast(bioclim_current)
+
+
+
+# ---------------------------------------------------------------------------- #
+# Format Data with true absences
+myBiomodData &lt;- BIOMOD_FormatingData(resp.var = myResp,
+                                     expl.var = myExpl,
+                                     resp.xy = myRespXY,
+                                     resp.name = myRespName)
+
+
+# ---------------------------------------------------------------------------- #
+# Model single models
+myBiomodModelOut &lt;- BIOMOD_Modeling(bm.format = myBiomodData,
+                                    modeling.id = 'AllModels',
+                                    models = c('RF', 'GLM'),
+                                    CV.strategy = 'random',
+                                    CV.nb.rep = 2,
+                                    CV.perc = 0.8,
+                                    OPT.strategy = 'bigboss',
+                                    metric.eval = c('TSS','ROC'),
+                                    var.import = 2,
+                                    seed.val = 42)
+myBiomodModelOut
+
+# Get evaluation scores &amp; variables importance
+get_evaluations(myBiomodModelOut)
+get_variables_importance(myBiomodModelOut)
+
+# Represent evaluation scores 
+bm_PlotEvalMean(bm.out = myBiomodModelOut, dataset = 'calibration')
+bm_PlotEvalMean(bm.out = myBiomodModelOut, dataset = 'validation')
+bm_PlotEvalBoxplot(bm.out = myBiomodModelOut, group.by = c('algo', 'run'))
+
+# # Represent variables importance 
+# bm_PlotVarImpBoxplot(bm.out = myBiomodModelOut, group.by = c('expl.var', 'algo', 'algo'))
+# bm_PlotVarImpBoxplot(bm.out = myBiomodModelOut, group.by = c('expl.var', 'algo', 'run'))
+# bm_PlotVarImpBoxplot(bm.out = myBiomodModelOut, group.by = c('algo', 'expl.var', 'run'))
+
+# # Represent response curves 
+# mods &lt;- get_built_models(myBiomodModelOut, run = 'RUN1')
+# bm_PlotResponseCurves(bm.out = myBiomodModelOut, 
+#                       models.chosen = mods,
+#                       fixed.var = 'median')
+# bm_PlotResponseCurves(bm.out = myBiomodModelOut, 
+#                       models.chosen = mods,
+#                       fixed.var = 'min')
+# mods &lt;- get_built_models(myBiomodModelOut, full.name = 'GuloGulo_allData_RUN2_RF')
+# bm_PlotResponseCurves(bm.out = myBiomodModelOut, 
+#                       models.chosen = mods,
+#                       fixed.var = 'median',
+#                       do.bivariate = TRUE)
+
+
+</code></pre>
+
+
+</div>

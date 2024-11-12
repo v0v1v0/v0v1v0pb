@@ -1,0 +1,273 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>brmultinom</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Bias reduction for multinomial response models using the
+Poisson trick.</h2>
+
+<h3>Description</h3>
+
+<p><code>brmultinom()</code> is a wrapper of <code>brglmFit()</code> that fits multinomial
+regression models using implicit and explicit bias reduction
+methods. See Kosmidis &amp; Firth (2011) for details.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">brmultinom(
+  formula,
+  data,
+  weights,
+  subset,
+  na.action,
+  contrasts = NULL,
+  ref = 1,
+  model = TRUE,
+  x = TRUE,
+  control = list(...),
+  ...
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>formula</code></td>
+<td>
+
+<p>a formula expression as for regression models, of the form
+<code>response ~ predictors</code>. The response should be a factor or a
+matrix with K columns, which will be interpreted as counts for each of
+K classes.
+A log-linear model is fitted, with coefficients zero for the first
+class. An offset can be included: it should be a numeric matrix with K columns
+if the response is either a matrix with K columns or a factor with K &gt;= 2
+classes, or a numeric vector for a response factor with 2 levels.
+See the documentation of <code>formula()</code> for other details.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+
+<p>an optional data frame in which to interpret the variables occurring
+in <code>formula</code>.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>weights</code></td>
+<td>
+
+<p>optional case weights in fitting.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>subset</code></td>
+<td>
+
+<p>expression saying which subset of the rows of the data should  be used
+in the fit. All observations are included by default.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>na.action</code></td>
+<td>
+
+<p>a function to filter missing data.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>contrasts</code></td>
+<td>
+
+<p>a list of contrasts to be used for some or all of
+the factors appearing as variables in the model formula.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ref</code></td>
+<td>
+<p>the reference category to use for multinomial
+regression. Either an integer, in which case
+<code>levels(response)[ref]</code> is used as a baseline, or a character
+string. Default is 1.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>model</code></td>
+<td>
+
+<p>logical. If true, the model frame is saved as component <code>model</code>
+of the returned object.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>should the model matrix be included with in the result
+(default is <code>TRUE</code>).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>control</code></td>
+<td>
+<p>a list of parameters for controlling the fitting
+process. See <code>brglmControl()</code> for details.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>arguments to be used to form the default <code>control</code>
+argument if it is not supplied directly.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The models <code>brmultinom()</code> handles are also known as
+baseline-category logit models (see, Agresti, 2002, Section 7.1),
+because they model the log-odds of every category against a
+baseline category. The user can control which baseline (or
+reference) category is used via the <code>ref</code>. By default
+<code>brmultinom()</code> uses the first category as reference.
+</p>
+<p>The maximum likelihood estimates for the parameters of
+baseline-category logit models have infinite components with
+positive probability, which can result in problems in their
+estimation and the use of inferential procedures (e.g. Wad
+tests). Albert and Andreson (1984) have categorized the possible
+data patterns for such models into the exclusive and exhaustive
+categories of complete separation, quasi-complete separation and
+overlap, and showed that infinite maximum likelihood estimates
+result when complete or quasi-complete separation occurs.
+</p>
+<p>The adjusted score approaches to bias reduction that <code>brmultinom()</code>
+implements for <code>type = "AS_mean"</code> and <code>type = "AS_median"</code> are
+alternatives to maximum likelihood that result in estimates with
+smaller asymptotic mean and median bias, respectively, that are
+also <em>always</em> finite, even in cases of complete or quasi-complete
+separation.
+</p>
+<p><code>brmultinom()</code> is a wrapper of <code>brglmFit()</code> that fits multinomial
+logit regression models through the 'Poisson trick' (see, for
+example, Palmgren, 1981; Kosmidis &amp; Firth, 2011).
+</p>
+<p>The implementation relies on the construction of an extended model
+matrix for the log-linear model and constraints on the sums of the
+Poisson means. Specifically, a log-linear model is fitted on a
+<a href="https://en.wikipedia.org/wiki/Kronecker_product">Kronecker product</a> of the
+original model matrix <code>X</code> implied by the formula, augmented by
+<code>nrow(X)</code> dummy variables.
+</p>
+<p>The extended model matrix is sparse, and the
+<a href="https://cran.r-project.org/package=Matrix"><span class="pkg">Matrix</span></a> package is
+used for its effective storage.
+</p>
+<p>While <code>brmultinom()</code> can be used for analyses using multinomial
+regression models, the current implementation is more of a proof of
+concept and is not expected to scale well with either of <code>nrow(X)</code>,
+<code>ncol(X)</code> or the number of levels in the categorical response.
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Ioannis Kosmidis <code style="white-space: pre;">⁠[aut, cre]⁠</code> <a href="mailto:ioannis.kosmidis@warwick.ac.uk">ioannis.kosmidis@warwick.ac.uk</a>
+</p>
+
+
+<h3>References</h3>
+
+<p>Kosmidis I, Kenne Pagui E C, Sartori N (2020). Mean and median bias
+reduction in generalized linear models. <em>Statistics and Computing</em>,
+<strong>30</strong>, 43-59. <a href="https://doi.org/10.1007/s11222-019-09860-6">doi:10.1007/s11222-019-09860-6</a>.
+</p>
+<p>Agresti A (2002). <em>Categorical data analysis</em> (2nd edition). Wiley
+Series in Probability and Statistics. Wiley.
+</p>
+<p>Albert A, Anderson J A (1984). On the Existence of Maximum
+Likelihood Estimates in Logistic Regression Models. <em>Biometrika</em>,
+<strong>71</strong> 1–10. <a href="https://doi.org/10.2307/2336390">doi:10.2307/2336390</a>.
+</p>
+<p>Kosmidis I, Firth D (2011). Multinomial logit bias reduction
+via the Poisson log-linear model. <em>Biometrika</em>, <strong>98</strong>, 755-759.
+<a href="https://doi.org/10.1093/biomet/asr026">doi:10.1093/biomet/asr026</a>.
+</p>
+<p>Palmgren, J (1981). The Fisher Information Matrix for Log Linear
+Models Arguing Conditionally on Observed Explanatory
+Variables. <em>Biometrika</em>, <strong>68</strong>, 563-566.
+<a href="https://doi.org/10.1093/biomet/68.2.563">doi:10.1093/biomet/68.2.563</a>.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>nnet::multinom()</code>, <code>bracl()</code> for adjacent category logit models for ordinal responses
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## The housing data analysis from ?MASS::housing
+
+data("housing", package = "MASS")
+
+# Maximum likelihood using nnet::multinom
+houseML1nnet &lt;- nnet::multinom(Sat ~ Infl + Type + Cont, weights = Freq,
+                               data = housing)
+# Maximum likelihood using brmultinom with baseline category 'Low'
+houseML1 &lt;- brmultinom(Sat ~ Infl + Type + Cont, weights = Freq,
+                       data = housing, type = "ML", ref = 1)
+# The estimates are numerically the same as houseML0
+all.equal(coef(houseML1nnet), coef(houseML1), tolerance = 1e-04)
+
+# Maximum likelihood using brmultinom with 'High' as baseline
+houseML3 &lt;- brmultinom(Sat ~ Infl + Type + Cont, weights = Freq,
+                      data = housing, type = "ML", ref = 3)
+# The fitted values are the same as houseML1
+all.equal(fitted(houseML3), fitted(houseML1), tolerance = 1e-10)
+
+# Bias reduction
+houseBR3 &lt;- update(houseML3, type = "AS_mean")
+# Bias correction
+houseBC3 &lt;- update(houseML3, type = "correction")
+
+## Reproducing Bull et al. (2002, Table 3)
+data("hepatitis", package = "brglm2")
+
+# Construct a variable with the multinomial categories according to
+# the HCV and nonABC columns
+hepat &lt;- hepatitis
+hepat$type &lt;- with(hepat, factor(1 - HCV * nonABC + HCV + 2 * nonABC))
+hepat$type &lt;- factor(hepat$type, labels = c("noDisease", "C", "nonABC"))
+contrasts(hepat$type) &lt;- contr.treatment(3, base = 1)
+
+# Maximum likelihood estimation fails to converge because some estimates are infinite
+hepML &lt;- brmultinom(type ~ group * time, data = hepat, weights = counts, type = "ML", slowit = 0.1)
+
+# Mean bias reduction returns finite estimates
+hep_meanBR &lt;- brmultinom(type ~ group * time, data = hepat, weights = counts, type = "AS_mean")
+# The estimates in Bull et al. (2002, Table 3, DOI: 10.1016/S0167-9473(01)00048-2)
+coef(hep_meanBR)
+
+# Median bias reduction also returns finite estimates, which are a bit larger in absolute value
+hep_medianBR &lt;- brmultinom(type ~ group * time, data = hepat, weights = counts, type = "AS_median")
+coef(hep_medianBR)
+
+</code></pre>
+
+
+</div>

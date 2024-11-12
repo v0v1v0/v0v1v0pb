@@ -1,0 +1,149 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>getColumn</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>get column from data.frame</h2>
+
+<h3>Description</h3>
+
+<p>(Try to) extract a column from a data frame with USEFUL warnings/errors.<br>
+Watch out not to define objects with the same name as x if you are using
+getColumn in a function!
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">getColumn(x, df, trace = TRUE, convnum = TRUE, quiet = FALSE)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>Column name to be subsetted. The safest is to use character strings
+or <code>substitute(input)</code>.
+If there is an object "x" in a function environment,
+its value will be used as name! (see upper2 example)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>df</code></td>
+<td>
+<p>dataframe object</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>trace</code></td>
+<td>
+<p>Logical: Add function call stack to the message? DEFAULT: TRUE</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>convnum</code></td>
+<td>
+<p>Logical: Convert numerical input (even if character) to
+Column name for that number?</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>quiet</code></td>
+<td>
+<p>Logical: suppress non-df warning? DEFAULT: FALSE</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>Vector with values in the specified column
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Berry Boessenkool, <a href="mailto:berry-b@gmx.de">berry-b@gmx.de</a>, Sep 2016
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>subset</code>, <code>getElement</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">head(stackloss)
+getColumn(Air.Flow, stackloss)
+getColumn("Air.Flow", stackloss)
+getColumn(2, stackloss)
+getColumn("2",  stackloss) # works too...
+
+# useful warnings:
+getColumn(1, stackloss[0,])
+getColumn(1, data.frame(AA=rep(NA,10)) )
+
+# Code returning a character works as well:
+getColumn(c("Air.Flow","Acid.Conc")[1],  stackloss)
+
+# Can be used in functions to get useful messages:
+upper &lt;- function(x, select) getColumn(x, stackloss[select,])
+upper(Water.Temp)
+upper(2)
+upper(2, select=0)
+
+checkerr &lt;- function(x) invisible(is.error(x, force=TRUE, tell=TRUE))
+
+# Pitfall lexical scoping: R only goes up until it finds things:
+upper2 &lt;- function(xx) {xx &lt;- "Timmy!"; getColumn(xx, stackloss)} # breaks!
+checkerr( upper2(Water.Temp) ) # Column "Timmy" does not exist
+# If possible, use "colname" with quotation marks.
+# This also avoids the CRAN check NOTE "no visible binding for global variable"
+upper3 &lt;- function(char=TRUE)
+{
+Sepal.Length &lt;- stackloss
+if(char) head(getColumn("Sepal.Length", iris), 10)
+else     head(getColumn( Sepal.Length,  iris), 10)
+}
+checkerr( upper3(char=FALSE) )
+upper3(char=TRUE) # use string "Sepal.Length" and it works fine.
+
+
+# The next examples all return informative errors:
+checkerr( upper(Water) ) #  partial matching not supported by design
+checkerr( getColumn("dummy", stackloss)) # no NULL for nonexisting columns
+checkerr( getColumn(2,  stackloss[,0]) ) # error for empty dfs
+checkerr( getColumn(Acid, stackloss)   ) # no error-prone partial matching
+checkerr( getColumn(2:3,  stackloss)   ) # cannot be a vector
+checkerr( getColumn(c("Air.Flow","Acid.Conc"),  stackloss) )
+
+
+#getColumn("a", tibble::tibble(a=1:7, b=7:1)) # works but warns with tibbles
+
+# Pitfall numerical column names:
+df &lt;- data.frame(1:5, 3:7)
+colnames(df) &lt;- c("a","1") # this is a bad idea anyways
+getColumn("1", df) # will actually return the first column, not column "1"
+getColumn("1", df, convnum=FALSE)  # now gives second column
+# as said, don't name column 2 as "1" - that will confuse people
+
+# More on scoping and code yielding a column selection:
+upp1 &lt;- function(coln, datf) {getColumn(substitute(coln), datf)[1:5]}
+upp2 &lt;- function(coln, datf) {getColumn(           coln,  datf)[1:5]}
+upp1(Sepal.Length, iris)
+upp2(Sepal.Length, iris)
+upp1("Sepal.Length", iris)
+upp2("Sepal.Length", iris)
+vekt &lt;- c("Sepal.Length","Dummy")
+# upp1(vekt[1], iris) # won't work if called e.g. by testExamples()
+upp2(vekt[1], iris)
+
+</code></pre>
+
+
+</div>

@@ -1,0 +1,117 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>benefit</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Bayesian Benefit Risk</h2>
+
+<h3>Description</h3>
+
+<p>Bayesian Benefit Risk
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">benefit(name, fun, weight)
+
+risk(name, fun, weight)
+
+br(...)
+
+mcda(...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>name</code></td>
+<td>
+<p>a string indicating the name of the benefit or risk.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>fun</code></td>
+<td>
+<p>a utility function which maps a parameter value to a utility
+value.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>weight</code></td>
+<td>
+<p>the weight of the benefit/risk.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>calls to <code>benefit()</code>, <code>risk()</code>, and <code>br_group()</code> to define the
+utility functions and treatment groups.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The <code>br()</code> function allows the user to define an arbitrary number
+of "benefits" and "risks".  Each benefit/risk requires a utility
+function (<code>fun</code>) and a weight.  The utility function maps the benefit/risk
+parameter to a utility score.  The <code>br_group()</code> function supplies samples
+from the posterior distribution for each benefit risk for a specific
+group (e.g. treatment arm).
+</p>
+<p>The <code>br()</code> function then calculates the posterior distribution of the
+overall utility for each group.  The overall utility is a weighted sum of
+the utilities for each benefit/risk.
+</p>
+<p>The <code>mcda()</code> function is the same as <code>br()</code>, but has extra checks to
+ensure that the total weight of all benefits and risks is 1, and that the
+utility functions produce values between 0 and 1 for all posterior
+samples.
+</p>
+
+
+<h3>Value</h3>
+
+<p>A named list with posterior summaries of utility for each group and
+the raw posterior utility scores.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">set.seed(1132)
+ilogit &lt;- function(x) 1 / (1 + exp(-x))
+out &lt;- mcda(
+  benefit("CV", function(x) ilogit(x), weight = .75),
+  risk("DVT", function(x) ilogit(- .5 * x), weight = .25),
+  br_group(
+    label = "PBO",
+    CV = rnorm(1e4, .1),
+    DVT = rnorm(1e4, .1)
+  ),
+  br_group(
+    label = "TRT",
+    CV = rnorm(1e4, 2),
+    DVT = rnorm(1e4, 1)
+  )
+)
+
+out
+
+summary(out, probs = c(.025, .5, .975))
+summary(out, reference = "PBO")
+
+plot(out)
+plot(out, reference = "PBO")
+
+plot_utility(out)
+plot_utility(out, reference = "PBO")
+plot_utility(out, stacked = TRUE)
+</code></pre>
+
+
+</div>

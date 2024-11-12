@@ -1,0 +1,304 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>draws</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Posterior Draws</h2>
+
+<h3>Description</h3>
+
+<p>Extracts posterior draws and puts them into a dataframe or
+tibble.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">draws(x, ...)
+
+## S3 method for class 'beaver_mcmc'
+draws(x, ...)
+
+## S3 method for class 'beaver_mcmc_bma'
+draws(x, ...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>MCMC output.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>additional arguments passed to methods.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+
+<dl>
+<dt>For generic:</dt>
+<dd>
+<p>See specific method.
+</p>
+</dd>
+</dl>
+<dl>
+<dt>For class 'beaver_mcmc':</dt>
+<dd>
+<p>A dataframe or tibble of MCMC draws.
+</p>
+</dd>
+</dl>
+<dl>
+<dt>For class 'beaver_mcmc_bma':</dt>
+<dd>
+<p>An error.
+</p>
+</dd>
+</dl>
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+# The {beaver} package, by definition, performs MCMC for multiple models.
+# Even with a small number of chains/burn-ins/samples, a minimally illustrative
+# example requires &gt;5s to run.
+
+library(dplyr)
+
+# No covariates----
+
+set.seed(100)
+
+df &lt;- data_negbin_emax(
+  n_per_arm = 10,
+  doses = 0:3,
+  b1 = 0,
+  b2 = 2.5,
+  b3 = 0.5,
+  ps = 0.75
+)
+
+df %&gt;%
+  group_by(dose) %&gt;%
+  summarize(
+    mean = mean(response),
+    se = sd(response) / sqrt(n()),
+    .groups = "drop"
+  )
+
+mcmc &lt;- beaver_mcmc(
+  emax = model_negbin_emax(
+    mu_b1 = 0,
+    sigma_b1 = 10,
+    mu_b2 = 0,
+    sigma_b2 = 10,
+    mu_b3 = 1.5,
+    sigma_b3 = 3,
+    w_prior = 1 / 4
+  ),
+  linear = model_negbin_linear(
+    mu_b1 = 0,
+    sigma_b1 = 10,
+    mu_b2 = 0,
+    sigma_b2 = 10,
+    w_prior = 1 / 4
+  ),
+  quad = model_negbin_quad(
+    mu_b1 = 0,
+    sigma_b1 = 10,
+    mu_b2 = 0,
+    sigma_b2 = 10,
+    mu_b3 = 1.5,
+    sigma_b3 = 3,
+    w_prior = 1 / 4
+  ),
+  exp = model_negbin_exp(
+    mu_b1 = 0,
+    sigma_b1 = 10,
+    mu_b2 = 0,
+    sigma_b2 = 10,
+    mu_b3 = 0,
+    sigma_b3 = 3,
+    w_prior = 1 / 4
+  ),
+  formula = ~ 1,
+  data = df,
+  n_iter = 1e2,
+  n_chains = 1,
+  quiet = TRUE
+)
+
+mcmc$w_post
+
+draws &lt;- try(draws(mcmc)) #draws() is intended for single model fits only
+draws_emax &lt;- draws(mcmc$models$emax$mcmc)
+draws_linear &lt;- draws(mcmc$models$linear$mcmc)
+draws_quad &lt;- draws(mcmc$models$quad$mcmc)
+draws_exp &lt;- draws(mcmc$models$exp$mcmc)
+
+post &lt;- posterior(
+  mcmc,
+  contrast = matrix(1, 1, 1),
+  doses = 0:3,
+  reference_dose = 0,
+  reference_type = "difference"
+)
+
+pr_eoi(
+  mcmc,
+  eoi = c(5, 8),
+  contrast = matrix(1, 1, 1),
+  reference_dose = 0,
+  reference_type = "difference"
+)
+
+post_g_comp &lt;- posterior_g_comp(
+  mcmc,
+  new_data = df,
+  reference_dose = 0,
+  reference_type = "difference"
+)
+
+pr_eoi_g_comp(
+  mcmc,
+  eoi = c(5, 8),
+  new_data = df,
+  reference_dose = 0,
+  reference_type = "difference"
+)
+
+plot(mcmc, contrast = matrix(1, 1, 1))
+
+# With covariates----
+
+set.seed(1000)
+
+x &lt;-
+  data.frame(
+    gender = factor(sample(c("F", "M"), 40, replace = TRUE))
+  ) %&gt;%
+  model.matrix(~ gender, data = .)
+
+df_cov &lt;-
+  data_negbin_emax(
+    n_per_arm = 10,
+    doses = 0:3,
+    b1 = c(0, 0.5),
+    b2 = 2.5,
+    b3 = 0.5,
+    ps = 0.75,
+    x = x
+  ) %&gt;%
+  mutate(
+    gender = case_when(
+      genderM == 1 ~ "M",
+      TRUE ~ "F"
+    ),
+    gender = factor(gender)
+  ) %&gt;%
+  select(subject, dose, gender, response)
+
+df_cov %&gt;%
+  group_by(dose, gender) %&gt;%
+  summarize(
+    mean = mean(response),
+    se = sd(response) / sqrt(n()),
+    .groups = "drop"
+  )
+
+mcmc_cov &lt;- beaver_mcmc(
+  emax = model_negbin_emax(
+    mu_b1 = 0,
+    sigma_b1 = 10,
+    mu_b2 = 0,
+    sigma_b2 = 10,
+    mu_b3 = 1.5,
+    sigma_b3 = 3,
+    w_prior = 1 / 4
+  ),
+  linear = model_negbin_linear(
+    mu_b1 = 0,
+    sigma_b1 = 10,
+    mu_b2 = 0,
+    sigma_b2 = 10,
+    w_prior = 1 / 4
+  ),
+  quad = model_negbin_quad(
+    mu_b1 = 0,
+    sigma_b1 = 10,
+    mu_b2 = 0,
+    sigma_b2 = 10,
+    mu_b3 = 1.5,
+    sigma_b3 = 3,
+    w_prior = 1 / 4
+  ),
+  exp = model_negbin_exp(
+    mu_b1 = 0,
+    sigma_b1 = 10,
+    mu_b2 = 0,
+    sigma_b2 = 10,
+    mu_b3 = 0,
+    sigma_b3 = 3,
+    w_prior = 1 / 4
+  ),
+  formula = ~ gender,
+  data = df_cov,
+  n_iter = 1e2,
+  n_chains = 1,
+  quiet = TRUE
+)
+
+mcmc_cov$w_post
+
+draws_cov &lt;- try(draws(mcmc_cov)) #draws() is intended for single model fits only
+draws_cov_emax &lt;- draws(mcmc_cov$models$emax$mcmc)
+draws_cov_linear &lt;- draws(mcmc_cov$models$linear$mcmc)
+draws_cov_quad &lt;- draws(mcmc_cov$models$quad$mcmc)
+draws_cov_exp &lt;- draws(mcmc_cov$models$exp$mcmc)
+
+post_cov &lt;- posterior(
+  mcmc_cov,
+  contrast = matrix(c(1, 1, 0, 1), 2, 2),
+  doses = 0:3,
+  reference_dose = 0,
+  reference_type = "difference"
+)
+
+pr_eoi(
+  mcmc_cov,
+  eoi = c(5, 8),
+  contrast = matrix(c(1, 1, 0, 1), 2, 2),
+  reference_dose = 0,
+  reference_type = "difference"
+)
+
+post_g_comp_cov &lt;- posterior_g_comp(
+  mcmc_cov,
+  new_data = df_cov,
+  reference_dose = 0,
+  reference_type = "difference"
+)
+
+pr_eoi_g_comp(
+  mcmc_cov,
+  eoi = c(5, 8),
+  new_data = df_cov,
+  reference_dose = 0,
+  reference_type = "difference"
+)
+
+plot(mcmc_cov, new_data = df_cov, type = "g-comp")
+
+</code></pre>
+
+
+</div>

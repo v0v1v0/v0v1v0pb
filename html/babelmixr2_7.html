@@ -1,0 +1,197 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>bblDatToMonolix</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Convert nlmixr2-compatible data to other formats (if possible)</h2>
+
+<h3>Description</h3>
+
+<p>Convert nlmixr2-compatible data to other formats (if possible)
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">bblDatToMonolix(
+  model,
+  data,
+  table = nlmixr2est::tableControl(),
+  rxControl = rxode2::rxControl(),
+  env = NULL
+)
+
+bblDatToNonmem(
+  model,
+  data,
+  table = nlmixr2est::tableControl(),
+  rxControl = rxode2::rxControl(),
+  env = NULL
+)
+
+bblDatToRxode(
+  model,
+  data,
+  table = nlmixr2est::tableControl(),
+  rxControl = rxode2::rxControl(),
+  env = NULL
+)
+
+bblDatToMrgsolve(
+  model,
+  data,
+  table = nlmixr2est::tableControl(),
+  rxControl = rxode2::rxControl(),
+  env = NULL
+)
+
+bblDatToPknca(
+  model,
+  data,
+  table = nlmixr2est::tableControl(),
+  rxControl = rxode2::rxControl(),
+  env = NULL
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>model</code></td>
+<td>
+<p>rxode2 model for conversion</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+<p>Input dataset.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>table</code></td>
+<td>
+<p>is the table control; this is mostly to figure out if
+there are additional columns to keep.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>rxControl</code></td>
+<td>
+<p>is the rxode2 control options; This is to figure
+out how to handle the addl dosing information.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>env</code></td>
+<td>
+<p>When <code>NULL</code> (default) nothing is done.  When an
+environment, the function <code>nlmixr2est::.foceiPreProcessData(data, env, model, rxControl)</code> is called on the provided environment.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>With the function <code>bblDatToMonolix()</code> return a list with:
+</p>
+
+<ul>
+<li>
+<p> Monolix compatible dataset ($monolix)
+</p>
+</li>
+<li>
+<p> Monolix ADM information ($adm)
+</p>
+</li>
+</ul>
+<p>With the function <code>nlmixrDataToNonmem()</code> return a dataset that is
+compatible with NONMEM.
+</p>
+<p>With the function <code>nlmixrDataToMrgsolve()</code> return a dataset that is
+compatible with <code>mrgsolve</code>.  Unlike NONMEM, it supports replacement
+events with <code>evid=8</code> (note with <code>rxode2</code> replacement <code>evid</code> is <code>5</code>).
+</p>
+<p>With the function <code>nlmixrDataToRxode()</code> this will normalize the
+dataset to use newer <code>evid</code> definitions that are closer to NONMEM
+instead of any classic definitions that are used at a lower level
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Matthew L. Fidler
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+pk.turnover.emax3 &lt;- function() {
+  ini({
+    tktr &lt;- log(1)
+    tka &lt;- log(1)
+    tcl &lt;- log(0.1)
+    tv &lt;- log(10)
+    ##
+    eta.ktr ~ 1
+    eta.ka ~ 1
+    eta.cl ~ 2
+    eta.v ~ 1
+    prop.err &lt;- 0.1
+    pkadd.err &lt;- 0.1
+    ##
+    temax &lt;- logit(0.8)
+    tec50 &lt;- log(0.5)
+    tkout &lt;- log(0.05)
+    te0 &lt;- log(100)
+    ##
+    eta.emax ~ .5
+    eta.ec50  ~ .5
+    eta.kout ~ .5
+    eta.e0 ~ .5
+    ##
+    pdadd.err &lt;- 10
+  })
+  model({
+    ktr &lt;- exp(tktr + eta.ktr)
+    ka &lt;- exp(tka + eta.ka)
+    cl &lt;- exp(tcl + eta.cl)
+    v &lt;- exp(tv + eta.v)
+    emax = expit(temax+eta.emax)
+    ec50 =  exp(tec50 + eta.ec50)
+    kout = exp(tkout + eta.kout)
+    e0 = exp(te0 + eta.e0)
+    ##
+    DCP = center/v
+    PD=1-emax*DCP/(ec50+DCP)
+    ##
+    effect(0) = e0
+    kin = e0*kout
+    ##
+    d/dt(depot) = -ktr * depot
+    d/dt(gut) =  ktr * depot -ka * gut
+    d/dt(center) =  ka * gut - cl / v * center
+    d/dt(effect) = kin*PD -kout*effect
+    ##
+    cp = center / v
+    cp ~ prop(prop.err) + add(pkadd.err)
+    effect ~ add(pdadd.err) | pca
+  })
+}
+
+bblDatToMonolix(pk.turnover.emax3, nlmixr2data::warfarin)
+
+bblDatToNonmem(pk.turnover.emax3, nlmixr2data::warfarin)
+
+bblDatToMrgsolve(pk.turnover.emax3, nlmixr2data::warfarin)
+
+bblDatToRxode(pk.turnover.emax3, nlmixr2data::warfarin)
+
+</code></pre>
+
+
+</div>

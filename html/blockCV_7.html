@@ -1,0 +1,205 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>cv_nndm</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Use the Nearest Neighbour Distance Matching (NNDM) to separate train and test folds</h2>
+
+<h3>Description</h3>
+
+<p>A fast implementation of the Nearest Neighbour Distance Matching (NNDM) algorithm (Milà et al., 2022) in C++. Similar
+to <code>cv_buffer</code>, this is a variation of leave-one-out (LOO) cross-validation. It tries to match the
+nearest neighbour distance distribution function between the test and training data to the nearest neighbour
+distance distribution function between the target prediction and training points (Milà et al., 2022).
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">cv_nndm(
+  x,
+  column = NULL,
+  r,
+  size,
+  num_sample = 10000,
+  sampling = "random",
+  min_train = 0.05,
+  presence_bg = FALSE,
+  add_bg = FALSE,
+  plot = TRUE,
+  report = TRUE
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>a simple features (sf) or SpatialPoints object of spatial sample data (e.g., species
+data or ground truth sample for image classification).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>column</code></td>
+<td>
+<p>character; indicating the name of the column in which response variable (e.g. species data as a binary
+response i.e. 0s and 1s) is stored. This is required when <code>presence_bg = TRUE</code>, otherwise optional.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>r</code></td>
+<td>
+<p>a terra SpatRaster object of a predictor variable. This defines the area that model is going to predict.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>size</code></td>
+<td>
+<p>numeric value of the range of spatial autocorrelation (the <code>phi</code> parameter).
+This distance should be in <strong>metres</strong>. The range could be explored by <code>cv_spatial_autocor</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>num_sample</code></td>
+<td>
+<p>integer; the number of sample points from predictor (<code>r</code>) to be used for calculating
+the G function of prediction points.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>sampling</code></td>
+<td>
+<p>either <code>"random"</code> or <code>"regular"</code> for sampling prediction points.
+When  <code>sampling = "regular"</code>, the actual number of samples might be less than <code>num_sample</code>
+for non-rectangular rasters (points falling on no-value areas are removed).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>min_train</code></td>
+<td>
+<p>numeric; between 0 and 1. A constraint on the minimum proportion of train points in each fold.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>presence_bg</code></td>
+<td>
+<p>logical; whether to treat data as species presence-background data. For all other data
+types (presence-absence, continuous, count or multi-class responses), this option should be <code>FALSE</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>add_bg</code></td>
+<td>
+<p>logical; add background points to the test set when <code>presence_bg = TRUE</code>. We do not
+recommend this according to Radosavljevic &amp; Anderson (2014). Keep it <code>FALSE</code>, unless you mean to add
+the background pints to testing points.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>plot</code></td>
+<td>
+<p>logical; whether to plot the G functions.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>report</code></td>
+<td>
+<p>logical; whether to generate print summary of records in each fold; for very big
+datasets, set to <code>FALSE</code> for slightly faster calculation.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>When working with presence-background (presence and pseudo-absence) species distribution
+data (should be specified by <code>presence_bg = TRUE</code> argument), only presence records are used
+for specifying the folds (recommended). The testing fold comprises only the target <em>presence</em> point (optionally,
+all background points within the distance are also included when <code>add_bg = TRUE</code>; this is the
+distance that matches the nearest neighbour distance distribution function of training-testing presences and
+training-presences and prediction points; often lower than <code>size</code>).
+Any non-target presence points inside the distance are excluded.
+All points (presence and background) outside of distance are used for the training set.
+The methods cycles through all the presence data, so the number of folds is equal to
+the number of presence points in the dataset.
+</p>
+<p>For all other types of data (including presence-absence, count, continuous, and multi-class)
+set <code>presence_bg = FALE</code>, and the function behaves similar to the methods
+explained by Milà and colleagues (2022).
+</p>
+
+
+<h3>Value</h3>
+
+<p>An object of class S3. A list of objects including:
+</p>
+
+<ul>
+<li>
+<p>folds_list - a list containing the folds. Each fold has two vectors with the training (first) and testing (second) indices
+</p>
+</li>
+<li>
+<p>k - number of the folds
+</p>
+</li>
+<li>
+<p>size - the distance band to separated trainig and testing folds)
+</p>
+</li>
+<li>
+<p>column - the name of the column if provided
+</p>
+</li>
+<li>
+<p>presence_bg - whether this was treated as presence-background data
+</p>
+</li>
+<li>
+<p>records - a table with the number of points in each category of training and testing
+</p>
+</li>
+</ul>
+<h3>References</h3>
+
+<p>C. Milà, J. Mateu, E. Pebesma, and H. Meyer, Nearest Neighbour Distance Matching
+Leave-One-Out Cross-Validation for map validation, Methods in Ecology and Evolution (2022).
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>cv_buffer</code> and <code>cv_spatial_autocor</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+library(blockCV)
+
+# import presence-absence species data
+points &lt;- read.csv(system.file("extdata/", "species.csv", package = "blockCV"))
+# make an sf object from data.frame
+pa_data &lt;- sf::st_as_sf(points, coords = c("x", "y"), crs = 7845)
+
+# load raster data
+path &lt;- system.file("extdata/au/bio_5.tif", package = "blockCV")
+covar &lt;- terra::rast(path)
+
+nndm &lt;- cv_nndm(x = pa_data,
+                column = "occ", # optional
+                r = covar,
+                size = 350000, # size in metres no matter the CRS
+                num_sample = 10000,
+                sampling = "regular",
+                min_train = 0.1)
+
+
+</code></pre>
+
+
+</div>

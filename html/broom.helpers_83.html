@@ -1,0 +1,167 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>model_get_n</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Get the number of observations</h2>
+
+<h3>Description</h3>
+
+<p>For binomial and multinomial logistic models, will also return
+the number of events.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">model_get_n(model)
+
+## Default S3 method:
+model_get_n(model)
+
+## S3 method for class 'glm'
+model_get_n(model)
+
+## S3 method for class 'glmerMod'
+model_get_n(model)
+
+## S3 method for class 'multinom'
+model_get_n(model)
+
+## S3 method for class 'LORgee'
+model_get_n(model)
+
+## S3 method for class 'coxph'
+model_get_n(model)
+
+## S3 method for class 'survreg'
+model_get_n(model)
+
+## S3 method for class 'model_fit'
+model_get_n(model)
+
+## S3 method for class 'tidycrr'
+model_get_n(model)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table><tr style="vertical-align: top;">
+<td><code>model</code></td>
+<td>
+<p>(a model object, e.g. <code>glm</code>)<br>
+A model object.</p>
+</td>
+</tr></table>
+<h3>Details</h3>
+
+<p>For Poisson models, will return the number of events and exposure time
+(defined with <code>stats::offset()</code>).
+</p>
+<p>For Cox models (<code>survival::coxph()</code>), will return the number of events,
+exposure time and the number of individuals.
+</p>
+<p>For competing risk regression models (<code>tidycmprsk::crr()</code>), <code>n_event</code> takes
+into account only the event of interest defined by <code>failcode.</code>
+</p>
+<p>See <code>tidy_add_n()</code> for more details.
+</p>
+<p>The total number of observations (<code>N_obs</code>), of individuals (<code>N_ind</code>), of
+events (<code>N_event</code>) and of exposure time (<code>Exposure</code>) are stored as attributes
+of the returned tibble.
+</p>
+<p>This function does not cover <code>lavaan</code> models (<code>NULL</code> is returned).
+</p>
+
+
+<h3>See Also</h3>
+
+<p>Other model_helpers: 
+<code>model_compute_terms_contributions()</code>,
+<code>model_get_assign()</code>,
+<code>model_get_coefficients_type()</code>,
+<code>model_get_contrasts()</code>,
+<code>model_get_model()</code>,
+<code>model_get_model_frame()</code>,
+<code>model_get_model_matrix()</code>,
+<code>model_get_nlevels()</code>,
+<code>model_get_offset()</code>,
+<code>model_get_pairwise_contrasts()</code>,
+<code>model_get_response()</code>,
+<code>model_get_response_variable()</code>,
+<code>model_get_terms()</code>,
+<code>model_get_weights()</code>,
+<code>model_get_xlevels()</code>,
+<code>model_identify_variables()</code>,
+<code>model_list_contrasts()</code>,
+<code>model_list_higher_order_variables()</code>,
+<code>model_list_terms_levels()</code>,
+<code>model_list_variables()</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">lm(hp ~ mpg + factor(cyl) + disp:hp, mtcars) |&gt;
+  model_get_n()
+
+mod &lt;- glm(
+  response ~ stage * grade + trt,
+  gtsummary::trial,
+  family = binomial,
+  contrasts = list(stage = contr.sum, grade = contr.treatment(3, 2), trt = "contr.SAS")
+)
+mod |&gt; model_get_n()
+
+## Not run: 
+mod &lt;- glm(
+  Survived ~ Class * Age + Sex,
+  data = Titanic |&gt; as.data.frame(),
+  weights = Freq, family = binomial
+)
+mod |&gt; model_get_n()
+
+d &lt;- dplyr::as_tibble(Titanic) |&gt;
+  dplyr::group_by(Class, Sex, Age) |&gt;
+  dplyr::summarise(
+    n_survived = sum(n * (Survived == "Yes")),
+    n_dead = sum(n * (Survived == "No"))
+  )
+mod &lt;- glm(cbind(n_survived, n_dead) ~ Class * Age + Sex, data = d, family = binomial)
+mod |&gt; model_get_n()
+
+mod &lt;- glm(response ~ age + grade * trt, gtsummary::trial, family = poisson)
+mod |&gt; model_get_n()
+
+mod &lt;- glm(
+  response ~ trt * grade + offset(ttdeath),
+  gtsummary::trial,
+  family = poisson
+)
+mod |&gt; model_get_n()
+
+dont
+df &lt;- survival::lung |&gt; dplyr::mutate(sex = factor(sex))
+mod &lt;- survival::coxph(survival::Surv(time, status) ~ ph.ecog + age + sex, data = df)
+mod |&gt; model_get_n()
+
+mod &lt;- lme4::lmer(Reaction ~ Days + (Days | Subject), lme4::sleepstudy)
+mod |&gt; model_get_n()
+
+mod &lt;- lme4::glmer(response ~ trt * grade + (1 | stage),
+  family = binomial, data = gtsummary::trial
+)
+mod |&gt; model_get_n()
+
+mod &lt;- lme4::glmer(cbind(incidence, size - incidence) ~ period + (1 | herd),
+  family = binomial, data = lme4::cbpp
+)
+mod |&gt; model_get_n()
+
+## End(Not run)
+</code></pre>
+
+
+</div>

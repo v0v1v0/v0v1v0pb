@@ -1,0 +1,152 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>auto_realign</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Fix small misalignments in the time position test sounds</h2>
+
+<h3>Description</h3>
+
+<p><code>auto_realign</code> fixes small misalignments in the time position of test sounds in an extended selection table using spectrographic cross-correlation
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">auto_realign(
+  X,
+  Y,
+  cores = getOption("mc.cores", 1),
+  pb = getOption("pb", TRUE),
+  hop.size = getOption("hop.size", 11.6),
+  wl = getOption("wl", NULL),
+  ovlp = getOption("ovlp", 90),
+  wn = c("hanning", "hamming", "bartlett", "blackman", "flattop", "rectangle")
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>X</code></td>
+<td>
+<p>object of class 'extended_selection_table' created by the function <code>selection_table</code> from the warbleR package. The object must include the following additional columns: 'sound.id', 'bottom.freq' and 'top.freq'.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Y</code></td>
+<td>
+<p>object of class 'extended_selection_table' (a class created by the function <code>selection_table</code> from the warbleR package) with the master sound file annotations. This should be the same data than that was used for finding the position of markers in <code>find_markers</code>. It should also contain a 'sound.id' column.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>cores</code></td>
+<td>
+<p>Numeric vector of length 1. Controls whether parallel computing is applied by specifying the number of cores to be used. Default is 1 (i.e. no parallel computing). Can be set globally for the current R session via the "mc.cores" option (see <code>options</code>).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>pb</code></td>
+<td>
+<p>Logical argument to control if progress bar is shown. Default is <code>TRUE</code>.  Can be set globally for the current R session via the "pb" option (see <code>options</code>).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>hop.size</code></td>
+<td>
+<p>A numeric vector of length 1 specifying the time window duration (in ms). Default is 11.6 ms, which is equivalent to 512 wl for a 44.1 kHz sampling rate. Ignored if 'wl' is supplied. Can be set globally for the current R session via the "hop.size" option (see <code>options</code>).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>wl</code></td>
+<td>
+<p>a vector with a single even integer number specifying the window length of the spectrogram, default is <code>NULL</code>. If supplied, 'hop.size' is ignored. Odd integers will be rounded up to the nearest even number. Can be set globally for the current R session via the "wl" option (see <code>options</code>).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ovlp</code></td>
+<td>
+<p>Numeric vector of length 1 specifying the percentage of overlap between two
+consecutive windows, as in <code>spectro</code>. Default is 90. High values slow down the function but produce more accurate results. Can be set globally for the current R session via the "ovlp" option (see <code>options</code>).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>wn</code></td>
+<td>
+<p>A character vector of length 1 specifying the window name as in <code>ftwindow</code>.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>Precise alignment is crucial for downstream measures of sound degradation. This function uses spectrographic cross-correlation to align the position in time of test sounds. The master sound file is used as reference. The function calls warbleR's <code>cross_correlation</code> internally to align sounds using cross-correlation. The output extended selection table contains the new start and end values after alignment. Note that this function only works to further improve alignments if the estimated position of the test sound is already close to the actual position. Note that both 'X' and 'Y' must be extended selection tables sensu <code>selection_table</code>.
+</p>
+
+
+<h3>Value</h3>
+
+<p>Object 'X' in which time parameters (columns 'start' and 'end') have been tailored to more closely match the start and end of the reference sound.
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Marcelo Araya-Salas (<a href="mailto:marcelo.araya@ucr.ac.cr">marcelo.araya@ucr.ac.cr</a>)
+</p>
+
+
+<h3>References</h3>
+
+
+<p>Araya-Salas M., E. Grabarczyk, M. Quiroz-Oliva, A. Garcia-Rodriguez, A. Rico-Guevara. (2023), baRulho: an R package to quantify degradation in animal acoustic signals .bioRxiv 2023.11.22.568305.
+</p>
+<p>Clark, C.W., Marler, P. &amp; Beeman K. (1987). Quantitative analysis of animal vocal phonology: an application to Swamp Sparrow song. Ethology. 76:101-115.
+
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>blur_ratio</code>, <code>cross_correlation</code>
+</p>
+<p>Other test sound alignment: 
+<code>align_test_files()</code>,
+<code>find_markers()</code>,
+<code>manual_realign()</code>,
+<code>plot_aligned_sounds()</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">{
+  # load example data
+  data("test_sounds_est")
+  data("master_est")
+  
+  # create "unaligned_test_sounds_est" by
+  # adding error to "test_sounds_est" start and end
+  unaligned_test_sounds_est &lt;- test_sounds_est
+  set.seed(123)
+  noise_time &lt;- sample(c(0.009, -0.01, 0.03, -0.03, 0, 0.07, -0.007),
+  nrow(unaligned_test_sounds_est),
+  replace = TRUE)
+  
+  attr(unaligned_test_sounds_est, "check.res")$start &lt;- 
+  unaligned_test_sounds_est$start &lt;- 
+  unaligned_test_sounds_est$start + noise_time
+  attr(unaligned_test_sounds_est, "check.res")$end &lt;- 
+  unaligned_test_sounds_est$end  &lt;- 
+  unaligned_test_sounds_est$end + noise_time
+
+# re align
+realigned_est &lt;- auto_realign(X = unaligned_test_sounds_est, Y = master_est)
+}
+
+</code></pre>
+
+
+</div>

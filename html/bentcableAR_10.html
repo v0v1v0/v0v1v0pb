@@ -1,0 +1,258 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>cable.fit.known.change</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2> Grid-based Bent-Cable Regression for Independent or AR Data </h2>
+
+<h3>Description</h3>
+
+<p>These functions compute the profile deviance over a <code class="reqn">(\tau,\gamma)</code>-grid
+to either fit a bent-cable regression with known transition, or to
+generate initial values for a bent-cable regression with unknown
+transition. <code>cable.dev</code> and <code>cable.fit.known.change</code> form
+the main engine of <code>bentcable.dev.plot</code>.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">cable.ar.0.fit(y.vect, t.vect = NULL, tau.vect, gamma.vect, dev.mat,
+	stick = FALSE)
+cable.dev(tau.vect, gamma.vect, y.vect, t.vect = NULL, p = 0)
+cable.fit.known.change(y.vect, t.vect = NULL, n = NA,
+	tau.vect, gamma.vect, dev.mat, p = 0)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>y.vect</code></td>
+<td>
+<p> A numeric vector of response values. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>t.vect</code></td>
+<td>
+<p> A numeric vector of design points. Specifying
+<code>t.vect=NULL</code> is equivalent to specifying the default time points
+<code>c(0,1,2,...)</code>. Also see <b>Warnings</b> below. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>n</code></td>
+<td>
+<p> Length of response vector (optional). </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>tau.vect</code></td>
+<td>
+<p> A numeric vector of <code class="reqn">\tau</code>-coordinates of the grid points. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>gamma.vect</code></td>
+<td>
+<p> A numeric vector of <code class="reqn">\gamma</code>-coordinates of the grid points. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>dev.mat</code></td>
+<td>
+<p> A numeric matrix (can be single column) corresponding to the bent-cable
+profile deviance surface / function over the <code class="reqn">(\tau,\gamma)</code>-grid. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>p</code></td>
+<td>
+<p> The autoregressive order (non-negative integer).
+<code>p=0</code> specifies independent data that may or may not be from a
+time series context. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>stick</code></td>
+<td>
+<p> A logical value; if <code>TRUE</code> then a broken stick (i.e. bent cable
+with <code class="reqn">\gamma</code>=0.) is fitted. </p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>Given the response data in <code>y.vect</code> and design points 
+in <code>t.vect</code>, <code>cable.dev</code> evaluates the bent-cable 
+profile deviance surface / function over the user-specified
+<code class="reqn">(\tau,\gamma)</code>-grid. The returned values are intended 
+to be used in conjunction with <code>contour</code> or <code>persp</code>, 
+in which case <code>tau.vect</code> and <code>gamma.vect</code> should have length
+greater than 1 so that the returned object is a matrix with at least
+two columns.  If such a plot is not required, then <code>tau.vect</code>
+and/or <code>gamma.vect</code> can be scalar. This function is internal
+to the main plotting interface <code>bentcable.dev.plot</code>.
+</p>
+<p>The grid point at which the profile deviance is maximum
+corresponds to a bent-cable fit given a known transition
+that is best among the specified grid points. 
+<code>cable.fit.known.change</code> locates this peak and computes 
+this fit. If multiple peaks exist (such as along a ridge), 
+then only that at the smallest <code class="reqn">\tau</code> and smallest <code class="reqn">\gamma</code> 
+is used.
+</p>
+<p>For both functions, <code>p=0</code> should be specified to indicate 
+independent data (time series or otherwise). For time-series 
+data, a positive integer <code>p</code> should be specified as the
+autoregressive order. Fitting is done by internally calling 
+the built-in <span style="font-family: Courier New, Courier; color: #666666;"><b>R</b></span> function <code>lm</code> for <code>p=0</code> and <code>arima</code> 
+for non-zero <code>p</code>; this procedure is appropriate since 
+bent-cable regression with a known transition is linear.
+</p>
+<p>Note that the grid-based <code>cable.fit.known.change</code>
+does not locate the true peak of the continuous profile 
+deviance surface / function. However, for a grid that traps 
+the true peak between grid points, the returned fit is 
+approximately the overall best fit (with all parameters
+unknown), and thus can be fed into <code>bentcable.ar</code> 
+as initial values for computing the actual best fit. A special 
+case is <code>p=0</code> for independent data (time-series or otherwise),
+which can be handled by <code>cable.ar.0.fit</code> (called internally by 
+<code>bentcable.ar</code>). <code>cable.ar.0.fit</code> calls
+<code>cable.ar.p.iter</code> when <code>stick=FALSE</code> but calls <code>stick.ar.0</code>
+when <code>stick=TRUE</code>; in both cases, the built-in <span style="font-family: Courier New, Courier; color: #666666;"><b>R</b></span> function <code>nls</code>
+is utilized to perform maximum likelihood.
+</p>
+<p>For all three functions, to fit a broken stick with a known 
+break point, <code>gamma.vect</code> should be the single 
+value 0, and thus <code>dev.mat</code> is a column matrix (see 
+<code>bentcable.dev.plot</code>).
+</p>
+
+
+<h3>Value</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>fit</code></td>
+<td>
+<p> Returned by <code>cable.fit.known.change</code>
+and <code>cable.ar.0.fit</code>. 
+</p>
+<p>For <code>cable.fit.known.change</code>,
+<code>$fit</code> is the AR(p) bent-cable regression at the known 
+transition grid point; if <code>p=0</code>, it is
+an <code>lm</code> object, otherwise it is an <code>arima</code> object. 
+</p>
+<p>For <code>cable.ar.0.fit</code>, <code>$fit</code> is an <code>nls</code> object 
+that is the maximum likelihood bent-cable fit. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>init</code></td>
+<td>
+<p> Returned by <code>cable.fit.known.change</code>, containing
+the coefficients from <code>$fit</code> that can be used as initial 
+values in bent-cable regression with unknown transition. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>y</code></td>
+<td>
+<p> Same as <code>y.vect</code>: returned by <code>cable.ar.0.fit</code>. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>t</code></td>
+<td>
+<p> Same as <code>t.vect</code>: returned by <code>cable.ar.0.fit</code>. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>n, p, stick</code></td>
+<td>
+<p> As supplied by the user: returned by <code>cable.ar.0.fit</code>. </p>
+</td>
+</tr>
+</table>
+<p><code>cable.dev</code> returns the evaluated profile deviance 
+surface / function as a matrix.
+</p>
+
+
+<h3>Warnings</h3>
+
+<p>For time-series data, <code>t.vect</code> <em>MUST</em> be 
+equidistant with unit increments; otherwise, these 
+functions will return meaningless values. (For 
+independent data, <code>t.vect</code> can be non-equidistant.)   
+</p>
+<p>Grid-based bent-cable regression and its use in 
+subsequent overall fits rely on locating the region
+in which the continous deviance surface truly peaks. 
+The user should be aware of possible local maxima and/or
+coarse grids that result in less-than-best fits.
+</p>
+
+
+<h3>Note</h3>
+
+<p>These functions are intended for internal use by <code>bentcable.dev.plot</code>
+and <code>bentcable.ar</code>.
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p> Grace Chiu </p>
+
+
+<h3>References</h3>
+
+<p> See the <code>bentcableAR</code> package references. </p>
+
+
+<h3>See Also</h3>
+
+ <p><code>bentcable.dev.plot</code>, <code>bentcable.ar</code>,
+<code>nls</code>, <code>lm</code>, <code>arima</code> </p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">data(stagnant)
+data(sockeye)
+
+# non-time-series data: compute grid-based profile deviance
+cable.dev( seq(-.04,.16,length=10), seq(.2,.65,length=10), 
+	stagnant$loght, stagnant$logflow )
+	# compare to this:
+	# bentcable.dev.plot( seq(-.04,.16,length=10), 
+	#	seq(.2,.65,length=10), stagnant$loght, stagnant$logflow )$dev
+
+# AR(2) bent cable, start time at 0: find best grid-based fit
+dev &lt;- cable.dev( seq(6,18,length=15), seq(.01,12,length=15),
+		sockeye$logReturns, p=2 )
+contour( seq(6,18,length=15), seq(.01,12,length=15), dev )
+cable.fit.known.change( sockeye$logReturns, tau.v=seq(6,18,length=15), 
+	gamma.v=seq(.01,12,length=15), dev.mat=dev, p=2 )
+
+# AR(0) broken stick, start time at 80: find best overall fit
+dev &lt;- cable.dev ( seq(85,97,length=15), 0, sockeye$logReturns, 
+	sockeye$year)
+plot( seq(85,97,length=15), dev, type="l" )
+cable.ar.0.fit( sockeye$logReturns, sockeye$year,
+	tau.v=seq(85,97,length=15), gamma.v=0, dev.mat=dev, 
+	stick=TRUE )
+	# compare to this:
+	# bentcable.ar( sockeye$logReturns, bentcable.dev.plot(
+	#	seq(85,97,length=15), 0, sockeye$logReturns, sockeye$year, TRUE
+	#	), stick=TRUE, t.vect=sockeye$year )
+</code></pre>
+
+
+</div>

@@ -1,0 +1,203 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>struct.aln</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2> Structure Alignment Of Two PDB Files </h2>
+
+<h3>Description</h3>
+
+<p>Performs a sequence and structural alignment of two PDB entities.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">struct.aln(fixed, mobile, fixed.inds=NULL, mobile.inds=NULL, 
+           write.pdbs=TRUE, outpath = "fitlsq", prefix=c("fixed",
+           "mobile"), max.cycles=10, cutoff=0.5, ... )
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>fixed</code></td>
+<td>
+<p> an object of class <code>pdb</code> as obtained from
+function <code>read.pdb</code>. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>mobile</code></td>
+<td>
+<p> an object of class <code>pdb</code> as obtained from
+function <code>read.pdb</code>. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>fixed.inds</code></td>
+<td>
+<p> atom and xyz coordinate indices obtained from
+<code>atom.select</code> that selects the elements of <code>fixed</code> upon
+which the calculation should be based.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>mobile.inds</code></td>
+<td>
+<p> atom and xyz coordinate indices obtained from
+<code>atom.select</code> that selects the elements of <code>mobile</code> upon
+which the calculation should be based.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>write.pdbs</code></td>
+<td>
+<p> logical, if TRUE the aligned structures are written
+to PDB files.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>outpath</code></td>
+<td>
+<p> character string specifing the output directory when
+<code>write.pdbs</code> is TRUE. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>prefix</code></td>
+<td>
+<p> a character vector of length 2 containing the filename
+prefix in which the fitted structures should be written. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>max.cycles</code></td>
+<td>
+<p> maximum number of refinement cycles.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>cutoff</code></td>
+<td>
+<p> standard deviation of the pairwise distances for
+aligned residues at which the fitting refinement stops.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p> extra arguments passed to <code>seqaln</code> function.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>This function performs a sequence alignment followed by a structural
+alignment of the two PDB entities. Cycles of refinement steps of the
+structural alignment are performed to improve the fit by removing
+atoms with a high structural deviation. The primary purpose of the
+function is to allow rapid structural alignment (and RMSD analysis)
+for protein structures with unequal, but related sequences.
+</p>
+<p>The function reports the residues of <code>fixed</code> and <code>mobile</code>
+included in the final structural alignment, as well as the related
+RMSD values.
+</p>
+<p>This function makes use of the underlying functions <code>seqaln</code>,
+<code>rot.lsq</code>, and <code>rmsd</code>.
+</p>
+
+
+<h3>Value</h3>
+
+<p>Returns a list with the following components:
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>a.inds</code></td>
+<td>
+<p> atom and xyz indices of <code>fixed</code>. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>b.inds</code></td>
+<td>
+<p> atom and xyz indices of <code>mobile</code>. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>xyz</code></td>
+<td>
+<p> fitted xyz coordinates of <code>mobile</code>. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>rmsd</code></td>
+<td>
+<p> a numeric vector of RMSD values after each cycle of
+refinement. </p>
+</td>
+</tr>
+</table>
+<h3>Author(s)</h3>
+
+<p> Lars Skjarven </p>
+
+
+<h3>References</h3>
+
+<p>Grant, B.J. et al. (2006) <em>Bioinformatics</em> <b>22</b>, 2695–2696.
+</p>
+
+
+<h3>See Also</h3>
+
+ <p><code>rmsd</code>, <code>rot.lsq</code>,
+<code>seqaln</code>, <code>pdbaln</code> </p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+# Needs MUSCLE installed - testing excluded
+
+if(check.utility("muscle")) {
+
+     ## Stucture of PKA:
+     a &lt;- read.pdb("1cmk")
+
+     ## Stucture of PKB:
+     b &lt;- read.pdb("2jdo")
+
+     ## Align and fit b on to a:
+     path = file.path(tempdir(), "struct.aln")
+     aln &lt;- struct.aln(a, b, outpath = path, outfile = tempfile())
+     
+     ## Should be the same as aln$rmsd (when using aln$a.inds and aln$b.inds)
+     rmsd(a$xyz, b$xyz, aln$a.inds$xyz, aln$b.inds$xyz, fit=TRUE)
+     
+     invisible( cat("\nSee the output files:", list.files(path, full.names = TRUE), sep="\n") )
+}
+
+
+## Not run: 
+     ## Align two subunits of GroEL (open and closed states)
+     a &lt;- read.pdb("1sx4")
+     b &lt;- read.pdb("1xck")
+
+     ## Select chain A only
+     a.inds &lt;- atom.select(a, chain="A")
+     b.inds &lt;- atom.select(b, chain="A")
+
+     ## Align and fit:
+     aln &lt;- struct.aln(a,b, a.inds, b.inds)
+
+## End(Not run)
+</code></pre>
+
+
+</div>

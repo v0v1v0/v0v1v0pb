@@ -1,0 +1,142 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>Bernstein_basis</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>
+Bernstein Basis Functions
+</h2>
+
+<h3>Description</h3>
+
+<p>Basis functions defining a polynomial in Bernstein form
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">Bernstein_basis(var, order = 2, ui = c("none", "increasing", "decreasing", 
+                                       "cyclic", "zerointegral", "positive",
+                                       "negative", "concave", "convex"),
+                extrapolate = FALSE, log_first = FALSE)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>var</code></td>
+<td>
+<p>a <code>numeric_var</code> object</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>order</code></td>
+<td>
+<p>the order of the polynomial, one defines a linear function</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ui</code></td>
+<td>
+<p>a character describing possible constraints</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>extrapolate</code></td>
+<td>
+<p>logical; if <code>TRUE</code>, the polynomial is
+extrapolated linearily outside <code>support(var)</code>.
+In particular, the second derivative of the polynomial
+at <code>support(var)</code> is constrained to zero.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>log_first</code></td>
+<td>
+<p>logical; the polynomial in Bernstein form is defined on the
+log-scale if <code>TRUE</code>. It makes sense to define the
+support as <code>c(1, q)</code>$, ie putting the first 
+basis function of the polynomial on
+<code>log(1)</code>.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p><code>Bernstein_basis</code> returns a function for the evaluation of
+the basis functions with corresponding <code>model.matrix</code> and <code>predict</code>
+methods.
+</p>
+
+
+<h3>References</h3>
+
+<p>Rida T. Farouki (2012), The Bernstein Polynomial Basis: A Centennial Retrospective,
+<em>Computer Aided Geometric Design</em>, <b>29</b>(6), 379–419.
+http://dx.doi.org/10.1016/j.cagd.2012.03.001
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+  ### set-up basis
+  bb &lt;- Bernstein_basis(numeric_var("x", support = c(0, pi)), 
+                        order = 3, ui = "increasing")
+
+  ### generate data + coefficients
+  x &lt;- as.data.frame(mkgrid(bb, n = 100))
+  cf &lt;- c(1, 2, 2.5, 2.6)
+
+  ### evaluate basis (in two equivalent ways)
+  bb(x[1:10,,drop = FALSE])
+  model.matrix(bb, data = x[1:10, ,drop = FALSE])
+
+  ### check constraints
+  cnstr &lt;- attr(bb(x[1:10,,drop = FALSE]), "constraint")
+  all(cnstr$ui %*% cf &gt; cnstr$ci)
+
+  ### evaluate and plot Bernstein polynomial defined by
+  ### basis and coefficients
+  plot(x$x, predict(bb, newdata = x, coef = cf), type = "l")
+
+  ### evaluate and plot first derivative of 
+  ### Bernstein polynomial defined by basis and coefficients
+  plot(x$x, predict(bb, newdata = x, coef = cf, deriv = c(x = 1)), 
+       type = "l")
+
+  ### illustrate constrainted estimation by toy example
+  N &lt;- 100
+  order &lt;- 10
+  x &lt;- seq(from = 0, to = pi, length.out = N)
+  y &lt;- rnorm(N, mean = -sin(x) + .5, sd = .5)
+
+  if (require("coneproj")) {
+    prnt_est &lt;- function(ui) {
+      xv &lt;- numeric_var("x", support = c(0, pi))
+      xb &lt;- Bernstein_basis(xv, order = 10, ui = ui)
+      X &lt;- model.matrix(xb, data = data.frame(x = x))
+      uiM &lt;- as(attr(X, "constraint")$ui, "matrix")
+      ci &lt;- attr(X, "constraint")$ci
+      if (all(is.finite(ci)))
+        parm &lt;- qprog(crossprod(X), crossprod(X, y), 
+                      uiM, ci, msg = FALSE)$thetahat
+      else
+        parm &lt;- coef(lm(y ~ 0 + X))
+      plot(x, y, main = ui)
+      lines(x, X %*% parm, col = col[ui], lwd = 2)
+    }
+    ui &lt;- eval(formals(Bernstein_basis)$ui)
+    col &lt;- 1:length(ui)
+    names(col) &lt;- ui
+    layout(matrix(1:length(ui), 
+                  ncol = ceiling(sqrt(length(ui)))))
+    tmp &lt;- sapply(ui, function(x) try(prnt_est(x)))
+  }
+</code></pre>
+
+
+</div>

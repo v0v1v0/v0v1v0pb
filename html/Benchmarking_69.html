@@ -1,0 +1,544 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>dea</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>DEA efficiency</h2>
+
+<h3>Description</h3>
+
+<p>Estimates a DEA frontier and calculates efficiency
+measures a la Farrell.</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">dea(X, Y, RTS="vrs", ORIENTATION="in", XREF=NULL, YREF=NULL,
+    FRONT.IDX=NULL, SLACK=FALSE, DUAL=FALSE, DIRECT=NULL, param=NULL,
+    TRANSPOSE=FALSE, FAST=FALSE, LP=FALSE, CONTROL=NULL, LPK=NULL)
+
+## S3 method for class 'Farrell'
+print(x, digits=4, ...) 
+## S3 method for class 'Farrell'
+summary(object, digits=4, ...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>X</code></td>
+<td>
+<p>Inputs of firms to be evaluated, a K x m matrix
+of observations of K firms with m inputs (firm x input).  In case
+<code>TRANSPOSE=TRUE</code> the input matrix is transposed to input x
+firm.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Y</code></td>
+<td>
+<p>Outputs of firms to be evaluated, a K x n matrix
+of observations of K firms with n outputs (firm x input).  In case
+<code>TRANSPOSE=TRUE</code> the output matrix is transposed to output x
+firm.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>RTS</code></td>
+<td>
+<p> Text string or a number defining the underlying DEA
+technology / returns to scale assumption.
+</p>
+
+<table>
+<tr>
+<td style="text-align: right;">
+
+0 </td>
+<td style="text-align: left;"> fdh </td>
+<td style="text-align: left;"> Free disposability hull, no convexity assumption </td>
+</tr>
+<tr>
+<td style="text-align: right;">
+
+1 </td>
+<td style="text-align: left;"> vrs </td>
+<td style="text-align: left;"> Variable returns to scale, convexity and free
+disposability </td>
+</tr>
+<tr>
+<td style="text-align: right;">
+
+2 </td>
+<td style="text-align: left;"> drs </td>
+<td style="text-align: left;"> Decreasing returns to scale, convexity, down-scaling
+and free disposability </td>
+</tr>
+<tr>
+<td style="text-align: right;">
+
+3 </td>
+<td style="text-align: left;"> crs </td>
+<td style="text-align: left;"> Constant returns to scale, convexity and free
+disposability </td>
+</tr>
+<tr>
+<td style="text-align: right;">
+
+4 </td>
+<td style="text-align: left;"> irs </td>
+<td style="text-align: left;"> Increasing returns to scale, (up-scaling, but not
+down-scaling), convexity and free disposability </td>
+</tr>
+<tr>
+<td style="text-align: right;">
+
+5 </td>
+<td style="text-align: left;"> irs2 </td>
+<td style="text-align: left;"> Increasing returns to scale (up-scaling, but not
+down-scaling), additivity, and free disposability </td>
+</tr>
+<tr>
+<td style="text-align: right;">
+
+6 </td>
+<td style="text-align: left;"> add </td>
+<td style="text-align: left;"> Additivity (scaling up and down, but only with
+integers), and free disposability; also known af replicability and 
+free disposability, the free disposability and replicability hull 
+(frh) -- no convexity assumption </td>
+</tr>
+<tr>
+<td style="text-align: right;">
+
+7 </td>
+<td style="text-align: left;"> fdh+ </td>
+<td style="text-align: left;"> A combination of free disposability and restricted
+ or local constant return to scale </td>
+</tr>
+<tr>
+<td style="text-align: right;">
+ 
+
+
+
+
+
+
+10 </td>
+<td style="text-align: left;"> vrs+ </td>
+<td style="text-align: left;"> As vrs, but with restrictions on the individual lambdas 
+via <code>param</code>
+
+</td>
+</tr>
+</table>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ORIENTATION</code></td>
+<td>
+<p>Input efficiency "in" (1), output efficiency "out"
+(2), and graph efficiency "graph" (3). For use with <code>DIRECT</code>,
+an additional option is "in-out" (0).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>XREF</code></td>
+<td>
+<p>Inputs of the firms determining the technology, defaults
+to <code>X</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>YREF</code></td>
+<td>
+<p>Outputs of the firms determining the technology, defaults
+to <code>Y</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>FRONT.IDX</code></td>
+<td>
+<p>Index for firms determining the technology</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>SLACK</code></td>
+<td>
+<p>Calculate slack in a phase II calculation by an intern 
+call of the function <code>slack</code>. Note that the precision
+for calculating slacks for orientation graph is low.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>DUAL</code></td>
+<td>
+<p>Calculate dual variables, i.e. shadow prices; not
+calculated for orientation graph as that is not an LP problem.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>DIRECT</code></td>
+<td>
+<p>Directional efficiency, <code>DIRECT</code> is either a
+scalar, an array, or a matrix with non-negative elements.
+</p>
+<p>If the argument is a scalar, the direction is (1,1,...,1) times
+the scalar; the value of the efficiency depends on the scalar as
+well as on the unit of measurements.
+</p>
+<p>If the argument is an array, this is used for the direction for every
+firm; the length of the array must correspond to the number of
+inputs and/or outputs depending on the <code>ORIENTATION</code>.
+</p>
+<p>If the argument is a matrix then different directions are used for
+each firm. The dimensions depends on the <code>ORIENTATION</code> (and
+<code>TRANSPOSE</code>), the number of firms must correspond to the
+number of firms in <code>X</code> and <code>Y</code>.
+</p>
+<p><code>DIRECT</code> must not be used in connection with
+<code>ORIENTATION="graph"</code>.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>param</code></td>
+<td>
+<p>Possible parameters. At the moment only used for
+RTS="fdh+" to set low and high values for restrictions on lambda;
+see the section details and examples for its use. Future versions
+might also use <code>param</code> for other purposes.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>TRANSPOSE</code></td>
+<td>
+<p>Input and output matrices are treated as firms
+times goods matrices for the default value <code>TRANSPOSE=FALSE</code>
+corresponding to the standard in R for statistical models.  When
+<code>TRUE</code> data matrices are transposed to good times firms
+matrices as is normally used in LP formulation of the problem.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>LP</code></td>
+<td>
+<p>Only for debugging. If <code>LP=TRUE</code> then input and
+output for the LP program are written to standard output for each
+unit.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>FAST</code></td>
+<td>
+<p>Only calculate efficiencies and just return them as a
+vector, i.e. no lambda or other output. The return when using
+FAST cannot be used as input for <code>slack</code> and <code>peers</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>CONTROL</code></td>
+<td>
+<p>Possible controls to <span class="pkg">lpSolveAPI</span>, see the
+documentation for that package; use <code>?lp.control.options</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Optional parameters for the print and summary methods.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>object, x</code></td>
+<td>
+<p>An object of class Farrell (returned by the
+function <code>dea</code>) – R code uses ‘<code>object</code>’ and
+‘<code>x</code>’ alternating for generic methods.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>digits</code></td>
+<td>
+<p>digits in printed output, handled by format in print.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>LPK</code></td>
+<td>
+<p>when <code>LPK=k</code> then a mps file is written for firm
+<code>k</code>; it can be used as input to an alternative LP solver
+to check the results.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+ 
+<p>The return from <code>dea</code> and <code>sdea</code> is an object of class
+Farrell.  The efficiency in <code>dea</code> is calculated by the LP method
+in the package <span class="pkg">lpSolveAPI</span>.  Slacks can be calculated either in
+the call of <code>dea</code> using the option <code>SLACK=TRUE</code> or in a
+following call to the function <code>slack</code>.
+</p>
+<p>The directional efficiency when the argument <code>DIRECT</code> is used,
+depends on the unit of measurement and is not restricted to be less
+than 1 (or greater than 1 for output efficiency) and is therefore
+completely different from the Farrell efficiency.
+</p>
+<p>The crs factor in RTS="fdh+" that sets the lower and upper bound can
+be changed by the argument <code>param</code> that will set the lower and
+upper bound to 1-param and 1+param; the default value is
+param=.15. The value must be greater than or equal to 0 and strictly
+less than 1. A value of 0 corresponds to RTS="fdh".  To get an
+asymmetric interval set param to a 2 dimensional array with values for
+the low and high end for interval, for instance
+<code>param=c(.8,1.15)</code>.  The FDH+ technology set is described in
+Bogetoft and Otto (2011) pages 73–74.
+</p>
+<p>The technology RTS="vrs+" uses the parameter <code>param</code> to set 
+restrictions on lambda, the convexity parameters. The elements of param 
+are <code>param=(low, high, sum_low, sum_high)</code> where "low" and "high"
+are restrictions on the individual lambda and "sum_low" and "sum_high" are 
+restrictions on the sum of lambdas. The individual lambda must be in the 
+interval from low to high or be zero. With one parameter the restrictions 
+set are <code>(param, 1+1-(param),1,1)</code>, with two parameters 
+<code>(param[1], param[2],1,1)</code>, and with four parameters 
+<code>(param[1], param[2],param[3], param[4])</code>. The resulting technology set is 
+not necessarily convex.
+</p>
+
+
+
+
+<p>The graph orientated efficiency is calculated by bisection between
+feasible and infeasible values of G. The precision in the result is
+less than for the other orientations.
+</p>
+<p>When the argument <code>DIRECT=d</code> is used then the returned value
+<code>e</code> for input orientation is the exces input measured in <code>d</code>
+units of measurements, i.e. <code class="reqn">x-e d</code>, and for output orientation
+<code class="reqn">y+e d</code>.  The directional efficency can be restricted to inputs
+(<code>ORIENTAION="in"</code>), restricted to outputs
+(<code>ORIENTAION="out"</code>), or both include inputs and output
+directions (<code>ORIENTAION="in-out"</code>). Directional efficiency is
+discussed on pages 31–35 and 121–127 in Bogetoft and Otto (2011).
+</p>
+
+
+<h3>Value</h3>
+
+<p> The results are returned in a Farrell object with the
+following components.  The last three components in the list are
+only part of the object when <code>SLACK=TRUE</code>.
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>eff</code></td>
+<td>
+<p>The efficiencies.  Note when DIRECT is used then the
+efficencies are not Farrell efficiencies but rather exces values
+in DIRECT units of measurement</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>lambda</code></td>
+<td>
+<p>The lambdas, i.e. the weight of the peers, for each firm</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>objval</code></td>
+<td>
+<p>The objective value as returned from the LP program;
+normally the same as eff, but for <code>slack</code> it is the the sum
+of the slacks</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>RTS</code></td>
+<td>
+<p>The return to scale assumption as in the option <code>RTS</code>
+in the call</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ORIENTATION</code></td>
+<td>
+<p>The efficiency orientation as in the call</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>TRANSPOSE</code></td>
+<td>
+<p>As in the call</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>slack</code></td>
+<td>
+<p>A logical vector where the component for a firm is
+<code>TRUE</code> if the sums of slacks for the corresponding firm is
+positive. Only calculated in dea when option <code>SLACK=TRUE</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>sum</code></td>
+<td>
+<p>A vector with sums of the slacks for each firm. Only
+calculated in dea when option <code>SLACK=TRUE</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>sx</code></td>
+<td>
+<p>A matrix for input slacks for each firm, only calculated if
+the option <code>SLACK</code> is <code>TRUE</code> or returned from the
+method <code>slack</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>sy</code></td>
+<td>
+<p>A matrix for output slack, see <code>sx</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ux</code></td>
+<td>
+<p>Dual variable for input, only calculated if <code>DUAL</code> is
+<code>TRUE</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>vy</code></td>
+<td>
+<p>Dual variable for output, only calculated if <code>DUAL</code> is
+<code>TRUE</code>.</p>
+</td>
+</tr>
+</table>
+<h3>Note</h3>
+
+ 
+<p>The arguments <code>X</code>, <code>Y</code>, <code>XREF</code>, and <code>YREF</code> are
+supposed to be matrices or numerical data frames that in the function
+will be converted to matrices. When subsetting a matrix or data frame
+to just one column then the class of the resulting object/variable is
+no longer a matrix or a data frame, but just a numeric (array,
+vector). Therefore, in this case a numeric input that is not a matrix
+nor a data frame is transformed to a 1 column matrix, and here the use
+of the argument <code>TRANSPOSE=TRUE</code> gives an error.
+</p>
+<p>The dual values are not unique for extreme points (firms on the
+boundary with an efficiency of 1) and therefore the calculated dual
+values for these firms can depend on the order of firms in the
+reference technology. The same lack of uniqueness also makes the peers
+for some firms depend on the order of firms in the reference
+technology.
+</p>
+<p>To calucalte slack use the argument <code>SLACK=TRUE</code> or use the
+function <code>slack</code> directly.
+</p>
+<p>When there is slack, and slack is not taken into consideration, then
+the peers for a firm with slack might depend on the order of firms in
+the data set; this is a property of the LP algorithm used to solve the
+problem.
+</p>
+<p>To handle fixed, non-discretionary inputs, one can let it appear as
+negative output in an input-based mode, and reversely for fixed,
+non-discretionary outputs. Fixed inputs (outputs) can also be handled
+by directional efficiency; set the direction, the argument
+<code>DIRECT</code>, equal to the variable, discretionary inputs (outputs)
+and 0 for the fixed inputs (outputs).
+</p>
+<p>When the the argument <code>DIRECT=X</code> is used the then the returned
+effiency is equal to 1 minus the Farrell efficiency for input
+orientation and to the Farrell effiency minus 1 for output
+orientation.
+</p>
+<p>To use matrices <code>X</code> and <code>Y</code> prepared for the methods in the
+package <span class="pkg">FEAR</span> (Wilson 2008) set the options
+<code>TRANSPOSE=TRUE</code>; for consistency with <span class="pkg">FEAR</span> the options
+<code>RTS</code> and <code>ORIENTATION</code> also accepts numbers as in
+<span class="pkg">FEAR</span>.
+</p>
+<p>The tolerance that lambda is zero or one is 1e-7, the default value of
+'epsint' in the package <code>lpSolveAPI</code>, i.e. values closer than
+1e-7 from zero or one are set to respective integer value. The 'epsint'
+is the tolerance that is used to determine whether a floating-point
+number is in fact an in teger. The same tolerance is used for
+efficiency value near one.
+</p>
+<p>Some scaling is done in the function, but this does not always work 
+satisfactory, i.e. sometime, a solution cannot always be found – the 
+program prints a warning and the efficiency for the firm is set to NA. 
+Often this is due to a bad scaling of the data. Either the user can try 
+a different scaling of data when calling the function or one can use the
+option <code>CONTROL</code> to try a different scaling by the program. For 
+instance one can insert <code>CONTROL=list(scaling=c("geometric", "equilibrate")</code>
+or <code>CONTROL=list(scaling=c("curtisreid", "equilibrate", "dynupdate")</code> 
+in the option list for the function call. The full list of possible 
+scaling options can be found found from <code>?lp.control.options</code> under
+"scaling".
+</p>
+<p>If a numerical problem occurs, status=5, the best solution is probably to
+scale the input <code>X</code> and output <code>Y</code> yourself or use a different
+scaling option as desribed above. The best results are obtained when the 
+variables are close to 1. If some variable are in the millions, then let
+the unit of measure be a million.
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p> Peter Bogetoft and Lars Otto <a href="mailto:larsot23@gmail.com">larsot23@gmail.com</a></p>
+
+
+<h3>References</h3>
+
+<p> Peter Bogetoft and Lars Otto; <em>Benchmarking with
+DEA, SFA, and R</em>; Springer 2011 </p>
+
+
+<h3>See Also</h3>
+
+<p>Paul W. Wilson (2008), “FEAR 1.0: A Software Package for Frontier
+Efficiency Analysis with R,” <em>Socio-Economic Planning Sciences</em>
+42, 247–254
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">x &lt;- matrix(c(100,200,300,500,100,200,600),ncol=1)
+y &lt;- matrix(c(75,100,300,400,25,50,400),ncol=1)
+dea.plot.frontier(x,y,txt=TRUE)
+
+e &lt;- dea(x,y)
+eff(e)
+print(e)
+summary(e)
+lambda(e)
+
+# Input savings potential for each firm
+(1-eff(e)) * x
+(1-e$eff) * x
+
+# calculate slacks
+el &lt;- dea(x,y,SLACK=TRUE)
+data.frame(e$eff,el$eff,el$slack,el$sx,el$sy)
+
+# Fully efficient units, eff==1 and no slack
+which(eff(e) == 1 &amp; !el$slack)
+
+# fdh+ with limits in the interval [.7, 1.2]
+dea(x,y,RTS="fdh+", param=c(.7,1.2))
+</code></pre>
+
+
+</div>

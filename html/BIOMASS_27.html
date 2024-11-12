@@ -1,0 +1,196 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>modelHD</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Fitting height-diameter models</h2>
+
+<h3>Description</h3>
+
+<p>This function fits and compares (optional) height-diameter models.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">modelHD(D, H, method = NULL, useWeight = FALSE, drawGraph = FALSE, plot = NULL)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>D</code></td>
+<td>
+<p>Vector with diameter measurements (in cm). NA values are accepted but a
+minimum of 10 valid entries (i.e. having a corresponding height in H) is required.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>H</code></td>
+<td>
+<p>Vector with total height measurements (in m). NA values are accepted but a minimum of 10 valid entries
+(i.e. having a corresponding diameter in D) is required.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>method</code></td>
+<td>
+<p>Method used to fit the relationship.
+To be chosen between:
+</p>
+
+<ul>
+<li>
+<p> log1, log2
+</p>
+
+<ul>
+<li>
+<p> log 1: <code class="reqn">(log(H) = a+ b*log(D))</code> (equivalent to a power model)
+</p>
+</li>
+<li>
+<p> log 2: <code class="reqn">(log(H) = a+ b*log(D) + c*log(D)^2)</code>
+</p>
+</li>
+</ul>
+</li>
+<li>
+<p> weibull: <code class="reqn">H = a*(1-exp(-(D/b)^c))</code>
+</p>
+</li>
+<li>
+<p> michaelis: <code class="reqn">H = (A * D)/(B + D)</code>
+</p>
+</li>
+</ul>
+<p>If <code>NULL</code>, all the methods will be compared.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>useWeight</code></td>
+<td>
+<p>If weight is <code>TRUE</code>, model weights will be <code class="reqn">(D^2)*H</code> (i.e. weights are proportional to tree
+volume, so that larger trees have a stronger influence during the construction of the model).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>drawGraph</code></td>
+<td>
+<p>If <code>TRUE</code>, a graphic will illustrate the relationship between H and D. Only if argument <code>plot</code> is null.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>plot</code></td>
+<td>
+<p>(optional) Plot ID, must be either one value, or a vector of the same length as D. This argument is used to build
+stand-specific HD models.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>All the back transformations for log-log models are done using the Baskerville correction (<code class="reqn">0.5 * RSE^2</code>,
+where RSE is the Residual Standard Error).
+</p>
+
+
+<h3>Value</h3>
+
+<p>If plot is NULL or has a single value, a single list is returned. If there is more than one plot,
+multiple embedded lists are returned with plots as the list names.
+Returns a list if the parameter model is not null:
+</p>
+
+<ul>
+<li> <p><code>input</code>: list of the data used to construct the model (list(H, D))
+</p>
+</li>
+<li> <p><code>model</code>: outputs of the model (same outputs as given by <code>stats::lm()</code>, <code>stats::nls()</code>)
+</p>
+</li>
+<li> <p><code>RSE</code>: Residual Standard Error of the model
+</p>
+</li>
+<li> <p><code>RSElog</code>: Residual Standard Error of the log model (<code>NULL</code> if other model)
+</p>
+</li>
+<li> <p><code>residuals</code>: Residuals of the model
+</p>
+</li>
+<li> <p><code>coefficients</code>: Coefficients of the model
+</p>
+</li>
+<li> <p><code>R.squared</code>: <code class="reqn">R^2</code> of the model
+</p>
+</li>
+<li> <p><code>formula</code>: Formula of the model
+</p>
+</li>
+<li> <p><code>method</code>: Name of the method used to construct the model
+</p>
+</li>
+<li> <p><code>predicted</code>: Predicted height values
+</p>
+</li>
+</ul>
+<p>If the parameter model is null, the function return a graph with all the methods for
+comparison, the function also returns a data.frame with:
+</p>
+
+<ul>
+<li> <p><code>method</code>: The method that had been used to construct the graph
+</p>
+</li>
+<li> <p><code>color</code>: The color of the curve in the graph
+</p>
+</li>
+<li> <p><code>RSE</code>: Residual Standard Error of the model
+</p>
+</li>
+<li> <p><code>RSElog</code>: Residual Standard Error of the log model (<code>NULL</code> if other model)
+</p>
+</li>
+<li> <p><code>Average_bias</code>: The average bias for the model
+</p>
+</li>
+</ul>
+<h3>Author(s)</h3>
+
+<p>Maxime REJOU-MECHAIN, Arthur PERE, Ariane TANGUY
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>retrieveH()</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+# Load a data set
+data(NouraguesHD)
+
+# To model the height from a dataset
+
+HDmodel &lt;- modelHD(D = NouraguesHD$D, H = NouraguesHD$H, drawGraph = TRUE)
+
+
+# If the method needed is known
+HDmodel &lt;- modelHD(D = NouraguesHD$D, H = NouraguesHD$H, method = "weibull", drawGraph = TRUE)
+HDmodel &lt;- modelHD(D = NouraguesHD$D, H = NouraguesHD$H, method = "log1", drawGraph = TRUE)
+
+# Using weights
+HDmodel &lt;- modelHD(
+  D = NouraguesHD$D, H = NouraguesHD$H, method = "weibull", useWeight = TRUE,
+  drawGraph = TRUE
+)
+</code></pre>
+
+
+</div>

@@ -1,0 +1,175 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>weights_jsd</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Weights Based on the Jensen-Shannon Divergence</h2>
+
+<h3>Description</h3>
+
+<p>Weights Based on the Jensen-Shannon Divergence
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">weights_jsd(design, ...)
+
+## S4 method for signature 'OneStageBasket'
+weights_jsd(
+  design,
+  n,
+  lambda,
+  epsilon = 1.25,
+  tau = 0.5,
+  logbase = 2,
+  prune = FALSE,
+  globalweight_fun = NULL,
+  globalweight_params = list(),
+  ...
+)
+
+## S4 method for signature 'TwoStageBasket'
+weights_jsd(design, n, n1, epsilon = 1.25, tau = 0, logbase = 2, ...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>design</code></td>
+<td>
+<p>An object of class <code>Basket</code> created by
+<code>setupOneStageBasket</code> or <code>setupTwoStageBasket</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Further arguments.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>n</code></td>
+<td>
+<p>The sample size per basket.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>lambda</code></td>
+<td>
+<p>The posterior probability threshold. See details for more
+information.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>epsilon</code></td>
+<td>
+<p>A tuning parameter that determines the amount of borrowing.
+See details for more information.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>tau</code></td>
+<td>
+<p>A tuning parameter that determines how similar the baskets
+have to be that borrowing occurs. See details for more information.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>logbase</code></td>
+<td>
+<p>A tuning parameter that determines which logarithm base is
+used to compute the Jensen-Shannon divergence. See details for more
+information.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>prune</code></td>
+<td>
+<p>Whether baskets with a number of responses below the
+critical pooled value should be pruned before the final analysis.
+If this is <code>TRUE</code> then <code>lambda</code> is also required and
+if <code>globalweight_fun</code> is not <code>NULL</code> then
+<code>globalweight_fun</code> and <code>globalweight_params</code> are also used.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>globalweight_fun</code></td>
+<td>
+<p>Which function should be used to calculate the
+global weights.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>globalweight_params</code></td>
+<td>
+<p>A list of tuning parameters specific to
+<code>globalweight_fun</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>n1</code></td>
+<td>
+<p>The sample size per basket for the interim analysis in case of a
+two-stage design.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p><code>weights_jsd</code> calculates the weights used for sharing
+information between baskets based on the Jensen-Shannon divergence (JSD).
+The weight for two baskets i and j is found as
+<code class="reqn">(1 - JSD(i, j))^\varepsilon</code> where <code class="reqn">JSD(i, j)</code> is the Jensen-Shannon
+divergence between the individual posterior distributions of the response
+probabilities of basket i and j. This is identical to how the weights are
+calculated in <code>weights_fujikawa</code>, however when Fujikawa's weights
+are used the prior information is also shared.
+</p>
+<p>A small value of epsilon results in stronger borrowing also across baskets
+with heterogenous results. If epsilon is large then information is only
+borrowed between baskets with similar results. If a weight is smaller than
+tau it is set to 0, which results in no borrowing.
+</p>
+<p>If <code>prune = TRUE</code> then the baskets with an observed number of baskets
+smaller than the pooled critical value are not borrowed from. The
+pooled critical value is the smallest integer c for which all null
+hypotheses can be rejected if the number of responses is exactly c for
+all baskets.
+</p>
+<p>The function is generally not called by the user but passed to another
+function such as <code>toer</code> and <code>pow</code> to specificy
+how the weights are calculated.
+</p>
+
+
+<h3>Value</h3>
+
+<p>A matrix including the weights of all possible pairwise outcomes.
+</p>
+
+
+<h3>Methods (by class)</h3>
+
+
+<ul>
+<li> <p><code>weights_jsd(OneStageBasket)</code>: Jensen-Shannon Divergence weights for a
+single-stage basket design.
+</p>
+</li>
+<li> <p><code>weights_jsd(TwoStageBasket)</code>: Jensen-Shannon Divergence weights for a two-stage
+basket design.
+</p>
+</li>
+</ul>
+<h3>Examples</h3>
+
+<pre><code class="language-R">design &lt;- setupOneStageBasket(k = 3, p0 = 0.2)
+toer(design, n = 15, lambda = 0.99, weight_fun = weights_jsd)
+</code></pre>
+
+
+</div>

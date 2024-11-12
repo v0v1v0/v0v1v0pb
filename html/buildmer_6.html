@@ -1,0 +1,121 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>buildcustom</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Use <code>buildmer</code> to perform stepwise elimination using a custom fitting function</h2>
+
+<h3>Description</h3>
+
+<p>Use <code>buildmer</code> to perform stepwise elimination using a custom fitting function
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">buildcustom(
+  formula,
+  data = NULL,
+  fit = function(p, formula) stop("'fit' not specified"),
+  crit = function(p, ref, alt) stop("'crit' not specified"),
+  elim = function(x) stop("'elim' not specified"),
+  REML = FALSE,
+  buildmerControl = buildmerControl()
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>formula</code></td>
+<td>
+<p>See the general documentation under <code>buildmer-package</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+<p>See the general documentation under <code>buildmer-package</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>fit</code></td>
+<td>
+<p>A function taking two arguments, of which the first is the <code>buildmer</code> parameter list <code>p</code> and the second one is a formula. The function must return a single object, which is treated as a model object fitted via the provided formula. The function must return an error ('<code>stop()</code>') if the model does not converge.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>crit</code></td>
+<td>
+<p>A function taking one argument and returning a single value. The argument is the return value of the function passed in <code>fit</code>, and the returned value must be a numeric indicating the goodness of fit, where smaller is better (like AIC or BIC).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>elim</code></td>
+<td>
+<p>A function taking one argument and returning a single value. The argument is the return value of the function passed in <code>crit</code>, and the returned value must be a logical indicating if the small model must be selected (return <code>TRUE</code>) or the large model (return <code>FALSE</code>).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>REML</code></td>
+<td>
+<p>A logical indicating if the fitting function wishes to distinguish between fits differing in fixed effects (for which <code>p$reml</code> will be set to FALSE) and fits differing only in the random part (for which <code>p$reml</code> will be TRUE). Note that this ignores the usual semantics of buildmer's optional <code>REML</code> argument, because they are redundant: if you wish to force REML on or off, simply code it so in your custom fitting function.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>buildmerControl</code></td>
+<td>
+<p>Control arguments for buildmer — see the general documentation under <code>buildmerControl</code></p>
+</td>
+</tr>
+</table>
+<h3>See Also</h3>
+
+<p><code>buildmer-package</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## Use \code{buildmer} to do stepwise linear discriminant analysis
+library(buildmer)
+migrant[,-1] &lt;- scale(migrant[,-1])
+flipfit &lt;- function (p,formula) {
+    # The predictors must be entered as dependent variables in a MANOVA
+    # (i.e. the predictors must be flipped with the dependent variable)
+    Y &lt;- model.matrix(formula,migrant)
+    m &lt;- lm(Y ~ 0+migrant$changed)
+    # the model may error out when asking for the MANOVA
+    test &lt;- try(anova(m))
+    if (inherits(test,'try-error')) test else m
+}
+crit.F &lt;- function (p,a,b) { # use whole-model F
+    pvals &lt;- anova(b)$'Pr(&gt;F)' # not valid for backward!
+    pvals[length(pvals)-1]
+}
+crit.Wilks &lt;- function (p,a,b) {
+    if (is.null(a)) return(crit.F(p,a,b)) #not completely correct, but close as F approximates X2
+    Lambda &lt;- anova(b,test='Wilks')$Wilks[1]
+    p &lt;- length(coef(b))
+    n &lt;- 1
+    m &lt;- nrow(migrant)
+    Bartlett &lt;- ((p-n+1)/2-m)*log(Lambda)
+    pchisq(Bartlett,n*p,lower.tail=FALSE)
+}
+
+# First, order the terms based on Wilks' Lambda
+model &lt;- buildcustom(changed ~ friends.nl+friends.be+multilingual+standard+hearing+reading+
+       attention+sleep+gender+handedness+diglossic+age+years,buildmerControl=list(
+       fit=flipfit,crit=crit.Wilks,direction='order'))
+# Now, use the six most important terms (arbitrary choice) in the LDA
+if (require('MASS')) {
+model &lt;- lda(changed ~ diglossic + age + reading + friends.be + years + 
+       multilingual,data=migrant)
+}
+</code></pre>
+
+
+</div>

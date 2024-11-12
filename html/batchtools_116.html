@@ -1,0 +1,112 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>waitForJobs</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Wait for Termination of Jobs</h2>
+
+<h3>Description</h3>
+
+<p>This function simply waits until all jobs are terminated.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">waitForJobs(
+  ids = NULL,
+  sleep = NULL,
+  timeout = 604800,
+  expire.after = NULL,
+  stop.on.error = FALSE,
+  stop.on.expire = FALSE,
+  reg = getDefaultRegistry()
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>ids</code></td>
+<td>
+<p>[<code>data.frame</code> or <code>integer</code>]<br>
+A <code>data.frame</code> (or <code>data.table</code>)
+with a column named “job.id”.
+Alternatively, you may also pass a vector of integerish job ids.
+If not set, defaults to the return value of <code>findSubmitted</code>.
+Invalid ids are ignored.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>sleep</code></td>
+<td>
+<p>[<code>function(i)</code> | <code>numeric(1)</code>]<br>
+Parameter to control the duration to sleep between queries.
+You can pass an absolute numeric value in seconds or a <code>function(i)</code> which returns
+the number of seconds to sleep in the <code>i</code>-th iteration.
+If not provided (<code>NULL</code>), tries to read the value (number/function) from the configuration file
+(stored in <code>reg$sleep</code>) or defaults to a function with exponential backoff between
+5 and 120 seconds.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>timeout</code></td>
+<td>
+<p>[<code>numeric(1)</code>]<br>
+After waiting <code>timeout</code> seconds, show a message and return
+<code>FALSE</code>. This argument may be required on some systems where, e.g.,
+expired jobs or jobs on hold are problematic to detect. If you don't want
+a timeout, set this to <code>Inf</code>. Default is <code>604800</code> (one week).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>expire.after</code></td>
+<td>
+<p>[<code>integer(1)</code>]<br>
+Jobs count as “expired” if they are not found on the system but have not communicated back
+their results (or error message). This frequently happens on managed system if the scheduler kills
+a job because the job has hit the walltime or request more memory than reserved.
+On the other hand, network file systems often require several seconds for new files to be found,
+which can lead to false positives in the detection heuristic.
+<code>waitForJobs</code> treats such jobs as expired after they have not been detected on the system
+for <code>expire.after</code> iterations.
+If not provided (<code>NULL</code>), tries to read the value from the configuration file (stored in <code>reg$expire.after</code>),
+and finally defaults to <code>3</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>stop.on.error</code></td>
+<td>
+<p>[<code>logical(1)</code>]<br>
+Immediately cancel if a job terminates with an error? Default is
+<code>FALSE</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>stop.on.expire</code></td>
+<td>
+<p>[<code>logical(1)</code>]<br>
+Immediately cancel if jobs are detected to be expired? Default is <code>FALSE</code>.
+Expired jobs will then be ignored for the remainder of <code>waitForJobs()</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>reg</code></td>
+<td>
+<p>[<code>Registry</code>]<br>
+Registry. If not explicitly passed, uses the default registry (see <code>setDefaultRegistry</code>).</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>[<code>logical(1)</code>]. Returns <code>TRUE</code> if all jobs terminated
+successfully and <code>FALSE</code> if either the timeout is reached or at least
+one job terminated with an exception or expired.
+</p>
+
+
+</div>

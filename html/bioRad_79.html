@@ -1,0 +1,391 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>integrate_to_ppi</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Calculate a plan position indicator (<code>ppi</code>) of vertically integrated density
+adjusted for range effects</h2>
+
+<h3>Description</h3>
+
+<p>Estimates a spatial image of vertically integrated density (<code>vid</code>) based on
+all elevation scans of the radar, while accounting for the changing overlap
+between the radar beams as a function of range. The resulting <code>ppi</code> is a
+vertical integration over the layer of biological scatterers based on all
+available elevation scans, corrected for range effects due to partial beam
+overlap with the layer of biological echoes (overshooting) at larger
+distances from the radar. The methodology is described in detail in
+Kranstauber et al. (2020).
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">integrate_to_ppi(
+  pvol,
+  vp,
+  nx = 100,
+  ny = 100,
+  xlim,
+  ylim,
+  zlim = c(0, 4000),
+  res,
+  quantity = "eta",
+  param = "DBZH",
+  raster = NA,
+  lat,
+  lon,
+  antenna,
+  beam_angle = 1,
+  crs,
+  param_ppi = c("VIR", "VID", "R", "overlap", "eta_sum", "eta_sum_expected"),
+  k = 4/3,
+  re = 6378,
+  rp = 6357
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>pvol</code></td>
+<td>
+<p>A <code>pvol</code> object.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>vp</code></td>
+<td>
+<p>A <code>vp</code> object</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nx</code></td>
+<td>
+<p>number of raster pixels in the x (longitude) dimension</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ny</code></td>
+<td>
+<p>number of raster pixels in the y (latitude) dimension</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>xlim</code></td>
+<td>
+<p>x (longitude) range</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ylim</code></td>
+<td>
+<p>y (latitude) range</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>zlim</code></td>
+<td>
+<p>Numeric vector of length two. Altitude range, in m</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>res</code></td>
+<td>
+<p>numeric vector of length 1 or 2 to set the resolution of the raster (see res).
+If this argument is used, arguments <code>nx</code> and <code>ny</code> are ignored. Unit is identical to <code>xlim</code> and <code>ylim</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>quantity</code></td>
+<td>
+<p>Character. Profile quantity on which to base range
+corrections, either <code>eta</code> or <code>dens</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>param</code></td>
+<td>
+<p>reflectivity Character. Scan parameter on which to base range
+corrections. Typically the same parameter from which animal densities are
+estimated in <code>vp</code>. Either <code>DBZH</code>, <code>DBZV</code>, <code>DBZ</code>, <code>TH</code>, or <code>TV</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>raster</code></td>
+<td>
+<p>(optional) RasterLayer with a CRS. When specified this raster topology is used for the output, and nx, ny, res
+arguments are ignored.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>lat</code></td>
+<td>
+<p>Latitude of the radar, in degrees. If missing taken from <code>pvol</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>lon</code></td>
+<td>
+<p>Latitude of the radar, in degrees. If missing taken from <code>pvol</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>antenna</code></td>
+<td>
+<p>Numeric. Radar antenna height, in m. Default to antenna height
+in <code>vp</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>beam_angle</code></td>
+<td>
+<p>Numeric. Beam opening angle in degrees, typically the
+angle between the half-power (-3 dB) points of the main lobe.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>crs</code></td>
+<td>
+<p>character or object of class CRS. PROJ.4 type description of a Coordinate Reference System (map projection).
+When 'NA' (default), an azimuthal equidistant projection with origin at the radar location is used.
+To use a WSG84 (lat,lon) projection, use crs="+proj=longlat +datum=WGS84"</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>param_ppi</code></td>
+<td>
+<p>Character (vector). One or multiple of <code>VIR</code>, <code>VID</code>, <code>R</code>,
+<code>overlap</code>, <code>eta_sum</code> or <code>eta_sum_expected</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>k</code></td>
+<td>
+<p>Numeric. Standard refraction coefficient.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>re</code></td>
+<td>
+<p>Numeric. Earth equatorial radius, in km.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>rp</code></td>
+<td>
+<p>Numeric. Earth polar radius, in km.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The function requires:
+</p>
+
+<ul>
+<li>
+<p> A polar volume, containing one or multiple scans (<code>pvol</code>).
+</p>
+</li>
+<li>
+<p> A vertical profile (of birds) calculated for that same polar volume (<code>vp</code>).
+</p>
+</li>
+<li>
+<p> A grid defined on the earth's surface, on which we will calculate the range
+corrected image (defined by <code>raster</code>, or a combination of <code>nx</code>, <code>ny</code>,<code>res</code>
+arguments).
+</p>
+</li>
+</ul>
+<p>The pixel locations on the ground are easily translated into a corresponding
+azimuth and range of the various scans (see <code>beam_range()</code>).
+</p>
+<p>For each scan within the polar volume, the function calculates:
+</p>
+
+<ul>
+<li>
+<p> the vertical radiation profile for each ground surface pixel for that
+particular scan, using beam_profile.
+</p>
+</li>
+<li>
+<p> the reflectivity expected for each ground surface pixel
+(<code class="reqn">\eta_{expected}</code>), given the vertical profile (of biological
+scatterers) and the part of the profile radiated by the beam.
+This <code class="reqn">\eta_{expected}</code> is simply the average of (linear) <code>eta</code> in the
+profile, weighted by the vertical radiation profile.
+</p>
+</li>
+<li>
+<p> the observed eta at each pixel <code class="reqn">\eta_{observed}</code>, which is converted
+form <code>DBZH</code> using function dbz_to_eta, with <code>DBZH</code> the reflectivity
+factor measured at the pixel's distance from the radar.
+</p>
+</li>
+<li>
+<p> The vertical radiation profile for each ground surface pixel for that
+particular scan, using <code>beam_profile()</code>.
+</p>
+</li>
+<li>
+<p> The reflectivity expected for each ground surface pixel
+(<code class="reqn">\eta_{expected}</code>), given the vertical profile (of biological
+scatterers) and the part of the profile radiated by the beam. This
+<code class="reqn">\eta_{expected}</code> is simply the average of (linear) <code>eta</code> in the profile,
+weighted by the vertical radiation profile.
+</p>
+</li>
+<li>
+<p> The observed <code>eta</code> at each pixel <code class="reqn">\eta_{observed}</code>,
+which is converted form <code>DBZH</code> using <code>dbz_to_eta()</code>, with <code>DBZH</code> the
+reflectivity factor measured at the pixel's distance from the radar.
+</p>
+</li>
+</ul>
+<p>If one of <code>lat</code> or <code>lon</code> is missing, the extent of the <code>ppi</code> is taken equal
+to the extent of the data in the first scan of the polar volume.
+</p>
+<p>To arrive at the final PPI image, the function calculates
+</p>
+
+<ul>
+<li>
+<p> the vertically integrated density (<code>vid</code>) and vertically integrated
+reflectivity (<code>vir</code>) for the profile, using the function
+integrate_profile.
+</p>
+</li>
+<li>
+<p> the spatial range-corrected PPI for <code>VID</code>, defined as the adjustment
+factor image (<code>R</code>), multiplied by the <code>vid</code> calculated for the profile
+</p>
+</li>
+<li>
+<p> the spatial range-corrected PPI for <code>VIR</code>, defined as the adjustment
+factor <code>R</code>, multiplied by the <code>vir</code> calculated for the profile.
+</p>
+</li>
+</ul>
+<p>Scans at 90 degree beam elevation (e.g. birdbath scans) are ignored.
+</p>
+<p>#' @seealso
+</p>
+
+<ul>
+<li> <p><code>summary.ppi()</code>
+</p>
+</li>
+<li> <p><code>beam_profile()</code>
+</p>
+</li>
+<li> <p><code>beam_range()</code>
+</p>
+</li>
+<li> <p><code>integrate_profile()</code>
+</p>
+</li>
+</ul>
+<h3>Value</h3>
+
+<p>A <code>ppi</code> object.
+</p>
+
+
+<h3>References</h3>
+
+
+<ul>
+<li>
+<p> Kranstauber B, Bouten W, Leijnse H, Wijers B, Verlinden L, Shamoun-Baranes
+J, Dokter AM (2020) High-Resolution Spatial Distribution of Bird Movements
+Estimated from a Weather Radar Network. Remote Sensing 12 (4), 635.
+<a href="https://doi.org/10.3390/rs12040635">doi:10.3390/rs12040635</a>
+</p>
+</li>
+<li>
+<p> Buler JJ &amp; Diehl RH (2009) Quantifying bird density during migratory
+stopover using weather surveillance radar. IEEE Transactions on Geoscience
+and Remote Sensing 47: 2741-2751.
+<a href="https://doi.org/10.1109/TGRS.2009.2014463">doi:10.1109/TGRS.2009.2014463</a>
+</p>
+</li>
+</ul>
+<ul>
+<li>
+<p> Kranstauber B, Bouten W, Leijnse H, Wijers B, Verlinden L, Shamoun-Baranes
+J, Dokter AM (2020) High-Resolution Spatial Distribution of Bird
+Movements Estimated from a Weather Radar Network. Remote Sensing 12 (4),
+635. <a href="https://doi.org/10.3390/rs12040635">doi:10.3390/rs12040635</a>
+</p>
+</li>
+<li>
+<p> Buler JJ &amp; Diehl RH (2009) Quantifying bird density during migratory
+stopover using weather surveillance radar. IEEE Transactions on Geoscience
+and Remote Sensing 47: 2741-2751.
+<a href="https://doi.org/10.1109/TGRS.2009.2014463">doi:10.1109/TGRS.2009.2014463</a>
+</p>
+</li>
+</ul>
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+# Locate and read the polar volume example file
+pvolfile &lt;- system.file("extdata", "volume.h5", package = "bioRad")
+
+# load polar volume
+pvol &lt;- read_pvolfile(pvolfile)
+
+# Read the corresponding vertical profile example
+data(example_vp)
+
+# Calculate the range-corrected ppi on a 50x50 pixel raster
+ppi &lt;- integrate_to_ppi(pvol, example_vp, nx = 50, ny = 50)
+
+# Plot the vertically integrated reflectivity (VIR) using a
+# 0-2000 cm^2/km^2 color scale
+plot(ppi, zlim = c(0, 2000))
+
+# Calculate the range-corrected ppi on finer 2000m x 2000m pixel raster
+ppi &lt;- integrate_to_ppi(pvol, example_vp, res = 2000)
+
+# Plot the vertically integrated density (VID) using a
+# 0-200 birds/km^2 color scale
+plot(ppi, param = "VID", zlim = c(0, 200))
+
+# Download a basemap and map the ppi
+if (all(sapply(c("ggspatial","prettymapr", "rosm"), requireNamespace, quietly = TRUE))) {
+map(ppi)
+}
+
+# The ppi can also be projected on a user-defined raster, as follows:
+
+# First define the raster
+template_raster &lt;- raster::raster(
+  raster::extent(12, 13, 56, 57),
+  crs = sp::CRS("+proj=longlat")
+)
+
+# Project the ppi on the defined raster
+ppi &lt;- integrate_to_ppi(pvol, example_vp, raster = template_raster)
+
+# Extract the raster data from the ppi object
+raster::brick(ppi$data)
+
+# Calculate the range-corrected ppi on an even finer 500m x 500m pixel raster,
+# cropping the area up to 50000 meter from the radar
+ppi &lt;- integrate_to_ppi(
+  pvol, example_vp, res = 500,
+  xlim = c(-50000, 50000), ylim = c(-50000, 50000)
+)
+plot(ppi, param = "VID", zlim = c(0, 200))
+
+</code></pre>
+
+
+</div>

@@ -1,0 +1,173 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>bcfrailpar</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Parametric bivariate correlated frailty models fit.</h2>
+
+<h3>Description</h3>
+
+<p>Fit a parametric Bivariate correlated gamma, inverse gaussian and power variance frailty models with Proportional Hazard structure.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">bcfrailpar(
+  formula,
+  data,
+  initfrailp = NULL,
+  inithazp = NULL,
+  initbeta = NULL,
+  haz = c("weibull", "gompertz", "exponential"),
+  frailty = c("gamma", "invgauss", "pv"),
+  comonvar = TRUE,
+  ...
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>formula</code></td>
+<td>
+<p>A formula object, with the response on the left of a ~ operator, and the terms on the right. The response must be a survival object as returned by the Surv function.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+<p>A dataframe contain survival time, censor, covariate etc with data in columns.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>initfrailp</code></td>
+<td>
+<p>Initial estimates for the frailty parameters. The default is c(0.5,0.5).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>inithazp</code></td>
+<td>
+<p>Initial estimates for the baseline hazard distribution parameters. The default is c(0.05) for both scale and shape parameters.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>initbeta</code></td>
+<td>
+<p>Initial estimates for the covariate coefficients if there are any included. The default is taken from coxph fit.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>haz</code></td>
+<td>
+<p>A baseline hazard distribution. Either weibull, gompertz or exponential distributions are possible.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>frailty</code></td>
+<td>
+<p>A type of frailty distribution. Either gamma, inverse gaussian <code>frailty="invgauss"</code>  or power variance <code>frailty="pv"</code> frailty distributions are possible.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>comonvar</code></td>
+<td>
+<p>An argument whether to assume common frailty variance. The default is <code>comonvar=TRUE</code>. If <code>comonvar=FALSE</code>, then only gamma frailty model is possible.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>further arguments.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>An object of  that contains  the following components.
+</p>
+
+<ul>
+<li> <p><code>coefficients</code> - A vector of estimated Covariate coefficients.
+</p>
+</li>
+<li> <p><code>frailparest</code> - A vector of estimated Frailty parameters i.e. frailty variance and correlation.
+</p>
+</li>
+<li> <p><code>basehazpar</code> - A vector of estimated baseline hazard parameters i.e. scale and shape.
+</p>
+</li>
+<li> <p><code>stderr</code>-A vector containing the Standard errors of the Estimated parameters with the order of frailty parameters,baseline hazard parameters and covariate coefficients.
+</p>
+</li>
+<li> <p><code>vcov</code>- Variance Covariance matrix of the Estimated parameters.
+</p>
+</li>
+<li> <p><code>loglik</code>-Log likelihood of the model.
+</p>
+</li>
+<li> <p><code>AIC</code>-AIC of the model.
+</p>
+</li>
+<li> <p><code>BIC</code>-BIC of the model.
+</p>
+</li>
+<li> <p><code>iterations</code>-Number of outer iterations.SeeconstrOptim for further.
+</p>
+</li>
+<li> <p><code>convergence</code>-An indicator of convergence. SeeconstrOptim for further.
+</p>
+</li>
+</ul>
+<h3>Examples</h3>
+
+<pre><code class="language-R">set.seed(4)
+simdata&lt;-simbcfraildv(psize=500, cenr= c(0.3),beta=c(2),frailty=c("gamma"),
+frailpar=c(0.5,0.5,0.5),bhaz=c("weibull"),
+bhazpar=list(shape =c(5), scale = c(0.1)),
+covartype= c("B"),covarpar=list(fargs=c(1),sargs=c(0.5)))
+dataa&lt;-simdata$data
+
+fitbcfrail=bcfrailpar(Surv(time,censor)~ X1+frailty(PID) ,data=dataa,frailty="gamma")
+fitbcfrail
+
+
+
+set.seed(18)
+simdata&lt;-simbcfraildv(psize=300, cenr= c(0.3),beta=c(2),frailty=c("gamma"),
+frailpar=c(0.5,0.5,0.4),bhaz=c("weibull"),
+bhazpar=list(shape =c(5), scale = c(0.1)),
+covartype= c("B"),covarpar=list(fargs=c(1),sargs=c(0.5)))
+dataa&lt;-simdata$data
+
+#fit with power variance frailty distribution
+fitbcfrail=bcfrailpar(Surv(time,censor)~ X1+frailty(PID) ,data=dataa,
+frailty="pv")
+fitbcfrail
+
+## one can set the initial parameter for the frailty parameters
+fitbcfrail=bcfrailpar(Surv(time,censor)~ X1+frailty(PID) ,data=dataa,initfrailp = c(0.4,0.3),
+frailty="gamma")
+fitbcfrail
+
+# Not run
+
+#if initial frailty parameters are in the boundary of parameter space
+fitmoe=try(bcfrailpar(Surv(time,censor)~ X1+frailty(PID),data=dataa,
+initfrailp=c(0.2,1)),silent = TRUE)
+
+#if a frailty distribution other than gamma, invgauss or pv is specified
+
+fitmoe=try(bcfrailpar(Surv(time,censor)~ X1,data=dataa,frailty="exp"),silent = TRUE)
+
+# End Not run
+
+
+</code></pre>
+
+
+</div>

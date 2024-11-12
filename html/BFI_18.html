@@ -1,0 +1,257 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>surv.simulate</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Generate survival data with predefined censoring rates for proportional hazards models</h2>
+
+<h3>Description</h3>
+
+<p><code>surv.simulate</code> simulates one or multiple (right-censored) survival datasets for proportional hazards models by simultaneously incorporating a baseline hazard function from three different survival distributions (exponential, Weibull and Gompertz), a random censoring time generated from a uniform distribution with an known/unknown upper limit, and a set of baseline covariates.
+When the upper limit of the uniform censoring time distribution is unknown, <code>surv.simulate</code> can be used separately to obtain the upper limit with a predefined censoring rate.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">surv.simulate(L = 1, Z, beta, a, b, u1 = 0, u2, cen_rate,
+              gen_data_from = c("exp", "weibul", "gomp"),
+              only_u2 = FALSE, n.rep = 100, Trace = FALSE)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>L</code></td>
+<td>
+<p>the number of datasets to be generated. Default is <code>L = 1</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Z</code></td>
+<td>
+<p>a list of <code>L</code> design matrices of dimension <code class="reqn">n_\ell \times p</code>, where <code class="reqn">n_\ell</code> is the number of samples observed for the <code class="reqn">\ell^{\text{th}}</code> dataset and <code class="reqn">p</code> is the number of covariables. When <code>L = 1</code>, <code>Z</code> can be a matrix.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>beta</code></td>
+<td>
+<p>the vector of the (true) coefficients values, with a length of <code class="reqn">p</code> (the number of covariates).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>a</code></td>
+<td>
+<p>scale parameter, which should be non-negative. See ‘Details’ for the form of the cumulative hazard that can be used.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>b</code></td>
+<td>
+<p>shape/location parameter, which should be non-negative. It is not used when <code>gen_data_from = </code>“exp”. See ‘Details’ for the form of the cumulative hazard that can be used.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>u1</code></td>
+<td>
+<p>a known non-negative lower limit of the uniform distribution for generating random censoring time. Default is <code>u1 = 0</code>. If <code>cen_rate</code> is not equal to 0, then <code>u1</code> does not need to be defined.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>u2</code></td>
+<td>
+<p>an non-negative upper limit of the uniform random censoring time distribution. The upper limit can be unknown (<code>u2 = NULL</code>, the default), or predefined. When this argument is assumed to be unknown, <code>u2 = NULL</code>, it is calculated by the algorithm within <code>surv.simulate()</code>. However, if the argument <code>u2</code> is known, the censoring rate cannot be predefined (meaning there is no control over it) and is calculated based on the generated dataset. See ‘Details’ and ‘References’.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>cen_rate</code></td>
+<td>
+<p>a value representing the proportion of observations in the simulated survival data that are censored. The range of this argument is from 0 to 1. When the upper limit is known, <code>cen_rate</code> can nor be predefined. If there is no censoring (<code>cen_rate = 0</code>), the lower (<code>u1</code>) and upper (<code>u2</code>) limits of the uniform distribution do not need to be specified.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>gen_data_from</code></td>
+<td>
+<p>a description of the distribution from which the time to event is generated. This is a character string and can be <code>exponential</code> (“exp”), <code>Weibull</code> (“weibul”), or <code>Gompertz</code> (“gomp”). Can be abbreviated. By default, the <code>exponential</code> distribution is used.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>only_u2</code></td>
+<td>
+<p>logical flag for calculating only the upper limit of the uniform censoring time distribution. If <code>only_u2 = TRUE</code>, the dataset(s) are not generated. If <code>only_u2 = TRUE</code>, the arguments <code>Z</code> and <code>u2</code> do not need to be specified, and <code>cen_rate</code> should not be set to <code class="reqn">0</code>. Default is <code>only_u2 = FALSE</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>n.rep</code></td>
+<td>
+<p>a scalar specifying the number of iterations. This argument is exclusively used in the case of the <code>Gompertz</code> distribution. Default is 100.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Trace</code></td>
+<td>
+<p>logical flag indicating whether the output of the desired <code>u2</code> and the censoring proportion for different datasets should be produced for each iteration. It works <code>gen_data_from = </code>“gomp”.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p><code>surv.simulate</code> function generates <code class="reqn">L</code> simulated right-censored survival datasets from exponential, Weibull, or Gompertz distributions, incorporating the covariates, <code>Z</code>, distributed according to a multivariate <code>normal</code> distribution, with censoring time generated from a uniform distribution <code>Uniform(u1, u2)</code>, where <code>u1</code> is known but <code>u2</code> can be either known or unknown.
+</p>
+<p><code>surv.simulate()</code> can also be used to calculate the unknown upper limit of the uniform distribution, <code>u2</code>, with a predefined censoring rate. To do this, set <code>u2 = NULL</code> and <code>only_u2 = TRUE</code>. In this case, the datasets are not generated; only <code>u2</code> is.
+</p>
+<p><code>surv.simulate()</code> uses a root-finding algorithm to select the censoring parameter that achieves predefined censoring rates in the simulated survival data.
+</p>
+<p>When <code>gen_data_from = </code>“exp”:
+</p>
+
+<ul>
+<li>
+<p> the cumulative baseline hazard function is considered as <code class="reqn">\Lambda_0=a t</code>,
+</p>
+</li>
+<li>
+<p> the event time for the <code class="reqn">\ell^{\text{th}}</code> dataset, <code class="reqn">T_\ell</code>, is computed by <code class="reqn"> - log(u) \ exp(- Z_\ell \boldsymbol{\beta}) / a</code>, where <code class="reqn">u</code> follows a standard uniform distribution;
+</p>
+</li>
+</ul>
+<p>For <code>gen_data_from = </code>“weibul”:
+</p>
+
+<ul>
+<li>
+<p> the cumulative hazard function is as <code class="reqn">\Lambda_0=a t ^ b</code>,
+</p>
+</li>
+<li>
+<p> the event time is computed by <code class="reqn">T_\ell= (- log(u) \ exp(- Z_\ell \boldsymbol{\beta}) / a)^{1/b}</code>, where <code class="reqn">u</code> follows a standard uniform distribution;
+</p>
+</li>
+</ul>
+<p>For <code>gen_data_from = </code>“gomp”:
+</p>
+
+<ul>
+<li>
+<p> the cumulative hazard function is as <code class="reqn">\Lambda_0=a (exp(b t) - 1) / b</code>,
+</p>
+</li>
+<li>
+<p> the event time is computed by <code class="reqn">T_\ell= \log(1- log(u) \ exp(- Z_\ell \boldsymbol{\beta}) b / a) / b</code>, where <code class="reqn">u</code> follows a standard uniform distribution;
+</p>
+</li>
+</ul>
+<p>Finally the survival time is obtained by <code class="reqn">\tilde{T}_\ell=\min\{T_\ell , C_\ell \}</code>.
+</p>
+<p>The function will be updated for <code>gen_data_from = </code>“gomp”.
+</p>
+
+
+<h3>Value</h3>
+
+<p><code>surv.simulate</code> returns a list containing the following components:
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>D</code></td>
+<td>
+<p>a list of <code class="reqn">L</code> data frames, with dimension <code class="reqn">n_\ell \times (p+2)</code>. The first and second columns, named <code>time</code> and <code>status</code>, contain the simulated survival time and the censoring indicator, respectively, where <code class="reqn">0</code> means censored and <code class="reqn">1</code> means uncensored;</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>censor_propor</code></td>
+<td>
+<p>the vector of censoring proportions in the simulated datasets <code>D</code>, containing <code class="reqn">L</code> elements;</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>u1</code></td>
+<td>
+<p>the lower limit of the uniform distribution used to generate random censoring times with a predefined censoring rate. Sometimes this output is less than the value entered by the user, as it is adjusted to achieve the desired amount of censoring rate;</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>u2</code></td>
+<td>
+<p>the upper limit of the uniform distribution used to generate random censoring times. If <code>u2 = NULL</code>, this output will be the estimated upper limit necessary to achieve the desired censoring rate across the <code class="reqn">L</code> datasets.</p>
+</td>
+</tr>
+</table>
+<h3>Author(s)</h3>
+
+<p>Hassan Pazira<br>
+Maintainer: Hassan Pazira <a href="mailto:hassan.pazira@radboudumc.nl">hassan.pazira@radboudumc.nl</a>
+</p>
+
+
+<h3>References</h3>
+
+<p>Pazira H., Massa E., Weijers J.A.M., Coolen A.C.C. and Jonker M.A. (2024). <em>Bayesian Federated Inference for Survival Models</em>, <em>arXiv</em>. &lt;https://arxiv.org/abs/2404.17464&gt;
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>MAP.estimation</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+# Setting a seed for reproducibility
+set.seed(1123)
+
+#-------------------------
+# Simulating Survival data
+#-------------------------
+N    &lt;- c(7, 10, 13) # the sample sizes of 3 datasets
+beta &lt;- 1:4
+p    &lt;- length(beta)
+L    &lt;- 3
+
+# Define a function to generate multivariate normal samples
+mvrnorm_new &lt;- function(n, mu, Sigma) {
+    pp &lt;- length(mu)
+    e &lt;- matrix(rnorm(n * pp), nrow = n)
+    return(crossprod(t(e), chol(Sigma)) + matrix(mu, n, pp, byrow = TRUE))
+}
+Z &lt;- list()
+for (z in seq_len(L)) {
+    Z[[z]] &lt;- mvrnorm_new(n = N[z], mu = rep(0, p),
+                          Sigma = diag(rep(1, p),p))
+    colnames(Z[[z]]) &lt;- paste0("Z_",seq_len(ncol(Z[[z]])))
+}
+
+# One simulated dataset from exponential distribution with no censoring:
+surv_data &lt;- surv.simulate(Z = Z[[1]], beta = beta, a = exp(-.9),
+                           cen_rate = 0, gen_data_from = "exp")
+surv_data
+surv_data$D[[1]][,1:2] # The simulated survival data
+
+# Calculate only 'u2' with a predefined censoring rate of 0.4:
+u2_new &lt;- surv.simulate(Z = Z[1:2], beta = beta, a = exp(-.9),
+                        b = exp(1.8), u1 = 0.1, only_u2 = TRUE,
+                        cen_rate = 0.4, gen_data_from = "weibul")$u2
+u2_new
+
+# Two simulated datasets with a known 'u2':
+# Using 'u2_new' to help control over censoring rate (was chosen 0.4)
+surv.simulate(Z = Z[1:2], beta = beta, a = exp(-.9), b = exp(1.8),
+              u1 = 0.05, u2 = u2_new, gen_data_from = "weibul")
+
+# Three simulated datasets from 'weibul' with an unknown 'u2':
+surv.simulate(Z = Z, beta = beta, a = exp(-1), b = exp(1),
+               u1 = 0.01, cen_rate = 0.3, gen_data_from = "weibul")
+
+# Two simulated datasets from 'gomp' with unknown 'u2' and censoring rate of 0.3:
+surv.simulate(Z = Z[2:3], beta = beta, a = exp(1), b = exp(2), u1 = 0.1,
+              cen_rate = 0.3, gen_data_from = "gomp", Trace = TRUE)
+
+</code></pre>
+
+
+</div>

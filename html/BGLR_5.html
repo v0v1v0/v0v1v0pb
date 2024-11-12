@@ -1,0 +1,182 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>BLRXy</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Bayesian Linear Regression</h2>
+
+<h3>Description</h3>
+
+<p>The BLRXy(‘Bayesian Linear Regression’) function
+fits various types of parametric Bayesian regressions to continuos outcomes.
+This is a wrapper for function BLRCross.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">
+BLRXy(y, intercept=TRUE, ETA, 
+             nIter = 1500, burnIn = 500, thin = 5, 
+             S0 = NULL, df0 = 5, R2 = 0.5, 
+             verbose = TRUE, saveAt="",
+             rmExistingFiles = TRUE)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>y</code></td>
+<td>
+<p>(numeric, <code class="reqn">n</code>) the data-vector (NAs allowed).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>intercept</code></td>
+<td>
+<p>(logical) indicates if an intercept is included.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ETA</code></td>
+<td>
+<p> (list) This is a two-level list used to specify the regression function (or linear predictor). 
+Regression on covariates and other types of random effects are specified in this two-level list. For instance:
+</p>
+<pre>
+ETA=list(list(X=W, model="FIXED"), 
+              list(X=Z,model="BRR")),
+</pre> 
+<p>specifies that the linear predictor should include: an intercept (included by default), 
+a linear regression on W with regression coefficients treated as fixed effects (i.e., flat prior), 
+plus regression on Z, with regression coefficients modeled as in the 
+Bayesian Ridge Regression.
+</p>
+<p>The following options are implemented for linear regressions: FIXED (flat prior),
+BayesA, BayesB, BRR (Gaussian prior), BayesC, SSVS and RKHS. 
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nIter,burnIn, thin</code></td>
+<td>
+<p>(integer) the number of iterations, burn-in and thinning.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>saveAt</code></td>
+<td>
+<p>(string) this may include a path and a pre-fix that will be added to the name of the files that are saved as the program runs.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>S0, df0</code></td>
+<td>
+<p> (numeric) The scale parameter for the scaled inverse-chi squared prior assigned to the residual variance, only used with Gaussian outcomes. 
+In the parameterization of the scaled-inverse chi square in BGLR the expected values is <code>S0/(df0-2)</code>. The default value for the 
+df parameter is 5. If the scale is not specified a value is calculated so that the prior mode of the residual 
+variance  equals <code>var(y)*R2</code> (see below). For further details see the vignettes in the package.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>R2</code></td>
+<td>
+<p>(numeric, <code>0&lt;R2&lt;1</code>) The proportion of variance that one expects, a priori, to be explained by the regression. Only used if 
+the hyper-parameters are not specified; if that is the case, internaly, hyper-paramters are set so that the prior modes are consistent with the 
+variance partition specified by R2 and the prior distribution is relatively flat at the mode. For 
+further details see the vignettes in the package.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>verbose</code></td>
+<td>
+<p>(logical) if TRUE the iteration history is printed, default TRUE.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>rmExistingFiles</code></td>
+<td>
+<p>(logical) if TRUE removes existing output files from previous runs, default TRUE.</p>
+</td>
+</tr>
+</table>
+<h3>Author(s)</h3>
+
+<p>Gustavo de los Campos, Paulino Perez Rodriguez.
+</p>
+
+
+<h3>References</h3>
+
+<p>de los Campos G., H. Naya, D. Gianola, J. Crossa, A. Legarra, E. Manfredi, K. Weigel and J. Cotes. 2009.
+Predicting Quantitative Traits with Regression Models for Dense Molecular Markers and Pedigree. <em>Genetics</em> <b>182</b>: 375-385.
+</p>
+<p>de los Campos, G., D. Gianola, G. J. M., Rosa, K. A., Weigel, and J. Crossa. 2010.  Semi-parametric genomic-enabled prediction of genetic values using 
+reproducing kernel Hilbert spaces methods. <em>Genetics Research</em>, <b>92</b>:295-308.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+## Not run: 
+
+library(BGLR)
+
+p=1000
+n=1500
+
+data(mice)
+X=scale(mice.X[1:n,1:p],center=TRUE)
+
+A=mice.A
+A=A[1:n,1:n]
+
+QTL=seq(from=50,to=p-50,by=80)
+
+b=rep(0,p)
+b[QTL]=1
+signal=as.vector(X%*%b)
+ 
+error=rnorm(sd=sd(signal),n=n)
+y=error+signal
+y=2+y
+
+#Example 1
+
+#BayesA
+ETA=list(list(X=X,model="BayesA"))
+
+fm1=BLRXy(y=y,ETA=ETA)
+plot(fm1$yHat,y)
+
+#Example 2, missing values
+yNA&lt;-y
+whichNA&lt;-sample(1:length(y),size=100,replace=FALSE)
+yNA[whichNA]&lt;-NA
+
+fm2&lt;-BLRXy(y=yNA,ETA=ETA)
+plot(fm2$yHat,y)
+points(fm2$yHat[whichNA],y[whichNA],col="red",pch=19)
+
+#Example 3, RKHS with no-missing values
+ETA&lt;-list(list(K=A,model="RKHS"))
+fm3&lt;-BLRXy(y=y,ETA=ETA)
+plot(fm3$yHat,y)
+
+#Example 4, RKHS with missing values
+fm4&lt;-BLRXy(y=yNA,ETA=ETA)
+plot(fm4$yHat,y)
+points(fm4$yHat[whichNA],y[whichNA],col="red",pch=19)
+
+
+
+## End(Not run)
+
+</code></pre>
+
+
+</div>

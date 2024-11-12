@@ -1,0 +1,127 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>BC</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>
+Run a BayesComm model
+</h2>
+
+<h3>Description</h3>
+
+<p><code>BC</code> is the main function for running BayesComm models.
+It is a wrapper function for <code>BCfit</code>; it checks inputs, sets up the model types and specifies a number of default <code>BCfit</code> settings.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">BC(Y, X = NULL, model = "null", covlist = NULL, condition = NULL, its = 100, ...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>Y</code></td>
+<td>
+
+<p>matrix of species presence/absence data
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>X</code></td>
+<td>
+
+<p>matrix of environmental covariates
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>model</code></td>
+<td>
+
+<p>type of model to run
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>covlist</code></td>
+<td>
+
+<p>optional list of which covariates to assign to each species
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>condition</code></td>
+<td>
+
+<p>matrix of conditioning variables
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>its</code></td>
+<td>
+
+<p>number of iterations for sampling phase
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+
+<p>further arguments to pass to <code>BCfit</code>
+</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p><code>Y</code> must be a matrix with records as rows and species as columns and <code>X</code> a matrix with records as rows and covariates as columns.
+<code>model</code> must be one of: <code>"null"</code> (intercept only), <code>"environment"</code> (intercept &amp; covariates), <code>"community"</code> (intercept &amp; community matrix) or <code>"full"</code> (intercept, covariates &amp; community matrix).
+<code>covlist</code> must have the same length as the number of species with, each element a vector of column indices for <code>X</code>. <code>covlist</code> defaults to <code>NULL</code>, which includes all covariates for all species.
+For more details of arguments for model fitting see <code>BCfit</code>. <code>condition</code> is an optional matrix of conditioning variables.
+These are fitted in the same way as <code>X</code> but are not removed in null and community models.
+</p>
+
+
+<h3>Value</h3>
+
+<p>An object of class <code>bayescomm</code> containing the model call and parameter chains which can be viewed and manipulated using <code>window</code>, <code>plot</code>, <code>print</code> and <code>summary</code>.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>BCfit</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R"># create fake data
+n &lt;- 100
+nsp &lt;- 4
+k &lt;- 3
+
+X &lt;- matrix(c(rep(1, n), rnorm(n * k)), n)  # covariate matrix
+W &lt;- matrix(rnorm(nsp * nsp), nsp)
+W &lt;- W %*% t(W) / 2  # true covariance matrix
+B &lt;- matrix(rnorm(nsp * (k + 1), 0, 3), nsp)  # true covariates
+mu &lt;- apply(B, 1, function(b, x) x %*% b, X)  # true mean
+e &lt;- matrix(rnorm(n * nsp), n) %*% chol(W)  # true e
+z &lt;- mu + e  # true z
+Y &lt;- ifelse(z &gt; 0, 1, 0)  # true presence/absence
+
+# run BC (after removing intercept column from design matrix)
+m1 &lt;- BC(Y, X[, -1], model = "full", its = 100)
+</code></pre>
+
+
+</div>

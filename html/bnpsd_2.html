@@ -1,0 +1,155 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>admix_prop_1d_circular</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Construct admixture proportion matrix for circular 1D geography</h2>
+
+<h3>Description</h3>
+
+<p>Assumes <code>k_subpops</code> intermediate subpopulations placed along a circumference (the [<code>0</code>, <code>2 * pi</code>] line that wraps around) with even spacing spread by random walks (see details below), then <code>n_ind</code> individuals sampled equally spaced in [<code>coord_ind_first</code>,<code>coord_ind_last</code>] (default [<code>0</code>, <code>2 * pi</code>] with a small gap so first and last individual do not overlap) draw their admixture proportions relative to the Von Mises density that models the random walks of each of these intermediate subpopulations.
+The spread of the random walks is <code>sigma = 1 / sqrt(kappa)</code> of the Von Mises density.
+If <code>sigma</code> is missing, it can be set indirectly by providing three variables: (1) the desired bias coefficient <code>bias_coeff</code>, (2) the coancestry matrix of the intermediate subpopulations <code>coanc_subpops</code> (up to a scalar factor), and (3) the final <code>fst</code> of the admixed individuals (see details below).
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">admix_prop_1d_circular(
+  n_ind,
+  k_subpops,
+  sigma = NA,
+  coord_ind_first = 2 * pi/(2 * n_ind),
+  coord_ind_last = 2 * pi * (1 - 1/(2 * n_ind)),
+  bias_coeff = NA,
+  coanc_subpops = NULL,
+  fst = NA
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>n_ind</code></td>
+<td>
+<p>Number of individuals</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>k_subpops</code></td>
+<td>
+<p>Number of intermediate subpopulations</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>sigma</code></td>
+<td>
+<p>Spread of intermediate subpopulations (approximate standard deviation of Von Mises densities, see above)
+The edge cases <code>sigma = 0</code> and <code>sigma = Inf</code> are handled appropriately!</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>coord_ind_first</code></td>
+<td>
+<p>Location of first individual</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>coord_ind_last</code></td>
+<td>
+<p>Location of last individual
+</p>
+<p>OPTIONS FOR BIAS COEFFICIENT VERSION</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>bias_coeff</code></td>
+<td>
+<p>If <code>sigma</code> is <code>NA</code>, this bias coefficient is required.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>coanc_subpops</code></td>
+<td>
+<p>If <code>sigma</code> is <code>NA</code>, this intermediate subpops coancestry is required.
+It can be provided as a <code>k_subpops</code>-by-<code>k_subpops</code> matrix, a length-<code>k_subpops</code> population inbreeding vector (for independent subpopulations, where between-subpop coancestries are zero) or scalar (if population inbreeding values are all equal and coancestries are zero).
+This <code>coanc_subpops</code> can be in the wrong scale (it cancels out in calculations), which is returned corrected, to result in the desired <code>fst</code> (next).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>fst</code></td>
+<td>
+<p>If <code>sigma</code> is <code>NA</code>, this FST of the admixed individuals is required.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>Assuming the full range of [<code>0</code>, <code>2 * pi</code>] is considered, and the first and last individuals do not overlap, the gap between individuals is <code>delta = 2 * pi / n</code>.
+To not have any individuals on the edge, we place the first individual at <code>delta / 2</code> and the last at <code>2 * pi - delta / 2</code>.
+The location of subpopulation <code>j</code> is <code>delta / 2 + ( j - 1/2 ) / k * (2 * pi - delta)</code>, chosen to agree with the default correspondence between individuals and subpopulations of the linear 1D geography admixture scenario (<code>admix_prop_1d_linear()</code>).
+</p>
+<p>If <code>sigma</code> is <code>NA</code>, its value is determined from the desired <code>bias_coeff</code>, <code>coanc_subpops</code> up to a scalar factor, and <code>fst</code>.
+Uniform weights for the final generalized FST are assumed.
+The scale of <code>coanc_subpops</code> is irrelevant because it cancels out in <code>bias_coeff</code>; after <code>sigma</code> is found, <code>coanc_subpops</code> is rescaled to give the desired final FST.
+However, the function stops if any rescaled <code>coanc_subpops</code> values are greater than 1, which are not allowed since they are IBD probabilities.
+</p>
+
+
+<h3>Value</h3>
+
+<p>If <code>sigma</code> was provided, returns the <code>n_ind</code>-by-<code>k_subpops</code> admixture proportion matrix (<code>admix_proportions</code>).
+If <code>sigma</code> is missing, returns a named list containing:
+</p>
+
+<ul>
+<li> <p><code>admix_proportions</code>: the <code>n_ind</code>-by-<code>k_subpops</code> admixture proportion matrix.
+If <code>coanc_subpops</code> had names, they are copied to the columns of this matrix.
+</p>
+</li>
+<li> <p><code>coanc_subpops</code>: the input <code>coanc_subpops</code> rescaled.
+</p>
+</li>
+<li> <p><code>sigma</code>: the fit value of the spread of intermediate subpopulations
+</p>
+</li>
+<li> <p><code>coanc_factor</code>: multiplicative factor used to rescale <code>coanc_subpops</code>
+</p>
+</li>
+</ul>
+<h3>Examples</h3>
+
+<pre><code class="language-R"># admixture matrix for 1000 individuals drawing alleles from 10 subpops
+# simple version: spread of about 2 standard deviations along the circular 1D geography
+# (just set sigma)
+admix_proportions &lt;- admix_prop_1d_circular(n_ind = 1000, k_subpops = 10, sigma = 2)
+
+# advanced version: a similar model but with a bias coefficient of exactly 1/2
+# (must provide bias_coeff, coanc_subpops, and fst in lieu of sigma)
+k_subpops &lt;- 10
+# FST vector for intermediate independent subpops, up to a factor (will be rescaled below)
+coanc_subpops &lt;- 1 : k_subpops
+obj &lt;- admix_prop_1d_circular(
+    n_ind = 1000,
+    k_subpops = k_subpops,
+    bias_coeff = 0.5,
+    coanc_subpops = coanc_subpops,
+    fst = 0.1 # desired final FST of admixed individuals
+)
+
+# in this case return value is a named list with three items:
+admix_proportions &lt;- obj$admix_proportions
+
+# rescaled coancestry data (matrix or vector) for intermediate subpops
+coanc_subpops &lt;- obj$coanc_subpops
+
+# and the sigma that gives the desired bias_coeff and final FST
+sigma &lt;- obj$sigma
+
+</code></pre>
+
+
+</div>

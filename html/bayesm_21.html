@@ -1,0 +1,230 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>margarine</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Household Panel Data on Margarine Purchases</h2>
+
+<h3>Description</h3>
+
+<p>Panel data on purchases of margarine by 516 households. Demographic variables are included.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">data(margarine)</code></pre>
+
+
+<h3>Format</h3>
+
+<p>The <code>detailing</code> object is a list containing two data frames, <code>choicePrice</code> and <code>demos</code>.
+</p>
+
+
+<h3>Details</h3>
+
+<p>In the <code>choicePrice</code> data frame:
+</p>
+
+<table>
+<tr>
+<td style="text-align: left;">
+    ...<code>$hhid  </code> </td>
+<td style="text-align: left;"> household ID </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+    ...<code>$choice</code> </td>
+<td style="text-align: left;"> multinomial indicator of one of the 10 products 
+  </td>
+</tr>
+</table>
+<p>The products are indicated by brand and type. 
+</p>
+<p>Brands:
+</p>
+
+<table>
+<tr>
+<td style="text-align: left;">
+    ...<code>$Pk  </code> </td>
+<td style="text-align: left;"> Parkay </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+    ...<code>$BB  </code> </td>
+<td style="text-align: left;"> BlueBonnett </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+    ...<code>$Fl  </code> </td>
+<td style="text-align: left;"> Fleischmanns </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+    ...<code>$Hse </code> </td>
+<td style="text-align: left;"> house </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+    ...<code>$Gen </code> </td>
+<td style="text-align: left;"> generic </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+    ...<code>$Imp </code> </td>
+<td style="text-align: left;"> Imperial </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+    ...<code>$SS  </code> </td>
+<td style="text-align: left;"> Shed Spread 
+  </td>
+</tr>
+</table>
+<p>Product type:
+</p>
+
+<table>
+<tr>
+<td style="text-align: left;">
+    ...<code>$_Stk</code> </td>
+<td style="text-align: left;"> stick </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+    ...<code>$_Tub</code> </td>
+<td style="text-align: left;"> tub 
+  </td>
+</tr>
+</table>
+<p>In the <code>demos</code> data frame:
+</p>
+
+<table>
+<tr>
+<td style="text-align: left;">
+    ...<code>$Fs3_4    </code> </td>
+<td style="text-align: left;"> dummy for family size 3-4 </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+    ...<code>$Fs5      </code> </td>
+<td style="text-align: left;"> dummy for family size &gt;= 5 </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+    ...<code>$college  </code> </td>
+<td style="text-align: left;"> dummy for education status </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+    ...<code>$whtcollar</code> </td>
+<td style="text-align: left;"> dummy for job status </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+    ...<code>$retired  </code> </td>
+<td style="text-align: left;"> dummy for retirement status 
+  </td>
+</tr>
+</table>
+<p>All prices are in U.S. dollars.
+</p>
+
+
+<h3>Source</h3>
+
+<p>Allenby, Greg and Peter Rossi (1991), "Quality Perceptions and Asymmetric Switching Between Brands," <em>Marketing Science</em> 10, 185–205.
+</p>
+
+
+<h3>References</h3>
+
+<p>Chapter 5, <em>Bayesian Statistics and Marketing</em> by Rossi, Allenby, and McCulloch.</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">data(margarine)
+cat(" Table of Choice Variable ", fill=TRUE)
+print(table(margarine$choicePrice[,2]))
+
+cat(" Means of Prices", fill=TRUE)
+mat=apply(as.matrix(margarine$choicePrice[,3:12]), 2, mean)
+print(mat)
+
+cat(" Quantiles of Demographic Variables", fill=TRUE)
+mat=apply(as.matrix(margarine$demos[,2:8]), 2, quantile)
+print(mat)
+
+
+## example of processing for use with 'rhierMnlRwMixture'
+if(0) {
+  select = c(1:5,7)  ## select brands
+  chPr = as.matrix(margarine$choicePrice)
+  
+  ## make sure to log prices
+  chPr = cbind(chPr[,1], chPr[,2], log(chPr[,2+select]))
+  demos = as.matrix(margarine$demos[,c(1,2,5)])
+  
+  ## remove obs for other alts
+  chPr = chPr[chPr[,2] &lt;= 7,]
+  chPr = chPr[chPr[,2] != 6,]
+  
+  ## recode choice
+  chPr[chPr[,2] == 7,2] = 6
+  
+  hhidl = levels(as.factor(chPr[,1]))
+  lgtdata = NULL
+  nlgt = length(hhidl)
+  p = length(select)  ## number of choice alts
+  
+  ind = 1
+  for (i in 1:nlgt) {
+    nobs = sum(chPr[,1]==hhidl[i])
+    if(nobs &gt;=5) {
+      data = chPr[chPr[,1]==hhidl[i],]
+      y = data[,2]
+      names(y) = NULL
+      X = createX(p=p, na=1, Xa=data[,3:8], nd=NULL, Xd=NULL, INT=TRUE, base=1)
+      lgtdata[[ind]] = list(y=y, X=X, hhid=hhidl[i])
+      ind = ind+1
+    }
+  }
+  nlgt = length(lgtdata)
+  
+  ## now extract demos corresponding to hhs in lgtdata
+  Z = NULL
+  nlgt = length(lgtdata)
+  for(i in 1:nlgt){
+     Z = rbind(Z, demos[demos[,1]==lgtdata[[i]]$hhid, 2:3])
+  }
+  
+  ## take log of income and family size and demean
+  Z = log(Z)
+  Z[,1] = Z[,1] - mean(Z[,1])
+  Z[,2] = Z[,2] - mean(Z[,2])
+  
+  keep = 5
+  R = 20000
+  mcmc1 = list(keep=keep, R=R)
+  
+  out = rhierMnlRwMixture(Data=list(p=p,lgtdata=lgtdata, Z=Z),
+                          Prior=list(ncomp=1), Mcmc=mcmc1)
+  
+  summary(out$Deltadraw)
+  summary(out$nmix)
+  
+  ## plotting examples
+  if(0){
+    plot(out$nmix)
+    plot(out$Deltadraw)
+  }
+}
+</code></pre>
+
+
+</div>

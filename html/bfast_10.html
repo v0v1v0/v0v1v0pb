@@ -1,0 +1,234 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>bfastpp</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Time Series Preprocessing for BFAST-Type Models</h2>
+
+<h3>Description</h3>
+
+<p>Time series preprocessing for subsequent regression modeling.  Based on a
+(seasonal) time series, a data frame with the response, seasonal terms, a
+trend term, (seasonal) autoregressive terms, and covariates is computed.
+This can subsequently be employed in regression models.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">bfastpp(
+  data,
+  order = 3,
+  lag = NULL,
+  slag = NULL,
+  na.action = na.omit,
+  stl = c("none", "trend", "seasonal", "both"),
+  decomp = c("stl", "stlplus"),
+  sbins = 1
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+<p>A time series of class <code>ts</code>, or another
+object that can be coerced to such. For seasonal components, a frequency
+greater than 1 is required.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>order</code></td>
+<td>
+<p>numeric. Order of the harmonic term, defaulting to <code>3</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>lag</code></td>
+<td>
+<p>numeric. Orders of the autoregressive term, by default omitted.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>slag</code></td>
+<td>
+<p>numeric. Orders of the seasonal autoregressive term, by default
+omitted.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>na.action</code></td>
+<td>
+<p>function for handling <code>NA</code>s in the data (after all
+other preprocessing).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>stl</code></td>
+<td>
+<p>character. Prior to all other preprocessing, STL (season-trend
+decomposition via LOESS smoothing) can be employed for trend-adjustment
+and/or season-adjustment.  The <code>"trend"</code> or <code>"seasonal"</code> component
+or both from <code>stl</code> are removed from each column in
+<code>data</code>. By default (<code>"none"</code>), no STL adjustment is used.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>decomp</code></td>
+<td>
+<p>"stlplus" or "stl": use the NA-tolerant decomposition package
+or the reference package (which can make use of time series with 2-3
+observations per year)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>sbins</code></td>
+<td>
+<p>numeric. Controls the number of seasonal dummies. If integer &gt; 1,
+sets the number of seasonal dummies to use per year.
+If &lt;= 1, treated as a multiplier to the number of observations per year, i.e.
+<code>ndummies = nobs/year * sbins</code>.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>To facilitate (linear) regression models of time series data, <code>bfastpp</code>
+facilitates preprocessing and setting up regressor terms. It returns a
+<code>data.frame</code> containing the first column of the <code>data</code> as the
+<code>response</code> while further columns (if any) are used as covariates
+<code>xreg</code>. Additionally, a linear trend, seasonal dummies, harmonic
+seasonal terms, and (seasonal) autoregressive terms are provided.
+</p>
+<p>Optionally, each column of <code>data</code> can be seasonally adjusted and/or
+trend-adjusted via STL (season-trend decomposition via LOESS smoothing)
+prior to preprocessing. The idea would be to capture season and/or trend
+nonparametrically prior to regression modelling.
+</p>
+
+
+<h3>Value</h3>
+
+<p>If no formula is provided, <code>bfastpp</code> returns a
+<code>"data.frame"</code> with the following variables (some of which may be
+matrices).  </p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>time</code></td>
+<td>
+<p>numeric vector of time stamps,</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>response</code></td>
+<td>
+<p>response vector (first column of <code>data</code>),</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>trend</code></td>
+<td>
+<p>linear time trend (running from 1 to number of observations),</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>season</code></td>
+<td>
+<p>factor indicating season period,</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>harmon</code></td>
+<td>
+<p>harmonic
+seasonal terms (of specified <code>order</code>),</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>lag</code></td>
+<td>
+<p>autoregressive terms
+(or orders <code>lag</code>, if any),</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>slag</code></td>
+<td>
+<p>seasonal autoregressive terms
+(or orders <code>slag</code>, if any),</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>xreg</code></td>
+<td>
+<p>covariate regressor (all
+columns of <code>data</code> except the first, if any).</p>
+</td>
+</tr>
+</table>
+<p>If a formula is given, <code>bfastpp</code> returns a <code>list</code> with components
+<code>X</code>, <code>y</code>, and <code>t</code>, where <code>X</code> is the design matrix of the
+model, <code>y</code> is the response vector, and <code>t</code> represents the time of
+observations. <code>X</code> will only contain variables that occur in the
+formula. Columns of <code>X</code> have names as decribed above.
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Achim Zeileis
+</p>
+
+
+<h3>References</h3>
+
+<p>Verbesselt J, Zeileis A, Herold M (2012).
+“Near real-time disturbance detection using satellite image time series.”
+<em>Remote Sensing of Environment</em>, <b>123</b>, 98–108.
+ISSN 0034-4257, doi: <a href="https://doi.org/10.1016/j.rse.2012.02.022">10.1016/j.rse.2012.02.022</a>, <a href="https://doi.org/10.1016/j.rse.2012.02.022">https://doi.org/10.1016/j.rse.2012.02.022</a>.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>bfastmonitor</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## set up time series
+ndvi &lt;- as.ts(zoo::zoo(cbind(a = som$NDVI.a, b = som$NDVI.b), som$Time))
+ndvi &lt;- window(ndvi, start = c(2006, 1), end = c(2009, 23))
+
+## parametric season-trend model
+d1 &lt;- bfastpp(ndvi, order = 2)
+d1lm &lt;- lm(response ~ trend + harmon, data = d1)
+summary(d1lm)
+# plot visually (except season, as it's a factor)
+plot(zoo::read.zoo(d1)[,-3],
+  # Avoid clipping plots for pretty output
+  ylim = list(c(min(d1[,2]), max(d1[,2])),
+            c(min(d1[,3]), max(d1[,3])),
+            c(-1, 1), c(-1, 1), c(-1, 1), c(-1, 1),
+            c(min(d1[,6]), max(d1[,6]))
+       ))
+
+## autoregressive model (after nonparametric season-trend adjustment)
+d2 &lt;- bfastpp(ndvi, stl = "both", lag = 1:2)
+d2lm &lt;- lm(response ~ lag, data = d2)
+summary(d2lm)
+
+## use the lower level lm.fit function
+d3 &lt;- bfastpp(ndvi, stl = "both", lag = 1:2)
+d3mm &lt;- model.matrix(response ~ lag, d3)
+d3lm &lt;- lm.fit(d3mm, d3$response)
+d3lm$coefficients
+</code></pre>
+
+
+</div>

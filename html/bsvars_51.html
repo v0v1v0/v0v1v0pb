@@ -1,0 +1,224 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>estimate.PosteriorBSVARSV</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Bayesian estimation of a Structural Vector Autoregression with 
+Stochastic Volatility heteroskedasticity via Gibbs sampler</h2>
+
+<h3>Description</h3>
+
+<p>Estimates the SVAR with Stochastic Volatility (SV) heteroskedasticity 
+proposed by Lütkepohl, Shang, Uzeda, and Woźniak (2024).
+Implements the Gibbs sampler proposed by Waggoner &amp; Zha (2003)
+for the structural matrix <code class="reqn">B</code> and the equation-by-equation sampler 
+by Chan, Koop, &amp; Yu (2024)
+for the autoregressive slope parameters <code class="reqn">A</code>. Additionally, 
+the parameter matrices <code class="reqn">A</code> and <code class="reqn">B</code>
+follow a Minnesota prior and generalised-normal prior distributions 
+respectively with the matrix-specific
+overall shrinkage parameters estimated thanks to a hierarchical prior distribution. 
+The SV model is estimated using a range of techniques including: 
+simulation smoother, auxiliary mixture, ancillarity-sufficiency interweaving strategy, 
+and generalised inverse Gaussian distribution summarised by Kastner &amp; Frühwirth-Schnatter (2014). 
+See section <b>Details</b> for the model equations.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">## S3 method for class 'PosteriorBSVARSV'
+estimate(specification, S, thin = 1, show_progress = TRUE)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>specification</code></td>
+<td>
+<p>an object of class PosteriorBSVARSV generated using the <code>estimate.BSVAR()</code> function.
+This setup facilitates the continuation of the MCMC sampling starting from the last draw of the previous run.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>S</code></td>
+<td>
+<p>a positive integer, the number of posterior draws to be generated</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>thin</code></td>
+<td>
+<p>a positive integer, specifying the frequency of MCMC output thinning</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>show_progress</code></td>
+<td>
+<p>a logical value, if <code>TRUE</code> the estimation progress bar is visible</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The heteroskedastic SVAR model is given by the reduced form equation:
+</p>
+<p style="text-align: center;"><code class="reqn">Y = AX + E</code>
+</p>
+
+<p>where <code class="reqn">Y</code> is an <code>NxT</code> matrix of dependent variables, <code class="reqn">X</code> is a <code>KxT</code> matrix of explanatory variables, 
+<code class="reqn">E</code> is an <code>NxT</code> matrix of reduced form error terms, and <code class="reqn">A</code> is an <code>NxK</code> matrix of autoregressive slope coefficients and parameters on deterministic terms in <code class="reqn">X</code>.
+</p>
+<p>The structural equation is given by
+</p>
+<p style="text-align: center;"><code class="reqn">BE = U</code>
+</p>
+
+<p>where <code class="reqn">U</code> is an <code>NxT</code> matrix of structural form error terms, and
+<code class="reqn">B</code> is an <code>NxN</code> matrix of contemporaneous relationships.
+Finally, the structural shocks, <code class="reqn">U</code>, are temporally and contemporaneously independent and jointly normally distributed with zero mean.
+</p>
+<p>Two alternative specifications of the conditional variance of the <code>n</code>th shock at time <code>t</code> 
+can be estimated: non-centred Stochastic Volatility by Lütkepohl, Shang, Uzeda, and Woźniak (2022) 
+or centred Stochastic Volatility by Chan, Koop, &amp; Yu (2021).
+</p>
+<p>The non-centred Stochastic Volatility by Lütkepohl, Shang, Uzeda, and Woźniak (2022) 
+is selected by setting argument <code>centred_sv</code> of function <code>specify_bsvar_sv$new()</code> to value <code>FALSE</code>.
+It has the conditional variances given by:
+</p>
+<p style="text-align: center;"><code class="reqn">Var_{t-1}[u_{n.t}] = exp(w_n h_{n.t})</code>
+</p>
+
+<p>where <code class="reqn">w_n</code> is the estimated conditional standard deviation of the log-conditional variance
+and the log-volatility process <code class="reqn">h_{n.t}</code> follows an autoregressive process:
+</p>
+<p style="text-align: center;"><code class="reqn">h_{n.t} = g_n h_{n.t-1} + v_{n.t}</code>
+</p>
+
+<p>where <code class="reqn">h_{n.0}=0</code>, <code class="reqn">g_n</code> is an autoregressive parameter and <code class="reqn">v_{n.t}</code> is a standard normal error term.
+</p>
+<p>The centred Stochastic Volatility by Chan, Koop, &amp; Yu (2021)
+is selected by setting argument <code>centred_sv</code> of function <code>specify_bsvar_sv$new()</code> to value <code>TRUE</code>.
+Its conditional variances are given by:
+</p>
+<p style="text-align: center;"><code class="reqn">Var_{t-1}[u_{n.t}] = exp(h_{n.t})</code>
+</p>
+
+<p>where the log-conditional variances <code class="reqn">h_{n.t}</code> follow an autoregressive process:
+</p>
+<p style="text-align: center;"><code class="reqn">h_{n.t} = g_n h_{n.t-1} + v_{n.t}</code>
+</p>
+
+<p>where <code class="reqn">h_{n.0}=0</code>, <code class="reqn">g_n</code> is an autoregressive parameter and <code class="reqn">v_{n.t}</code> is a zero-mean normal error term
+with variance <code class="reqn">s_{v.n}^2</code>.
+</p>
+
+
+<h3>Value</h3>
+
+<p>An object of class PosteriorBSVARSV containing the Bayesian estimation output and containing two elements:
+</p>
+<p><code>posterior</code> a list with a collection of <code>S</code> draws from the posterior distribution generated via Gibbs sampler containing:
+</p>
+
+<dl>
+<dt>A</dt>
+<dd>
+<p>an <code>NxKxS</code> array with the posterior draws for matrix <code class="reqn">A</code></p>
+</dd>
+<dt>B</dt>
+<dd>
+<p>an <code>NxNxS</code> array with the posterior draws for matrix <code class="reqn">B</code></p>
+</dd>
+<dt>hyper</dt>
+<dd>
+<p>a <code>5xS</code> matrix with the posterior draws for the hyper-parameters of the hierarchical prior distribution</p>
+</dd>
+<dt>h</dt>
+<dd>
+<p>an <code>NxTxS</code> array with the posterior draws of the log-volatility processes</p>
+</dd>
+<dt>rho</dt>
+<dd>
+<p>an <code>NxS</code> matrix with the posterior draws of SV autoregressive parameters</p>
+</dd>
+<dt>omega</dt>
+<dd>
+<p>an <code>NxS</code> matrix with the posterior draws of SV process conditional standard deviations</p>
+</dd>
+<dt>S</dt>
+<dd>
+<p>an <code>NxTxS</code> array with the posterior draws of the auxiliary mixture component indicators</p>
+</dd>
+<dt>sigma2_omega</dt>
+<dd>
+<p>an <code>NxS</code> matrix with the posterior draws of the variances of the zero-mean normal prior for <code>omega</code></p>
+</dd>
+<dt>s_</dt>
+<dd>
+<p>an <code>S</code>-vector with the posterior draws of the scale of the gamma prior of the hierarchical prior for <code>sigma2_omega</code></p>
+</dd>
+</dl>
+<p><code>last_draw</code> an object of class BSVARSV with the last draw of the current MCMC run as the starting value to be passed to the continuation of the MCMC estimation using <code>estimate()</code>.
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Tomasz Woźniak <a href="mailto:wozniak.tom@pm.me">wozniak.tom@pm.me</a>
+</p>
+
+
+<h3>References</h3>
+
+<p>Chan, J.C.C., Koop, G, and Yu, X. (2024) Large Order-Invariant Bayesian VARs with Stochastic Volatility. <em>Journal of Business &amp; Economic Statistics</em>, <b>42</b>, <a href="https://doi.org/10.1080/07350015.2023.2252039">doi:10.1080/07350015.2023.2252039</a>.
+</p>
+<p>Kastner, G. and Frühwirth-Schnatter, S. (2014) Ancillarity-Sufficiency Interweaving Strategy (ASIS) for Boosting MCMC 
+Estimation of Stochastic Volatility Models. <em>Computational Statistics &amp; Data Analysis</em>, <b>76</b>, 408–423, 
+<a href="https://doi.org/10.1016/j.csda.2013.01.002">doi:10.1016/j.csda.2013.01.002</a>.
+</p>
+<p>Lütkepohl, H., Shang, F., Uzeda, L., and Woźniak, T. (2024) Partial Identification of Heteroskedastic Structural VARs: Theory and Bayesian Inference. <em>University of Melbourne Working Paper</em>, 1–57, <a href="https://doi.org/10.48550/arXiv.2404.11057">doi:10.48550/arXiv.2404.11057</a>.
+</p>
+<p>Waggoner, D.F., and Zha, T., (2003) A Gibbs sampler for structural vector autoregressions. <em>Journal of Economic Dynamics and Control</em>, <b>28</b>, 349–366, <a href="https://doi.org/10.1016/S0165-1889%2802%2900168-9">doi:10.1016/S0165-1889(02)00168-9</a>.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>specify_bsvar_sv</code>, <code>specify_posterior_bsvar_sv</code>, <code>normalise_posterior</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R"># simple workflow
+############################################################
+# upload data
+data(us_fiscal_lsuw)
+
+# specify the model and set seed
+specification  = specify_bsvar_sv$new(us_fiscal_lsuw, p = 1)
+set.seed(123)
+
+# run the burn-in
+burn_in        = estimate(specification, 10)
+
+# estimate the model
+posterior      = estimate(burn_in, 20, 2)
+
+# workflow with the pipe |&gt;
+############################################################
+set.seed(123)
+us_fiscal_lsuw |&gt;
+  specify_bsvar_sv$new(p = 1) |&gt;
+  estimate(S = 10) |&gt; 
+  estimate(S = 20, thin = 2) |&gt; 
+  compute_impulse_responses(horizon = 4) -&gt; irf
+
+</code></pre>
+
+
+</div>

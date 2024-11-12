@@ -1,0 +1,188 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>map_bucket_trades</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Bucket trade data over an extended period</h2>
+
+<h3>Description</h3>
+
+<p><code>map_bucket_trades()</code> uses <code>purrr::map_dfr</code> to execute multiple API calls.
+This is useful when the data you want to return exceeds the maximum 1000 row response limit,
+but do not want to have to manually call <code>bucket_trades()</code> repeatedly.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">map_bucket_trades(
+  start_date = "2015-09-25 13:00:00",
+  end_date = now(tzone = "UTC"),
+  binSize = "1d",
+  symbol = "XBTUSD",
+  partial = "false",
+  filter = NULL,
+  use_auth = FALSE,
+  verbose = FALSE
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>start_date</code></td>
+<td>
+<p>character string.
+Starting date for results in the format <code>"yyyy-mm-dd"</code> or <code>"yyyy-mm-dd hh-mm-ss"</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>end_date</code></td>
+<td>
+<p>character string.
+Ending date for results in the format <code>"yyyy-mm-dd"</code> or <code>"yyyy-mm-dd hh-mm-ss"</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>binSize</code></td>
+<td>
+<p>character string.
+The time interval to bucket by, must be one of: <code>"1m"</code>, <code>"5m"</code>, <code>"1h"</code> or <code>"1d"</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>symbol</code></td>
+<td>
+<p>a character string for the instrument symbol.
+Use <code>available_symbols()</code> to see available symbols.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>partial</code></td>
+<td>
+<p>character string. Either <code>"true"</code> or <code>"false"</code>.
+If <code>"true"</code>, will send in-progress (incomplete) bins for the current time period.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>filter</code></td>
+<td>
+<p>an optional character string for table filtering.
+Send JSON key/value pairs, such as <code>"{'key':'value'}"</code>. See examples in <code>trades()</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>use_auth</code></td>
+<td>
+<p>logical. Use <code>TRUE</code> to enable authentication with API key.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>verbose</code></td>
+<td>
+<p>logical. If <code>TRUE</code>, will print information to the console. Useful for
+long running requests.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p><code>map_bucket_trades()</code> takes a start and end date, and creates a sequence of start dates
+which are passed in to the 'startTime“ parameter in <code>bucket_trades()</code>.
+</p>
+<p>The length of time between each start time in each API call is determined by the binSize.
+For example, <code>"1d"</code> is chosen as the binSize the length of time between start dates will be 1000 days.
+If <code>"1h"</code> is chosen, it will be 1000 hours etc.
+</p>
+<p>The function will print the number of API calls being sent and provides a progress bar in the console
+</p>
+<p>Public API requests are limited to 30 per minute. Consequently, <code>map_bucket_trades()</code> uses
+<code>purrr::slowly</code> to restrict how often the function is called.
+</p>
+
+
+<h3>Value</h3>
+
+<p><code>map_bucket_trades</code> returns a <code>data.frame</code> containing:
+</p>
+
+<ul>
+<li>
+<p>timestamp: POSIXct. Date and time of trade.
+</p>
+</li>
+<li>
+<p>symbol: character. Instrument ticker.
+</p>
+</li>
+<li>
+<p>open: numeric. Opening price for the bucket.
+</p>
+</li>
+<li>
+<p>high: numeric. Highest price in the bucket.
+</p>
+</li>
+<li>
+<p>low: numeric. Lowest price in the bucket.
+</p>
+</li>
+<li>
+<p>close: numeric. Closing price of the bucket.
+</p>
+</li>
+<li>
+<p>trades: numeric. Number of trades executed within the bucket.
+</p>
+</li>
+<li>
+<p>volume: numeric. Volume in USD.
+</p>
+</li>
+<li>
+<p>vwap: numeric. Volume weighted average price.
+</p>
+</li>
+<li>
+<p>lastSize: numeric. Size of the last trade executed.
+</p>
+</li>
+<li>
+<p>turnover: numeric. How many satoshi were exchanged.
+</p>
+</li>
+<li>
+<p>homeNotional: numeric. BTC value of the bucket.
+</p>
+</li>
+<li>
+<p>foreignNotional: numeric. USD value of the bucket.
+</p>
+</li>
+</ul>
+<h3>References</h3>
+
+<p><a href="https://www.bitmex.com/api/explorer/#!/Trade/Trade_getBucketed">https://www.bitmex.com/api/explorer/#!/Trade/Trade_getBucketed</a>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## Not run: 
+# Get hourly bucketed trade data between 2020-01-01 and 2020-02-01
+
+map_bucket_trades(
+  start_date = "2020-01-01",
+  end_date = "2020-02-01",
+  binSize = "1h"
+)
+
+## End(Not run)
+
+</code></pre>
+
+
+</div>

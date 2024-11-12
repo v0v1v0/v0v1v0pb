@@ -1,0 +1,173 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>stabsel</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Stability selection.</h2>
+
+<h3>Description</h3>
+
+<p>Performs stability selection based on gradient boosting.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">stabsel(formula, data, family = "gaussian",
+  q, maxit, B = 100, thr = .9, fraction = 0.5, seed = NULL, ...)
+
+## Plot selection frequencies.
+## S3 method for class 'stabsel'
+plot(x, show = NULL,
+  pal = function(n) gray.colors(n, start = 0.9, end = 0.3), ...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>formula</code></td>
+<td>
+<p> A formula or extended formula. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>data</code></td>
+<td>
+<p> A <code>data.frame</code>. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>family</code></td>
+<td>
+<p> A <code>bamlss.family</code> object. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>q</code></td>
+<td>
+<p> An integer specifying how many terms to select in each boosting run. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>maxit</code></td>
+<td>
+<p> An integer specifying the maximum number of boosting iterations.
+See <code>opt_boost</code>. Either choose <code>q</code> or <code>maxit</code> as hyper-parameter
+for regularization.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>B</code></td>
+<td>
+<p> An integer. The boosting is run B times. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>thr</code></td>
+<td>
+<p> Cut-off threshold of relative frequencies (between 0 and 1) for selection. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>fraction</code></td>
+<td>
+<p> Numeric between 0 and 1. The fraction of data to be used in each
+boosting run. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>seed</code></td>
+<td>
+<p>A seed to be set before the stability selection.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p> A object of class stabsel. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>show</code></td>
+<td>
+<p> Number of terms to be shown. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>pal</code></td>
+<td>
+<p> Color palette for different model terms. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p> Not used yet in <code>stabsel</code>. </p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p><code>stabsel</code> performs stability selection based on gradient
+boosting (<code>opt_boost</code>): The boosting algorithm is run
+<code>B</code> times on a randomly drawn <code>fraction</code> of the <code>data</code>.
+Each boosting run is stopped either when <code>q</code> terms have been selected,
+or when <code>maxit</code> iterations have been performed, i.e. either <code>q</code>
+or <code>maxit</code> can be used to tune the regularization of the boosting.
+After the boosting the relative selection frequencies are evaluated.
+Terms with a relative selection frequency larger then <code>thr</code>
+are suggested for a final regression model.
+</p>
+<p>If neither <code>q</code> nor <code>maxit</code> has been specified, <code>q</code>
+will be set to the square root of the number of columns in <code>data</code>.
+</p>
+<p>Gradient boosting does not depend on random numbers. Thus, the
+individual boosting runs differ only in the subset of data which
+is used.
+</p>
+
+
+<h3>Value</h3>
+
+<p>A object of class stabsel.
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Thorsten Simon</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">## Not run: ## Simulate some data.
+set.seed(111)
+d &lt;- GAMart()
+n &lt;- nrow(d)
+
+## Add some noise variables.
+for(i in 4:9)
+  d[[paste0("x",i)]] &lt;- rnorm(n)
+
+f &lt;- paste0("~ ", paste("s(x", 1:9, ")", collapse = "+", sep = ""))
+f &lt;- paste(f, "+ te(lon,lat)")
+f &lt;- as.formula(f)
+f &lt;- list(update(f, num ~ .), f)
+
+## Run stability selection.
+sel &lt;- stabsel(f, data = d, q = 6, B = 10)
+plot(sel)
+
+## Estimate selected model.
+nf &lt;- formula(sel)
+b &lt;- bamlss(nf, data = d)
+plot(b)
+
+## End(Not run)
+</code></pre>
+
+
+</div>

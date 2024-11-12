@@ -1,0 +1,474 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>plot_conditional_effects.bgmfit</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Visualize conditional effects of predictor</h2>
+
+<h3>Description</h3>
+
+<p>Display conditional effects of one or more numeric and/or categorical
+predictors including two-way interaction effects.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">## S3 method for class 'bgmfit'
+plot_conditional_effects(
+  model,
+  effects = NULL,
+  conditions = NULL,
+  int_conditions = NULL,
+  re_formula = NA,
+  spaghetti = FALSE,
+  surface = FALSE,
+  categorical = FALSE,
+  ordinal = FALSE,
+  transform = NULL,
+  resolution = 100,
+  select_points = 0,
+  too_far = 0,
+  prob = 0.95,
+  robust = TRUE,
+  newdata = NULL,
+  ndraws = NULL,
+  draw_ids = NULL,
+  levels_id = NULL,
+  resp = NULL,
+  ipts = 10,
+  deriv = 0,
+  deriv_model = NULL,
+  idata_method = NULL,
+  verbose = FALSE,
+  dummy_to_factor = NULL,
+  expose_function = FALSE,
+  usesavedfuns = NULL,
+  clearenvfuns = NULL,
+  envir = NULL,
+  ...
+)
+
+plot_conditional_effects(model, ...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>model</code></td>
+<td>
+<p>An object of class <code>bgmfit</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>effects</code></td>
+<td>
+<p>An optional character vector naming effects (main effects or
+interactions) for which to compute conditional plots. Interactions are
+specified by a <code>:</code> between variable names. If <code>NULL</code> (the
+default), plots are generated for all main effects and two-way interactions
+estimated in the model. When specifying <code>effects</code> manually, <em>all</em>
+two-way interactions (including grouping variables) may be plotted
+even if not originally modeled.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>conditions</code></td>
+<td>
+<p>An optional <code>data.frame</code> containing variable values
+to condition on. Each effect defined in <code>effects</code> will
+be plotted separately for each row of <code>conditions</code>. Values in the
+<code>cond__</code> column will be used as titles of the subplots. If <code>cond__</code>
+is not given, the row names will be used for this purpose instead.
+It is recommended to only define a few rows in order to keep the plots clear.
+See <code>make_conditions</code> for an easy way to define conditions.
+If <code>NULL</code> (the default), numeric variables will be conditionalized by
+using their means and factors will get their first level assigned.
+<code>NA</code> values within factors are interpreted as if all dummy
+variables of this factor are zero. This allows, for instance, to make
+predictions of the grand mean when using sum coding.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>int_conditions</code></td>
+<td>
+<p>An optional named <code>list</code> whose elements are
+vectors of values of the variables specified in <code>effects</code>.
+At these values, predictions are evaluated. The names of
+<code>int_conditions</code> have to match the variable names exactly.
+Additionally, the elements of the vectors may be named themselves,
+in which case their names appear as labels for the conditions in the plots.
+Instead of vectors, functions returning vectors may be passed and are
+applied on the original values of the corresponding variable.
+If <code>NULL</code> (the default), predictions are evaluated at the
+<code class="reqn">mean</code> and at <code class="reqn">mean +/- sd</code> for numeric predictors and at
+all categories for factor-like predictors.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>re_formula</code></td>
+<td>
+<p>A formula containing group-level effects to be considered
+in the conditional predictions. If <code>NULL</code>, include all group-level
+effects; if <code>NA</code> (default), include no group-level effects.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>spaghetti</code></td>
+<td>
+<p>Logical. Indicates if predictions should
+be visualized via spaghetti plots. Only applied for numeric
+predictors. If <code>TRUE</code>, it is recommended
+to set argument <code>ndraws</code> to a relatively small value
+(e.g., <code>100</code>) in order to reduce computation time.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>surface</code></td>
+<td>
+<p>Logical. Indicates if interactions or
+two-dimensional smooths should be visualized as a surface.
+Defaults to <code>FALSE</code>. The surface type can be controlled
+via argument <code>stype</code> of the related plotting method.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>categorical</code></td>
+<td>
+<p>Logical. Indicates if effects of categorical
+or ordinal models should be shown in terms of probabilities
+of response categories. Defaults to <code>FALSE</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ordinal</code></td>
+<td>
+<p>(Deprecated) Please use argument <code>categorical</code>.
+Logical. Indicates if effects in ordinal models
+should be visualized as a raster with the response categories
+on the y-axis. Defaults to <code>FALSE</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>transform</code></td>
+<td>
+<p>A function or a character string naming
+a function to be applied on the predicted responses
+before summary statistics are computed. Only allowed
+if <code>method = "posterior_predict"</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>resolution</code></td>
+<td>
+<p>Number of support points used to generate
+the plots. Higher resolution leads to smoother plots.
+Defaults to <code>100</code>. If <code>surface</code> is <code>TRUE</code>,
+this implies <code>10000</code> support points for interaction terms,
+so it might be necessary to reduce <code>resolution</code>
+when only few RAM is available.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>select_points</code></td>
+<td>
+<p>Positive number.
+Only relevant if <code>points</code> or <code>rug</code> are set to <code>TRUE</code>:
+Actual data points of numeric variables that
+are too far away from the values specified in <code>conditions</code>
+can be excluded from the plot. Values are scaled into
+the unit interval and then points more than <code>select_points</code>
+from the values in <code>conditions</code> are excluded.
+By default, all points are used.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>too_far</code></td>
+<td>
+<p>Positive number.
+For surface plots only: Grid points that are too
+far away from the actual data points can be excluded from the plot.
+<code>too_far</code> determines what is too far. The grid is scaled into
+the unit square and then grid points more than <code>too_far</code>
+from the predictor variables are excluded. By default, all
+grid points are used. Ignored for non-surface plots.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>prob</code></td>
+<td>
+<p>A value between 0 and 1 indicating the desired probability
+to be covered by the uncertainty intervals. The default is 0.95.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>robust</code></td>
+<td>
+<p>If <code>TRUE</code> (the default) the median is used as the
+measure of central tendency. If <code>FALSE</code> the mean is used instead.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>newdata</code></td>
+<td>
+<p>An optional data frame to be used in estimation. If
+<code>NULL</code> (default), the <code>newdata</code> is retrieved from the
+<code>model</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ndraws</code></td>
+<td>
+<p>A positive integer indicating the number of posterior draws to
+be used in estimation. If <code>NULL</code> (default), all draws are used.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>draw_ids</code></td>
+<td>
+<p>An integer indicating the specific posterior draw(s)
+to be used in estimation (default <code>NULL</code>).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>levels_id</code></td>
+<td>
+<p>An optional argument to specify the <code>ids</code> for
+hierarchical model (default <code>NULL</code>). It is used only when model is
+applied to the data with 3 or more levels of hierarchy. For a two level
+model, the <code>levels_id</code> is automatically inferred from the model fit.
+Even for 3 or higher level model, the <code>levels_id</code> is inferred from the
+model fit but under the assumption that hierarchy is specified from lowest
+to upper most level i.e, <code>id</code> followed by <code>study</code> where <code>id</code>
+is nested within the <code>study</code> Note that it is not guaranteed that the
+<code>levels_id</code> is sorted correctly, and therefore it is better to set it
+manually when fitting a model with three or more levels of hierarchy.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>resp</code></td>
+<td>
+<p>A character string (default <code>NULL</code>) to specify response
+variable when processing posterior draws for the <code>univariate_by</code> and
+<code>multivariate</code> models. See <code>bsitar()</code> for details on
+<code>univariate_by</code> and <code>multivariate</code> models</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ipts</code></td>
+<td>
+<p>An integer to set the length of the predictor variable to get a
+smooth velocity curve. The <code>NULL</code> will return original values whereas
+an integer such as <code>ipts = 10</code> (default) will interpolate the
+predictor. It is important to note that these interpolations do not alter
+the range of predictor when calculating population average and/or the
+individual specific growth curves.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>deriv</code></td>
+<td>
+<p>An integer to indicate whether to estimate distance curve or its
+derivative (i.e., velocity curve). The <code>deriv = 0</code> (default) is for
+the distance curve whereas <code>deriv = 1</code> for the velocity curve.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>deriv_model</code></td>
+<td>
+<p>A logical to specify whether to estimate velocity curve
+from the derivative function, or the differentiation of the distance curve.
+The argument <code>deriv_model</code> is set to <code>TRUE</code> for those functions
+which need velocity curve such as <code>growthparameters()</code> and
+<code>plot_curves()</code>, and <code>NULL</code> for functions which explicitly use
+the distance curve (i.e., fitted values) such as <code>loo_validation()</code>
+and <code>plot_ppc()</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>idata_method</code></td>
+<td>
+<p>A character string to indicate the interpolation method.
+The number of of interpolation points is set up the <code>ipts</code> argument.
+Options available for <code>idata_method</code> are <em>method 1</em> (specified as
+<code>'m1'</code>) and <em>method 2</em> (specified as <code>'m2'</code>). The
+<em>method 1</em> (<code>'m1'</code>) is adapted from the the <span class="pkg">iapvbs</span> package
+and is documented here
+<a href="https://rdrr.io/github/Zhiqiangcao/iapvbs/src/R/exdata.R">https://rdrr.io/github/Zhiqiangcao/iapvbs/src/R/exdata.R</a>
+whereas <em>method 2</em> (<code>'m2'</code>) is based on the <span class="pkg">JMbayes</span>
+package as documented here
+<a href="https://github.com/drizopoulos/JMbayes/blob/master/R/dynPred_lme.R">https://github.com/drizopoulos/JMbayes/blob/master/R/dynPred_lme.R</a>.
+The <code>'m1'</code> method works by internally constructing the data frame based
+on the model configuration whereas the method <code>'m2'</code> uses the exact
+data frame used in model fit and can be accessed via <code>fit$data</code>. If
+<code>idata_method = NULL, default</code>, then method <code>'m2'</code> is
+automatically set. Note that method <code>'m1'</code> might fail in some cases
+when model involves covariates particularly when model is fit as
+<code>univariate_by</code>. Therefore, it is advised to switch to method
+<code>'m2'</code> in case <code>'m1'</code> results in error.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>verbose</code></td>
+<td>
+<p>An optional argument (logical, default <code>FALSE</code>) to
+indicate whether to print information collected during setting up the
+object(s).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>dummy_to_factor</code></td>
+<td>
+<p>A named list (default <code>NULL</code>) that is used to
+convert dummy variables into a factor variable. The named elements are
+<code>factor.dummy</code>, <code>factor.name</code>, and <code>factor.level</code>. The
+<code>factor.dummy</code> is a vector of character strings that need to be
+converted to a factor variable whereas the <code>factor.name</code> is a single
+character string that is used to name the newly created factor variable.
+The <code>factor.level</code> is used to name the levels of newly created factor.
+When <code>factor.name</code> is <code>NULL</code>, then the factor name is internally
+set as <code>'factor.var'</code>. If <code>factor.level</code> is <code>NULL</code>, then
+names of factor levels are take from the <code>factor.dummy</code> i.e., the
+factor levels are assigned same name as <code>factor.dummy</code>. Note that when
+<code>factor.level</code> is not <code>NULL</code>, its length must be same as the
+length of the <code>factor.dummy</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>expose_function</code></td>
+<td>
+<p>An optional logical argument to indicate whether to
+expose Stan functions (default <code>FALSE</code>). Note that if user has already
+exposed Stan functions during model fit by setting <code>expose_function =
+  TRUE</code> in the <code>bsitar()</code>, then those exposed functions are saved and can be
+used during post processing of the posterior draws and therefore
+<code>expose_function</code> is by default set as <code>FALSE</code> in all post
+processing functions except <code>optimize_model()</code>. For <code>optimize_model()</code>, the
+default setting is <code>expose_function = NULL</code>. The reason is that each
+optimized model has different Stan function and therefore it need to be re
+exposed and saved. The <code>expose_function = NULL</code> implies that the
+setting for <code>expose_function</code> is taken from the original <code>model</code>
+fit. Note that <code>expose_function</code> must be set to <code>TRUE</code> when
+adding <code>fit criteria</code> and/or <code>bayes_R2</code> during model
+optimization.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>usesavedfuns</code></td>
+<td>
+<p>A logical (default <code>NULL</code>) to indicate whether to
+use the already exposed and saved <code>Stan</code> functions. Depending on
+whether the user have exposed Stan functions within the <code>bsitar()</code> call via
+<code>expose_functions</code> argument in the <code>bsitar()</code>, the <code>usesavedfuns</code>
+is automatically set to <code>TRUE</code> (if <code>expose_functions = TRUE</code>) or
+<code>FALSE</code> (if <code>expose_functions = FALSE</code>). Therefore, manual
+setting of <code>usesavedfuns</code> as <code>TRUE</code>/<code>FALSE</code> is rarely
+needed. This is for internal purposes only and mainly used during the
+testing of the functions and therefore should not be used by users as it
+might lead to unreliable estimates.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>clearenvfuns</code></td>
+<td>
+<p>A logical to indicate whether to clear the exposed
+function from the environment (<code>TRUE</code>) or not (<code>FALSE</code>). If
+<code>NULL</code> (default), then <code>clearenvfuns</code> is set as <code>TRUE</code> when
+<code>usesavedfuns</code> is <code>TRUE</code>, and <code>FALSE</code> if <code>usesavedfuns</code>
+is <code>FALSE</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>envir</code></td>
+<td>
+<p>Environment used for function evaluation. The default is
+<code>NULL</code> which will set <code>parent.frame()</code> as default environment.
+Note that since most of post processing functions are based on <span class="pkg">brms</span>,
+the functions needed for evaluation should be in the <code>.GlobalEnv</code>.
+Therefore, it is strongly recommended to set <code> envir = globalenv()</code>
+(or <code>envir = .GlobalEnv</code>). This is particularly true for the
+derivatives such as velocity curve.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Additional arguments passed to the <code>brms::conditional_effects()</code>
+function. Please see <code>brms::conditional_effects()</code> for details.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The <strong>plot_conditional_effects()</strong> is a wrapper around the
+<code>brms::conditional_effects()</code>. The <code>brms::conditional_effects()</code> function
+from the <span class="pkg">brms</span> package can used to plot the fitted (distance) curve
+when response (e.g., height) is not transformed. However, when the outcome
+is log or square root transformed, the <code>brms::conditional_effects()</code> will
+return the fitted curve on the log or square root scale whereas the
+<strong>plot_conditional_effects()</strong> will return the fitted curve on the
+original scale. Furthermore, the <strong>plot_conditional_effects()</strong> also
+plots the velocity curve on the original scale after making required
+back-transformation. Apart from these differences, both these functions
+(brms::conditional_effects and <strong>plot_conditional_effects()</strong> work
+in the same manner. In other words, user can specify all the arguments
+which are available in the <code>brms::conditional_effects()</code>.
+</p>
+
+
+<h3>Value</h3>
+
+<p>An object of class 'brms_conditional_effects' which is a named list
+with one data.frame per effect containing all information required to
+generate conditional effects plots. See brms::conditional_effects for
+details.
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Satpal Sandhu  <a href="mailto:satpal.sandhu@bristol.ac.uk">satpal.sandhu@bristol.ac.uk</a>
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>brms::conditional_effects()</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+# Fit Bayesian SITAR model 
+
+# To avoid mode estimation which takes time, the Bayesian SITAR model fit to 
+# the 'berkeley_exdata' has been saved as an example fit ('berkeley_exfit').
+# See 'bsitar' function for details on 'berkeley_exdata' and 'berkeley_exfit'.
+
+# Check and confirm whether model fit object 'berkeley_exfit' exists
+ berkeley_exfit &lt;- getNsObject(berkeley_exfit)
+
+model &lt;- berkeley_exfit
+
+# Population average distance curve
+plot_conditional_effects(model, deriv = 0, re_formula = NA)
+
+
+# Individual-specific distance curves
+plot_conditional_effects(model, deriv = 0, re_formula = NULL)
+
+# Population average velocity curve
+plot_conditional_effects(model, deriv = 1, re_formula = NA)
+
+# Individual-specific velocity curves
+plot_conditional_effects(model, deriv = 1, re_formula = NULL)
+
+
+</code></pre>
+
+
+</div>

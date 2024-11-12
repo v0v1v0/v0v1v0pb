@@ -1,0 +1,226 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>BRISC_correlation</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Function for simulating correlated data with BRISC</h2>
+
+<h3>Description</h3>
+
+<p>The function <code>BRISC_correlation</code> creates correlated data (known structure) using Nearest Neighbor
+Gaussian Processes (NNGP). <code>BRISC_correlation</code> uses the sparse Cholesky representation of Vecchia’s
+likelihood developed in Datta et al., 2016. Some code blocks are borrowed from the R package: spNNGP:
+Spatial Regression Models for Large Datasets using Nearest Neighbor Gaussian Processes
+https://CRAN.R-project.org/package=spNNGP .
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">BRISC_correlation(coords, sim, sigma.sq = 1, tau.sq = 0, phi = 1,
+                  nu = 1.5, n.neighbors = NULL, n_omp = 1,
+                  cov.model = "exponential",
+                  search.type = "tree", stabilization = NULL,
+                  verbose = TRUE, tol = 12)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>coords</code></td>
+<td>
+<p>an <code class="reqn">n \times 2</code> matrix of the observation
+coordinates in <code class="reqn">R^2</code> (e.g., easting and northing). </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>sim</code></td>
+<td>
+<p>an <code class="reqn">n \times k</code> matrix of the <code class="reqn">k</code> many <code class="reqn">n \times 1</code> vectors
+from which the correlated data are calculated (see Details below). </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>sigma.sq</code></td>
+<td>
+<p>value of sigma square. Default value is 1. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>tau.sq</code></td>
+<td>
+<p>value of tau square. Default value is 0.1. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>phi</code></td>
+<td>
+<p>value of phi. Default value is 1. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nu</code></td>
+<td>
+<p>value of nu, only required for matern covariance model. Default value is 1.5. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>n.neighbors</code></td>
+<td>
+<p>number of neighbors used in the NNGP. Default value is <code class="reqn">max(100, n -1)</code>. We suggest a high value of
+<code>n.neighbors</code> for lower value of phi. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>n_omp</code></td>
+<td>
+<p>number of threads to be used, value can be more than 1 if source code is compiled with OpenMP support.
+Default is 1. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>cov.model</code></td>
+<td>
+<p>keyword that specifies the covariance function to be used in modelling the spatial dependence structure
+among the observations. Supported keywords are: <code>"exponential"</code>, <code>"matern"</code>, <code>"spherical"</code>, and <code>"gaussian"</code>
+for exponential, Matern, spherical and Gaussian covariance function respectively. Default value is <code>"exponential"</code>. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>search.type</code></td>
+<td>
+<p>keyword that specifies type of nearest neighbor search algorithm to be used. Supported keywords are:
+<code>"brute"</code>, <code>"tree"</code> and <code>"cb"</code>. <br><code>"brute"</code> and <code>"tree"</code> provide the same result, though
+<code>"tree"</code> should be faster. <code>"cb"</code> implements fast code book search described in Ra and Kim (1993)
+modified for NNGP. If locations do not have identical coordinate values on the axis used for the nearest neighbor
+determination, then <code>"cb"</code> and <code>"brute"</code> should produce identical neighbor sets. However, if there are
+identical coordinate values on the axis used for nearest neighbor determination, then <code>"cb"</code> and <code>"brute"</code>
+might produce different, but equally valid neighbor sets, e.g., if data are on a grid. Default value is <code>"tree"</code>. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>stabilization</code></td>
+<td>
+<p>when we use a very smooth covarince model (lower values of phi for spherical and Gaussian
+covariance and low phi and high nu for Matern covarinace) in absence of a non-negligble nugget, the correlation process may fail
+due to computational instability. If <code>stabilization = TRUE</code>, performs stabilization by setting <code>tau.sq = </code> <code class="reqn">max{\code{tau
+                      .sq}, \code{sigma.sq} * 1e-06}</code>. Default value is <code>TRUE</code> for <code>cov.model = "expoenential"</code> and <code>FALSE</code> otherwise. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>verbose</code></td>
+<td>
+<p>if <code>TRUE</code>, model specifications along with information regarding OpenMP support and progress of the algorithm
+is printed to the screen. Otherwise, nothing is printed to the screen. Default value is <code>TRUE</code>. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>tol</code></td>
+<td>
+<p>the input observation coordinates are rounded to this many places after the decimal. The default value is 12. </p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>Denote <code class="reqn">g</code> be the input <code>sim</code>. Let <code class="reqn">\Sigma</code> be the precision matrix associated with the covariance model determined by the <code class="reqn">cov.model</code> and model parameters. Then <code>BRISC_correlation</code> calculates <code class="reqn">h</code>, where <code class="reqn">h</code> is given as follows:
+</p>
+<p style="text-align: center;"><code class="reqn">
+S ^{-0.5} h = g
+</code>
+</p>
+
+<p>where, <code class="reqn">S ^{-0.5}</code> is a sparse approximation of the cholesky factor <code class="reqn">\Sigma ^{-0.5}</code> of the precision matrix <code class="reqn">\Sigma ^{-1}</code>, obtained from NNGP.
+</p>
+
+
+<h3>Value</h3>
+
+<p>A list comprising of the following:
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>coords</code></td>
+<td>
+<p>the matrix <code>coords</code>. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>n.neighbors</code></td>
+<td>
+<p>the used value of <code>n.neighbors</code>. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>cov.model</code></td>
+<td>
+<p>the used covariance model. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Theta</code></td>
+<td>
+<p>parameters of covarinace model; accounts for <code>stabilization</code>. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>input.data</code></td>
+<td>
+<p>the matrix <code>sim</code>. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>output.data</code></td>
+<td>
+<p>the output matrix <code class="reqn">h</code> in Details. </p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>time</code></td>
+<td>
+<p>time (in seconds) required after preprocessing data in R, <br> reported using,
+<code>proc.time()</code>. </p>
+</td>
+</tr>
+</table>
+<h3>Author(s)</h3>
+
+<p>Arkajyoti Saha <a href="mailto:arkajyotisaha93@gmail.com">arkajyotisaha93@gmail.com</a>, <br>
+Abhirup Datta <a href="mailto:abhidatta@jhu.edu">abhidatta@jhu.edu</a>
+</p>
+
+
+<h3>References</h3>
+
+<p>Datta, A., S. Banerjee, A.O. Finley, and A.E. Gelfand. (2016)
+Hierarchical Nearest-Neighbor Gaussian process models for large
+geostatistical datasets. Journal of the American Statistical
+Association, 111:800-812.
+</p>
+<p>Andrew Finley, Abhirup Datta and Sudipto Banerjee (2017). spNNGP: Spatial Regression Models for Large
+Datasets using Nearest Neighbor Gaussian Processes. R package version 0.1.1.
+https://CRAN.R-project.org/package=spNNGP
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+set.seed(1)
+n &lt;- 1000
+coords &lt;- cbind(runif(n,0,1), runif(n,0,1))
+
+sigma.sq = 1
+phi = 1
+
+set.seed(1)
+sim &lt;- matrix(rnorm(3*n),n, 3)
+correlation_result &lt;- BRISC_correlation(coords, sigma.sq = sigma.sq,
+                                        phi = phi, sim = sim)
+</code></pre>
+
+
+</div>

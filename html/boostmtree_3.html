@@ -1,0 +1,691 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>boostmtree</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Boosted multivariate trees for longitudinal data</h2>
+
+<h3>Description</h3>
+
+<p>Multivariate extension of Friedman's gradient descent boosting method
+for modeling continuous or binary longitudinal response using 
+multivariate tree base learners (Pande et
+al., 2017).  Covariate-time interactions are modeled using penalized
+B-splines (P-splines) with estimated adaptive smoothing parameter.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R"> boostmtree(x,
+            tm,
+            id,
+            y,
+            family = c("Continuous","Binary","Nominal","Ordinal"),
+            y_reference = NULL,
+            M = 200,
+            nu = 0.05,
+            na.action = c("na.omit","na.impute")[2],
+            K = 5,
+            mtry = NULL,
+            nknots = 10,
+            d = 3,
+            pen.ord = 3,
+            lambda,
+            rho,
+            lambda.max = 1e6,
+            lambda.iter = 2,
+            svd.tol = 1e-6,
+            forest.tol = 1e-3,
+            verbose = TRUE,
+            cv.flag = FALSE,
+            eps = 1e-5,
+            mod.grad = TRUE,
+            NR.iter = 3,
+            ...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>Data frame (or matrix) containing the x-values.   Rows
+must be duplicated to match the number of time points for an individual.
+That is, if individual <em>i</em> has <em>n[i]</em> outcome y-values,
+then there must be <em>n[i]</em> duplicate rows of <em>i</em>'s x-value.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>tm</code></td>
+<td>
+<p>Vector of time values, one entry for each row in <code>x</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>id</code></td>
+<td>
+<p>Unique subject identifier, one entry for each row in <code>x</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>y</code></td>
+<td>
+<p>Observed y-value, one entry for each row in <code>x</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>family</code></td>
+<td>
+<p>Family of the response variable <code>y</code>. Use any one 
+from {"Continuous", "Binary","Nominal","Ordinal"} based on the scale of <code>y</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>y_reference</code></td>
+<td>
+<p>Set this value, among the unique <code>y</code> values 
+when <code>family</code> == "Nominal". If NULL, lowest value, among unique <code>y</code> values, is used.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>M</code></td>
+<td>
+<p>Number of boosting iterations</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nu</code></td>
+<td>
+<p>Boosting regularization parameter.  A value in (0,1].</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>na.action</code></td>
+<td>
+<p>Remove missing values (casewise) or impute it. Default is to impute the missign values.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>K</code></td>
+<td>
+<p>Number of terminal nodes used for the multivariate tree learner.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>mtry</code></td>
+<td>
+<p>Number of <code>x</code> variables selected randomly for tree fitting. Default is use all <code>x</code> variables.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nknots</code></td>
+<td>
+<p>Number of knots used for the B-spline for modeling the
+time interaction effect.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>d</code></td>
+<td>
+<p>Degree of the piecewise B-spline polynomial (no time
+effect is fit when d &lt; 1).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>pen.ord</code></td>
+<td>
+<p>Differencing order used to define the penalty with
+increasing values implying greater smoothness.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>lambda</code></td>
+<td>
+<p>Smoothing (penalty) parameter used for B-splines with
+increasing values associated with increasing
+smoothness/penalization. If missing, or non-positive, the value is
+estimated adaptively using a mixed models approach.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>rho</code></td>
+<td>
+<p>If missing, rho is estimated, else, use the <code>rho</code> value specified in this argument.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>lambda.max</code></td>
+<td>
+<p>Tolerance used for adaptively estimated lambda
+(caps it).  For experts only.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>lambda.iter</code></td>
+<td>
+<p>Number of iterations used to estimate lambda
+(only applies when lambda is not supplied and adaptive smoothing
+is employed).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>svd.tol</code></td>
+<td>
+<p>Tolerance value used in the SVD calculation of the
+penalty matrix.  For experts only.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>forest.tol</code></td>
+<td>
+<p>Tolerance used for forest weighted least squares
+solution.  Experimental and for experts only.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>verbose</code></td>
+<td>
+<p>Should verbose output be printed?</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>cv.flag</code></td>
+<td>
+<p>Should in-sample cross-validation (CV) be used to determine
+optimal stopping using out of bag data?</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>eps</code></td>
+<td>
+<p>Tolerance value used for determining the optimal
+<code>M</code>. Applies only if <code>cv.flag</code> = TRUE.  For experts only.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>mod.grad</code></td>
+<td>
+<p>Use a modified gradient? See details below.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>NR.iter</code></td>
+<td>
+<p>Number of Newton-Raphson iteration. Applied 
+for <code>family</code> = {Binary","Nominal","Ordinal"}.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Further arguments passed to or from other methods.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>Each individual has observed y-values, over possibly different time
+points, with possibly differing number of time points.  Given y, the
+time points, and x, the conditional mean time profile of y is
+estimated using gradient boosting in which the gradient is derived
+from a criterion function involving a working variance matrix for y
+specified as an equicorrelation matrix with parameter <em>rho</em>
+multiplied by a variance parameter <em>phi</em>. Multivariate trees are
+used for base learners and weighted least squares is used for solving
+the terminal node optimization problem.  This provides solutions to
+the core parameters of the algorithm.  For ancillary parameters, a
+mixed-model formulation is used to estimate the smoothing parameter
+associated with the B-splines used for the time-interaction effect,
+although the user can manually set the smoothing parameter as well.
+Ancillary parameters <em>rho</em> and <em>phi</em> are estimated using GLS
+(generalized least squares).
+</p>
+<p>In the original boostmtree algorithm (Pande et al., 2017), the
+equicorrelation parameter <em>rho</em> is used in two places in the
+algorithm: (1) for growing trees using the gradient, which depends
+upon <em>rho</em>; and (2) for solving the terminal node optimization
+problem which also uses the gradient.  However, Pande (2017) observed
+that setting <em>rho</em> to zero in the gradient used for growing trees
+improved performance of the algorithm, especially in high dimensions.
+For this reason the default setting used in this algorithm is to set
+<em>rho</em> to zero in the gradient for (1).  The <code>rho</code> in the
+gradient for (2) is not touched.  The option <code>mod.grad</code> specifies
+whether a modified gradient is used in the tree growing process and is
+TRUE by default.
+</p>
+<p>By default, trees are grown from a bootstrap sample of the data –
+thus the boosting method employed here is a modified example of
+stochastic gradient descent boosting (Friedman, 2002).  Stochastic
+descent often improves performance and has the added advantage that
+out-of-sample data (out-of-bag, OOB) can be used to calculate
+variable importance (VIMP).
+</p>
+<p>The package implements R-side parallel processing by replacing
+the R function <code>lapply</code> with <code>mclapply</code> found in the
+<span class="pkg">parallel</span> package.  You can set the number of cores accessed by
+<code>mclapply</code> by issuing the command <code>options(mc.cores =
+    x)</code>, where <code>x</code> is the number of cores.  The options command
+can also be placed in the users .Rprofile file for convenience.  You
+can, alternatively, initialize the environment variable
+<code>MC_CORES</code> in your shell environment.
+</p>
+<p>As an example, issuing the following options command uses all
+available cores for R-side parallel processing:
+</p>
+<p><code>options(mc.cores=detectCores())</code>
+</p>
+<p>However, be cautious when setting <code>mc.cores</code>.  This can create
+not only high CPU usage but also high RAM usage, especially when using
+functions <code>partialPlot</code> and <code>predict</code>.
+</p>
+<p>The method can impute the missing observations in x (covariates) using
+on the fly imputation. Details regarding can be found in the
+<span class="pkg">randomForestSRC</span> package. If missing values are present in the
+<code>tm</code>, <code>id</code> or <code>y</code>, the user should either impute or
+delete these values before executing the function.
+</p>
+<p>Finally note <code>cv.flag</code> can be used for an in-sample
+cross-validated estimate of prediction error.  This is used to
+determine the optimized number of boosting iterations <em>Mopt</em>.
+The final mu predictor is evaluated at this value and is
+cross-validated.  The prediction error returned via <code>err.rate</code>
+is standardized by the overall standard deviation of y.  </p>
+
+
+<h3>Value</h3>
+
+<p> An
+object of class <code>(boostmtree, grow)</code> with the following
+components:
+</p>
+<table>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>The x-values, but with only one row per individual
+(i.e. duplicated rows are removed). Values sorted on <code>id</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>xvar.names</code></td>
+<td>
+<p>X-variable names.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>time</code></td>
+<td>
+<p>List with each component containing the time
+points for a given individual. Values sorted on <code>id</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>id</code></td>
+<td>
+<p>Sorted subject identifier.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>y</code></td>
+<td>
+<p>List with each component containing the observed
+y-values for a given individual. Values sorted on <code>id</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Yorg</code></td>
+<td>
+<p>For family == "Nominal" or family == "Ordinal", this provides the 
+response in list-format where each element coverted the response into the binary response.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>family</code></td>
+<td>
+<p>Family of <code>y</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ymean</code></td>
+<td>
+<p>Overall mean of y-values for all individuals. If <code>family</code> = 
+"Binary", <code>ymean</code> = 0.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ysd</code></td>
+<td>
+<p>Overall standard deviation of y-values for all individuals. If <code>family</code> = 
+"Binary", <code>ysd</code> = 1.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>na.action</code></td>
+<td>
+<p>Remove missing values or impute?</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>n</code></td>
+<td>
+<p>Total number of subjects.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ni</code></td>
+<td>
+<p>Number of repeated measures for each subject.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>n.Q</code></td>
+<td>
+<p>Number of class labels for non-continuous response.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Q_set</code></td>
+<td>
+<p>Class labels for the non-continuous response.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>y.unq</code></td>
+<td>
+<p>Unique y values for the non-continous response.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>y_reference</code></td>
+<td>
+<p>Reference value for family == "Nominal".</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>tm.unq</code></td>
+<td>
+<p>Unique time points.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>gamma</code></td>
+<td>
+<p>List of length <em>M</em>, with each component
+containing the boosted tree fitted values.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>mu</code></td>
+<td>
+<p>List with each component containing the estimated mean
+values for an individual.  That is, each component contains the
+estimated time-profile for an individual.  When in-sample
+cross-validation is requested using <code>cv.flag</code>=TRUE, the
+estimated mean is cross-validated and evaluated at the optimal
+number of iterations <code>Mopt</code>.
+If the family == "Nominal" or family == "Ordinal", <code>mu</code> will have a higher level
+of list to accommodate binary responses generated from nominal or ordinal response.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Prob_class</code></td>
+<td>
+<p>For family == "Ordinal", this provides individual probabilty rather than
+cumulative probabilty.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>lambda</code></td>
+<td>
+<p>Smoothing parameter. Results provided in vector or matrix form, depending
+on whether family == c("Continuous","Binary") or family == c("Nominal", "Ordinal").</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>phi</code></td>
+<td>
+<p>Variance parameter.Results provided in vector or matrix form, depending
+on whether family == c("Continuous","Binary") or family == c("Nominal", "Ordinal").</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>rho</code></td>
+<td>
+<p>Correlation parameter.Results provided in vector or matrix form, depending
+on whether family == c("Continuous","Binary") or family == c("Nominal", "Ordinal").</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>baselearner</code></td>
+<td>
+<p>List of length <em>M</em> containing the base learners.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>membership</code></td>
+<td>
+<p>List of length <em>M</em>, with each component
+containing the terminal node membership for a given boosting
+iteration.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>X.tm</code></td>
+<td>
+<p>Design matrix for all the unique time points.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>D</code></td>
+<td>
+<p>Design matrix for each subject.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>d</code></td>
+<td>
+<p>Degree of the piecewise B-spline polynomial.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>pen.ord</code></td>
+<td>
+<p>Penalization difference order.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>K</code></td>
+<td>
+<p>Number of terminal nodes.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>M</code></td>
+<td>
+<p>Number of boosting iterations.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nu</code></td>
+<td>
+<p>Boosting regularization parameter.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>ntree</code></td>
+<td>
+<p>Number of trees.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>cv.flag</code></td>
+<td>
+<p>Whether in-sample CV is used or not?</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>err.rate</code></td>
+<td>
+<p>In-sample standardized estimate of l1-error and RMSE.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>rmse</code></td>
+<td>
+<p>In-sample standardized RMSE at optimized <code>M</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Mopt</code></td>
+<td>
+<p>The optimized <code>M</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>gamma.i.list</code></td>
+<td>
+<p>Estimate of gamma obtained from in-sample CV if <code>cv.flag</code> = TRUE,       else NULL</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>forest.tol</code></td>
+<td>
+<p>Forest tolerance value (needed for prediction).</p>
+</td>
+</tr>
+</table>
+<h3>Author(s)</h3>
+
+<p>Hemant Ishwaran, Amol Pande and Udaya B. Kogalur
+</p>
+
+
+<h3>References</h3>
+
+<p>Friedman J.H. (2001). Greedy function approximation: a gradient
+boosting machine, <em>Ann. of Statist.</em>, 5:1189-1232.
+</p>
+<p>Friedman J.H. (2002). Stochastic gradient boosting.
+<em>Comp. Statist. Data Anal.</em>, 38(4):367–378.
+</p>
+<p>Pande A., Li L., Rajeswaran J., Ehrlinger J., Kogalur U.B.,
+Blackstone E.H., Ishwaran H. (2017).  Boosted multivariate trees for
+longitudinal data, <em>Machine Learning</em>, 106(2): 277–305.
+</p>
+<p>Pande A. (2017).  <em>Boosting for longitudinal data</em>.  Ph.D. Dissertation,
+Miller School of Medicine, University of Miami.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>marginalPlot</code>
+<code>partialPlot</code>,
+<code>plot.boostmtree</code>,
+<code>predict.boostmtree</code>,
+<code>print.boostmtree</code>,
+<code>simLong</code>,
+<code>vimpPlot</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">##------------------------------------------------------------
+## synthetic example (Response y is continuous)
+## 0.8 correlation, quadratic time with quadratic interaction
+##-------------------------------------------------------------
+#simulate the data (use a small sample size for illustration)
+dta &lt;- simLong(n = 50, N = 5, rho =.80, model = 2,family = "Continuous")$dtaL
+
+#basic boosting call (M set to a small value for illustration)
+boost.grow &lt;- boostmtree(dta$features, dta$time, dta$id, dta$y,family = "Continuous",M = 20)
+
+#print results
+print(boost.grow)
+
+#plot.results
+plot(boost.grow)
+
+##------------------------------------------------------------
+## synthetic example (Response y is binary)
+## 0.8 correlation, quadratic time with quadratic interaction
+##-------------------------------------------------------------
+#simulate the data (use a small sample size for illustration)
+dta &lt;- simLong(n = 50, N = 5, rho =.80, model = 2, family = "Binary")$dtaL
+
+#basic boosting call (M set to a small value for illustration)
+boost.grow &lt;- boostmtree(dta$features, dta$time, dta$id, dta$y,family = "Binary", M = 20)
+
+#print results
+print(boost.grow)
+
+#plot.results
+plot(boost.grow)
+
+## Not run: 
+##------------------------------------------------------------
+## Same synthetic example as above with continuous response
+## but with in-sample cross-validation estimate for RMSE
+##-------------------------------------------------------------
+dta &lt;- simLong(n = 50, N = 5, rho =.80, model = 2,family = "Continuous")$dtaL
+boost.cv.grow &lt;- boostmtree(dta$features, dta$time, dta$id, dta$y,
+                 family = "Continuous", M = 300, cv.flag = TRUE)
+plot(boost.cv.grow)
+print(boost.cv.grow)
+
+##----------------------------------------------------------------------------
+## spirometry data (Response is continuous)
+##----------------------------------------------------------------------------
+data(spirometry, package = "boostmtree")
+
+#boosting call: cubic B-splines with 15 knots
+spr.obj &lt;- boostmtree(spirometry$features, spirometry$time, spirometry$id, spirometry$y,
+                        family = "Continuous",M = 100, nu = .025, nknots = 15)
+plot(spr.obj)
+
+
+##----------------------------------------------------------------------------
+## Atrial Fibrillation data (Response is binary)
+##----------------------------------------------------------------------------
+data(AF, package = "boostmtree")
+
+#boosting call: cubic B-splines with 15 knots
+AF.obj &lt;- boostmtree(AF$feature, AF$time, AF$id, AF$y,
+                        family = "Binary",M = 100, nu = .025, nknots = 15)
+plot(AF.obj)
+
+
+##----------------------------------------------------------------------------
+## sneaky way to use boostmtree for (univariate) regression: boston housing
+##----------------------------------------------------------------------------
+
+if (library("mlbench", logical.return = TRUE)) {
+
+  ## assemble the data
+  data(BostonHousing)
+  x &lt;- BostonHousing; x$medv &lt;- NULL
+  y &lt;- BostonHousing$medv
+  trn &lt;- sample(1:nrow(x), size = nrow(x) * (2 / 3), replace = FALSE)
+
+  ## run boosting in univariate mode
+  o &lt;- boostmtree(x = x[trn,], y = y[trn],family = "Continuous")
+  o.p &lt;- predict(o, x = x[-trn, ], y = y[-trn])
+  print(o)
+  plot(o.p)
+
+  ## run boosting in univariate mode to obtain RMSE and vimp
+  o.cv &lt;- boostmtree(x = x, y = y, M = 100,family = "Continuous",cv.flag = TRUE)
+  print(o.cv)
+  plot(o.cv)
+}
+
+
+## End(Not run)</code></pre>
+
+
+</div>

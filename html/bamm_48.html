@@ -1,0 +1,163 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>sdm_sim</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>sdm_sim: Simulate single species dispersal dynamics using the BAM framework.</h2>
+
+<h3>Description</h3>
+
+<p>sdm_sim: Simulate single species dispersal dynamics using the BAM framework.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">sdm_sim(
+  set_A,
+  set_M,
+  initial_points,
+  nsteps,
+  stochastic_dispersal = TRUE,
+  disp_prop2_suitability = TRUE,
+  disper_prop = 0.5,
+  progress_bar = TRUE
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>set_A</code></td>
+<td>
+<p>A setA object returned by the function
+<code>model2sparse</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>set_M</code></td>
+<td>
+<p>A setM object containing the adjacency matrix of the
+study area.
+See <code>adj_mat</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>initial_points</code></td>
+<td>
+<p>A sparse vector returned by the function
+<code>occs2sparse</code></p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nsteps</code></td>
+<td>
+<p>Number of steps to run the simulation</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>stochastic_dispersal</code></td>
+<td>
+<p>Logical. If dispersal depends on a probability of
+visiting neighbor cells (Moore neighborhood).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>disp_prop2_suitability</code></td>
+<td>
+<p>Logical. If probability of dispersal
+is proportional to the suitability of reachable cells. The proportional
+value must be declared in the parameter 'disper_prop'.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>disper_prop</code></td>
+<td>
+<p>Probability of dispersal to reachable cells.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>progress_bar</code></td>
+<td>
+<p>Show progress bar</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The model is cellular automata where the occupied area
+of a species at time <code class="reqn">t+1</code> is estimated by the multiplication of two
+binary matrices: one matrix represents movements (M), another
+abiotic -niche- tolerances (A)
+(Soberon and Osorio-Olvera, 2022).
+</p>
+<p style="text-align: center;"><code class="reqn">\mathbf{G}_j(t+1) =\mathbf{A}_j(t)\mathbf{M}_j
+\mathbf{G}_j(t)</code>
+</p>
+
+<p>The equation describes a very simple process: To find the occupied patches
+in <code class="reqn">t+1</code> start with those occupied at time <code class="reqn">t</code> denoted by
+<code class="reqn">\mathbf{G}_j(t)</code>, allow the individuals to disperse among
+adjacent patches, as defined by <code class="reqn">\mathbf{M}_j</code>, then remove individuals
+from patches that are unsuitable, as defined by <code class="reqn">\mathbf{A}_j(t)</code>.
+</p>
+
+
+<h3>Value</h3>
+
+<p>An object of class <code>bam</code> with simulation results.
+The simulation are stored in the sdm_sim slot (a list of sparse matrices).
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Luis Osorio-Olvera &amp; Jorge Soberón
+</p>
+
+
+<h3>References</h3>
+
+<p>Soberón J, Osorio-Olvera L (2023).
+“A dynamic theory of the area of distribution.”
+<em>Journal of Biogeography6</em>, <b>50</b>, 1037-1048.
+<a href="https://doi.org/10.1111/jbi.14587">doi:10.1111/jbi.14587</a>, <a href="https://onlinelibrary.wiley.com/doi/abs/10.1111/jbi.14587">https://onlinelibrary.wiley.com/doi/abs/10.1111/jbi.14587</a>..
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">
+model_path &lt;- system.file("extdata/Lepus_californicus_cont.tif",
+                          package = "bamm")
+model &lt;- raster::raster(model_path)
+
+sparse_mod &lt;- bamm::model2sparse(model,threshold=0.05)
+adj_mod &lt;- bamm::adj_mat(sparse_mod,ngbs=1)
+occs_lep_cal &lt;- data.frame(longitude = c(-110.08880,
+                                         -98.89638),
+                           latitude = c(30.43455,
+                                        25.19919))
+
+occs_sparse &lt;- bamm::occs2sparse(modelsparse = sparse_mod,
+                                occs = occs_lep_cal)
+sdm_lep_cal &lt;- bamm::sdm_sim(set_A = sparse_mod,
+                             set_M = adj_mod,
+                             initial_points = occs_sparse,
+                             nsteps = 10,
+                             stochastic_dispersal = TRUE,
+                             disp_prop2_suitability=TRUE,
+                             disper_prop=0.5,
+                             progress_bar=TRUE)
+
+sim_res &lt;- bamm::sim2Raster(sdm_lep_cal)
+raster::plot(sim_res)
+
+
+</code></pre>
+
+
+</div>

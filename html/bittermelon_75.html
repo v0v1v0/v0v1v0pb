@@ -1,0 +1,122 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>bm_compress</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Compress bitmaps by a factor of two</h2>
+
+<h3>Description</h3>
+
+<p>Compresses <code>bm_bitmap()</code> objects by a factor of two by re-mapping to a “block elements” scheme.
+For pixmap objects like <code>bm_pixmap()</code> we simply shrink the pixmap by a factor of two using <code>bm_distort()</code>.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">bm_compress(x, direction = "vertical", ...)
+
+## S3 method for class 'bm_bitmap'
+bm_compress(x, direction = "vertical", ...)
+
+## S3 method for class 'bm_pixmap'
+bm_compress(x, direction = "vertical", ..., filter = "Point")
+
+## S3 method for class ''magick-image''
+bm_compress(x, direction = "vertical", ..., filter = "Point")
+
+## S3 method for class 'nativeRaster'
+bm_compress(x, direction = "vertical", ..., filter = "Point")
+
+## S3 method for class 'raster'
+bm_compress(x, direction = "vertical", ..., filter = "Point")
+
+## S3 method for class 'bm_list'
+bm_compress(x, ...)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>Either a <code>bm_bitmap()</code>, <code>bm_font()</code>, <code>bm_list()</code>, "magick-image", "nativeRaster", <code>bm_pixmap()</code>, or "raster"  object.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>direction</code></td>
+<td>
+<p>Either "vertical" or "v", "horizontal" or "h",
+OR "both" or "b".</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Additional arguments to be passed to or from methods.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>filter</code></td>
+<td>
+<p>Passed to <code>magick::image_resize()</code>.
+Use <code>magick::filter_types()</code> for list of supported filters.
+The default "Point" filter will maintain your sprite's color palette.
+<code>NULL</code> will give you the <code>magick</code>'s default filter which may work better
+if you are not trying to maintain a sprite color palette.</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>Depending on <code>direction</code> we shrink the bitmaps height and/or width by
+a factor of two and re-encode pairs/quartets of pixels to a “block elements” scheme.
+If necessary we pad the right/bottom of the bitmap(s) by
+a pixel. For each pair/quartet we determine the most-common non-zero element
+and map them to a length twenty set of integers representing the “block
+elements” scheme.  For integers greater than zero we map it to higher twenty
+character sets i.e. <code>1</code>'s get mapped to 0:19, <code>2</code>'s get mapped to 20:39, <code>3</code>'s
+get mapped to 40:59, etc.  Using the default <code>px_unicode</code> will give you the exact
+matching “Block Elements” glyphs while <code>px_ascii</code> gives the closest ASCII approximation.
+Hence <code>print.bm_bitmap()</code> should produce reasonable results for compressed bitmaps if
+either of them are used as the <code>px</code> argument.
+</p>
+
+
+<h3>Value</h3>
+
+<p>Depending on <code>x</code> either a <code>bm_bitmap()</code>, <code>bm_font()</code>, <code>bm_list()</code>, magick-image, "nativeRaster", <code>bm_pixmap()</code>, or raster  object.
+</p>
+
+
+<h3>See Also</h3>
+
+<p>See <a href="https://en.wikipedia.org/wiki/Block_Elements">https://en.wikipedia.org/wiki/Block_Elements</a> for more info on the Unicode Block Elements block.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">font_file &lt;- system.file("fonts/spleen/spleen-8x16.hex.gz", package = "bittermelon")
+font &lt;- read_hex(font_file)
+r &lt;- font[[str2ucp("R")]]
+print(r)
+print(bm_compress(r, "vertical"))
+print(bm_compress(r, "horizontal"))
+print(bm_compress(r, "both"))
+
+img &lt;- png::readPNG(system.file("img", "Rlogo.png", package="png"))
+logo &lt;- as_bm_pixmap(img)
+if (cli::is_utf8_output() &amp;&amp; 
+    cli::num_ansi_colors() &gt; 256L &amp;&amp;
+    requireNamespace("magick", quietly = TRUE)) {
+  logo_c &lt;- bm_compress(pm, "both", filter = NULL)
+  print(logo_c, compress = "v")
+}
+</code></pre>
+
+
+</div>

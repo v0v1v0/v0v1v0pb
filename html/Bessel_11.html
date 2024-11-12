@@ -1,0 +1,132 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>besselJs</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Bessel J() function Simple Series Representation</h2>
+
+<h3>Description</h3>
+
+<p>Computes the modified Bessel <code class="reqn">J</code> function, using one of its basic
+definitions as an infinite series, e.g. A. &amp; S., p.360, (9.1.10).  The
+implementation is pure <span style="font-family: Courier New, Courier; color: #666666;"><b>R</b></span>, working for <code>numeric</code>,
+<code>complex</code>, but also e.g., for objects of class
+<code>"mpfr"</code> from package <span class="pkg">Rmpfr</span>.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">besselJs(x, nu, nterm = 800, log = FALSE,
+         Ceps = if (isNum) 8e-16 else 2^(-x@.Data[[1]]@prec))
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>numeric or complex vector, or of another <code>class</code>
+for which arithmetic methods are defined, notably
+objects of class <code>mpfr</code>.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nu</code></td>
+<td>
+<p>non-negative numeric (scalar).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nterm</code></td>
+<td>
+<p>integer indicating the number of terms to be used.
+Should be in the order of <code>abs(x)</code>, but can be smaller for
+large x.  A warning is given, when <code>nterm</code> was <em>possibly</em> too
+small. (Currently, many of these warnings are wrong, as</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>log</code></td>
+<td>
+<p>logical indicating if the logarithm <code class="reqn">log J.()</code> is
+required.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>Ceps</code></td>
+<td>
+<p>a relative error tolerance for checking if <code>nterm</code>
+has been sufficient.  The default is “correct” for double
+precision and also for
+multiprecision objects.</p>
+</td>
+</tr>
+</table>
+<h3>Value</h3>
+
+<p>a “numeric” (or complex or <code>"mpfr"</code>)
+vector of the same class and length as <code>x</code>.
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Martin Maechler</p>
+
+
+<h3>References</h3>
+
+<p>Abramowitz, M., and Stegun, I. A. (1964–1972).
+<em>Handbook of mathematical functions</em>
+(NBS AMS series 55, U.S. Dept. of Commerce).
+<a href="https://personal.math.ubc.ca/~cbm/aands/page_360.htm">https://personal.math.ubc.ca/~cbm/aands/page_360.htm</a>
+</p>
+
+
+<h3>See Also</h3>
+
+<p>This package <code>BesselJ()</code>, <span class="pkg">base</span> <code>besselJ()</code>, etc
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">stopifnot(all.equal(besselJs(1:10, 1), # our R code --&gt; 4 warnings, for x = 4:7
+                    besselJ (1:10, 1)))# internal C code w/ different algorithm
+
+## Large 'nu' ...
+x &lt;- (0:20)/4
+if(interactive()) op &lt;- options(nwarnings = 999)
+(bx &lt;- besselJ(x, nu=200))# base R's -- gives 19 (mostly wrong) warnings about precision lost
+## Visualize:
+bj &lt;- curve(besselJ(1, x), 1, 2^10, log="xy", n=1001,
+            main=quote(J[nu](1)), xlab = quote(nu), xaxt="n", yaxt="n") # 50+ warnings
+eaxis &lt;- if(!requireNamespace("sfsmisc")) axis else sfsmisc::eaxis
+eaxis(1, sub10 = 3); eaxis(2)
+bj6 &lt;- curve(besselJ(6, x), add=TRUE, n=1001, col=adjustcolor(2, 1/2), lwd=2)
+plot(y~x, as.data.frame(bj6), log="x", type="l", col=2, lwd=2,
+     main = quote(J[nu](6)), xlab = quote(nu), xaxt="n")
+eaxis(1, sub10=3); abline(h=0, lty=3)
+
+if(require("Rmpfr")) { ## Use high precision, notably large exponent range, numbers:
+  Bx &lt;- besselJs(mpfr(x, 64), nu=200)
+  all.equal(Bx, bx, tol = 1e-15)# TRUE -- warnings were mostly wrong; specifically:
+  cbind(bx, Bx)
+  signif(asNumeric(1 - (bx/Bx)[19:21]), 4) # only [19] had lost accuracy
+
+  ## With*out* mpfr numbers -- using log -- is accurate (here)
+  lbx &lt;- besselJs(     x,      nu=200, log=TRUE)
+  lBx &lt;- besselJs(mpfr(x, 64), nu=200, log=TRUE)
+  cbind(x, lbx, lBx)
+  stopifnot(all.equal(asNumeric(log(Bx)), lbx, tol=1e-15),
+	    all.equal(lBx, lbx, tol=4e-16))
+} # Rmpfr
+if(interactive()) options(op) # reset 'nwarnings'
+</code></pre>
+
+
+</div>

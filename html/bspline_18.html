@@ -1,0 +1,219 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>smbsp</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Smoothing B-spline of order n &gt;= 0</h2>
+
+<h3>Description</h3>
+
+<p>Optimize smoothing B-spline coefficients (smbsp) and knot positions (fitsmbsp)
+such that residual squared sum is minimized for all y columns.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">smbsp(
+  x,
+  y,
+  n = 3L,
+  xki = NULL,
+  nki = 1L,
+  lieq = NULL,
+  monotone = 0,
+  positive = 0,
+  mat = NULL,
+  estSD = FALSE,
+  tol = 1e-10
+)
+
+fitsmbsp(
+  x,
+  y,
+  n = 3L,
+  xki = NULL,
+  nki = 1L,
+  lieq = NULL,
+  monotone = 0,
+  positive = 0,
+  control = list(),
+  estSD = FALSE,
+  tol = 1e-10
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>x</code></td>
+<td>
+<p>Numeric vector, abscissa points</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>y</code></td>
+<td>
+<p>Numeric vector or matrix or data.frame, ordinate values to be smoothed
+(one set per column in case of matrix or data.frame)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>n</code></td>
+<td>
+<p>Integer scalar, polynomial order of B-splines (3 by default)</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>xki</code></td>
+<td>
+<p>Numeric vector, strictly internal B-spline knots, i.e. lying strictly
+inside of <code>x</code> bounds. If NULL (by default), they are
+estimated with the help of <code>iknots()</code>. This vector is used as initial approximation
+during optimization process. Must be non decreasing if not NULL.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nki</code></td>
+<td>
+<p>Integer scalar, internal knot number (1 by default). When
+nki==0, it corresponds to polynomial regression. If <code>xki</code>
+is not NULL, this parameter is ignored.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>lieq</code></td>
+<td>
+<p>List, equality constraints to respect by the smoothing spline,
+one list item per y column. By default (NULL), no constraint is imposed.
+Constraints are given as a 2-column matrix <code>(xe, ye)</code> where
+for each xe, an ye value is imposed. If a list item is NULL, no constraint
+is imposed on corresponding y column.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>monotone</code></td>
+<td>
+<p>Numeric scalar or vector, if <code>monotone &gt; 0</code>, resulting B-spline
+weights must be increasing;
+if <code>monotone &lt; 0</code>, B-spline weights must be decreasing; if <code>monotone == 0</code> (default), no
+constraint on monotonicity is imposed. If 'monotone' is a vector it
+must be of length <code>ncol(y)</code>, in which case each component indicates
+the constraint for corresponding column of y.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>positive</code></td>
+<td>
+<p>Numeric scalar, if <code>positive &gt; 0</code>, resulting B-spline weights
+must be &gt;= 0;
+if <code>positive &lt; 0</code>, B-spline weights must be decreasing; if <code>positive == 0</code> (default), no
+constraint on positivity is imposed. If 'positive' is a vector it
+must be of length <code>ncol(y)</code>, in which case each component indicates
+the constraint for corresponding column of y.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>mat</code></td>
+<td>
+<p>Numeric matrix of basis vectors, if NULL it is recalculated
+by <code>bsc()</code>. If provided, it is the responsibility of the user
+to ensure that this matrix be adequate to xki vector.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>estSD</code></td>
+<td>
+<p>Logical scalar, if TRUE, indicates to calculate: SD of each y column, covariance
+matrix and SD of spline coefficients. All these values can be retrieved
+with bsppar() call (FALSE by default). These estimations are made under assumption
+that all y points have uncorrelated noise. Optional constraints are not taken
+into account of SD.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>tol</code></td>
+<td>
+<p>Numerical scalar, relative tolerance for small singular values
+that should be considered as 0 if <code>s[i] &lt;= tol*s[1]</code>. This parameter
+is ignored if estSD=FALSE (1.e-10 by default).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>control</code></td>
+<td>
+<p>List, passed through to <code>nlsic()</code> call</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>If constraints are set, we use <code>nlsic::lsie_ln()</code> to solve a
+least squares
+problem with equality constraints in least norm sens for each y column.
+Otherwise, <code>nlsic::ls_ln_svd()</code> is used for the whole y matrix.
+The solution of least squares problem is a vector of B-splines coefficients <code>qw</code>,
+one vector per <code>y</code> column. These vectors are used to define B-spline function
+which is returned as the result.<br><br>
+NB. When <code>nki &gt;= length(x)-n-1</code> (be it from direct setting or calculated
+from <code>length(xki)</code>), it corresponds
+to spline interpolation, i.e. the resulting spline will pass
+exactly by (x,y) points (well, up to numerical precision).
+</p>
+<p>Border and external knots are fixed, only strictly internal knots can move
+during optimization. The optimization process is constrained to respect a minimal
+distance between knots as well as to bound them to x range.
+This is done to avoid knots getting unsorted during iterations and/or going
+outside of a meaningful range.
+</p>
+
+
+<h3>Value</h3>
+
+<p>Function, smoothing B-splines
+respecting optional constraints (generated by <code>par2bsp()</code>).
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>bsppar</code> for retrieving parameters of B-spline functions; <code>par2bsp</code>
+for generating B-spline function; <code>iknots</code> for estimation of knot positions
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">  x=seq(0, 1, length.out=11)
+  y=sin(pi*x)+rnorm(x, sd=0.1)
+  # constraint B-spline to be 0 at the interval ends
+  fsm=smbsp(x, y, nki=1, lieq=list(rbind(c(0, 0), c(1, 0))))
+  # check parameters of found B-splines
+  bsppar(fsm)
+  plot(x, y) # original "measurements"
+  # fine grained x
+  xfine=seq(0, 1, length.out=101)
+  lines(xfine, fsm(xfine)) # fitted B-splines
+  lines(xfine, sin(pi*xfine), col="blue") # original function
+  # visualize knot positions
+  xk=bsppar(fsm)$xk
+  points(xk, fsm(xk), pch="x", col="red")
+ # fit broken line with linear B-splines
+ x1=seq(0, 1, length.out=11)
+ x2=seq(1, 3, length.out=21)
+ x3=seq(3, 4, length.out=11)
+ y1=x1+rnorm(x1, sd=0.1)
+ y2=-2+3*x2+rnorm(x2, sd=0.1)
+ y3=4+x3+rnorm(x3, sd=0.1)
+ x=c(x1, x2, x3)
+ y=c(y1, y2, y3)
+ plot(x, y)
+ f=fitsmbsp(x, y, n=1, nki=2)
+ lines(x, f(x))
+</code></pre>
+
+
+</div>

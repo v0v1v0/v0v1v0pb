@@ -1,0 +1,226 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>getG</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Computes a Genomic Relationship Matrix</h2>
+
+<h3>Description</h3>
+
+<p>Computes a positive semi-definite symmetric genomic relation matrix G=XX'
+offering options for centering and scaling the columns of <code>X</code>
+beforehand.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">getG(X, center = TRUE, scale = TRUE, impute = TRUE, scaleG = TRUE,
+  minVar = 1e-05, i = seq_len(nrow(X)), j = seq_len(ncol(X)), i2 = NULL,
+  chunkSize = 5000L, nCores = getOption("mc.cores", 2L), verbose = FALSE)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>X</code></td>
+<td>
+
+<p>A matrix-like object, typically the genotypes of a <code>BGData</code>
+object.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>center</code></td>
+<td>
+
+<p>Either a logical value or a numeric vector of length equal to the
+number of columns of <code>X</code>. Numeric vector required if <code>i2</code> is
+used. If <code>FALSE</code>, no centering is done. Defaults to <code>TRUE</code>.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>scale</code></td>
+<td>
+
+<p>Either a logical value or a numeric vector of length equal to the
+number of columns of <code>X</code>. Numeric vector required if <code>i2</code> is
+used. If <code>FALSE</code>, no scaling is done. Defaults to <code>TRUE</code>.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>impute</code></td>
+<td>
+
+<p>Indicates whether missing values should be imputed. Defaults to
+<code>TRUE</code>.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>scaleG</code></td>
+<td>
+
+<p>Whether XX' should be scaled. Defaults to <code>TRUE</code>.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>minVar</code></td>
+<td>
+
+<p>Columns with variance lower than this value will not be used in the
+computation (only if <code>scale</code> is not <code>FALSE</code>).
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>i</code></td>
+<td>
+
+<p>Indicates which rows of <code>X</code> should be used. Can be integer,
+boolean, or character. By default, all rows are used.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>j</code></td>
+<td>
+
+<p>Indicates which columns of <code>X</code> should be used. Can be integer,
+boolean, or character. By default, all columns are used.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>i2</code></td>
+<td>
+
+<p>Indicates which rows should be used to compute a block of the genomic
+relationship matrix. Will compute XY' where X is determined by <code>i</code>
+and <code>j</code> and Y by <code>i2</code> and <code>j</code>. Can be integer, boolean,
+or character. If <code>NULL</code>, the whole genomic relationship matrix XX'
+is computed. Defaults to <code>NULL</code>.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>chunkSize</code></td>
+<td>
+
+<p>The number of columns of <code>X</code> that are brought into physical memory
+for processing per core. If <code>NULL</code>, all columns of <code>X</code> are
+used. Defaults to 5000.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>nCores</code></td>
+<td>
+
+<p>The number of cores (passed to <code>mclapply</code>). Defaults to the number
+of cores as detected by <code>detectCores</code>.
+</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>verbose</code></td>
+<td>
+
+<p>Whether progress updates will be posted. Defaults to <code>FALSE</code>.
+</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>If <code>center = FALSE</code>, <code>scale = FALSE</code> and <code>scaleG = FALSE</code>,
+<code>getG</code> produces the same outcome than <code>tcrossprod</code>.
+</p>
+
+
+<h3>Value</h3>
+
+<p>A positive semi-definite symmetric numeric matrix.
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>file-backed-matrices</code> for more information on file-backed
+matrices. <code>multi-level-parallelism</code> for more information on
+multi-level parallelism. <code>BGData-class</code> for more information on
+the <code>BGData</code> class.
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R"># Restrict number of cores to 1 on Windows
+if (.Platform$OS.type == "windows") {
+    options(mc.cores = 1)
+}
+
+# Load example data
+bg &lt;- BGData:::loadExample()
+
+# Compute a scaled genomic relationship matrix from centered and scaled
+# genotypes
+g1 &lt;- getG(X = geno(bg))
+
+# Disable scaling of G
+g2 &lt;- getG(X = geno(bg), scaleG = FALSE)
+
+# Disable centering of genotypes
+g3 &lt;- getG(X = geno(bg), center = FALSE)
+
+# Disable scaling of genotypes
+g4 &lt;- getG(X = geno(bg), scale = FALSE)
+
+# Provide own scales
+scales &lt;- chunkedApply(X = geno(bg), MARGIN = 2, FUN = sd)
+g4 &lt;- getG(X = geno(bg), scale = scales)
+
+# Provide own centers
+centers &lt;- chunkedApply(X = geno(bg), MARGIN = 2, FUN = mean)
+g5 &lt;- getG(X = geno(bg), center = centers)
+
+# Only use the first 50 individuals (useful to account for population structure)
+g6 &lt;- getG(X = geno(bg), i = 1:50)
+
+# Only use the first 100 markers (useful to ignore some markers)
+g7 &lt;- getG(X = geno(bg), j = 1:100)
+
+# Compute unscaled G matrix by combining blocks of $XX_{i2}'$ where $X_{i2}$ is
+# a horizontal partition of X. This is useful for distributed computing as each
+# block can be computed in parallel. Centers and scales need to be precomputed.
+block1 &lt;- getG(X = geno(bg), i2 = 1:100, center = centers, scale = scales)
+block2 &lt;- getG(X = geno(bg), i2 = 101:199, center = centers, scale = scales)
+g8 &lt;- cbind(block1, block2)
+
+# Compute unscaled G matrix by combining blocks of $X_{i}X_{i2}'$ where both
+# $X_{i}$ and $X_{i2}$ are horizontal partitions of X. Similarly to the example
+# above, this is useful for distributed computing, in particular to compute
+# very large G matrices. Centers and scales need to be precomputed. This
+# approach is similar to the one taken by the symDMatrix package, but the
+# symDMatrix package adds memory-mapped blocks, only stores the upper side of
+# the triangular matrix, and provides a type that allows for indexing as if the
+# full G matrix is in memory.
+block11 &lt;- getG(X = geno(bg), i = 1:100, i2 = 1:100, center = centers, scale = scales)
+block12 &lt;- getG(X = geno(bg), i = 1:100, i2 = 101:199, center = centers, scale = scales)
+block21 &lt;- getG(X = geno(bg), i = 101:199, i2 = 1:100, center = centers, scale = scales)
+block22 &lt;- getG(X = geno(bg), i = 101:199, i2 = 101:199, center = centers, scale = scales)
+g9 &lt;- rbind(
+    cbind(block11, block12),
+    cbind(block21, block22)
+)
+</code></pre>
+
+
+</div>

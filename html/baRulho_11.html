@@ -1,0 +1,142 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>find_markers</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Find acoustic markers on test sound files</h2>
+
+<h3>Description</h3>
+
+<p><code>find_markers</code> find acoustic markers on test (re-recorded) sound files using spectrographic cross-correlation.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">find_markers(
+  X,
+  markers = c("start_marker", "end_marker"),
+  test.files = NULL,
+  path = getOption("sound.files.path", "."),
+  pb = getOption("pb", TRUE),
+  cores = getOption("mc.cores", 1),
+  ...
+)
+</code></pre>
+
+
+<h3>Arguments</h3>
+
+<table>
+<tr style="vertical-align: top;">
+<td><code>X</code></td>
+<td>
+<p>Object of class 'data.frame', 'selection_table' or 'extended_selection_table' (the last 2 classes are created by the function <code>selection_table</code> from the warbleR package) with the reference to the sounds in the master sound file. Must contain the following columns: 1) "sound.files": name of the .wav files, 2) "selec": unique selection identifier (within a sound file), 3) "start": start time, 4) "end": end time of selections and 5) "sound.id": unique identifier for each of the annotated sounds in 'X'. Columns for 'top.freq', 'bottom.freq' and 'channel' are optional. The acoustic start and end markers (added by <code>master_sound_file</code>) should be labeled as "start_marker" and "end_marker" respectively. Required.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>markers</code></td>
+<td>
+<p>Character vector with the name of the annotations (as in the column 'sound.id') to be used as templates for cross-correlation. Default is <code>c("start_marker", "end_marker")</code>. Using more than one marker is recommended as the time difference between their position can be used to evaluate the precision of the detection (see 'Value' section).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>test.files</code></td>
+<td>
+<p>Character vector of length 1 with the name(s) of the test (re-recorded) file(s) in which to search for the marker(s). If not supplied all sound files in 'path' are used instead.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>path</code></td>
+<td>
+<p>Character string containing the directory path where test (re-recorded) sound files are found.</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>pb</code></td>
+<td>
+<p>Logical argument to control if progress bar is shown. Default is <code>TRUE</code>.  Can be set globally for the current R session via the "pb" option (see <code>options</code>).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>cores</code></td>
+<td>
+<p>Numeric vector of length 1. Controls whether parallel computing is applied by specifying the number of cores to be used. Default is 1 (i.e. no parallel computing). Can be set globally for the current R session via the "mc.cores" option (see <code>options</code>).</p>
+</td>
+</tr>
+<tr style="vertical-align: top;">
+<td><code>...</code></td>
+<td>
+<p>Additional arguments to be passed to <code>template_correlator</code> for setting cross-correlation parameters (e.g. 'wl', 'ovlp', etc).</p>
+</td>
+</tr>
+</table>
+<h3>Details</h3>
+
+<p>The function takes a master sound file's reference data ('X') and finds the position of acoustics markers ('markers' argument, included as selections in 'X') in the re-recorded sound files. This is used to align signals found in re-recorded sound files according to a master sound file referenced in 'X'. The position of the markers is determined as the highest spectrogram cross-correlation value for each marker using the functions <code>template_correlator</code> and <code>template_detector</code>. <strong>Make sure the master sound file (that referred to in 'X') is found in the same folder than the re-recorded sound files</strong>. Take a look at the package vignette for information on how to incorporate this function into a sound degradation analysis workflow. In cases in which markers are not correctly detected editing test sound files to remove audio segments with no target sounds (before the start marker and after the end marker) can improve performance. Using a low 'hop.size' or window length 'wl' (used internally by <code>template_correlator</code>) can help to improve precision Other spectrogram types (argument 'type' in <code>template_correlator</code>) can sometimes show better performance when markers are highly degraded.
+</p>
+
+
+<h3>Value</h3>
+
+<p>A data frame with test file names, marker id, maximum cross-correlation score for each marker and the start and end where it was detected. If two or more markers are used the function computes an additional column, 'time.mismatch', that compares the time difference between the two markers in the test-files against that in the master sound file. In a perfect detection the value must be 0.
+</p>
+
+
+<h3>Author(s)</h3>
+
+<p>Marcelo Araya-Salas (<a href="mailto:marcelo.araya@ucr.ac.cr">marcelo.araya@ucr.ac.cr</a>)
+</p>
+
+
+<h3>References</h3>
+
+
+<p>Araya-Salas M., E. Grabarczyk, M. Quiroz-Oliva, A. Garcia-Rodriguez, A. Rico-Guevara. (2023), baRulho: an R package to quantify degradation in animal acoustic signals .bioRxiv 2023.11.22.568305.
+
+</p>
+
+
+<h3>See Also</h3>
+
+<p><code>manual_realign</code>; <code>auto_realign</code>; <code>align_test_files</code>; <code>master_sound_file</code>
+</p>
+<p>Other test sound alignment: 
+<code>align_test_files()</code>,
+<code>auto_realign()</code>,
+<code>manual_realign()</code>,
+<code>plot_aligned_sounds()</code>
+</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">{
+  # set temporary directory
+  td &lt;- tempdir()
+
+  # load example data
+  data("master_est")
+
+  # save example files in working director to recreate a case in which working
+  # with sound files instead of extended selection tables.
+  # This doesn't have to be done with your own data as you will
+  # have them as sound files already.
+  for (i in unique(test_sounds_est$sound.files)[1:2]) {
+    writeWave(object = attr(test_sounds_est, "wave.objects")[[i]], file.path(td, i))
+  }
+
+  # save master file
+  writeWave(object = attr(master_est, "wave.objects")[[1]], file.path(td, "master.wav"))
+
+  # set path and no progress bar in global options
+  options(sound.files.path = td, pb = FALSE)
+
+  # get marker position
+  markers &lt;- find_markers(X = master_est, test.files = unique(test_sounds_est$sound.files)[2])
+}
+</code></pre>
+
+
+</div>

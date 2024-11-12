@@ -1,0 +1,159 @@
+<div class="container">
+
+<table style="width: 100%;"><tr>
+<td>tuna</td>
+<td style="text-align: right;">R Documentation</td>
+</tr></table>
+<h2>Canned Tuna Sales Data</h2>
+
+<h3>Description</h3>
+
+<p>Volume of canned tuna sales as well as a measure of display activity, log price, and log wholesale price. Weekly data aggregated to the chain level. This data is extracted from the Dominick's Finer Foods database maintained by the Kilts Center for Marketing at the University of Chicago's Booth School of Business. Brands are seven of the top 10 UPCs in the canned tuna product category.
+</p>
+
+
+<h3>Usage</h3>
+
+<pre><code class="language-R">data(tuna)</code></pre>
+
+
+<h3>Format</h3>
+
+<p>A data frame with 338 observations on 30 variables.
+</p>
+
+<table>
+<tr>
+<td style="text-align: left;">
+    ...<code>$WEEK     </code> </td>
+<td style="text-align: left;"> a numeric vector </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+    ...<code>$MOVE#    </code> </td>
+<td style="text-align: left;"> unit sales of brand # </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+    ...<code>$NSALE#   </code> </td>
+<td style="text-align: left;"> a measure of display activity of brand # </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+    ...<code>$LPRICE#  </code> </td>
+<td style="text-align: left;"> log of price of brand # </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+    ...<code>$LWHPRIC# </code> </td>
+<td style="text-align: left;"> log of wholesale price of brand # </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+    ...<code>$FULLCUST </code> </td>
+<td style="text-align: left;"> total customers visits 
+  </td>
+</tr>
+</table>
+<p>The brands are:
+</p>
+
+<table>
+<tr>
+<td style="text-align: left;">
+    1. </td>
+<td style="text-align: left;"> Star Kist 6 oz. </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+    2. </td>
+<td style="text-align: left;"> Chicken of the Sea 6 oz. </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+    3. </td>
+<td style="text-align: left;"> Bumble Bee Solid 6.12 oz. </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+    4. </td>
+<td style="text-align: left;"> Bumble Bee Chunk 6.12 oz. </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+    5. </td>
+<td style="text-align: left;"> Geisha 6 oz. </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+    6. </td>
+<td style="text-align: left;"> Bumble Bee Large Cans. </td>
+</tr>
+<tr>
+<td style="text-align: left;">
+    7. </td>
+<td style="text-align: left;"> HH Chunk Lite 6.5 oz. 
+  </td>
+</tr>
+</table>
+<h3>Source</h3>
+
+<p>Chevalier, Judith, Anil Kashyap, and Peter Rossi (2003), "Why Don't Prices Rise During Periods of Peak Demand? Evidence from Scanner Data," <em>The American Economic Review</em> , 93(1), 15–37.</p>
+
+
+<h3>References</h3>
+
+<p>Chapter 7, <em>Bayesian Statistics and Marketing</em> by Rossi, Allenby, and McCulloch.</p>
+
+
+<h3>Examples</h3>
+
+<pre><code class="language-R">data(tuna)
+cat(" Quantiles of sales", fill=TRUE)
+mat = apply(as.matrix(tuna[,2:5]), 2, quantile)
+print(mat)
+
+
+## example of processing for use with rivGibbs
+if(0) {
+  data(tuna)                          
+  t = dim(tuna)[1]    
+  customers = tuna[,30]                 
+  sales = tuna[,2:8]                                                        
+  lnprice = tuna[,16:22]      
+  lnwhPrice = tuna[,23:29]      
+  share = sales/mean(customers)
+  shareout = as.vector(1-rowSums(share))
+  lnprob = log(share/shareout)  
+
+  ## create w matrix
+  I1 = as.matrix(rep(1,t))
+  I0 = as.matrix(rep(0,t))
+  intercept = rep(I1,4)
+  brand1 = rbind(I1, I0, I0, I0)
+  brand2 = rbind(I0, I1, I0, I0)
+  brand3 = rbind(I0, I0, I1, I0)
+  w = cbind(intercept, brand1, brand2, brand3)  
+  
+  ## choose brand 1 to 4
+  y = as.vector(as.matrix(lnprob[,1:4]))
+  X = as.vector(as.matrix(lnprice[,1:4]))
+  lnwhPrice = as.vector(as.matrix(lnwhPrice[1:4]))
+  z = cbind(w, lnwhPrice)
+                        
+  Data = list(z=z, w=w, x=X, y=y)
+  Mcmc = list(R=R, keep=1)
+  
+  set.seed(66)
+  out = rivGibbs(Data=Data, Mcmc=Mcmc)
+
+  cat(" betadraws ", fill=TRUE)
+  summary(out$betadraw)
+
+  ## plotting examples
+  if(0){plot(out$betadraw)}
+}
+</code></pre>
+
+
+</div>
